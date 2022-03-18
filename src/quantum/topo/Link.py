@@ -31,14 +31,25 @@ class Link:
 
 
     def assignQubits(self):
+        # prevState = self.assigned
         self.assigned = True
+        self.n1.remainingQubits -= 1
+        self.n2.remainingQubits -= 1
   
     def clearEntanglement(self):
+        preState = self.assigned
         self.assigned = False
         self.entangled = False
+
+        if preState:
+            self.n1.remainingQubits += 1
+            self.n2.remainingQubits += 1
+   
     
     def tryEntanglement(self):
         b = self.assigned and self.p >= random.random()
         self.entangled = b
         return b
   
+    def assignable(self): 
+        return not self.assigned and self.n1.remainingQubits > 0 and self.n2.remainingQubits > 0

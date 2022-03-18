@@ -11,8 +11,8 @@ class Node:
         self.remainingQubits = nQubits
         self.q = topo.q
         self.internalLinks = []
-        self.neighbors = []
-        self.links = []
+        self.neighbors = [] 
+        self.links = []     
 
     def attemptSwapping(self, l1, l2):  # l1 -> Link, l2 -> Link
         if l1.n1 == self:    
