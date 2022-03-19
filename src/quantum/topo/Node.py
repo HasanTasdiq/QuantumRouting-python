@@ -8,7 +8,7 @@ class Node:
     def __init__(self, id: int, loc: tuple, nQubits: int, topo) -> bool:
         self.id = id
         self.loc = loc
-        self.remainingQubits = nQubits
+        self.remainingQubits = int(nQubits)
         self.q = topo.q
         self.internalLinks = []
         self.neighbors = [] 

@@ -49,11 +49,12 @@ class Topo:
                         #print(usedNode)
 
         # Construct node's neighbor list in Node struct
-        for (node, _node) in zip(self.nodes, _nodes):
-            node.neighbors.append(self.nodes[_node])
+        for node in self.nodes:
+            for neighbor in _neighbors[node.id]:
+                node.neighbors.append(self.nodes[neighbor])
 
-        for _node in _nodes:
-            print(_node, _neighbors[_node])
+        # for _node in _nodes:
+        #     print(_node, _neighbors[_node])
 
         # print(len(_edges)*2/len(_nodes))
 
@@ -73,7 +74,7 @@ class Topo:
         p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
         for n in p:
             print(n.id)
-        print('width:', self.widthPhase2(p))
+        # print('width:', self.widthPhase2(p))
         
 
     def distance(self, pos1, pos2): # para1 type: tuple, para2 type: tuple
@@ -117,7 +118,7 @@ class Topo:
         fStateMetric.clear()
         if greedyType == 'Hop':
             fStateMetric = {edge : 1 for edge in self.edges}
-        elif greedyType == 'Geograpgic':
+        else: 
             fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges}
 
         # Construct neightor & weight table for nodes
@@ -175,6 +176,7 @@ class Topo:
         
 
     def hopsAway(self, src, dst, greedyType):
+        # print('enter hopsAway')
         path = self.shortestPath(src, dst, greedyType)
-        return len(path) - 1
+        return len(path[1]) - 1
         

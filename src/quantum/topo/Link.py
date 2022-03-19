@@ -25,7 +25,7 @@ class Link:
     def swappedAtTheOtherEndOf(self, n: Node):  
         return (self.n1 == n and self.s2 or self.n2 == n and self.s1)
     def swapped(self):  
-        return self.s1 or self.s1
+        return self.s1 or self.s2
     def notSwapped(self):  
         return not self.swapped()
 

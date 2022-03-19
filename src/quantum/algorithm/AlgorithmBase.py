@@ -1,38 +1,37 @@
 import sys
 sys.path.append("..")
 from topo.Topo import Topo  
-import networkx as nx
 
 class AlgorithmBase:
 
     def __init__(self, topo):
-        self.name = "Greedy_H"
+        self.name = "Greedy"
         self.topo = topo
         self.srcDstPairs = []
 
-    def __prepare(self):
+    def prepare(self):
         pass
     
-    def __p2(self):
+    def p2(self):
         pass
 
-    def __p4(self):
+    def p4(self):
         pass
 
-    def __tryEntanglement(self):
+    def tryEntanglement(self):
         for link in self.topo.links:
             link.tryEntanglement()
 
     def work(self, pairs: list): 
         self.srcDstPairs.clear()
         self.srcDstPairs = pairs
+       
+        self.p2()
+        
+        self.tryEntanglement()
 
-        self.__p2()
-
-        self.__tryEntanglement()
-
-        self.__p4()
-
+        self.p4()
+        
 
 
 if __name__ == '__main__':

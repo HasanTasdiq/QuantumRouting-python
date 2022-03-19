@@ -8,12 +8,12 @@ from topo.Node import Node
 from topo.Link import Link
 import queue
 
-class GreedyHopRouting(AlgorithmBase):
+class GreedyGeographicRouting(AlgorithmBase):
 
     def __init__(self, topo):
         super().__init__(topo)
         self.pathsSortedDynamically = []
-        self.name = "Greedy_H"
+        self.name = "Greedy_G"
 
     def p2(self):
         self.pathsSortedDynamically.clear()
@@ -47,11 +47,11 @@ class GreedyHopRouting(AlgorithmBase):
 
                     # Choose the neighbor with smallest number of hop from it to dst
                     next = self.topo.sentinal
-                    hopsCurMinNum = sys.maxsize
+                    disCurMin = sys.maxsize
                     for selectedNeighbor in selectedNeighbors:
-                        hopsNum = self.topo.hopsAway(selectedNeighbor, dst, 'Hop')      
-                        if hopsCurMinNum > hopsNum:
-                            hopsCurMinNum = hopsNum
+                        dis = self.topo.distance(selectedNeighbor.loc, dst.loc)      
+                        if disCurMin > dis:
+                            disCurMin = dis
                             next = selectedNeighbor
 
                     # If have cycle, break
@@ -116,10 +116,9 @@ class GreedyHopRouting(AlgorithmBase):
                     curr.attemptSwapping(l1, l2)
                 
         print('p4 end') 
-
-        
+                    
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
-    s = GreedyHopRouting(topo)
+    s = GreedyGeographicRouting(topo)
     s.work([(topo.nodes[3],topo.nodes[99])])
