@@ -2,9 +2,44 @@ import sys
 import random
 import heapq
 from queue import PriorityQueue
+from tkinter.tix import AUTO
 import networkx as nx
 from .Node import Node
 from .Link import Link
+from dataclasses import dataclass
+
+@dataclass
+class Edge(Node):
+
+    def __init__(self, n1: Node, n2: Node):
+        self.n1 = n1
+        self.n2 = n2
+        self.p_first = []
+        self.p_second = []
+
+        p = [self.p_first, self.p_second]
+
+    def toList(self):
+        List = [self.n1, self.n2]
+        return List
+
+    def otherthan(self, n: Node):
+        if n == self.n1:
+            return self.n2
+        elif n == self.n2:
+            return self.n1
+        else:
+            print('Neither\n')
+
+    def contains(self, n: Node):
+        if self.n1 in n or self.n2 in n:
+            return True
+
+    def hashCode(self):
+        return self.n1.id ^ self.n2.id
+
+    def equals(self, other):
+        return other is Edge and (other.n1 == self.n1 and other.n2 == self.n2 or other.n1 == self.n2 and other.n2 == self.n1)
 
 class Topo:
 
@@ -18,7 +53,7 @@ class Topo:
         self.k = k
         self.sentinal = Node(-1, (-1.0, -1.0), -1, self)
 
-        # Construct neighbor table 
+        # Construct neighbor table by int type
         _neighbors = {}
         for _node in _nodes:
             _neighbors[_node] = list(nx.neighbors(G,_node))
@@ -77,7 +112,7 @@ class Topo:
         # print('width:', self.widthPhase2(p))
         
 
-    def distance(self, pos1, pos2): # para1 type: tuple, para2 type: tuple
+    def distance(self, pos1: tuple, pos2: tuple): # para1 type: tuple, para2 type: tuple
         d = 0
         for a, b in zip(pos1, pos2):
             d += (a-b) ** 2
@@ -122,7 +157,7 @@ class Topo:
             fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges}
 
         # Construct neightor & weight table for nodes
-        neighborsOf = {}    # {node : {neighbor node : weight}}
+        neighborsOf = {}    # {Node : {Node : weight, ...}, ...}
         for edge in self.edges:
             n1, n2 = edge
             if neighborsOf.__contains__(n1):

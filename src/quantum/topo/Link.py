@@ -14,7 +14,7 @@ class Link:
 
     def theOtherEndOf(self, n: Node): 
         if (self.n1 == n): 
-            tmp = self.n2 
+            tmp = self.n2
         elif (self.n2 == n): 
             tmp = self.n1 
         return tmp
