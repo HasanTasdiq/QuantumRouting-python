@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import sys
 sys.path.append("..")
 from topo.Topo import Topo  
@@ -31,8 +32,12 @@ class AlgorithmBase:
         self.tryEntanglement()
 
         self.p4()
-        
 
+@dataclass
+class PickedPath:
+    weight: float
+    width: int
+    path: list
 
 if __name__ == '__main__':
 
