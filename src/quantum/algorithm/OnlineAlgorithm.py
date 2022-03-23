@@ -1,4 +1,5 @@
 
+from dataclasses import dataclass
 from re import A
 import sys
 sys.path.append("..")
@@ -8,6 +9,13 @@ from topo.Topo import Topo
 from topo.Node import Node 
 from topo.Link import Link
 
+@dataclass
+class RecoveryPath:
+    path: list
+    width: int
+    taken: int 
+    available: int 
+
 
 class OnlineAlgorithm(AlgorithmBase):
 
@@ -15,8 +23,9 @@ class OnlineAlgorithm(AlgorithmBase):
         super().__init__(topo)
         self.pathsSortedDynamically = []
         self.name = "Online"
-        self.majorPaths = []   
+        self.majorPaths = []    # [PickedPath, ...]
         self.recoveryPaths = {} # {PickedPath: [PickedPath, ...], ...}
+        self.pathToRecoveryPaths = {} # {PickedPath : [RecoveryPath, ...], ...}
         self.allowRecoveryPaths = allowRecoveryPaths
 
     # P2
@@ -40,12 +49,12 @@ class OnlineAlgorithm(AlgorithmBase):
             
          
     # 對每個SD-pair找出候選路徑，目前不確定只會找一條還是可以多條
-    # 目前缺期望值計算 e method 的實作 實作在Topo.py
+    # ***目前缺期望值計算 e method 的實作 實作在Topo.py
     def calCandidates(self, pairs: list): # pairs -> [(Node, Node), ...]
         candidates = []
         for pair in pairs:
             candidate = []
-            src, dst = pair
+            src, dst = pair[0], pair[1]
             maxM = max(src.remainingQubits, dst.remainingQubits)
             if maxM == 0:   # not enough qubit
                 continue
@@ -62,27 +71,37 @@ class OnlineAlgorithm(AlgorithmBase):
 
                 # collect edges with links 
                 for link in self.topo.links:
+                    if link.n2.id < link.n1.id:
+                        link.n1, link.n2 = link.n2, link.n1
                     if not link.assigned and link.n1 not in failNodes and link.n2 not in failNodes:
-                        if edges.__contains__((link.n1, link.n2)):
-                            edges[(link.n1, link.n2)].append(link)
-                        else:
-                            edges[(link.n1, link.n2)] = [link]
+                        if not edges.__contains__((link.n1, link.n2)):
+                            edges[(link.n1, link.n2)] = []
+                        edges[(link.n1, link.n2)].append(link)
 
                 neighborsOf = {} # neighborsOf -> {Node: [Node, ...], ...}
+                neighborsOf[src] = []
+                neighborsOf[dst] = []
 
                 # filter available links satisfy width w
                 for edge in edges:
                     links = edges[edge]
                     if len(links) >= w:
-                        if neighborsOf.__contains__(edge[0]):
-                            neighborsOf[edge[0]].append(edge[1])
-                        else:
-                            neighborsOf[edge[0]] = [edge[1]]
-                        if neighborsOf.__contains__(edge[1]):
-                            neighborsOf[edge[1]].append(edge[0])
-                        else:
-                            neighborsOf[edge[1]] = [edge[0]]
-                            
+                        if not neighborsOf.__contains__(edge[0]):
+                            neighborsOf[edge[0]] = []
+                        if not neighborsOf.__contains__(edge[1]):
+                            neighborsOf[edge[1]] = []
+
+                        neighborsOf[edge[0]].append(edge[1])
+                        neighborsOf[edge[1]].append(edge[0])
+                        neighborsOf[edge[0]] = list(set(neighborsOf[edge[0]]))
+                        neighborsOf[edge[1]] = list(set(neighborsOf[edge[1]]))
+                
+                # test
+                for node in neighborsOf:
+                    for neigh in neighborsOf[node]:
+                        if(node.id == src.id or node.id == dst.id):
+                            print(w, node.id, neigh.id)
+                                
                 if (len(neighborsOf[src]) == 0 or len(neighborsOf[dst]) == 0):
                     continue
 
@@ -91,7 +110,7 @@ class OnlineAlgorithm(AlgorithmBase):
                 def getPathFromSrc(n): 
                     path = []
                     cur = n
-                    while (cur != topo.sentinal): 
+                    while (cur != self.topo.sentinal): 
                         path.insert(0, cur)
                         cur = prevFromSrc[cur]
                     return path
@@ -116,10 +135,11 @@ class OnlineAlgorithm(AlgorithmBase):
                         candidate.append(PickedPath(E[dst.id][0], w, getPathFromSrc(dst)))
                         break
                     
-                    # Update neighbors of w by E
+                    # Update neighbors by EXT
                     for neighbor in neighborsOf[u]:
                         tmp = E[u.id][1]
-                        e = self.topo.e(getPathFromSrc(u) + neighbor, w, tmp)
+                        p = getPathFromSrc(u)
+                        e = self.topo.e(p.append(neighbor), w, tmp)
                         newE = [e, tmp]
                         oldE = E[neighbor.id]
 
@@ -175,17 +195,136 @@ class OnlineAlgorithm(AlgorithmBase):
                         self.pickAndAssignPath(pick, majorPath)
 
     def p4(self):
-        pass
+        for pathWithWidth in self.majorPaths:
+            width = pathWithWidth.width
+            majorPath = pathWithWidth.path
+
+            recoveryPaths = self.recoveryPaths[pathWithWidth]   # recoveryPaths -> [pickedPath, ...]
+            sorted(recoveryPaths, key=lambda x: len(x.path)*10000 + majorPath.index(x.path[0])) # sort recoveryPaths by it recoverypath length and the index of the first node in recoveryPath  
+
+            # Construct pathToRecoveryPaths table
+            for recoveryPath in recoveryPaths:
+                w = recoveryPath.width
+                p = recoveryPath.path
+                available = sys.maxsize
+                for i in range(0, len(p) - 1):
+                    n1 = p[i]
+                    n2 = p[i+1]
+                    cnt = 0
+                    for link in n1.links:
+                        if link.contains(n2) and link.entangled:
+                            cnt += 1
+                    if cnt < available:
+                        available = cnt
+                
+                if not self.pathToRecoveryPaths.__contains__(pathWithWidth):
+                    self.pathToRecoveryPaths[pathWithWidth] = []
+                
+                self.pathToRecoveryPaths[pathWithWidth].append(RecoveryPath(p, w, 0, available))
+            # for end 
+
+            rpToWidth = {recoveryPath.path: recoveryPath.width for recoveryPath in recoveryPaths}  # rpToWidth -> {pickedPath: int, ...}
+
+            # for w-width major path, treat it as w different paths, and repair separately
+            for w in range(1, width + 1):
+                brokenEdges = []    # [(int, int), ...]
+
+                # find all broken edges on the major path
+                for i in range(0, len(majorPath) - 1):
+                    i1 = i
+                    i2 = i+1
+                    n1 = majorPath[i1]
+                    n2 = majorPath[i2]
+                    for link in n1.links:
+                        if link.contains(n2) and link.assigned and link.notSwapped() and not link.entangledand:
+                            brokenEdges.append((i1, i2))
+                            continue
+                
+                edgeToRps = {brokenEdge: [] for brokenEdge in brokenEdges}
+                rpToEdges = {recoveryPath.path: [] for recoveryPath in recoveryPaths}
+
+                # Construct edgeToRps & rpToEdges
+                for recoveryPath in recoveryPaths:
+                    rp = recoveryPath.path
+                    s1, s2 = majorPath.index(rp[0]), majorPath.index(rp[-1])
+
+                    for j in range(s1, s2):
+                        if (j, j+1) in brokenEdges:
+                            edgeToRps[(j, j+1)].append(rp)
+                            rpToEdges[rp].append((j, j+1))
+
+                realPickedRps = set()
+                realRepairedEdges = set()
+
+                # try to cover the broken edges
+                for brokenEdge in brokenEdges:
+                    # if the broken edge is repaired, go to repair the next broken edge
+                    if brokenEdge in realRepairedEdges: 
+                        continue
+                    repaired = False
+                    next = 0
+                    rps = edgeToRps[brokenEdge] 
+
+                    # filter the avaliable rp in rps for brokenEdge
+                    for rp in rps:
+                        if not (rpToWidth[rp] > 0 and rp not in realPickedRps):
+                            rps.remove(rp)
+
+                    # sort rps by the start id in majorPath
+                    sorted(rps, key=lambda x: majorPath.index(x[0]) * 10000 + majorPath.index(x[-1]) )
+
+                    for rp in rps:
+                        if majorPath.index(rp[0]) < next:
+                            continue 
+
+                        next = majorPath.index(rp[-1])
+                        pickedRps = realPickedRps
+                        repairedEdges = realRepairedEdges
+                        otherCoveredEdges = set(rpToEdges[rp]) - {brokenEdge}
+                        covered = False
+
+                        for edge in otherCoveredEdges: #delete covered rps, or abort
+                            prevRp = set(edgeToRps[edge]) & pickedRps    # 這個edge 所覆蓋到的rp 假如已經有被選過 表示她被修理過了 表示目前這個rp要修的edge蓋到以前的rp
+                            
+                            if prevRp == set()  :
+                                repairedEdges.add(edge)
+                            else: 
+                                covered = True
+                                break  # the rps overlap. taking time to search recursively. just abort
+                        
+                        if covered:
+                            continue
+
+                        repaired = True      
+                        repairedEdges.add(brokenEdge) 
+                        pickedRps.add(rp)
+
+                        for rp in realPickedRps - pickedRps:
+                            rpToWidth[rp] += 1
+                        for rp in pickedRps - realPickedRps:
+                            rpToWidth[rp] -= 1
+                        
+                        realPickedRps = pickedRps
+                        realRepairedEdges = repairedEdges
+                    # for rp end
+
+                    if not repaired:   # this major path cannot be repaired
+                        break
+                # for brokenEdge end
+            # for w end
+        # for pathWithWidth end
 
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
-    # s = GreedyHopRouting(topo)
-    # s.work([(topo.nodes[3],topo.nodes[99])])
-    # a = [sys.float_info.max, [0.0 for i in range(0,10)]]
-    # print(a)
-    # a = PickedPath(0, 1, [])
-    # b = []
-    # b.append(a)
-    # sorted(b, key=lambda x: x.weight)
-    # print(b)
+    s = OnlineAlgorithm(topo)
+    s.work([(topo.nodes[3],topo.nodes[99])])
+    
+    a = {1,2,3}
+    b = {1,2,3}
+
+    for aa in a-b:
+        print(aa)
+    print(a&b)
+    
+    

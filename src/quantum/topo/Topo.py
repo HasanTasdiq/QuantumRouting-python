@@ -91,7 +91,7 @@ class Topo:
         # for _node in _nodes:
         #     print(_node, _neighbors[_node])
 
-        # print(len(_edges)*2/len(_nodes))
+        # print('average neighbors:', len(_edges)*2/len(_nodes))
 
         # Construct Link
         linkId = 0
@@ -147,34 +147,49 @@ class Topo:
         return curMinWidth
         
 
-    def shortestPath(self, src, dst, greedyType):
+    def shortestPath(self, src, dst, greedyType, edges = None):
         # Construct state metric (weight) table for edges
-        fStateMetric = {}   # {edge : fstate}
+        fStateMetric = {}   # {edge: fstate}
         fStateMetric.clear()
-        if greedyType == 'Hop':
+        if edges != None:
+            fStateMetric = {edge : 1 for edge in edges} 
+        elif greedyType == 'Hop' and edges == None:
             fStateMetric = {edge : 1 for edge in self.edges}
         else: 
             fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges}
 
         # Construct neightor & weight table for nodes
-        neighborsOf = {}    # {Node : {Node : weight, ...}, ...}
-        for edge in self.edges:
-            n1, n2 = edge
-            if neighborsOf.__contains__(n1):
-                neighborsOf[n1].update({n2 : fStateMetric[edge]})
-            else:
-                neighborsOf[n1] = {n2 : fStateMetric[edge]}
+        neighborsOf = {}    # {Node: {Node: weight, ...}, ...}
+        if edges == None:
+            for edge in self.edges:
+                n1, n2 = edge
+                if neighborsOf.__contains__(n1):
+                    neighborsOf[n1].update({n2 : fStateMetric[edge]})
+                else:
+                    neighborsOf[n1] = {n2 : fStateMetric[edge]}
 
-            if neighborsOf.__contains__(n2):
-                neighborsOf[n2].update({n1 : fStateMetric[edge]})
-            else:
-                neighborsOf[n2] = {n1 : fStateMetric[edge]}
+                if neighborsOf.__contains__(n2):
+                    neighborsOf[n2].update({n1 : fStateMetric[edge]})
+                else:
+                    neighborsOf[n2] = {n1 : fStateMetric[edge]}
+        else:
+            for edge in edges:
+                n1, n2 = edge
+                if neighborsOf.__contains__(n1):
+                    neighborsOf[n1].update({n2 : fStateMetric[edge]})
+                else:
+                    neighborsOf[n1] = {n2 : fStateMetric[edge]}
 
-        D = {node.id : sys.float_info.max for node in self.nodes} 
+                if neighborsOf.__contains__(n2):
+                    neighborsOf[n2].update({n1 : fStateMetric[edge]})
+                else:
+                    neighborsOf[n2] = {n1 : fStateMetric[edge]}
+
+        D = {node.id : sys.float_info.max for node in self.nodes} # {int: [int, int, ...], ...}
         q = [] # [(weight, curr, prev)]
 
         D[src.id] = 0.0
-        prevFromSrc = {}   # {cur : prev}
+        prevFromSrc = {}   # {cur: prev}
 
         q.append((D[src.id], src, self.sentinal))
         sorted(q, key=lambda q: q[0])
@@ -214,4 +229,7 @@ class Topo:
         # print('enter hopsAway')
         path = self.shortestPath(src, dst, greedyType)
         return len(path[1]) - 1
+
+    def e(self, path: list, width: int, oldP: list):
+        return 0.0
         
