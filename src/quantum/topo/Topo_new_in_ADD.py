@@ -8,9 +8,6 @@ from .Node import Node
 from .Link import Link
 from dataclasses import dataclass
 
-###'ADD:' means new parts or changes
-
-#ADD: dataclass class Edge
 @dataclass
 class Edge(Node):
 
@@ -44,8 +41,6 @@ class Edge(Node):
     def equals(self, other):
         return other is Edge and (other.n1 == self.n1 and other.n2 == self.n2 or other.n1 == self.n2 and other.n2 == self.n1)
 
-
-
 class Topo:
 
     def __init__(self, G, q, k, a, degree):
@@ -53,11 +48,12 @@ class Topo:
         self.nodes = []
         self.links = []
         self.edges = [] # (Node, Node)
+        self.q = q
         self.alpha = a
         self.k = k
         self.sentinal = Node(-1, (-1.0, -1.0), -1, self)
 
-        # Construct neighbor table 
+        # Construct neighbor table by int type
         _neighbors = {}
         for _node in _nodes:
             _neighbors[_node] = list(nx.neighbors(G,_node))
@@ -95,7 +91,7 @@ class Topo:
         # for _node in _nodes:
         #     print(_node, _neighbors[_node])
 
-        # print(len(_edges)*2/len(_nodes))
+        # print('average neighbors:', len(_edges)*2/len(_nodes))
 
         # Construct Link
         linkId = 0
@@ -116,7 +112,6 @@ class Topo:
         # print('width:', self.widthPhase2(p))
         
 
-    #ADD:": tuple"
     def distance(self, pos1: tuple, pos2: tuple): # para1 type: tuple, para2 type: tuple
         d = 0
         for a, b in zip(pos1, pos2):
@@ -152,34 +147,49 @@ class Topo:
         return curMinWidth
         
 
-    def shortestPath(self, src, dst, greedyType):
+    def shortestPath(self, src, dst, greedyType, edges = None):
         # Construct state metric (weight) table for edges
-        fStateMetric = {}   # {edge : fstate}
+        fStateMetric = {}   # {edge: fstate}
         fStateMetric.clear()
-        if greedyType == 'Hop':
+        if edges != None:
+            fStateMetric = {edge : 1 for edge in edges} 
+        elif greedyType == 'Hop' and edges == None:
             fStateMetric = {edge : 1 for edge in self.edges}
         else: 
             fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges}
 
         # Construct neightor & weight table for nodes
-        neighborsOf = {}    # {node : {neighbor node : weight}}
-        for edge in self.edges:
-            n1, n2 = edge
-            if neighborsOf.__contains__(n1):
-                neighborsOf[n1].update({n2 : fStateMetric[edge]})
-            else:
-                neighborsOf[n1] = {n2 : fStateMetric[edge]}
+        neighborsOf = {}    # {Node: {Node: weight, ...}, ...}
+        if edges == None:
+            for edge in self.edges:
+                n1, n2 = edge
+                if neighborsOf.__contains__(n1):
+                    neighborsOf[n1].update({n2 : fStateMetric[edge]})
+                else:
+                    neighborsOf[n1] = {n2 : fStateMetric[edge]}
 
-            if neighborsOf.__contains__(n2):
-                neighborsOf[n2].update({n1 : fStateMetric[edge]})
-            else:
-                neighborsOf[n2] = {n1 : fStateMetric[edge]}
+                if neighborsOf.__contains__(n2):
+                    neighborsOf[n2].update({n1 : fStateMetric[edge]})
+                else:
+                    neighborsOf[n2] = {n1 : fStateMetric[edge]}
+        else:
+            for edge in edges:
+                n1, n2 = edge
+                if neighborsOf.__contains__(n1):
+                    neighborsOf[n1].update({n2 : fStateMetric[edge]})
+                else:
+                    neighborsOf[n1] = {n2 : fStateMetric[edge]}
 
-        D = {node.id : sys.float_info.max for node in self.nodes} 
+                if neighborsOf.__contains__(n2):
+                    neighborsOf[n2].update({n1 : fStateMetric[edge]})
+                else:
+                    neighborsOf[n2] = {n1 : fStateMetric[edge]}
+
+        D = {node.id : sys.float_info.max for node in self.nodes} # {int: [int, int, ...], ...}
         q = [] # [(weight, curr, prev)]
 
         D[src.id] = 0.0
-        prevFromSrc = {}   # {cur : prev}
+        prevFromSrc = {}   # {cur: prev}
 
         q.append((D[src.id], src, self.sentinal))
         sorted(q, key=lambda q: q[0])
@@ -220,24 +230,63 @@ class Topo:
         path = self.shortestPath(src, dst, greedyType)
         return len(path[1]) - 1
 
-    #ADD #原本的code裡有在裡面再呼叫一次clearEntanglements()，不確定差別會在哪，先記錄一下
-    def clearEntanglements(self):
-        for S1, S2 in enumerate(zip(self.links.s1, self.links.s2)):
-            S1 = False
-            S2 = False
-        
-        for internallinks in self.nodes.internalLinks:
-            internallinks.clear()
+    def e(self, path: list, width: int, oldP: list):
+        return 0.0
 
-        # for nQubits, remainingQubits in enumerate(zip(self.nodes.nQubits ,self.nodes.remainingQubits)):
-        #     if nQubits != remainingQubits:
-        #         print('it.nQubits and it.remainingQubits are not equal\n')
-    
-    #ADD #原本的code裡「沒有」在裡面再呼叫一次clearEntanglements()，不確定差別會在哪，先記錄一下
-    def clearOnlyPhase4(self):
-        for S1, S2 in enumerate(zip(self.links.s1, self.links.s2)):
-            S1 = False
-            S2 = False
+    #ADD
+    def getEstablishedEntanglements(self, n1: Node, n2: Node):
+        stack = []
+        stack.append(None, n1) #Pair[Link, Node]
+        result = []
+
+        while stack:
+            incoming, current = stack.pop()
+
+            if current == n2:
+                path = []
+                path.append(n2)
+                inc = incoming
+
+                while inc.n1 != n1 and inc.n2 != n2:
+                    if inc.n1 == path[-1]:
+                        prev = inc.n2
+                    else:
+                        prev = inc.n1
+                        
+                    #inc = prev.internalLinks.first { it.contains(inc) }.otherThan(inc)
+                    for internalLinks in prev.internalLinks:
+                        if inc in internalLinks:
+                            for links in internalLinks:
+                                if inc != links:
+                                    inc = links
+                                    break
+                                else:
+                                    continue
+                            break
+                        else:
+                            continue
+                    path.append(prev)
+
+                path.append(n1)
+                result.append(path.reverse())
+                continue
+
+            outgoingLinks = []
+            if incoming is None:
+                for links in current.links:
+                    if links.entangled and not links.swappedAt(current):
+                        outgoingLinks.append(links)
+            else:
+                for internalLinks in current.internalLinks:
+                    for links in internalLinks:
+                        if incoming != links:
+                            outgoingLinks.append(links)
+            
+            for l in outgoingLinks:
+                if l.n1 == current:
+                    stack.append(l, l.n2)
+                else:
+                    stack.append(l, l.n1)
+
+        return result
         
-        for internallinks in self.nodes.internalLinks:
-            internallinks.clear()
