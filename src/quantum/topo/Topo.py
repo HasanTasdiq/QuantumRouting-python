@@ -1,12 +1,14 @@
 import sys
 import random
 import heapq
+import math
 from queue import PriorityQueue
 from tkinter.tix import AUTO
 import networkx as nx
 from .Node import Node
 from .Link import Link
 from dataclasses import dataclass
+
 
 @dataclass
 class Edge(Node):
@@ -231,5 +233,98 @@ class Topo:
         return len(path[1]) - 1
 
     def e(self, path: list, width: int, oldP: list):
-        return 0.0
+        s = len(path) - 1
+        P = [0.0 for _ in range(0,width+1)]
+        p = [0 for _ in range(0, s+1)]  # Entanglement percentage
+        
+        for i in range(0, s):
+            l = self.distance(path[i].loc, path[i+1].loc)
+            p[i+1] = math.exp(-self.alpha * l)
+
+        start = s
+        if sum(oldP) == 0:
+            for m in range(0, width+1):
+                oldP[m] = math.comb(m, width) * math.pow(p[1], m) * math.pow(1-p[1], width-m)
+                start = 2
+        
+        for k in range(start, s+1):
+            for i in range(0, width+1):
+                exactlyM = math.comb(i, width) *  math.pow(p[k], i) * math.pow(1-p[k], width-i)
+                atLeastM = exactlyM
+
+                for j in range(i+1, width+1):
+                    atLeastM += (math.comb(j, width) * math.pow(p[k], j) * math.pow(1-p[1], width-j))
+
+                acc = 0
+                for j in range(i+1, width+1):
+                    acc += oldP[j]
+                
+                P[i] = oldP[i] * atLeastM + exactlyM * acc
+            
+            for i in range(0, width+1):
+                oldP[i] = P[i]
+        
+        acc = 0
+        for m in range(1, width+1):
+            acc += m * oldP[m]
+        
+        return acc * math.pow(self.q, s-1)
+    
+
+    def getEstablishedEntanglements(self, n1: Node, n2: Node):
+        stack = []
+        stack.append(None, n1) #Pair[Link, Node]
+        result = []
+
+        while stack:
+            incoming, current = stack.pop()
+
+            if current == n2:
+                path = []
+                path.append(n2)
+                inc = incoming
+
+                while inc.n1 != n1 and inc.n2 != n2:
+                    if inc.n1 == path[-1]:
+                        prev = inc.n2
+                    else:
+                        prev = inc.n1
+                        
+                    #inc = prev.internalLinks.first { it.contains(inc) }.otherThan(inc)
+                    for internalLinks in prev.internalLinks:
+                        if inc in internalLinks:
+                            for links in internalLinks:
+                                if inc != links:
+                                    inc = links
+                                    break
+                                else:
+                                    continue
+                            break
+                        else:
+                            continue
+                    path.append(prev)
+
+                path.append(n1)
+                result.append(path.reverse())
+                continue
+
+            outgoingLinks = []
+            if incoming is None:
+                for links in current.links:
+                    if links.entangled and not links.swappedAt(current):
+                        outgoingLinks.append(links)
+            else:
+                for internalLinks in current.internalLinks:
+                    for links in internalLinks:
+                        if incoming != links:
+                            outgoingLinks.append(links)
+            
+            for l in outgoingLinks:
+                if l.n1 == current:
+                    stack.append(l, l.n2)
+                else:
+                    stack.append(l, l.n1)
+
+        return result
+
         
