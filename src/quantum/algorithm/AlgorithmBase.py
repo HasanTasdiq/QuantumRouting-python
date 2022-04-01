@@ -39,6 +39,9 @@ class PickedPath:
     width: int
     path: list
 
+    def __hash__(self):
+        return hash((self.weight, self.width, self.path[0], self.path[-1]))
+
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
