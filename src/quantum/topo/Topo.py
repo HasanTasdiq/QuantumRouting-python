@@ -109,8 +109,7 @@ class Topo:
 
         # print p and width for test
         p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
-        for n in p:
-            print(n.id)
+        print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
         
 
@@ -273,39 +272,49 @@ class Topo:
 
     def getEstablishedEntanglements(self, n1: Node, n2: Node):
         stack = []
-        stack.append(None, n1) #Pair[Link, Node]
+        stack.append((None, n1)) #Pair[Link, Node]
         result = []
 
         while stack:
-            incoming, current = stack.pop()
+            (incoming, current) = stack.pop()
+            if incoming != None:
+                print(incoming.n1.id, incoming.n2.id, current.id)
 
             if current == n2:
                 path = []
                 path.append(n2)
                 inc = incoming
-
-                while inc.n1 != n1 and inc.n2 != n2:
+                while inc.n1 != n1 and inc.n2 != n1:
                     if inc.n1 == path[-1]:
                         prev = inc.n2
-                    else:
+                    elif inc.n2 == path[-1]:
                         prev = inc.n1
                         
                     #inc = prev.internalLinks.first { it.contains(inc) }.otherThan(inc)
                     for internalLinks in prev.internalLinks:
-                        if inc in internalLinks:
-                            for links in internalLinks:
-                                if inc != links:
-                                    inc = links
-                                    break
-                                else:
-                                    continue
+                        # if inc in internalLinks:
+                        #     for links in internalLinks:
+                        #         if inc != links:
+                        #             inc = links
+                        #             break
+                        #         else:
+                        #             continue
+                        #     break
+                        # else:
+                        #     continue
+                        (l1, l2) = internalLinks
+                        if l1 == inc:
+                            inc = l2
                             break
-                        else:
-                            continue
+                        elif l2 == inc:
+                            inc = l1
+                            break
+
                     path.append(prev)
 
                 path.append(n1)
-                result.append(path.reverse())
+                path.reverse()
+                result.append(path)
                 continue
 
             outgoingLinks = []
@@ -315,15 +324,21 @@ class Topo:
                         outgoingLinks.append(links)
             else:
                 for internalLinks in current.internalLinks:
-                    for links in internalLinks:
-                        if incoming != links:
-                            outgoingLinks.append(links)
+                    # for links in internalLinks:
+                    #     if incoming != links:
+                    #         outgoingLinks.append(links)
+                    (l1, l2) = internalLinks
+                    if l1 == incoming:
+                        outgoingLinks.append(l2)
+                    elif l2 == incoming:
+                        outgoingLinks.append(l1)
+                    
             
             for l in outgoingLinks:
                 if l.n1 == current:
-                    stack.append(l, l.n2)
-                else:
-                    stack.append(l, l.n1)
+                    stack.append((l, l.n2))
+                elif l.n2 == current:
+                    stack.append((l, l.n1))
 
         return result
 

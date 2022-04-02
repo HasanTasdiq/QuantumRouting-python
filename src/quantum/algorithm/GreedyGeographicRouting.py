@@ -6,7 +6,7 @@ from AlgorithmBase import AlgorithmBase
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
-import queue
+
 
 class GreedyGeographicRouting(AlgorithmBase):
 
@@ -30,7 +30,6 @@ class GreedyGeographicRouting(AlgorithmBase):
                 # Find a shortest path by greedy min hop  
                 while True:
                     last = p[-1]
-                    print('last:', last.id)
                     if last == dst:
                         break
 
@@ -114,6 +113,11 @@ class GreedyGeographicRouting(AlgorithmBase):
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     curr.attemptSwapping(l1, l2)
+            print('path:', [x.id for x in p])
+            r = self.topo.getEstablishedEntanglements(p[0], p[-1])
+            for x in r:
+                print('success:', [z.id for z in x])      
+            
                 
         print('p4 end') 
                     

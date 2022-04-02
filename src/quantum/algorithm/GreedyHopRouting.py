@@ -1,12 +1,11 @@
 import sys
-
 from argon2 import PasswordHasher
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
-import queue
+
 
 class GreedyHopRouting(AlgorithmBase):
 
@@ -30,7 +29,6 @@ class GreedyHopRouting(AlgorithmBase):
                 # Find a shortest path by greedy min hop  
                 while True:
                     last = p[-1]
-                    print('last:', last.id)
                     if last == dst:
                         break
 
@@ -114,7 +112,10 @@ class GreedyHopRouting(AlgorithmBase):
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     curr.attemptSwapping(l1, l2)
-                
+            print('path:', [x.id for x in p])
+            r = self.topo.getEstablishedEntanglements(p[0], p[-1])
+            for x in r:
+                print('success:', [z.id for z in x])   
         print('p4 end') 
 
         
@@ -123,3 +124,4 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = GreedyHopRouting(topo)
     s.work([(topo.nodes[3],topo.nodes[99])])
+  
