@@ -32,6 +32,7 @@ class OnlineAlgorithm(AlgorithmBase):
     def p2(self):
         self.majorPaths.clear()
         self.recoveryPaths.clear()
+        self.pathToRecoveryPaths.clear()
 
         while True: 
             candidates = self.calCandidates(self.srcDstPairs) # candidates -> [PickedPath, ...]   
@@ -53,7 +54,6 @@ class OnlineAlgorithm(AlgorithmBase):
             
          
     # 對每個SD-pair找出候選路徑，目前不確定只會找一條還是可以多條
-    # ***目前缺期望值計算 e method 的實作 實作在Topo.py
     def calCandidates(self, pairs: list): # pairs -> [(Node, Node), ...]
         candidates = []
         for pair in pairs:
@@ -360,15 +360,22 @@ class OnlineAlgorithm(AlgorithmBase):
                     acc = p[1]
                     print('new acc size:', len(acc))
                     print('new acc:', [x.id for x in acc])
+
+                    #swap
+
+                    r = self.topo.getEstablishedEntanglements(acc[0], acc[-1])
+                    for x in r:
+                        print('success:', [z.id for z in x])
+
  
             # for w end
         # for pathWithWidth end
 
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.01, 6)
     s = OnlineAlgorithm(topo)
-    s.work([(topo.nodes[3],topo.nodes[99])])
+    s.work([(topo.nodes[3],topo.nodes[99])], 0)
     
 
     

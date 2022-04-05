@@ -12,7 +12,7 @@ class Node:
         self.q = topo.q
         self.internalLinks = []
         self.neighbors = [] 
-        self.links = []     
+        self.links = [] 
 
     def attemptSwapping(self, l1, l2):  # l1 -> Link, l2 -> Link
         if l1.n1 == self:    
@@ -30,4 +30,9 @@ class Node:
             self.internalLinks.append((l1, l2))
         return b
 
+    def assignIntermediate(self): # for intermediate 
+        self.remainingQubits -= 1
+
+    def clearIntermediate(self):
+        self.remainingQubits += 1
         

@@ -9,6 +9,8 @@ class AlgorithmBase:
         self.name = "Greedy"
         self.topo = topo
         self.srcDstPairs = []
+        self.finishedSrcDstPairs = []
+        self.timeSlot = 0
 
     def prepare(self):
         pass
@@ -23,15 +25,22 @@ class AlgorithmBase:
         for link in self.topo.links:
             link.tryEntanglement()
 
-    def work(self, pairs: list): 
-        self.srcDstPairs.clear()
-        self.srcDstPairs = pairs
-       
+    def work(self, pairs: list, time): 
+        # self.finishedSrcDstPairs.clear()
+        self.timeSlot = time # 紀錄目前回合
+        self.srcDstPairs.extend(pairs) # 任務追加進去
+
+        if self.timeSlot == 0:
+            self.prepare()
+
         self.p2()
         
         self.tryEntanglement()
 
         self.p4()
+
+        for req in self.finishedSrcDstPairs:
+            self.srcDstPairs.remove(req)
 
 @dataclass
 class PickedPath:
