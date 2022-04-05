@@ -36,7 +36,7 @@ class GreedyHopRouting(AlgorithmBase):
                     selectedNeighbors = []    # type Node
                     selectedNeighbors.clear()
                     for neighbor in last.neighbors:
-                        if neighbor.remainingQubits > 2 or neighbor == dst and neighbor.remainingQubits > 1:
+                        if neighbor.remainingQubits > 2 or (neighbor == dst and neighbor.remainingQubits > 1):
                             for link in neighbor.links:
                                 if link.contains(last) and (not link.assigned):
                                     # print('select neighbor:', neighbor.id)
@@ -112,6 +112,7 @@ class GreedyHopRouting(AlgorithmBase):
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     curr.attemptSwapping(l1, l2)
+
             print('path:', [x.id for x in p])
             r = self.topo.getEstablishedEntanglements(p[0], p[-1])
             for x in r:
@@ -121,7 +122,7 @@ class GreedyHopRouting(AlgorithmBase):
         
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.01, 6)
     s = GreedyHopRouting(topo)
-    s.work([(topo.nodes[3],topo.nodes[99])])
+    s.work([(topo.nodes[3],topo.nodes[99])], 0)
   
