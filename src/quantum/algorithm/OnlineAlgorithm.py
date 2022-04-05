@@ -362,6 +362,26 @@ class OnlineAlgorithm(AlgorithmBase):
                     print('new acc:', [x.id for x in acc])
 
                     #swap
+                    for i in range(1, len(acc) - 1):
+                        prev = acc[i-1]
+                        curr = acc[i]
+                        next = acc[i+1]
+                        prevLinks = []
+                        nextLinks = []
+                        
+
+                        for link in curr.links:
+                            if link.entangled and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
+                                prevLinks.append(link)
+                                break
+
+                        for link in curr.links:
+                            if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1):
+                                nextLinks.append(link)
+                                break
+
+                        for (l1, l2) in zip(prevLinks, nextLinks):
+                            curr.attemptSwapping(l1, l2)
 
                     r = self.topo.getEstablishedEntanglements(acc[0], acc[-1])
                     for x in r:
