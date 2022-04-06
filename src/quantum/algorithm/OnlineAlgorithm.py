@@ -361,34 +361,31 @@ class OnlineAlgorithm(AlgorithmBase):
                     print('new acc size:', len(acc))
                     print('new acc:', [x.id for x in acc])
 
-                    #swap
-                    for i in range(1, len(acc) - 1):
-                        prev = acc[i-1]
-                        curr = acc[i]
-                        next = acc[i+1]
-                        prevLinks = []
-                        nextLinks = []
-                        
+                #swap
+                for i in range(1, len(acc) - 1):
+                    prev = acc[i-1]
+                    curr = acc[i]
+                    next = acc[i+1]
+                    prevLinks = []
+                    nextLinks = []
+                    
+                    for link in curr.links:
+                        if link.entangled and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
+                            prevLinks.append(link)
+                            break
 
-                        for link in curr.links:
-                            if link.entangled and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
-                                prevLinks.append(link)
-                                break
+                    for link in curr.links:
+                        if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1):
+                            nextLinks.append(link)
+                            break
 
-                        for link in curr.links:
-                            if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1):
-                                nextLinks.append(link)
-                                break
-
-                        for (l1, l2) in zip(prevLinks, nextLinks):
-                            curr.attemptSwapping(l1, l2)
-
-                    r = self.topo.getEstablishedEntanglements(acc[0], acc[-1])
-                    for x in r:
-                        print('success:', [z.id for z in x])
-
- 
+                    for (l1, l2) in zip(prevLinks, nextLinks):                    
+                        curr.attemptSwapping(l1, l2)
+                # for swap end
             # for w end
+            r = self.topo.getEstablishedEntanglements(acc[0], acc[-1])
+            for x in r:
+                print('success:', [z.id for z in x])
         # for pathWithWidth end
 
 if __name__ == '__main__':
@@ -396,7 +393,6 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 0.9, 5, 0.01, 6)
     s = OnlineAlgorithm(topo)
     s.work([(topo.nodes[3],topo.nodes[99])], 0)
-    
 
     
     

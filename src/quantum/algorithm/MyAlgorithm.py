@@ -10,6 +10,14 @@ from topo.Topo import Topo
 from topo.Node import Node 
 from topo.Link import Link
 
+@dataclass
+class RequestInfo:
+    state: int  
+    intermediate: Node
+    pathlen: int 
+    pickpath: list 
+    taken : bool
+
 class MyAlgorithm(AlgorithmBase):
 
     def __init__(self, topo):
@@ -19,7 +27,7 @@ class MyAlgorithm(AlgorithmBase):
         self.r = 40 # 暫存回合
         self.givenShortestPath = {} # {(src, dst): path, ...}
         self.socialRelationship = {}    # {id : [Node, ...], ...}
-        self.requestState = {}  # {(src, dst, timeslot) : [state, Node(k), path length, path, take]}
+        self.requestState = {}  # {(src, dst, timeslot) : RequestInfo}
 
     def establishShortestPath(self):        
         for n1 in self.topo.nodes:
@@ -37,7 +45,7 @@ class MyAlgorithm(AlgorithmBase):
     def descideSegmentation(self):
         for req in self.srcDstPairs:
             src, dst = req[0], req[1]
-            self.requestState[(src, dst, self.timeSlot)] = [0, None, len(self.givenShortestPath[(src, dst)]), self.givenShortestPath[(src, dst)], False]
+            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(self.givenShortestPath[(src, dst)]), self.givenShortestPath[(src, dst)], False)
             D_sd = self.topo.distance(src.loc, dst.loc)
             P_sd = math.exp(-self.topo.alpha * D_sd)
             minNum = 1 / P_sd
@@ -52,7 +60,7 @@ class MyAlgorithm(AlgorithmBase):
 
                 if minNum > curMin:    # 分2段 取k中間  
                     minNum = curMin
-                    self.requestState[(src, dst, self.timeSlot)] = [1, k, len(self.givenShortestPath[(src, k)]), self.givenShortestPath[(src, k)], False]
+                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(self.givenShortestPath[(src, k)]), self.givenShortestPath[(src, k)], False)
 
     def prepare(self):
         self.givenShortestPath.clear()
@@ -63,13 +71,15 @@ class MyAlgorithm(AlgorithmBase):
     # p2 第2次篩選
     def p2Extra(self):
         for req in self.requestState:
-            state, take = self.requestState[req][0], self.requestState[req][3]
-            if state == 0: 
+            requestInfo = self.requestState[req]
+            if requestInfo.state == 0: 
                 src, dst, time = req[0], req[1], req[2]
-            else:
-                src, dst, time = req[0], self.requestState[req][1], req[2]
+            elif requestInfo.state == 1:
+                src, dst, time = req[0], requestInfo.intermediate, req[2]
+            elif requestInfo.state == 2:
+                src, dst, time = requestInfo.intermediate, req[1], req[2]
 
-            if not take:
+            if not requestInfo.taken:
                 if src.remainingQubits < 1:
                     continue
                 p = []
@@ -126,11 +136,11 @@ class MyAlgorithm(AlgorithmBase):
                                 link.assignQubits()
                                 break 
 
-                if state == 1:
+                if requestInfo.state == 1:
                     dst.assignIntermediate()
                 
-                self.requestState[req][3] = p
-                self.requestState[req][4] = True
+                requestInfo.pickpath = p
+                requestInfo.taken= True
 
     # p1 & p2    
     def p2(self):
@@ -139,26 +149,28 @@ class MyAlgorithm(AlgorithmBase):
         self.descideSegmentation()
 
         # 根據path長度排序
-        sorted(self.requestState.items(), key=lambda x: x[1][2])
+        sorted(self.requestState.items(), key=lambda x: x[1].pathlen)
         self.requestState = dict(self.requestState)
 
-        # p2 第1次篩選
+        # p2 (1)
         for req in self.requestState:
-            state = self.requestState[req][0]
-            if state == 0: 
+            requestInfo = self.requestState[req]
+            if requestInfo.state == 0: 
                 src, dst, time = req[0], req[1], req[2]
-            else:
-                src, dst, time = req[0], self.requestState[req][1], req[2]
+            elif requestInfo.state == 1:
+                src, dst, time = req[0], requestInfo.intermediate, req[2]
+            elif requestInfo.state == 2:
+                src, dst, time = requestInfo.intermediate, req[1], req[2]
 
-            # 檢查path資源
+            # 檢查path qubit資源
             path = self.givenShortestPath[(src, dst)]
             unavaliable = False
             for n in path:
-                if (state == 0 and (n == src or n == dst) and n.remainingQubits < 1) or \
-                    (state == 1 and n == dst and n.remainingQubits < 2) or \
-                    (state == 1 and n == src and n.remainingQubits < 1) or \
-                    (state == 2 and n == src and n.remainingQubits < 1) or \
-                    (state == 2 and n == dst and n.remainingQubits < 1) or \
+                if (requestInfo.state == 0 and (n == src or n == dst) and n.remainingQubits < 1) or \
+                    (requestInfo.state == 1 and n == dst and n.remainingQubits < 2) or \
+                    (requestInfo.state == 1 and n == src and n.remainingQubits < 1) or \
+                    (requestInfo.state == 2 and n == src and n.remainingQubits < 1) or \
+                    (requestInfo.state == 2 and n == dst and n.remainingQubits < 1) or \
                     ((n != src and n != dst) and n.remainingQubits < 2):             
                     unavaliable = True
 
@@ -170,6 +182,7 @@ class MyAlgorithm(AlgorithmBase):
                 for link in n1.links:
                     if link.contains(n2) and (not link.assigned):
                         pick = True
+                        continue
 
                 if not pick:
                    unavaliable = True  
@@ -188,15 +201,14 @@ class MyAlgorithm(AlgorithmBase):
                         break 
 
             # 有分段 另外分配資源給中繼點
-            if state == 1:
+            if requestInfo.state == 1:
                 dst.assignIntermediate()
             
             # take這個request
-            self.requestState[req][3] = path
-            self.requestState[req][4] = True
+            requestInfo.pickpath = path
+            requestInfo.taken= True
         
-
-        # p2 第2次篩選
+        # p2 (2)
         self.p2Extra()
 
 

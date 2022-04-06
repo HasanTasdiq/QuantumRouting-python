@@ -120,7 +120,7 @@ class Topo:
         return d ** 0.5
 
     def generate(n, q, k, a, degree):
-        dist = lambda x, y: sum(abs(a - b) for a, b in zip(x, y))
+        dist = lambda x, y: distance(x, y)
         G = nx.waxman_graph(n, 0.5, 0.1, L=50/(n**0.5) , domain=(0, 0, 100, 100), metric=dist)
 
         return Topo(G, q, k, a, degree)
