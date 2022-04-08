@@ -12,20 +12,27 @@ class REPS(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
         self.name = "REPS"
-        self.numOfSDpair = len(self.srcDstPair)
 
     def p2(self):
-        f, self.ti = self.PFT()
-        for i in range(self.numOfSDpair):
-            for link in self.topo.links:
-                if f[i][(link.n1, link.n2)]:
-                    link.assignQubits()
-                    f[i][(link.n1, link.n2)] = f[i][(link.n1, link.n2)] - 1
+        self.PFT() # compute (self.t_i, self.f_i)
+        for SDpair in self.srcDstPairs:
+            for edge in self.topo.edges:
+                n1 = edge.n1
+                n2 = edge.n2
+                if self.f_i[SDpair][edge]:
+                    assignCount = 0
+                    for link in n1.links:
+                        if link.contains(n2) and link.assignable():
+                            # link(n1, n2)
+                            link.assign()
 
+                            assignCount += 1
+                            if assignCount == self.f[SDpair][edge]:
+                                break
         print('p2 end')
     
     def p4(self):
-        self.EPS(self.ti)
+        self.EPS()
         self.ELS()
         print('p4 end') 
     
@@ -34,33 +41,24 @@ class REPS(AlgorithmBase):
         
         # initialize f_i(u, v) ans t_i
 
-        fi = [{}] * self.numOfSDpair
-        ti = [0] * self.numOfSDpair
-        for i in range(self.numOfSDpair):
-            fi[i] = {} # erase the reference
-            for link in self.topo.links:
-                fi[i][(link.n1, link.n2)] = 0
-    
+        self.f_i = {i : {uv : 0 for uv in self.topo.edges} for i in self.srcDstPairs}
+        self.t_i = {i : 0 for i in self.srcDstPairs}
+
         # LP
         # f, t = ...
 
         print('PFT end')
-        return (fi, ti)
-
-    def EPS(self, ti):
-        # initialize f_k_i(u, v), t_k_i
-        fki = [] * self.numOfSDpair
-        tki = [] * self.numOfSDpair
-
-        for i in range(self.numOfSDpair):
-            fki[i] = [{}] * ti[i]
-            tki[i] = [0] * ti[i]
-            for k in range(ti[i]):
-                fki[i][k] = {}
-                for link in self.topo.link:
-                    fki[i][k][(link.n1, link.2)] = 0
-
+        
+    def EPS(self):
+        # initialize f_ki(u, v), t_ki
+        f_ki = {i : {k : {uv : 0 for uv in self.topp.edges} for k in self.ti[i]} for i in self.srcDstPairs}
+        t_ki = {i : {k : 0 for k in self.ti[i]} for i in self.srcDstPairs}
+        
+        # LP
+        # f, t = ...
         print('EPS end')
+
+        return (f_ki, t_ki)
     def ELS(self):
         print('ELS end')
 if __name__ == '__main__':
