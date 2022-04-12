@@ -41,8 +41,8 @@ class REPS(AlgorithmBase):
         
         # initialize f_i(u, v) ans t_i
 
-        self.f_i = {i : {uv : 0 for uv in self.topo.edges} for i in self.srcDstPairs}
-        self.t_i = {i : 0 for i in self.srcDstPairs}
+        self.f_i = {SDpair : {edge : 0 for edge in self.topo.edges} for SDpair in self.srcDstPairs}
+        self.t_i = {SDpair : 0 for SDpair in self.srcDstPairs}
 
         # LP
         # f, t = ...
@@ -51,14 +51,13 @@ class REPS(AlgorithmBase):
         
     def EPS(self):
         # initialize f_ki(u, v), t_ki
-        f_ki = {i : {k : {uv : 0 for uv in self.topp.edges} for k in self.ti[i]} for i in self.srcDstPairs}
-        t_ki = {i : {k : 0 for k in self.ti[i]} for i in self.srcDstPairs}
+        self.f_ki = {SDpair : {k : {edge : 0 for edge in self.topp.edges} for k in self.ti[SDpair]} for SDpair in self.srcDstPairs}
+        self.t_ki = {SDpair : {k : 0 for k in range(self.ti[SDpair])} for SDpair in self.srcDstPairs}
         
         # LP
         # f, t = ...
         print('EPS end')
 
-        return (f_ki, t_ki)
     def ELS(self):
         print('ELS end')
 if __name__ == '__main__':
