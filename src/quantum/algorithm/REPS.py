@@ -6,6 +6,7 @@ from AlgorithmBase import AlgorithmBase
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
+import gurobipy as gp
 
 
 class REPS(AlgorithmBase):
@@ -43,8 +44,25 @@ class REPS(AlgorithmBase):
 
         self.f_i = {SDpair : {edge : 0 for edge in self.topo.edges} for SDpair in self.srcDstPairs}
         self.t_i = {SDpair : 0 for SDpair in self.srcDstPairs}
+        
+        numOfNodes = len(self.topo.nodes)
+        
+        nodeIndices = []
+        edgeIndices = []
 
+        for i in range(numOfNodes):
+            nodeIndices.append(i)
+
+        for edge in self.topo.edges:
+            edgeIndices.append(edge.n1, edge.n2)
+        
         # LP
+        ub_t = {}
+
+        m = gp.Model('REPS')
+        f = m.addVars(numOfNodes, numOfNodes)
+        t = m.addVars(numOfNodes)
+        x = m.addVars(numOfNodes, numOfNodes)
         # f, t = ...
 
         print('PFT end')
