@@ -340,8 +340,8 @@ if __name__ == "__main__":
 	matching.startMatch()
 	for (i, j) in matching.getMatch():
 		print((i, j), matching.matrix[i][j])
-	# 0 1 100
-	# 1 2 10
-	# 2 0 10
-	# 3 4 1
+	# (0, 1) 100
+	# (1, 2) 10
+	# (2, 0) 10
+	# (3, 9) 1
 	matching.clear()
