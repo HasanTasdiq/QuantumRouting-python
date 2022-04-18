@@ -1,5 +1,5 @@
-from platform import node
 import sys
+import math
 from threading import local
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
@@ -7,6 +7,8 @@ from topo.Topo import Topo
 from topo.Node import Node 
 from topo.Link import Link
 import gurobipy as gp
+from gurobipy import GRB
+from gurobipy import quicksum
 
 
 class REPS(AlgorithmBase):
@@ -24,8 +26,8 @@ class REPS(AlgorithmBase):
                     assignCount = 0
                     for link in n1.links:
                         if link.contains(n2) and link.assignable():
-                            # link(n1, n2)
-                            link.assign()
+                            # link(n1, n2) for u, v in edgeIndices)
+
 
                             assignCount += 1
                             if assignCount == self.f[SDpair][edge]:
@@ -46,7 +48,8 @@ class REPS(AlgorithmBase):
         self.t_i = {SDpair : 0 for SDpair in self.srcDstPairs}
         
         numOfNodes = len(self.topo.nodes)
-        
+        numOfSDpairs = len(len(self.srcDstPairs))
+
         nodeIndices = []
         edgeIndices = []
 
@@ -57,12 +60,48 @@ class REPS(AlgorithmBase):
             edgeIndices.append(edge.n1, edge.n2)
         
         # LP
-        ub_t = {}
 
         m = gp.Model('REPS')
-        f = m.addVars(numOfNodes, numOfNodes)
-        t = m.addVars(numOfNodes)
-        x = m.addVars(numOfNodes, numOfNodes)
+        f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = GRB.CONTINUOUS)
+        t = m.addVars(numOfNodes, lb = 0, vtype = GRB.CONTINUOUS)
+        x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = GRB.CONTINUOUS)
+        m.update()
+        
+        m.setObjective(quicksum(t[i] for i in range(numOfSDpairs)), GRB.MAXIMIZE)
+
+        for i in range(numOfSDpairs):
+            s = self.srcDstPairs[i].id
+            m.addConstrs(quicksum(f[i, s, v] for v in range(numOfNodes) - quicksum(f[i, v, s] for v in range(numOfNodes)) == t[i]))
+
+            d = self.srcDstPairs[i].id
+            m.addConstrs(quicksum(f[i, d, v] for v in range(numOfNodes) - quicksum(f[i, v, d] for v in range(numOfNodes)) == -t[i]))
+
+            for node in self.topo.node:
+                u = node.id
+                if u not in [s, d]:
+                    m.addConstrs(quicksum(f[i, u, v] for v in range(numOfNodes) - quicksum(f[i, v, u] for v in range(numOfNodes)) == 0))
+
+
+        
+        for (u, v) in edgeIndices:
+            dis = self.topo.distance(self.topo.node[u].loc, self.topo.node[v])
+            probability = math.exp(-self.topo.alpha * dis)
+            m.addConstrs(quicksum(f[i, u, v + f[i, v, u]] for i in range(numOfSDpairs)) <= probability * x[u, v])
+
+            capacity = 0
+            for link in self.nodes[v]:
+                if link.contain(u):
+                    capacity += 1
+
+            m.addConstrs(x[u, v] <= capacity)
+        
+        for u in range(numOfNodes):
+            edgeContainu = []
+            for (n1, n2) in edgeIndices:
+                if u in (n1, n2):
+                    edgeContainu.append(n1, n2)
+            m.addConstrs(quicksum(x[n1, n2] for (n1, n2) in edgeContainu) <= self.nodes[u].remainingQubits)
+
         # f, t = ...
 
         print('PFT end')
