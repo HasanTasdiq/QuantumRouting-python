@@ -153,38 +153,24 @@ class Topo:
         fStateMetric = {}   # {edge: fstate}
         fStateMetric.clear()
         if edges != None:
-            fStateMetric = {edge : 1 for edge in edges} 
+            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges} 
         elif greedyType == 'Hop' and edges == None:
             fStateMetric = {edge : 1 for edge in self.edges}
         else: 
             fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges}
 
         # Construct neightor & weight table for nodes
-        neighborsOf = {}    # {Node: {Node: weight, ...}, ...}
+        neighborsOf = {node: {} for node in self.nodes}    # {Node: {Node: weight, ...}, ...}
         if edges == None:
             for edge in self.edges:
                 n1, n2 = edge
-                if neighborsOf.__contains__(n1):
-                    neighborsOf[n1].update({n2 : fStateMetric[edge]})
-                else:
-                    neighborsOf[n1] = {n2 : fStateMetric[edge]}
-
-                if neighborsOf.__contains__(n2):
-                    neighborsOf[n2].update({n1 : fStateMetric[edge]})
-                else:
-                    neighborsOf[n2] = {n1 : fStateMetric[edge]}
+                neighborsOf[n1][n2] = fStateMetric[edge]
+                neighborsOf[n2][n1] = fStateMetric[edge]
         else:
             for edge in edges:
                 n1, n2 = edge
-                if neighborsOf.__contains__(n1):
-                    neighborsOf[n1].update({n2 : fStateMetric[edge]})
-                else:
-                    neighborsOf[n1] = {n2 : fStateMetric[edge]}
-
-                if neighborsOf.__contains__(n2):
-                    neighborsOf[n2].update({n1 : fStateMetric[edge]})
-                else:
-                    neighborsOf[n2] = {n1 : fStateMetric[edge]}
+                neighborsOf[n1][n2] = fStateMetric[edge]
+                neighborsOf[n2][n1] = fStateMetric[edge]
 
         D = {node.id : sys.float_info.max for node in self.nodes} # {int: [int, int, ...], ...}
         q = [] # [(weight, curr, prev)]
