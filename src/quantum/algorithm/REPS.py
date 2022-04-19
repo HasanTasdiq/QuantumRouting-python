@@ -15,6 +15,9 @@ class REPS(AlgorithmBase):
         super().__init__(topo)
         self.name = "REPS"
 
+    def getVarName(self, varName, parName):
+        return (varName + str(parName)).replace(' ', '')
+
     def p2(self):
         self.PFT() # compute (self.t_i, self.f_i)
         for SDpair in self.srcDstPairs:
@@ -58,9 +61,9 @@ class REPS(AlgorithmBase):
         # LP
 
         m = gp.Model('REPS')
-        f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS)
-        t = m.addVars(numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS)
-        x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS)
+        f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "f")
+        t = m.addVars(numOfSDpairs, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "t")
+        x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "x")
         m.update()
         
         m.setObjective(quicksum(t[i] for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
@@ -105,11 +108,27 @@ class REPS(AlgorithmBase):
 
         m.optimize()
         vars = m.getVars()
-        print(m.objVal)
+
+        for i in range(numOfSDpairs):
+            for edge in self.topo.edges:
+                u = edge[0].id
+                v = edge[1].id
+                varName = self.getVarName('f', [i, u, v])
+                SDpair = self.srcDstPairs[i]
+                self.f_i_LP[SDpair][edge] = m.getVarByName(varName).x
+
+            for edge in self.topo.edges:
+                u = edge[1].id
+                v = edge[0].id
+                varName = self.getVarName('f', [i, u, v])
+                SDpair = self.srcDstPairs[i]
+                self.f_i_LP[SDpair][edge] = m.getVarByName(varName).x
+            
+            varName = self.getVarName('t', [i])
+            self.t_i_LP = m.getVatByName(varName)
         # for var in vars:
-        #     print(var.varName)
-        # f, t = ...
         # self.f_i_LP = 
+        # self.t_i_LP = 
         print('PFT end')
         
     def EPS(self):
@@ -123,6 +142,34 @@ class REPS(AlgorithmBase):
 
     def ELS(self):
         print('ELS end')
+
+
+    def findPath(self, SDpair: int):
+        src = self.srcDstPairs[SDpair][0]
+        dst = self.srcDstPairs[SDpair][1]
+        visited = {node : False for node in self.topo.nodes}
+        parent = {node : self.topo.sentinal for node in self.topo.nodes}
+        self.DFS(dst)
+        path = []
+        currentNode = src
+        while currentNode != self.topo.sentinal:
+            path.append(currentNode)
+            currentNode = parent[currentNode]
+
+        if len(path) == 1:
+            return [-1]
+        else:
+            return path
+
+    def DFS(self, currentNode):
+
+        self.visited[currentNode] = True
+        for link in currentNode.links:
+            nextNode = link.theOtherEndOf(currentNode)
+            if not self.visited[currentNode] and self.f_i_LP >= 1:
+                self.parent[nextNode] = currentNode
+                self.DFS(nextNode)
+
 if __name__ == '__main__':
     
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
