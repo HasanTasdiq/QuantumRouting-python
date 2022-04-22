@@ -1,6 +1,10 @@
+from gettext import find
+from operator import ne
 import sys
 import math
 from threading import local
+from tkinter.messagebox import NO
+from turtle import width
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from topo.Topo import Topo 
@@ -22,15 +26,16 @@ class REPS(AlgorithmBase):
         self.PFT() # compute (self.t_i, self.f_i)
         for SDpair in self.srcDstPairs:
             for edge in self.topo.edges:
-                n1 = edge[0]
-                n2 = edge[1]
+                u = edge[0]
+                v = edge[1]
+                need = self.f_i[SDpair][(u, v)] + self.f_i[SDpair][(u, v)]
                 if self.f_i[SDpair][edge]:
                     assignCount = 0
-                    for link in n1.links:
-                        if link.contains(n2) and link.assignable():
-                            # link(n1, n2) for u, v in edgeIndices)
+                    for link in u.links:
+                        if link.contains(v) and link.assignable():
+                            # link(u, v) for u, v in edgeIndices)
                             assignCount += 1
-                            if assignCount == self.f[SDpair][edge]:
+                            if assignCount == need:
                                 break
         print('p2 end')
     
@@ -40,24 +45,25 @@ class REPS(AlgorithmBase):
         print('p4 end') 
     
     # return f_i(u, v)
-    def PFT(self):
-        
+
+    def LP1(self):
         # initialize f_i(u, v) ans t_i
 
-        self.f_i = {SDpair : {edge : 0 for edge in self.topo.edges} for SDpair in self.srcDstPairs}
-        self.t_i = {SDpair : 0 for SDpair in self.srcDstPairs}
-
-        self.f_i_LP = {SDpair : {edge : 0 for edge in self.topo.edges} for SDpair in self.srcDstPairs}
+        self.f_i_LP = {SDpair : {} for SDpair in self.srcDstPairs}
         self.t_i_LP = {SDpair : 0 for SDpair in self.srcDstPairs}
         
         numOfNodes = len(self.topo.nodes)
         numOfSDpairs = len(self.srcDstPairs)
 
         edgeIndices = []
-
+        notEdge = []
         for edge in self.topo.edges:
             edgeIndices.append((edge[0].id, edge[1].id))
         
+        for u in range(numOfNodes):
+            for v in range(numOfNodes):
+                if (u, v) not in edgeIndices and (v, u) not in edgeIndices:
+                    notEdge.append((u, v))
         # LP
 
         m = gp.Model('REPS')
@@ -92,48 +98,74 @@ class REPS(AlgorithmBase):
                     capacity += 1
             m.addConstr(x[u, v] <= capacity)
         
-        for u in range(numOfNodes):
-            for v in range(numOfNodes):
-                if (u, v) not in edgeIndices and (v, u) not in edgeIndices:
-                    m.addConstr(x[u, v] == 0)                
-                    for i in range(numOfSDpairs):
-                        m.addConstr(f[i, u, v] == 0)
+        for (u, v) in notEdge:
+            m.addConstr(x[u, v] == 0)                
+            for i in range(numOfSDpairs):
+                m.addConstr(f[i, u, v] == 0)
 
         for u in range(numOfNodes):
             edgeContainu = []
             for (n1, n2) in edgeIndices:
                 if u in (n1, n2):
                     edgeContainu.append((n1, n2))
+                    edgeContainu.append((n2, n1))
             m.addConstr(quicksum(x[n1, n2] for (n1, n2) in edgeContainu) <= self.topo.nodes[u].remainingQubits)
 
         m.optimize()
-        vars = m.getVars()
 
         for i in range(numOfSDpairs):
             for edge in self.topo.edges:
-                u = edge[0].id
-                v = edge[1].id
-                varName = self.getVarName('f', [i, u, v])
+                u = edge[0]
+                v = edge[1]
+                varName = self.getVarName('f', [i, u.id, v.id])
                 SDpair = self.srcDstPairs[i]
-                self.f_i_LP[SDpair][edge] = m.getVarByName(varName).x
+                self.f_i_LP[SDpair][(u, v)] = m.getVarByName(varName).x
 
             for edge in self.topo.edges:
-                u = edge[1].id
-                v = edge[0].id
-                varName = self.getVarName('f', [i, u, v])
+                u = edge[1]
+                v = edge[0]
+                varName = self.getVarName('f', [i, u.id, v.id])
                 SDpair = self.srcDstPairs[i]
-                self.f_i_LP[SDpair][edge] = m.getVarByName(varName).x
+                self.f_i_LP[SDpair][(u, v)] = m.getVarByName(varName).x
+
+            for (u, v) in notEdge:
+                u = self.topo.nodes[u]
+                v = self.topo.nodes[v]
+                self.f_i_LP[SDpair][(u, v)] = 0
+            
             
             varName = self.getVarName('t', [i])
-            self.t_i_LP = m.getVatByName(varName)
-        # for var in vars:
-        # self.f_i_LP = 
-        # self.t_i_LP = 
+            self.t_i_LP = m.getVarByName(varName).x
+
+    def PFT(self):
+
+        self.f_i = {SDpair : {} for SDpair in self.srcDstPairs}
+        self.t_i = {SDpair : 0 for SDpair in self.srcDstPairs}
+
+        self.f_i = {SDpair : {} for SDpair in self.srcDstPairs}
+        self.t_i = {SDpair : 0 for SDpair in self.srcDstPairs}
+
+        self.LP1()
+        failedFindPath = False
+        while not failedFindPath:
+            failedFindPath = True
+            P_i = {}
+            for SDpair in self.srcDstPairs:
+                P_i[SDpair] = self.findPaths(SDpair)
+
+            for SDpair in self.srcDstPairs:
+                K = len(P_i[SDpair])
+                if K >= 1:
+                    failedFindPath = False
+
+                for k in range(K):
+                    width = self.pathWidth(P_i[SDpair][k], SDpair)
+
         print('PFT end')
         
     def EPS(self):
         # initialize f_ki(u, v), t_ki
-        self.f_ki = {SDpair : {k : {edge : 0 for edge in self.topp.edges} for k in range(self.t_i[SDpair])} for SDpair in self.srcDstPairs}
+        self.f_ki = {SDpair : {k : {} for k in range(self.t_i[SDpair])} for SDpair in self.srcDstPairs}
         self.t_ki = {SDpair : {k : 0 for k in range(self.t_i[SDpair])} for SDpair in self.srcDstPairs}
         
         # LP
@@ -144,34 +176,43 @@ class REPS(AlgorithmBase):
         print('ELS end')
 
 
-    def findPath(self, SDpair: int):
-        src = self.srcDstPairs[SDpair][0]
-        dst = self.srcDstPairs[SDpair][1]
-        visited = {node : False for node in self.topo.nodes}
-        parent = {node : self.topo.sentinal for node in self.topo.nodes}
-        self.DFS(dst)
-        path = []
-        currentNode = src
-        while currentNode != self.topo.sentinal:
-            path.append(currentNode)
-            currentNode = parent[currentNode]
+    def findPaths(self, SDpair: int):
+        src = SDpair[0]
+        dst = SDpair[1]
+        self.pathList = []
+        self.currentPath = []
+        self.DFS(src, dst, SDpair)
+        return self.pathList
 
-        if len(path) == 1:
-            return [-1]
+    def pathWidth(self, path, SDpair):
+        numOfnodes = len(path)
+        width = math.inf
+        for i in range(numOfnodes - 1):
+            currentNode = path[i]
+            nextNode = path[i - 1]
+            width = min(width, self.f_i_LP[SDpair][(currentNode, nextNode)])
+
+        return width
+
+    def DFS(self, currentNode: Node, dst: Node, SDpair):
+        self.currentPath.append(currentNode)
+        if currentNode == dst:
+            self.pathList.append(self.currentPath[::-1])
         else:
-            return path
+            adjcentNode = set()
+            for link in currentNode.links:
+                nextNode = link.theOtherEndOf(currentNode)
+                if self.f_i_LP[SDpair][(currentNode, nextNode)] >= 1:
+                    adjcentNode.add(nextNode)
 
-    def DFS(self, currentNode):
+            for node in adjcentNode:
+                if node not in self.currentPath:
+                    self.DFS(node, dst, SDpair)
 
-        self.visited[currentNode] = True
-        for link in currentNode.links:
-            nextNode = link.theOtherEndOf(currentNode)
-            if not self.visited[currentNode] and self.f_i_LP >= 1:
-                self.parent[nextNode] = currentNode
-                self.DFS(nextNode)
+        self.currentPath.pop()
 
 if __name__ == '__main__':
     
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = REPS(topo)
-    s.work([(topo.nodes[3],topo.nodes[99])], 100)
+    s.work([(topo.nodes[3],topo.nodes[99]), (topo.nodes[0], topo.nodes[98])], 1)
