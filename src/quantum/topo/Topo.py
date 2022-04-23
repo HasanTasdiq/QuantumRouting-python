@@ -53,7 +53,7 @@ class Topo:
         self.q = q
         self.alpha = a
         self.k = k
-        self.sentinal = Node(-1, (-1.0, -1.0), -1, self)
+        self.sentinel = Node(-1, (-1.0, -1.0), -1, self)
 
         # Construct neighbor table by int type
         _neighbors = {}
@@ -178,7 +178,7 @@ class Topo:
         D[src.id] = 0.0
         prevFromSrc = {}   # {cur: prev}
 
-        q.append((D[src.id], src, self.sentinal))
+        q.append((D[src.id], src, self.sentinel))
         sorted(q, key=lambda q: q[0])
 
         # Dijkstra 
@@ -193,7 +193,7 @@ class Topo:
             if w == dst:
                 path = []
                 cur = dst
-                while cur != self.sentinal:
+                while cur != self.sentinel:
                     path.insert(0, cur)
                     cur = prevFromSrc[cur]          
                 return (D[dst.id], path)

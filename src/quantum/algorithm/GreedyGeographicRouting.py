@@ -13,17 +13,22 @@ class GreedyGeographicRouting(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
         self.pathsSortedDynamically = []
+        self.requests = []
         self.name = "Greedy_G"
 
     def p2(self):
         self.pathsSortedDynamically.clear()
 
+        for req in self.srcDstPairs:
+            (src, dst) = req
+            self.requests.append((src, dst, self.timeSlot))
+
         while True:
             found = False   # record this round whether find new path
 
             # Find the shortest path and assing qubits for every srcDstPair
-            for srcDstPair in self.srcDstPairs:
-                (src, dst) = srcDstPair
+            for req in self.requests:
+                (src, dst, time) = req
                 p = []
                 p.append(src)
                 
@@ -37,7 +42,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                     selectedNeighbors = []    # type Node
                     selectedNeighbors.clear()
                     for neighbor in last.neighbors:
-                        if neighbor.remainingQubits > 2 or neighbor == dst and neighbor.remainingQubits > 1:
+                        if neighbor.remainingQubits > 2 or (neighbor == dst and neighbor.remainingQubits > 1):
                             for link in neighbor.links:
                                 if link.contains(last) and (not link.assigned):
                                     # print('select neighbor:', neighbor.id)
@@ -45,7 +50,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                                     break
 
                     # Choose the neighbor with smallest number of hop from it to dst
-                    next = self.topo.sentinal
+                    next = self.topo.sentinel
                     disCurMin = sys.maxsize
                     for selectedNeighbor in selectedNeighbors:
                         dis = self.topo.distance(selectedNeighbor.loc, dst.loc)      
@@ -54,7 +59,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                             next = selectedNeighbor
 
                     # If have cycle, break
-                    if next == topo.sentinal or next in p:
+                    if next == topo.sentinel or next in p:
                         break 
                     p.append(next)
                 # while end
@@ -64,12 +69,12 @@ class GreedyGeographicRouting(AlgorithmBase):
                 
                 # Caculate width for p
                 width = topo.widthPhase2(p)
-                
+            
                 if width == 0:
                     continue
 
                 found = True
-                self.pathsSortedDynamically.append((0.0, width, p))
+                self.pathsSortedDynamically.append((0.0, width, p, time))
                 sorted(self.pathsSortedDynamically, key=lambda x: x[1])
 
                 # Assign Qubits for links in path 
@@ -81,7 +86,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                             if link.contains(n2) and (not link.assigned):
                                 link.assignQubits()
                                 break    
-            # SDpairs end
+            # for SDpairs end
 
             if not found:
                 break
@@ -90,8 +95,8 @@ class GreedyGeographicRouting(AlgorithmBase):
     
     def p4(self):
         for path in self.pathsSortedDynamically:
-            _, width, p = path
-            
+            _, width, p, time = path
+
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
                 curr = p[i]
@@ -113,16 +118,16 @@ class GreedyGeographicRouting(AlgorithmBase):
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     curr.attemptSwapping(l1, l2)
+
             print('path:', [x.id for x in p])
             r = self.topo.getEstablishedEntanglements(p[0], p[-1])
             for x in r:
                 print('success:', [z.id for z in x])      
-            
-                
+                    
         print('p4 end') 
                     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.035, 6)
     s = GreedyGeographicRouting(topo)
-    s.work([(topo.nodes[3],topo.nodes[99])])
+    s.work([(topo.nodes[3],topo.nodes[99])], 0)

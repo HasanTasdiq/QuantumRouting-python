@@ -108,7 +108,7 @@ class OnlineAlgorithm(AlgorithmBase):
                 def getPathFromSrc(n): 
                     path = []
                     cur = n
-                    while (cur != self.topo.sentinal): 
+                    while (cur != self.topo.sentinel): 
                         path.insert(0, cur)
                         cur = prevFromSrc[cur]
                     return path
@@ -117,7 +117,7 @@ class OnlineAlgorithm(AlgorithmBase):
                 q = []  # q -> [(E, Node, Node), ...]
 
                 E[src.id] = [sys.float_info.max, [0.0 for _ in range(0,w+1)]]
-                q.append((E[src.id][0], src, self.topo.sentinal))
+                q.append((E[src.id][0], src, self.topo.sentinel))
                 sorted(q, key=lambda q: q[0])
 
                 # Dijkstra by EXT
