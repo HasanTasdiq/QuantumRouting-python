@@ -152,7 +152,7 @@ class MyAlgorithm(AlgorithmBase):
                                     break
 
                     # Choose the neighbor with smallest number of hop from it to dst
-                    next = self.topo.sentinal
+                    next = self.topo.sentinel
                     hopsCurMinNum = sys.maxsize
                     for selectedNeighbor in selectedNeighbors:
                         hopsNum = self.topo.hopsAway(selectedNeighbor, dst, 'Hop')      
@@ -161,7 +161,7 @@ class MyAlgorithm(AlgorithmBase):
                             next = selectedNeighbor
 
                     # If have cycle, break
-                    if next == self.topo.sentinal or next in p:
+                    if next == self.topo.sentinel or next in p:
                         break 
                     p.append(next)
                 # while end
@@ -224,7 +224,7 @@ class MyAlgorithm(AlgorithmBase):
             link.s2 = False 
             link.entangled = False
 
-    def resetSucceedRequestFor2(self, requestInfo, usedLinks):      # 第二段傳成功
+    def resetSucceedRequestFor2(self, requestInfo, usedLinks):      # 第二段傳成功 忘記釋放第一段 要補
         # 資源全部釋放
         requestInfo.intermediate.clearIntermediate()
         for link in usedLinks:
