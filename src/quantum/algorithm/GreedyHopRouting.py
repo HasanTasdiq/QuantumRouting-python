@@ -12,10 +12,15 @@ class GreedyHopRouting(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
         self.pathsSortedDynamically = []
+        self.requests = []
         self.name = "Greedy_H"
 
     def p2(self):
         self.pathsSortedDynamically.clear()
+
+        for req in self.srcDstPairs:
+            (src, dst) = req
+            self.requests.append((src, dst, self.timeSlot))
 
         while True:
             found = False   # record this round whether find new path
@@ -44,16 +49,16 @@ class GreedyHopRouting(AlgorithmBase):
                                     break
 
                     # Choose the neighbor with smallest number of hop from it to dst
-                    next = self.topo.sentinal
+                    next = self.topo.sentinel
                     hopsCurMinNum = sys.maxsize
                     for selectedNeighbor in selectedNeighbors:
                         hopsNum = self.topo.hopsAway(selectedNeighbor, dst, 'Hop')      
-                        if hopsCurMinNum > hopsNum:
+                        if hopsCurMinNum > hopsNum and hopsNum != -1:
                             hopsCurMinNum = hopsNum
                             next = selectedNeighbor
 
                     # If have cycle, break
-                    if next == topo.sentinal or next in p:
+                    if next == topo.sentinel or next in p:
                         break 
                     p.append(next)
                 # while end
@@ -122,7 +127,7 @@ class GreedyHopRouting(AlgorithmBase):
         
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.01, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = GreedyHopRouting(topo)
     s.work([(topo.nodes[3],topo.nodes[99])], 0)
   
