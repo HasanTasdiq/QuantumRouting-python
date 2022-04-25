@@ -325,7 +325,6 @@ class REPS(AlgorithmBase):
             
             
                 varName = self.genNameByBbracket('t', [i, k])
-                print(k)
                 self.tki_LP[SDpair][k] = m.getVarByName(varName).x
     
     def EPS(self):
@@ -333,7 +332,7 @@ class REPS(AlgorithmBase):
         # initialize fki(u, v), tki
         numOfFlow = {SDpair : self.ti[SDpair] for SDpair in self.srcDstPairs}
         self.fki = {SDpair : [{} for _ in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
-        self.tki = {SDpair : [self.tki_LP[SDpair][k] >= random.random() for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
+        self.tki = {SDpair : [0 for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
 
         for SDpair in self.srcDstPairs:
             for k in range(numOfFlow[SDpair]):
@@ -343,8 +342,28 @@ class REPS(AlgorithmBase):
 
         for SDpair in self.srcDstPairs:
             for k in range(numOfFlow[SDpair]):
+                self.tki[SDpair][k] = self.tki_LP[SDpair][k] >= random.random()
+
                 if not self.tki[SDpair][k]:
                     continue
+                paths = self.findPathsForEPS(SDpair, k)
+
+                for u in self.topo.nodes:
+                    for v in self.topo.nodes:
+                        self.fki[SDpair][k][(u, v)] = 0
+                    
+                for path in paths:
+                    width = path[-1]
+                    select = (width / self.tki[SDpair][k]) >= random.random()
+                    if not select:
+                        continue
+                    
+                    pathLen = len(path) - 1
+                    for i in range(pathLen - 1):
+                        node = path[i]
+                        next = path[i + 1]
+                        self.fki[SDpair][k][(node, next)] = 1
+                
 
         print('EPS end')
 
@@ -435,7 +454,7 @@ class REPS(AlgorithmBase):
                 currentNode = self.parent[currentNode]
 
             path = path[::-1]
-            width = self.widthForEPS(path, SDpair)
+            width = self.widthForEPS(path, SDpair, k)
             pathLen = len(path)
             for i in range(pathLen - 1):
                 node = path[i]
