@@ -39,8 +39,7 @@ class AlgorithmBase:
 
         self.p4()
 
-        for req in self.finishedSrcDstPairs:
-            self.srcDstPairs.remove(req)
+        self.srcDstPairs = []
 
 @dataclass
 class PickedPath:
