@@ -78,7 +78,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                 sorted(self.pathsSortedDynamically, key=lambda x: x[1])
 
                 # Assign Qubits for links in path 
-                for i in range(0, width):
+                for _ in range(0, width):
                     for s in range(0, len(p) - 1):
                         n1 = p[s]
                         n2 = p[s+1]
@@ -122,7 +122,13 @@ class GreedyGeographicRouting(AlgorithmBase):
             print('path:', [x.id for x in p])
             r = self.topo.getEstablishedEntanglements(p[0], p[-1])
             for x in r:
-                print('success:', [z.id for z in x])      
+                print('success:', [z.id for z in x])
+            
+            if len(r) > 0:
+                print('finish time:', self.timeSlot - time)
+                find = (p[0], p[-1], time)
+                if find in self.requests:
+                    self.requests.remove((p[0], p[-1], time))      
                     
         print('p4 end') 
                     

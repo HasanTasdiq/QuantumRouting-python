@@ -55,10 +55,20 @@ class Topo:
         self.k = k
         self.sentinel = Node(-1, (-1.0, -1.0), -1, self)
 
+        # for pos in _positions:
+        #     print(_positions[pos])
+
+        # for _node in _nodes:
+        #     for _node2 in _nodes:
+        #         if self.distance(_positions[_node], _positions[_node2]) <= 5:
+        #             print('node 1:', _node, 'node 2:', _node2, self.distance(_positions[_node], _positions[_node2]))
+
+        _edges = [] # reset edge
+
         # Construct neighbor table by int type
-        _neighbors = {}
-        for _node in _nodes:
-            _neighbors[_node] = list(nx.neighbors(G,_node))
+        _neighbors = {_node: [] for _node in _nodes}
+        # for _node in _nodes:
+        #     _neighbors[_node] = list(nx.neighbors(G,_node))
           
         # Construct Node 
         for _node in _nodes:
@@ -68,15 +78,16 @@ class Topo:
             
             # Make the number of neighbors approach degree  
             if len(_neighbors[_node]) < degree - 1:  
-                for i in range(0, degree - 1 - len(_neighbors[_node])):
+                for _ in range(0, degree - 1 - len(_neighbors[_node])):
                     curNode = -1
                     curLen = sys.maxsize
                     for _node2 in _nodes:
                         # print(_positions[_node], _positions[_node2])
-                        if _node2 not in usedNode and _node2 not in _neighbors[_node] and self.distance(_positions[_node], _positions[_node2]) < curLen:
+                        dis = self.distance(_positions[_node], _positions[_node2])
+                        if _node2 not in usedNode and _node2 not in _neighbors[_node] and dis < curLen: # no duplicate
                             # print(_positions[_node], _positions[_node2], self.distance(_positions[_node], _positions[_node2]))
                             curNode = _node2
-                            curLen = self.distance(_positions[_node], _positions[_node2])
+                            curLen = dis
 
                     if curNode >= 0:
                         _neighbors[_node].append(curNode)
@@ -93,6 +104,9 @@ class Topo:
         # for _node in _nodes:
         #     print(_node, _neighbors[_node])
 
+        #     for _node2 in _neighbors[_node]:
+        #         print(self.distance(_positions[_node], _positions[_node2]))
+
         # print('average neighbors:', len(_edges)*2/len(_nodes))
 
         # Construct Link
@@ -100,7 +114,7 @@ class Topo:
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             rand = int(random.random()*5+3) # 3~8
-            for i in range(0, rand):
+            for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
                 self.links.append(link)
                 self.nodes[_edge[0]].links.append(link)
@@ -108,8 +122,8 @@ class Topo:
                 linkId += 1
 
         # print p and width for test
-        p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
-        print('Hop path:', [x.id for x in p])
+        # p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
+        # print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
         
 
@@ -121,7 +135,8 @@ class Topo:
 
     def generate(n, q, k, a, degree):
         dist = lambda x, y: distance(x, y)
-        G = nx.waxman_graph(n, 0.5, 0.1, L=50/(n**0.5) , domain=(0, 0, 100, 100), metric=dist)
+        # dist = lambda x, y: sum(abs((a**2 - b**2)**0.5) for a, b in zip(x, y))
+        G = nx.waxman_graph(n, beta=0.5, alpha=0.1, L=5, domain=(0, 0, 100, 100), metric=dist)
 
         return Topo(G, q, k, a, degree)
 
@@ -329,3 +344,6 @@ class Topo:
         return result
 
         
+    def clearAllEntanglements(self):
+        for link in self.links:
+            link.clearEntanglement()
