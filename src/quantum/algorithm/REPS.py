@@ -9,6 +9,7 @@ from AlgorithmBase import AlgorithmBase
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
+from numpy import log as ln
 
 EPS = 1e-6
 class REPS(AlgorithmBase):
@@ -20,14 +21,7 @@ class REPS(AlgorithmBase):
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
     def genNameByBbracket(self, varName: str, parName: list):
-        if len(parName) == 0:
-            return varName
-        name = varName
-        name += "["
-        for par in parName:
-            name += (str(par) + "][")
-        name = name[0: len(name) - 2] + "]"
-        return name
+        return (varName + str(parName)).replace(' ', '').replace(',', '][')
     def p2(self):
         self.PFT() # compute (self.ti, self.fi)
         for SDpair in self.srcDstPairs:
@@ -183,15 +177,15 @@ class REPS(AlgorithmBase):
                     paths.append(Pi[SDpair][k])
                     pathLen = len(Pi[SDpair][k]) - 1
                     self.ti[SDpair] += width
-                    if width > 0:
-                        failedFindPath = False
-
+                    if width == 0:
+                        continue
+                    failedFindPath = False
                     for i in range(pathLen - 1):
                         node = Pi[SDpair][k][i]
                         next = Pi[SDpair][k][i + 1]
                         self.fi[SDpair][(node, next)] += width
 
-            sorted(paths, key=self.widthForSort)
+            sorted(paths, key = self.widthForSort)
 
             for path in paths:
                 pathLen = len(path) - 1
@@ -210,7 +204,7 @@ class REPS(AlgorithmBase):
                         next = path[i + 1]
                         self.fi_LP[SDpair][(node, next)] -= width
                     continue
-                    
+                
                 failedFindPath = False
                 self.ti[SDpair] += 1
                 for i in range(pathLen - 1):
@@ -333,6 +327,7 @@ class REPS(AlgorithmBase):
         numOfFlow = {SDpair : self.ti[SDpair] for SDpair in self.srcDstPairs}
         self.fki = {SDpair : [{} for _ in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.tki = {SDpair : [0 for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
+        self.pathForELS = {SDpair : [] for SDpair in self.srcDstPairs}
 
         for SDpair in self.srcDstPairs:
             for k in range(numOfFlow[SDpair]):
@@ -358,6 +353,7 @@ class REPS(AlgorithmBase):
                     if not select:
                         continue
                     
+                    self.pathForELS[SDpair].append(path)
                     pathLen = len(path) - 1
                     for i in range(pathLen - 1):
                         node = path[i]
@@ -368,6 +364,48 @@ class REPS(AlgorithmBase):
         print('EPS end')
 
     def ELS(self):
+        Ci = self.pathForELS
+        y = {(u, v) : 0 for u in self.topo.nodes for v in self.topo.nodes}
+        weightOfNode = {node : -ln(node.remainingQubits) for node in self.topo.nodes}
+        T = [SDpair for SDpair in self.srcDstPairs]
+
+        while len(T):
+            for SDpair in self.srcDstPairs:
+                pathLen = len(path) - 1
+                for path in Ci[SDpair]:
+                    noResource = False
+                    for k in range(pathLen - 1):
+                        node = path[k]
+                        next = path[k + 1]
+                        if y[(node, next)] >= self.edgeCapacity(node, next):
+                            noResource = True
+                    if noResource:
+                        Ci[SDpair].remove(path)
+                if len(Ci[SDpair]) and SDpair in T == 0:
+                    T.remove(SDpair)
+            
+            if len(T) == 0:
+                break
+
+            i = -1
+            minLength = math.inf
+            for SDpair in T:
+                for path in Ci[SDpair]:
+                    if len(path) - 1 < minLength:
+                        minLength = len(path) - 1
+                        i = SDpair
+            
+            minR = math.inf
+            taregtPath = []
+            for path in Ci[i]:
+                r = 0
+                for k in range(len(path) - 1):
+                    r += weightOfNode[path[k]]
+                if minR > r:
+                    taregtPath = path
+                    minR = r
+            
+            
         print('ELS end')
 
 
@@ -385,8 +423,8 @@ class REPS(AlgorithmBase):
 
             path = path[::-1]
             width = self.widthForPFT(path, SDpair)
-            pathLen = len(path)
-            for i in range(pathLen - 1):
+            
+            for i in range(len(path) - 1):
                 node = path[i]
                 next = path[i + 1]
                 self.fi_LP[SDpair][(node, next)] -= width
@@ -455,8 +493,7 @@ class REPS(AlgorithmBase):
 
             path = path[::-1]
             width = self.widthForEPS(path, SDpair, k)
-            pathLen = len(path)
-            for i in range(pathLen - 1):
+            for i in range(len(path) - 1):
                 node = path[i]
                 next = path[i + 1]
                 self.fki_LP[SDpair][k][(node, next)] -= width
