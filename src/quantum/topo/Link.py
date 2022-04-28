@@ -38,14 +38,36 @@ class Link:
   
     def clearEntanglement(self):
         preState = self.assigned
+        self.s1 = False
+        self.s2 = False
         self.assigned = False
         self.entangled = False
+
+        for internalLink in self.n1.internalLinks:
+            if self in internalLink:
+                self.n1.internalLinks.remove(internalLink)
+
+        for internalLink in self.n2.internalLinks:
+                    if self in internalLink:
+                        self.n2.internalLinks.remove(internalLink)
 
         if preState:
             self.n1.remainingQubits += 1
             self.n2.remainingQubits += 1
-   
     
+    def clearPhase4Swap(self):
+        self.s1 = False
+        self.s2 = False
+        self.entangled = False
+
+        for internalLink in self.n1.internalLinks:
+            if self in internalLink:
+                self.n1.internalLinks.remove(internalLink)
+
+        for internalLink in self.n2.internalLinks:
+                    if self in internalLink:
+                        self.n2.internalLinks.remove(internalLink)
+         
     def tryEntanglement(self):
         b = self.assigned and self.p >= random.random()
         self.entangled = b
