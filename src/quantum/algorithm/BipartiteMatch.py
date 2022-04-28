@@ -4,42 +4,41 @@ from typing import NewType, Sequence, Tuple
 Matrix = NewType('Matrix', Sequence[Sequence[int]])
 
 class BipartiteMatching:
-	def __init__(self, numOfSDpair: int, numOfRepeater: int):
-		self.numOfLeft = numOfSDpair
-		self.numOfRight = numOfRepeater
-		self.n = max(self.numOfLeft, self.numOfRight)
-		self.inf = 10**18
-		self.matrix = [[self.inf] * self.n for _ in range(self.n)]
-		self.isAdjacent = [[False] * self.n for _ in range(self.n)]
-		self.matchList = [] # [(SDpair_i, Repeater_k), ...]
+    def __init__(self, numOfSDpair: int, numOfRepeater: int):
+        self.numOfLeft = numOfSDpair
+        self.numOfRight = numOfRepeater
+        self.n = max(self.numOfLeft, self.numOfRight)
+        self.inf = 10**18
+        self.matrix = [[self.inf] * self.n for _ in range(self.n)]
+        self.isAdjacent = [[False] * self.n for _ in range(self.n)]
+        self.matchList = [] # [(SDpair_i, Repeater_k), ...]
 
-	def addEdge(self, SDpair_i: int, Repeater_k: int, cost: int): 
+    def addEdge(self, SDpair_i: int, Repeater_k: int, cost: int): 
 
-		if SDpair_i >= self.numOfLeft:
-			print("[Warning] In Bipartite Matching, index of SDpair exceed number of SDpairs")
+        if SDpair_i >= self.numOfLeft:
+            print("[Warning] In Bipartite Matching, index of SDpair exceed number of SDpairs")
 
-		if Repeater_k >= self.numOfRight:
-			print("[Warning] In Bipartite Matching, index of Repeater exceed number of Repeaters")
+        if Repeater_k >= self.numOfRight:
+            print("[Warning] In Bipartite Matching, index of Repeater exceed number of Repeaters")
 
-		self.matrix[SDpair_i][Repeater_k] = cost
-		self.isAdjacent[SDpair_i][Repeater_k] = True
+        self.matrix[SDpair_i][Repeater_k] = cost
+        self.isAdjacent[SDpair_i][Repeater_k] = True
 
-	def getMatch(self):
-		return self.matchList # a pair list [(SDpair_i, Repeater_k), ...]
+    def getMatch(self):
+        return self.matchList # a pair list [(SDpair_i, Repeater_k), ...]
 
-	def clear(self):
-		self.matrix = [[0] * self.n for _ in range(self.n)]
-		self.isAdjacent = [[False] * self.n for _ in range(self.n)]
-		self.matchList = [] # [(SDpair_i, Repeater_k), ...]
+    def clear(self):
+        self.matrix = [[0] * self.n for _ in range(self.n)]
+        self.isAdjacent = [[False] * self.n for _ in range(self.n)]
+        self.matchList = [] # [(SDpair_i, Repeater_k), ...]
 
-	def startMatch(self): # Do BipartiteMatching
-
-		solver = Hungarian()
-		matrix = [[self.matrix[i][j] for j in range(self.n)] for i in range(self.n)] # copy matrix
-		match = solver.solve(matrix)
-		for (i, k) in match:
-			if self.isAdjacent[i][k]:
-				self.matchList.append((i, k))
+    def startMatch(self): # Do BipartiteMatching
+        solver = Hungarian()
+        matrix = [[self.matrix[i][j] for j in range(self.n)] for i in range(self.n)] # copy matrix
+        match = solver.solve(matrix)
+        for (i, k) in match:
+            if self.isAdjacent[i][k]:
+                self.matchList.append((i, k))
 
 
 
@@ -331,17 +330,17 @@ class Hungarian:
                     self.starred[i][j] = 0
 
 if __name__ == "__main__":
-	matching = BipartiteMatching(4, 10) # 3 nodes in left set, 3 node in right set
-	matching.addEdge(0, 1, 100)
-	matching.addEdge(1, 2, 10)
-	matching.addEdge(2, 0, 10)
-	matching.addEdge(0, 2, 1)
-	matching.addEdge(3, 9, 1)
-	matching.startMatch()
-	for (i, j) in matching.getMatch():
-		print((i, j), matching.matrix[i][j])
-	# (0, 1) 100
-	# (1, 2) 10
-	# (2, 0) 10
-	# (3, 9) 1
-	matching.clear()
+    matching = BipartiteMatching(4, 10) # 4 nodes in left set, 10 node in right set
+    matching.addEdge(0, 1, 100)
+    matching.addEdge(1, 2, 10)
+    matching.addEdge(2, 0, 10)
+    matching.addEdge(0, 2, 1)
+    matching.addEdge(3, 9, 1)
+    matching.startMatch()
+    for (i, j) in matching.getMatch():
+        print((i, j), matching.matrix[i][j])
+    # (0, 1) 100
+    # (1, 2) 10
+    # (2, 0) 10
+    # (3, 9) 1
+    matching.clear()

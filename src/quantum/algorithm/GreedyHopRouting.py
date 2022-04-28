@@ -5,7 +5,7 @@ from AlgorithmBase import AlgorithmBase
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
-
+from random import sample
 
 class GreedyHopRouting(AlgorithmBase):
 
@@ -13,6 +13,7 @@ class GreedyHopRouting(AlgorithmBase):
         super().__init__(topo)
         self.pathsSortedDynamically = []
         self.requests = []
+        self.totalTime = 0
         self.name = "Greedy_H"
 
     def p2(self):
@@ -26,8 +27,8 @@ class GreedyHopRouting(AlgorithmBase):
             found = False   # record this round whether find new path
 
             # Find the shortest path and assing qubits for every srcDstPair
-            for srcDstPair in self.srcDstPairs:
-                (src, dst) = srcDstPair
+            for req in self.requests:
+                (src, dst, time) = req
                 p = []
                 p.append(src)
                 
@@ -73,7 +74,7 @@ class GreedyHopRouting(AlgorithmBase):
                     continue
 
                 found = True
-                self.pathsSortedDynamically.append((0.0, width, p))
+                self.pathsSortedDynamically.append((0.0, width, p, time))
                 sorted(self.pathsSortedDynamically, key=lambda x: x[1])
 
                 # Assign Qubits for links in path 
@@ -94,7 +95,7 @@ class GreedyHopRouting(AlgorithmBase):
     
     def p4(self):
         for path in self.pathsSortedDynamically:
-            _, width, p = path
+            _, width, p, time = path
             
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
@@ -115,19 +116,44 @@ class GreedyHopRouting(AlgorithmBase):
                         nextLinks.append(link)
                         w -= 1
 
+                if prevLinks == None or nextLinks == None:
+                    break
+
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     curr.attemptSwapping(l1, l2)
 
+            print('-----------------')
             print('path:', [x.id for x in p])
             r = self.topo.getEstablishedEntanglements(p[0], p[-1])
             for x in r:
-                print('success:', [z.id for z in x])   
-        print('p4 end') 
+                print('success:', [z.id for z in x])
+            
+            if len(r) > 0:
+                print('finish time:', self.timeSlot - time)
+                find = (p[0], p[-1], time)
+                if find in self.requests:
+                    self.totalTime += self.timeSlot - time
+                    self.requests.remove((p[0], p[-1], time))
+            print('-----------------')
+
+        tmpTime = 0
+        for req in self.requests:
+            tmpTime += self.timeSlot - req[2]
+        print('total time:', self.totalTime + tmpTime)
+
+        print('p4 end')
+
+        self.topo.clearAllEntanglements() 
 
         
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = GreedyHopRouting(topo)
-    s.work([(topo.nodes[3],topo.nodes[99])], 0)
+    for i in range(0, 100):
+        if i < 50:
+            a = sample(topo.nodes, 2)
+            s.work([(a[0],a[1])], i)
+        else:
+            s.work([], i)
   
