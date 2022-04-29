@@ -39,7 +39,7 @@ class AlgorithmBase:
 
         self.p4()
 
-        self.srcDstPairs = []
+        self.srcDstPairs.clear()
 
 @dataclass
 class PickedPath:

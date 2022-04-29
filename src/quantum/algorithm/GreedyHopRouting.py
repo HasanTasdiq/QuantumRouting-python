@@ -96,6 +96,7 @@ class GreedyHopRouting(AlgorithmBase):
     def p4(self):
         for path in self.pathsSortedDynamically:
             _, width, p, time = path
+            oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
             
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
@@ -122,25 +123,22 @@ class GreedyHopRouting(AlgorithmBase):
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     curr.attemptSwapping(l1, l2)
 
-            print('-----------------')
+            print('----------------------')
             print('path:', [x.id for x in p])
-            r = self.topo.getEstablishedEntanglements(p[0], p[-1])
-            for x in r:
-                print('success:', [z.id for z in x])
-            
-            if len(r) > 0:
+            succ = len(self.topo.getEstablishedEntanglements(p[0], p[-1])) - oldNumOfPairs
+        
+            if succ > 0 or len(p) == 2:
                 print('finish time:', self.timeSlot - time)
                 find = (p[0], p[-1], time)
                 if find in self.requests:
                     self.totalTime += self.timeSlot - time
                     self.requests.remove((p[0], p[-1], time))
-            print('-----------------')
+            print('----------------------')
 
         tmpTime = 0
         for req in self.requests:
             tmpTime += self.timeSlot - req[2]
         print('total time:', self.totalTime + tmpTime)
-
         print('p4 end')
 
         self.topo.clearAllEntanglements() 
@@ -150,10 +148,15 @@ if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = GreedyHopRouting(topo)
-    for i in range(0, 100):
-        if i < 50:
-            a = sample(topo.nodes, 2)
-            s.work([(a[0],a[1])], i)
+
+    for i in range(0, 500):
+        requests = []
+        if i < 1:
+            a = sample(topo.nodes, 6)
+            for n in range(0,6,2):
+                requests.append((a[n], a[n+1]))
+            s.work(requests, i)
         else:
             s.work([], i)
-  
+    
+    
