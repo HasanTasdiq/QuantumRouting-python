@@ -72,7 +72,7 @@ class Topo:
           
         # Construct Node 
         for _node in _nodes:
-            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~15
+            self.nodes.append(Node(_node, _positions[_node], random.random()*5+15 , self))  # 15~20
             usedNode = []
             usedNode.append(_node) 
             
@@ -113,7 +113,7 @@ class Topo:
         linkId = 0
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
-            rand = int(random.random()*5+3) # 3~8
+            rand = int(random.random()*5+7) # 7~12
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
                 self.links.append(link)
@@ -168,7 +168,7 @@ class Topo:
         fStateMetric = {}   # {edge: fstate}
         fStateMetric.clear()
         if edges != None:
-            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges} 
+            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in edges} 
         elif greedyType == 'Hop' and edges == None:
             fStateMetric = {edge : 1 for edge in self.edges}
         else: 
