@@ -2,6 +2,7 @@ import re
 import sys
 import math
 import random
+from tabnanny import check
 import gurobipy as gp
 from gurobipy import quicksum
 from queue import PriorityQueue
@@ -19,8 +20,25 @@ class REPS(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
         self.name = "REPS"
-        self.F = open("output.txt", "w")
+        self.waitSum = 0
         self.requests = []
+        if not self.checkConnected():
+            print("Graph is not connected")
+
+    def checkConnected(self):
+        self.visited = {node : False for node in self.topo.nodes}
+        self.DFS(self.topo.nodes[0])
+        for node in self.topo.nodes:
+            if not self.visited[node]:
+                return False
+        return True
+
+    def DFS(self, currentNode):
+        self.visited[currentNode] = True
+        for link in currentNode.links:
+            nextNode = link.theOtherEndOf(currentNode)
+            if not self.visited[nextNode]:
+                self.DFS(nextNode)
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
@@ -36,17 +54,20 @@ class REPS(AlgorithmBase):
             src = request[0]
             dst = request[1]
             if (src, dst) not in self.srcDstPairs:
-                self.srcDstPairs.append((request[0], request[1]))
+                self.srcDstPairs.append((src, dst))
+        print([(src.id, dst.id) for (src, dst) in self.srcDstPairs])
 
     def p2(self):
+        if len(self.srcDstPairs) == 0:
+            return
         self.AddNewSDpairs()
         self.PFT() # compute (self.ti, self.fi)
         for SDpair in self.srcDstPairs:
             for edge in self.topo.edges:
                 u = edge[0]
                 v = edge[1]
-                need = self.fi[SDpair][(u, v)] + self.fi[SDpair][(u, v)]
-                if self.fi[SDpair][edge]:
+                need = self.fi[SDpair][(u, v)] + self.fi[SDpair][(v, u)]
+                if need:
                     assignCount = 0
                     for link in u.links:
                         if link.contains(v) and link.assignable():
@@ -58,10 +79,14 @@ class REPS(AlgorithmBase):
         print('p2 end')
     
     def p4(self):
+        if len(self.srcDstPairs) == 0:
+            return
         self.EPS()
         self.ELS()
         print('p4 end') 
         self.topo.clearAllEntanglements() 
+        print("total time:", self.waitSum)
+        print("remain request:", len(self.requests))
     
     # return fi(u, v)
 
@@ -86,6 +111,7 @@ class REPS(AlgorithmBase):
         # LP
 
         m = gp.Model('REPS for PFT')
+        m.setParam("OutputFlag", 0)
         f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "f")
         t = m.addVars(numOfSDpairs, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "t")
         x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "x")
@@ -262,6 +288,7 @@ class REPS(AlgorithmBase):
                     notEdge.append((u, v))
 
         m = gp.Model('REPS for EPS')
+        m.setParam("OutputFlag", 0)
 
         f = [0] * numOfSDpairs
         for i in range(numOfSDpairs):
@@ -432,10 +459,10 @@ class REPS(AlgorithmBase):
                 node = targetPath[nodeIndex]
                 next = targetPath[nodeIndex + 1]
                 for link in node.links:
-                    if link.contains(next) and link.entangled:
+                    if link.contains(next) and link.entangled and link.notSwapped():
                         targetLink1 = link
                     
-                    if link.contains(prev) and link.entangled:
+                    if link.contains(prev) and link.entangled and link.notSwapped():
                         targetLink2 = link
                 
                 self.y[((node, next))] += 1
@@ -451,11 +478,15 @@ class REPS(AlgorithmBase):
                 for x in successPath:
                     print('success:', [z.id for z in x])
                 if len(successPath):
+                    successTimes = len(successPath)
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
                             print('finish time:', self.timeSlot - request[2])
+                            self.waitSum += (self.timeSlot - request[2])
                             self.requests.remove(request)
-                            break
+                            successTimes -= 1
+                            if successTimes == 0:
+                                break
                 print('-----------------')
 
             T.remove(i)
@@ -476,12 +507,7 @@ class REPS(AlgorithmBase):
                         removePaths.append(path)
                 for path in removePaths:
                     Ci[SDpair].remove(path)
-                if len(Ci[SDpair]) == 0 and SDpair in T:
-                    T.remove(SDpair)
             
-            if len(T) == 0:
-                break
-
             i = -1
             minLength = math.inf
             for SDpair in T:
@@ -489,12 +515,13 @@ class REPS(AlgorithmBase):
                     if len(path) - 1 < minLength:
                         minLength = len(path) - 1
                         i = SDpair
+                if len(Ci[SDpair]) == 0 and i == -1:
+                    i = SDpair
             
             src = i[0]
             dst = i[1]
 
             targetPath = self.findPathForELS(i)
-            
             for nodeIndex in range(1, len(targetPath) - 1):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -515,21 +542,23 @@ class REPS(AlgorithmBase):
             if len(targetPath) > 0:
                 print('-----------------')
                 print('path:', [x.id for x in targetPath])
+
                 successPath = self.topo.getEstablishedEntanglements(src, dst)
                 for x in successPath:
                     print('success:', [z.id for z in x])
+
 
                 if len(successPath):
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
                             print('finish time:', self.timeSlot - request[2])
+                            self.waitSum += self.timeSlot - request[2]
                             self.requests.remove(request)
                             break
                 print('-----------------')
             T.remove(i)
         
         print('ELS end')
-
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]
@@ -721,11 +750,11 @@ class REPS(AlgorithmBase):
 
 if __name__ == '__main__':
     
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 1, 5, 0, 6)
     s = REPS(topo)
     for i in range(0, 100):
         if i < 50:
-            a = sample(topo.nodes, 4)
+            a = sample(topo.nodes, 6)
             s.work([(a[0],a[1]), (a[2], a[3])], i)
         else:
             s.work([], i)
