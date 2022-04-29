@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from inspect import modulesbyfile
 from re import A
 import random
 from random import sample
@@ -31,14 +32,28 @@ class MyAlgorithm(AlgorithmBase):
         self.r = 40                     # 暫存回合
         self.givenShortestPath = {}     # {(src, dst): path, ...} path表
         self.socialRelationship = {}    # {Node : [Node, ...], ...} social表
-        self.requestState = {}          # {(src, dst, timeslot) : RequestInfo}  這回合要做的request
+        self.requestState = {}          # {(src, dst, timeslot) : RequestInfo} request表 
         self.totalTime = 0
- 
+        self.factorialTable = {}        # 階層運算表
+        self.expectTabkle = {}          # {(path1, path2) : expectRound} expectRound表
+    
+    def myFactorial(self, n):   
+        if n in self.factorialTable:
+            return self.factorialTable[n]
+
+        if n-1 in self.factorialTable:
+            self.factorialTable[n] = n * self.factorialTable[n-1]
+        else:
+            self.factorialTable[n] = math.factorial(n)
+
+        return self.factorialTable[n]
+
     def establishShortestPath(self):        
         for n1 in self.topo.nodes:
             for n2 in self.topo.nodes:
                 if n1 != n2:
                     self.givenShortestPath[(n1, n2)] = self.topo.shortestPath(n1, n2, 'Hop')[1] 
+                    print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id)
 
     def Pr(self, path):
         P = 1
@@ -52,34 +67,35 @@ class MyAlgorithm(AlgorithmBase):
         return P
       
     def expectedRound(self, p1, p2):
-        aa = 0 
-        a = 0
-        b = 0
-        i = 0 
+        prev_a, a, b = 0 
+        i = 2
         while(1):
-            k = i-math.ceil(i/(self.r+1))
-            for j in range(1,k+1):
-                b += math.factorial(i-j-1)//math.factorial(math.ceil(j/self.r)-1)//math.factorial(i-j-math.ceil(j/self.r))*pow(p1,math.ceil(j/self.r))*pow((1-p1),i-j-math.ceil(j/self.r))*p2*pow((1-p2),j-1)
-            aa += a
+            k = i - math.ceil(i/(self.r+1))
+            for j in range(1, k+1):
+                b += self.myFactorial(i-j-1) \
+                     // self.myFactorial(math.ceil(j/self.r)-1) \
+                     // self.myFactorial(math.ceil(j/self.r)-1) \
+                     // self.myFactorial(i-j-math.ceil(j/self.r)) * pow(p1,math.ceil(j/self.r)) * pow((1-p1),i-j-math.ceil(j/self.r)) * p2 * pow((1-p2),j-1)
+                     
+            prev_a += a
             a += i*b
 
-            if aa !=0 and a/aa <= 0.005 :
+            if prev_a !=0 and a/prev_a <= 0.005 :
                 break
             b = 0
             i += 1
         return a
 
-    def genSocialRelationalship(self):
+    def genSocialRelationship(self):
         for i in range(0, len(self.topo.nodes)):
-            for j in range(i, len(self.topo.nodes)):
+            for j in range(i+1, len(self.topo.nodes)):
                 n1 = self.topo.nodes[i]
                 n2 = self.topo.nodes[j]
-                if i == j:
-                    continue
                 p = random.random() + 0.05
                 if p >= 0.5:
                     self.socialRelationship[n1].append(n2)
                     self.socialRelationship[n2].append(n1)
+                    print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
 
     # p1
     def descideSegmentation(self):
@@ -105,15 +121,21 @@ class MyAlgorithm(AlgorithmBase):
                     continue
                 path_sk = self.givenShortestPath[(src, k)]
                 path_kd = self.givenShortestPath[(k, dst)]
-                P_sk = self.Pr(path_sk)
-                P_kd = self.Pr(path_kd)
-                curMin = self.expectedRound(P_sk, P_kd)
+
+                if ((src, k), (k, dst)) in self.expectTabkle:
+                    curMin = self.expectTabkle[((src, k), (k, dst))]
+                else:
+                    P_sk = self.Pr(path_sk)
+                    P_kd = self.Pr(path_kd)
+                    curMin = self.expectedRound(P_sk, P_kd)
+                    self.expectTabkle[((src, k), (k, dst))] = curMin
+
                 # print('curMin:', curMin)
                 if minNum > curMin:    # 分2段 取k中間  
                     minNum = curMin
                     self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), path_sk, path_kd, False, 0, None)
 
-            # 模擬用掉這個k的一個Qubits，非真正用掉
+            # 模擬用掉這個k的一個Qubits 紀錄剩下的數量
             k = self.requestState[(src, dst, self.timeSlot)].intermediate
             if k == None: continue
             nodeRemainingQubits[k] -= 1
@@ -124,7 +146,7 @@ class MyAlgorithm(AlgorithmBase):
         self.socialRelationship.clear()
         self.socialRelationship = {node: [] for node in self.topo.nodes}
         self.establishShortestPath()
-        self.genSocialRelationalship()
+        self.genSocialRelationship()
 
     # p2 第2次篩選
     def p2Extra(self):
@@ -185,15 +207,14 @@ class MyAlgorithm(AlgorithmBase):
                 if width == 0:
                     continue
                 
-                # Assign Qubits for links in path 
-                for i in range(0, width):
-                    for s in range(0, len(p) - 1):
-                        n1 = p[s]
-                        n2 = p[s+1]
-                        for link in n1.links:
-                            if link.contains(n2) and (not link.assigned):
-                                link.assignQubits()
-                                break 
+                # Assign Qubits for links in path     
+                for i in range(0, len(p) - 1):
+                    n1 = p[i]
+                    n2 = p[i+1]
+                    for link in n1.links:
+                        if link.contains(n2) and (not link.assigned):
+                            link.assignQubits()
+                            break 
 
                 if requestInfo.state == 1:
                     dst.assignIntermediate()
@@ -206,20 +227,23 @@ class MyAlgorithm(AlgorithmBase):
 
                 print('P2Extra take')
 
-    def resetFailedRequestFor01(self, requestInfo, usedLinks):                   # 第一段傳失敗
+    def resetFailedRequestFor01(self, requestInfo, usedLinks):      # 第一段傳失敗
         # for link in usedLinks:
         #     link.clearPhase4Swap()
         
         requestInfo.taken = False
+        if requestInfo.state == 1:
+            requestInfo.intermediate.clearIntermediate()
+
         for link in usedLinks:
             link.clearEntanglement()
-
+        
     def resetFailedRequestFor2(self, requestInfo, usedLinks):       # 第二段傳失敗 且超時
         requestInfo.savetime = 0
         requestInfo.state = 1
         requestInfo.pathlen = len(requestInfo.pathseg1)
         requestInfo.intermediate.clearIntermediate()
-        # requestInfo.taken = False # 這邊可能有問題 重新分配資源
+        requestInfo.taken = False # 這邊可能有問題 重新分配資源
 
         # 第二段的資源全部釋放
         for link in usedLinks:
@@ -229,19 +253,19 @@ class MyAlgorithm(AlgorithmBase):
         requestInfo.state = 2
         requestInfo.pathlen = len(requestInfo.pathseg2)
         requestInfo.taken = False                           # 這邊可能有問題 重新分配資源
-        requestInfo.linkseg1 = usedLinks                    # 紀錄seg1用了哪些link seg2成功要釋放資源
+        # requestInfo.linkseg1 = usedLinks                  # 紀錄seg1用了哪些link seg2成功要釋放資源
 
         # 第一段的資源還是預留的 只是清掉entangled跟swap
         for link in usedLinks:      
-            link.clearPhase4Swap()
+            link.clearEntanglement()
 
     def resetSucceedRequestFor2(self, requestInfo, usedLinks):      # 第二段傳成功 
         # 資源全部釋放
         requestInfo.intermediate.clearIntermediate()
         for link in usedLinks:
             link.clearEntanglement()
-        for link in requestInfo.linkseg1: 
-            link.clearEntanglement()
+        # for link in requestInfo.linkseg1: 
+        #     link.clearEntanglement()
 
     # p1 & p2    
     def p2(self):
@@ -266,7 +290,7 @@ class MyAlgorithm(AlgorithmBase):
             elif requestInfo.state == 2:    # 2
                 src, dst = requestInfo.intermediate, req[1]
 
-            # 檢查path qubit資源
+            # 檢查path node Qubit資源
             path = self.givenShortestPath[(src, dst)]
             unavaliable = False
             for n in path:
@@ -279,9 +303,9 @@ class MyAlgorithm(AlgorithmBase):
                     unavaliable = True
 
             # 檢查link資源
-            for s in range(0, len(path) - 1):
-                n1 = path[s]
-                n2 = path[s+1]
+            for i in range(0, len(path) - 1):
+                n1 = path[i]
+                n2 = path[i+1]
                 pick = False
                 for link in n1.links:
                     if link.contains(n2) and (not link.assigned):
@@ -296,9 +320,9 @@ class MyAlgorithm(AlgorithmBase):
                 continue
 
             # 分配資源給path
-            for s in range(0, len(path) - 1):
-                n1 = path[s]
-                n2 = path[s+1]
+            for i in range(0, len(path) - 1):
+                n1 = path[i]
+                n2 = path[i+1]
                 for link in n1.links:
                     if link.contains(n2) and (not link.assigned):
                         link.assignQubits()
@@ -329,9 +353,10 @@ class MyAlgorithm(AlgorithmBase):
             requestInfo = self.requestState[req]
             if not requestInfo.taken:
                 continue
-            
-            print('-----------------')
-            print('src:', req[0].id, 'dst:', req[1].id)
+            print('----------------------')
+            print('request information')
+            print('----------------------')
+            print('src:', req[0].id, 'dst:', req[1].id, 'time:', self.timeSlot)
             
             # swap
             if requestInfo.state == 2:
@@ -374,13 +399,12 @@ class MyAlgorithm(AlgorithmBase):
             # p5
             success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
-            print('-----------------')
+            print('----------------------')
             print('success:', success)
-            print('state:'  , requestInfo.state)
-            pp = self.givenShortestPath[(req[0],req[1])]
-            print('original path:'   , [x.id for x in pp])
-            print('path:'   , [x.id for x in p])
-            print('-----------------')
+            print('state:', requestInfo.state)
+            p2 = self.givenShortestPath[(req[0],req[1])]
+            print('original path:', [x.id for x in p2])
+            print('path:', [x.id for x in p])
 
             # failed
             if success == 0:
@@ -388,9 +412,11 @@ class MyAlgorithm(AlgorithmBase):
                     self.resetFailedRequestFor01(requestInfo, usedLinks)
                 elif requestInfo.state == 2:                            # 2
                     requestInfo.savetime += 1
-                    self.resetFailedRequestFor01(requestInfo, usedLinks)
                     if requestInfo.savetime > self.r:   # 超出k儲存時間 重頭送 重設req狀態
-                        self.resetFailedRequestFor2(requestInfo, usedLinks)  
+                        self.resetFailedRequestFor2(requestInfo, usedLinks)
+                    else:
+                        self.resetFailedRequestFor01(requestInfo, usedLinks)
+ 
                 continue
             
             # succeed
@@ -417,18 +443,23 @@ class MyAlgorithm(AlgorithmBase):
         tmpTime = 0
         for req in self.requestState:
             tmpTime += self.timeSlot - req[2]
+        print('----------------------')
         print('total time:', self.totalTime + tmpTime)
-
+        print('remaining request:', len(self.requestState))
+        print('----------------------')
             
     
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = MyAlgorithm(topo)
-    for i in range(0, 100):
-        if i < 50:
-            a = sample(topo.nodes, 2)
-            s.work([(a[0],a[1])], i)
+    for i in range(0, 500):
+        requests = []
+        if i < 1:
+            a = sample(topo.nodes, 6)
+            for n in range(0,6,2):
+                requests.append((a[n], a[n+1]))
+            s.work(requests, i)
         else:
             s.work([], i)
 
@@ -452,8 +483,8 @@ if __name__ == '__main__':
     # a=0
     # aa = 0
     # b=0
-    # p1 = 0.01
-    # p2 = 0.02
+    # p1 = 0.6
+    # p2 = 0.25
     # i = 2
     # while(1):
 

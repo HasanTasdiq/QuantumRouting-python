@@ -8,6 +8,7 @@ from AlgorithmBase import PickedPath
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
+from random import sample
 
 @dataclass
 class RecoveryPath:
@@ -23,9 +24,9 @@ class OnlineAlgorithm(AlgorithmBase):
         super().__init__(topo)
         self.pathsSortedDynamically = []
         self.name = "Online"
-        self.majorPaths = []    # [PickedPath, ...]
-        self.recoveryPaths = {} # {PickedPath: [PickedPath, ...], ...}
-        self.pathToRecoveryPaths = {} # {PickedPath : [RecoveryPath, ...], ...}
+        self.majorPaths = []            # [PickedPath, ...]
+        self.recoveryPaths = {}         # {PickedPath: [PickedPath, ...], ...}
+        self.pathToRecoveryPaths = {}   # {PickedPath : [RecoveryPath, ...], ...}
         self.allowRecoveryPaths = allowRecoveryPaths
 
     # P2
@@ -71,7 +72,7 @@ class OnlineAlgorithm(AlgorithmBase):
                     if node.remainingQubits < 2 * w and node != src and node != dst:
                         failNodes.append(node)
 
-                edges = {} # edges -> {(Node, Node): [Link, ...], ...}
+                edges = {}  # edges -> {(Node, Node): [Link, ...], ...}
 
                 # collect edges with links 
                 for link in self.topo.links:
@@ -392,7 +393,12 @@ if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.01, 6)
     s = OnlineAlgorithm(topo)
-    s.work([(topo.nodes[3],topo.nodes[99])], 0)
+    for i in range(0, 100):
+        if i < 50:
+            a = sample(topo.nodes, 2)
+            s.work([(a[0],a[1])], i)
+        else:
+            s.work([], i)
 
     
     
