@@ -59,7 +59,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                             next = selectedNeighbor
 
                     # If have cycle, break
-                    if next == topo.sentinel or next in p:
+                    if next == self.topo.sentinel or next in p:
                         break 
                     p.append(next)
                 # while end
@@ -68,7 +68,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                     continue
                 
                 # Caculate width for p
-                width = topo.widthPhase2(p)
+                width = self.topo.widthPhase2(p)
             
                 if width == 0:
                     continue
@@ -116,6 +116,9 @@ class GreedyGeographicRouting(AlgorithmBase):
                     if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1) and w > 0:
                         nextLinks.append(link)
                         w -= 1
+                
+                if prevLinks == None or nextLinks == None:
+                    break
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     curr.attemptSwapping(l1, l2)
@@ -140,16 +143,20 @@ class GreedyGeographicRouting(AlgorithmBase):
 
         self.topo.clearAllEntanglements()      
                     
-
+        return self.totalTime + tmpTime
                     
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = GreedyGeographicRouting(topo)
-    for i in range(0, 100):
-        if i < 1:
-            a = sample(topo.nodes, 2)
-            s.work([(a[0],a[1])], i)
+    for i in range(0, 200):
+        requests = []
+        if i < 10:
+            a = sample(topo.nodes, 6)
+            for n in range(0,6,2):
+                requests.append((a[n], a[n+1]))
+            s.work(requests, i)
         else:
             s.work([], i)
+    
   

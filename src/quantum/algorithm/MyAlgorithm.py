@@ -21,7 +21,7 @@ class RequestInfo:
     pathseg2: list 
     taken : bool        # 是否可處理這個req (已預定資源)
     savetime : int      # req存在中繼點k 還沒送出去經過的時間
-    linkseg1 : list     # seg1 用過的 links
+    width : int         # seg1 用過的 links
 
 class MyAlgorithm(AlgorithmBase):
 
@@ -53,7 +53,9 @@ class MyAlgorithm(AlgorithmBase):
             for n2 in self.topo.nodes:
                 if n1 != n2:
                     self.givenShortestPath[(n1, n2)] = self.topo.shortestPath(n1, n2, 'Hop')[1] 
-                    print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id)
+                    if len(self.givenShortestPath[(n1, n2)]) == 0:
+                        quit()
+                    print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id, ', path length ->', len(self.givenShortestPath[(n1, n2)]))
 
     def Pr(self, path):
         P = 1
@@ -65,26 +67,61 @@ class MyAlgorithm(AlgorithmBase):
             P *= p
 
         return P
+    
+    def Round(self, p1, p2, r):
+        state = 0 # 0 1 2
+        maxRound = 10000
+        currentRound = 0
+        currentMaintain = 0
+        while state != 2:
+            if currentRound >= maxRound:
+                break
+            currentRound += 1
+            if state == 0:
+                if random.random() <= p1:
+                    state = 1
+            elif state == 1:
+                currentMaintain += 1
+                if currentMaintain >= r:
+                    state = 0
+                    currentMaintain = 0
+                elif random.random() <= p2:
+                    state = 2
+        return currentRound
       
     def expectedRound(self, p1, p2):
-        prev_a, a, b = 0 
-        i = 2
-        while(1):
-            k = i - math.ceil(i/(self.r+1))
-            for j in range(1, k+1):
-                b += self.myFactorial(i-j-1) \
-                     // self.myFactorial(math.ceil(j/self.r)-1) \
-                     // self.myFactorial(math.ceil(j/self.r)-1) \
-                     // self.myFactorial(i-j-math.ceil(j/self.r)) * pow(p1,math.ceil(j/self.r)) * pow((1-p1),i-j-math.ceil(j/self.r)) * p2 * pow((1-p2),j-1)
+        print('p1:', p1,'p2:', p2)
+        # prev_a = 0
+        # a = 0 
+        # b = 0 
+        # i = 2
+        # while(1):
+        #     k = i - math.ceil(i/(self.r+1))
+        #     for j in range(1, k+1):
+        #         b += self.myFactorial(i-j-1) \
+        #              // self.myFactorial(math.ceil(j/self.r)-1) \
+        #              // self.myFactorial(math.ceil(j/self.r)-1) \
+        #              // self.myFactorial(i-j-math.ceil(j/self.r)) * pow(p1,math.ceil(j/self.r)) * pow((1-p1),i-j-math.ceil(j/self.r)) * p2 * pow((1-p2),j-1)
                      
-            prev_a += a
-            a += i*b
+        #     prev_a += a
+        #     a += i*b
 
-            if prev_a !=0 and a/prev_a <= 0.005 :
-                break
-            b = 0
-            i += 1
-        return a
+        #     if prev_a !=0 and a/prev_a < 0.002 :
+        #         break
+        #     b = 0
+        #     i += 1
+        # print('expect:', a)
+        # return a
+    
+        # 大數法則
+        times = 500
+        roundSum = 0
+        for _ in range(times):
+            roundSum += self.Round(p1, p2, self.r)
+
+        print('expect:', roundSum / times)
+        return roundSum / times
+
 
     def genSocialRelationship(self):
         for i in range(0, len(self.topo.nodes)):
@@ -111,7 +148,7 @@ class MyAlgorithm(AlgorithmBase):
         for req in self.srcDstPairs:
             src, dst = req[0], req[1]
             path_sd = self.givenShortestPath[(src, dst)]
-            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(path_sd), path_sd, None, False, 0, None)
+            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(path_sd), path_sd, None, False, 0, 0)
             P_sd = self.Pr(self.givenShortestPath[(src, dst)])
             minNum = 1 / P_sd
             # print('minNum:', minNum)
@@ -133,7 +170,7 @@ class MyAlgorithm(AlgorithmBase):
                 # print('curMin:', curMin)
                 if minNum > curMin:    # 分2段 取k中間  
                     minNum = curMin
-                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), path_sk, path_kd, False, 0, None)
+                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), path_sk, path_kd, False, 0, 0)
 
             # 模擬用掉這個k的一個Qubits 紀錄剩下的數量
             k = self.requestState[(src, dst, self.timeSlot)].intermediate
@@ -144,94 +181,150 @@ class MyAlgorithm(AlgorithmBase):
     def prepare(self):
         self.givenShortestPath.clear()
         self.socialRelationship.clear()
+        self.requestState.clear()
         self.socialRelationship = {node: [] for node in self.topo.nodes}
         self.establishShortestPath()
         self.genSocialRelationship()
 
     # p2 第2次篩選
     def p2Extra(self):
-        for req in self.requestState:
-            requestInfo = self.requestState[req]
 
-            if requestInfo.state == 0: 
-                src, dst = req[0], req[1]
-            elif requestInfo.state == 1:
-                src, dst = req[0], requestInfo.intermediate
-            elif requestInfo.state == 2:
-                src, dst = requestInfo.intermediate, req[1]
+        while True:
+            found = False
 
-            if not requestInfo.taken:
-                if src.remainingQubits < 1:
-                    continue
-                p = []
-                p.append(src)
-                
-                # Find a shortest path by greedy min hop  
-                while True:
-                    last = p[-1]
-                    if last == dst:
-                        break
+            for req in self.requestState:
+                requestInfo = self.requestState[req]
 
-                    # Select avaliable neighbors of last(local)
-                    selectedNeighbors = []    # type Node
-                    selectedNeighbors.clear()
-                    for neighbor in last.neighbors:
-                        if neighbor.remainingQubits > 2 or neighbor == dst and neighbor.remainingQubits > 1:
-                            for link in neighbor.links:
-                                if link.contains(last) and (not link.assigned):
-                                    # print('select neighbor:', neighbor.id)
-                                    selectedNeighbors.append(neighbor)
-                                    break
+                if requestInfo.state == 0: 
+                    src, dst = req[0], req[1]
+                elif requestInfo.state == 1:
+                    src, dst = req[0], requestInfo.intermediate
+                elif requestInfo.state == 2:
+                    src, dst = requestInfo.intermediate, req[1]
 
-                    # Choose the neighbor with smallest number of hop from it to dst
-                    next = self.topo.sentinel
-                    hopsCurMinNum = sys.maxsize
-                    for selectedNeighbor in selectedNeighbors:
-                        hopsNum = self.topo.hopsAway(selectedNeighbor, dst, 'Hop')      
-                        if hopsCurMinNum > hopsNum:
-                            hopsCurMinNum = hopsNum
-                            next = selectedNeighbor
+                if not requestInfo.taken:
+                    if src.remainingQubits < 1:
+                        continue
+                    p = []
+                    p.append(src)
+                    
+                    # Find a shortest path by greedy min hop  
+                    while True:
+                        last = p[-1]
+                        if last == dst:
+                            break
 
-                    # If have cycle, break
-                    if next == self.topo.sentinel or next in p:
-                        break 
-                    p.append(next)
-                # while end
+                        # Select avaliable neighbors of last(local)
+                        selectedNeighbors = []    # type Node
+                        selectedNeighbors.clear()
+                        for neighbor in last.neighbors:
+                            if neighbor.remainingQubits > 2 or neighbor == dst and neighbor.remainingQubits > 1:
+                                for link in neighbor.links:
+                                    if link.contains(last) and (not link.assigned):
+                                        # print('select neighbor:', neighbor.id)
+                                        selectedNeighbors.append(neighbor)
+                                        break
 
-                if p[-1] != dst:
-                    continue
-                
-                # Caculate width for p
-                width = self.topo.widthPhase2(p)
-                
-                if width == 0:
-                    continue
-                
-                # Assign Qubits for links in path     
-                for i in range(0, len(p) - 1):
-                    n1 = p[i]
-                    n2 = p[i+1]
-                    for link in n1.links:
-                        if link.contains(n2) and (not link.assigned):
-                            link.assignQubits()
+                        # Choose the neighbor with smallest number of hop from it to dst
+                        next = self.topo.sentinel
+                        hopsCurMinNum = sys.maxsize
+                        for selectedNeighbor in selectedNeighbors:
+                            hopsNum = self.topo.hopsAway(selectedNeighbor, dst, 'Hop')      
+                            if hopsCurMinNum > hopsNum:
+                                hopsCurMinNum = hopsNum
+                                next = selectedNeighbor
+
+                        # If have cycle, break
+                        if next == self.topo.sentinel or next in p:
                             break 
+                        p.append(next)
+                    # while end
 
-                if requestInfo.state == 1:
-                    dst.assignIntermediate()
-                
-                if requestInfo.state == 2:
-                    requestInfo.pathseg2 = p
-                else:
-                    requestInfo.pathseg1 = p
-                requestInfo.taken= True
+                    if p[-1] != dst:
+                        continue
+                    
+                    # Caculate width for p
+                    width = self.topo.widthPhase2(p)
+                    
+                    if width == 0:
+                        continue
+                    
+                    # Assign Qubits for links in path     
+                    for i in range(0, len(p) - 1):
+                        n1 = p[i]
+                        n2 = p[i+1]
+                        for link in n1.links:
+                            if link.contains(n2) and (not link.assigned):
+                                link.assignQubits()
+                                break 
 
-                print('P2Extra take')
+                    if requestInfo.state == 1:
+                        dst.assignIntermediate()
+                    
+                    if requestInfo.state == 2:
+                        requestInfo.pathseg2 = p
+                    else:
+                        requestInfo.pathseg1 = p
+                    requestInfo.taken= True
+                    
+                    found = True
+                    print('P2Extra take')
+
+                elif requestInfo.taken:
+                    if src.remainingQubits < 1:
+                        continue
+                    
+                    if requestInfo.state == 2:
+                        p = requestInfo.pathseg2
+                    else:
+                        p = requestInfo.pathseg1
+                    
+                    # 檢查資源
+                    unavaliable = False
+                    for n in p:
+                        if ((n == src or n == dst) and n.remainingQubits < 1) or \
+                            ((n != src and n != dst) and n.remainingQubits < 2):             
+                            unavaliable = True
+
+                    # 檢查link資源
+                    for i in range(0, len(p) - 1):
+                        n1 = p[i]
+                        n2 = p[i+1]
+                        pick = False
+                        for link in n1.links:
+                            if link.contains(n2) and (not link.assigned):
+                                pick = True
+                                continue
+
+                        if not pick:
+                            unavaliable = True  
+                    
+                    # 資源不夠 先跳過
+                    if unavaliable:
+                        continue
+
+                    # 分配資源給path
+                    for i in range(0, len(p) - 1):
+                        n1 = p[i]
+                        n2 = p[i+1]
+                        for link in n1.links:
+                            if link.contains(n2) and (not link.assigned):
+                                link.assignQubits()
+                                break
+
+                    requestInfo.width += 1
+                    found = True
+            # for end
+            if not found:
+                break
+        # while end
 
     def resetFailedRequestFor01(self, requestInfo, usedLinks):      # 第一段傳失敗
         # for link in usedLinks:
         #     link.clearPhase4Swap()
         
         requestInfo.taken = False
+        requestInfo.width = 0
         if requestInfo.state == 1:
             requestInfo.intermediate.clearIntermediate()
 
@@ -243,6 +336,7 @@ class MyAlgorithm(AlgorithmBase):
         requestInfo.state = 1
         requestInfo.pathlen = len(requestInfo.pathseg1)
         requestInfo.intermediate.clearIntermediate()
+        requestInfo.width = 0
         requestInfo.taken = False # 這邊可能有問題 重新分配資源
 
         # 第二段的資源全部釋放
@@ -253,6 +347,7 @@ class MyAlgorithm(AlgorithmBase):
         requestInfo.state = 2
         requestInfo.pathlen = len(requestInfo.pathseg2)
         requestInfo.taken = False                           # 這邊可能有問題 重新分配資源
+        requestInfo.width = 0
         # requestInfo.linkseg1 = usedLinks                  # 紀錄seg1用了哪些link seg2成功要釋放資源
 
         # 第一段的資源還是預留的 只是清掉entangled跟swap
@@ -338,8 +433,9 @@ class MyAlgorithm(AlgorithmBase):
             else:
                 requestInfo.pathseg1 = path
             requestInfo.taken= True
+            requestInfo.width = 1
         
-        # p2 (2) 對資源不夠的 另外找路徑 
+        # p2 繼續找路徑分配資源 
         self.p2Extra()
 
   
@@ -364,7 +460,9 @@ class MyAlgorithm(AlgorithmBase):
             else:
                 p = requestInfo.pathseg1
 
+            width = requestInfo.width
             usedLinks = set()
+            # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
@@ -373,15 +471,20 @@ class MyAlgorithm(AlgorithmBase):
                 prevLinks = []
                 nextLinks = []
                 
+                w = width
                 for link in curr.links:
-                    if link.entangled and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
+                    if link.entangled and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1) and w > 0:
                         prevLinks.append(link)
-                        break
+                        w -= 1
 
+                w = width
                 for link in curr.links:
-                    if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1):
+                    if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1) and w > 0:
                         nextLinks.append(link)
-                        break
+                        w -= 1
+
+                if prevLinks == None or nextLinks == None:
+                    break
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     usedLinks.add(l1)
@@ -407,7 +510,7 @@ class MyAlgorithm(AlgorithmBase):
             print('path:', [x.id for x in p])
 
             # failed
-            if success == 0:
+            if success == 0 and len(p) != 2:
                 if requestInfo.state == 0 or requestInfo.state == 1:    # 0, 1
                     self.resetFailedRequestFor01(requestInfo, usedLinks)
                 elif requestInfo.state == 2:                            # 2
@@ -416,11 +519,10 @@ class MyAlgorithm(AlgorithmBase):
                         self.resetFailedRequestFor2(requestInfo, usedLinks)
                     else:
                         self.resetFailedRequestFor01(requestInfo, usedLinks)
- 
                 continue
             
             # succeed
-            if success > 0:
+            if success > 0 or len(p) == 2:
                 if requestInfo.state == 0:      # 0
                     self.totalTime += self.timeSlot - req[2]
                     finishedRequest.append(req)
@@ -447,57 +549,23 @@ class MyAlgorithm(AlgorithmBase):
         print('total time:', self.totalTime + tmpTime)
         print('remaining request:', len(self.requestState))
         print('----------------------')
-            
+        self.topo.clearAllEntanglements() 
+        return self.totalTime + tmpTime
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
-    s = MyAlgorithm(topo)
-    for i in range(0, 500):
-        requests = []
-        if i < 1:
-            a = sample(topo.nodes, 6)
-            for n in range(0,6,2):
-                requests.append((a[n], a[n+1]))
-            s.work(requests, i)
-        else:
-            s.work([], i)
+    # topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    # s = MyAlgorithm(topo)
+    
+    # for i in range(0, 200):
+    #     requests = []
+    #     if i < 10:
+    #         a = sample(topo.nodes, 6)
+    #         for n in range(0,6,2):
+    #             requests.append((a[n], a[n+1]))
+    #         s.work(requests, i)
+    #     else:
+    #         s.work([], i)
 
-    # r=40
-    # a=0
-    # b=0
-    # p1 = 0.03
-    # p2 = 0.03
-    # for i in range(2,500):
-    #     k = i-math.ceil(i/(r+1))
-    #     for j in range(1,k+1):
-    #         b += math.factorial(i-j-1)//math.factorial(math.ceil(j/r)-1)//math.factorial(i-j-math.ceil(j/r))*pow(p1,math.ceil(j/r))*pow((1-p1),i-j-math.ceil(j/r))*p2*pow((1-p2),j-1)
-    #     a += i*b
-    #     b = 0
-
-    # print(a)
-
-
-
-    # r=40
-    # a=0
-    # aa = 0
-    # b=0
-    # p1 = 0.6
-    # p2 = 0.25
-    # i = 2
-    # while(1):
-
-    #     k = i-math.ceil(i/(r+1))
-    #     for j in range(1,k+1):
-    #         b += math.factorial(i-j-1)//math.factorial(math.ceil(j/r)-1)//math.factorial(i-j-math.ceil(j/r))*pow(p1,math.ceil(j/r))*pow((1-p1),i-j-math.ceil(j/r))*p2*pow((1-p2),j-1)  
-    #     aa += a
-    #     a += i*b
-
-    #     if aa !=0 and a/aa <= 0.005 :
-    #       break
-
-    #     b = 0
-    #     i += 1
-
-    # print(a)
+    f = open('logfile.txt', 'w')
+    f.write('aaa')

@@ -2,6 +2,7 @@ import sys
 from argon2 import PasswordHasher
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
+from MyAlgorithm import MyAlgorithm
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
@@ -16,6 +17,9 @@ class GreedyHopRouting(AlgorithmBase):
         self.totalTime = 0
         self.name = "Greedy_H"
 
+    def prepare(self):
+        self.requests.clear()
+        
     def p2(self):
         self.pathsSortedDynamically.clear()
 
@@ -59,7 +63,7 @@ class GreedyHopRouting(AlgorithmBase):
                             next = selectedNeighbor
 
                     # If have cycle, break
-                    if next == topo.sentinel or next in p:
+                    if next == self.topo.sentinel or next in p:
                         break 
                     p.append(next)
                 # while end
@@ -68,7 +72,7 @@ class GreedyHopRouting(AlgorithmBase):
                     continue
                 
                 # Caculate width for p
-                width = topo.widthPhase2(p)
+                width = self.topo.widthPhase2(p)
                 
                 if width == 0:
                     continue
@@ -142,21 +146,45 @@ class GreedyHopRouting(AlgorithmBase):
         print('p4 end')
 
         self.topo.clearAllEntanglements() 
-
+        
+        return self.totalTime + tmpTime
         
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
-    s = GreedyHopRouting(topo)
+    f = open('logfile.txt', 'w')
+    a1 = GreedyHopRouting(topo)
+    a2 = MyAlgorithm(topo)
+    samplesPerTime = 2
 
-    for i in range(0, 500):
-        requests = []
-        if i < 1:
-            a = sample(topo.nodes, 6)
-            for n in range(0,6,2):
-                requests.append((a[n], a[n+1]))
-            s.work(requests, i)
-        else:
-            s.work([], i)
+    while samplesPerTime < 11:
+        ttime = 200
+        rtime = 10
+        requests = {i : [] for i in range(ttime)}
+        t1 = 0
+        t2 = 0
+        f.write(str(samplesPerTime/2)+' ')
+        for i in range(ttime):
+            if i < rtime:
+                a = sample(topo.nodes, samplesPerTime)
+                for n in range(0,samplesPerTime,2):
+                    requests[i].append((a[n], a[n+1]))
+            
+
+        for i in range(ttime):
+            t1 = a1.work(requests[i], i)
+        f.write(str(t1/(samplesPerTime/2*rtime))+' ')
+        for i in range(ttime):
+            t2 = a2.work(requests[i], i)
+        for req in a2.requestState:
+            if a2.requestState[req].state == 2:
+                a2.requestState[req].intermediate.clearIntermediate()
+
+        f.write(str(t2/(samplesPerTime/2*rtime))+'\n')
+        samplesPerTime += 2 
+
+    # 5XX
+    f.close()
+    
     
     
