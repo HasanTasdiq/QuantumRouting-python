@@ -3,6 +3,7 @@ import sys
 import math
 import random
 from tabnanny import check
+from cupshelpers import setPPDPageSize
 import gurobipy as gp
 from gurobipy import quicksum
 from queue import PriorityQueue
@@ -58,9 +59,9 @@ class REPS(AlgorithmBase):
         print([(src.id, dst.id) for (src, dst) in self.srcDstPairs])
 
     def p2(self):
+        self.AddNewSDpairs()
         if len(self.srcDstPairs) == 0:
             return
-        self.AddNewSDpairs()
         self.PFT() # compute (self.ti, self.fi)
         for SDpair in self.srcDstPairs:
             for edge in self.topo.edges:
@@ -411,6 +412,8 @@ class REPS(AlgorithmBase):
         Ci = self.pathForELS
         self.y = {(u, v) : 0 for u in self.topo.nodes for v in self.topo.nodes}
         self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
+        needLink = {SDpair : [] for SDpair in self.srcDstPairs}
+        nextLink = {node : [] for node in self.topo.nodes}
         T = [SDpair for SDpair in self.srcDstPairs]
 
         while len(T) > 0:
@@ -469,25 +472,7 @@ class REPS(AlgorithmBase):
                 self.y[((next, node))] += 1
                 self.y[((node, prev))] += 1
                 self.y[((prev, node))] += 1
-                node.attemptSwapping(targetLink1, targetLink2)
-            
-            if len(targetPath) > 0:
-                print('-----------------')
-                print('path:', [x.id for x in targetPath[:-1]])
-                successPath = self.topo.getEstablishedEntanglements(src, dst)
-                for x in successPath:
-                    print('success:', [z.id for z in x])
-                if len(successPath):
-                    successTimes = len(successPath)
-                    for request in self.requests:
-                        if (src, dst) == (request[0], request[1]):
-                            print('finish time:', self.timeSlot - request[2])
-                            self.waitSum += (self.timeSlot - request[2])
-                            self.requests.remove(request)
-                            successTimes -= 1
-                            if successTimes == 0:
-                                break
-                print('-----------------')
+                needLink[i].append((node, targetLink1, targetLink2))
 
             T.remove(i)
 
@@ -537,28 +522,36 @@ class REPS(AlgorithmBase):
                 self.y[((next, node))] += 1
                 self.y[((node, prev))] += 1
                 self.y[((prev, node))] += 1
-                node.attemptSwapping(targetLink1, targetLink2)
-
-            if len(targetPath) > 0:
-                print('-----------------')
-                print('path:', [x.id for x in targetPath])
-
-                successPath = self.topo.getEstablishedEntanglements(src, dst)
-                for x in successPath:
-                    print('success:', [z.id for z in x])
-
-
-                if len(successPath):
-                    for request in self.requests:
-                        if (src, dst) == (request[0], request[1]):
-                            print('finish time:', self.timeSlot - request[2])
-                            self.waitSum += self.timeSlot - request[2]
-                            self.requests.remove(request)
-                            break
-                print('-----------------')
+                needLink[i].append((node, targetLink1, targetLink2))
             T.remove(i)
         
         print('ELS end')
+
+        for SDpair in self.srcDstPairs:
+            src = SDpair[0]
+            dst = SDpair[1]
+            for (node, link1, link2) in needLink[SDpair]:
+                node.attemptSwapping(link1, link2)
+                nextLink[node].append(link1)
+            successPath = self.topo.getEstablishedEntanglements(src, dst)
+            for x in successPath:
+                print('success:', [z.id for z in x])
+                for nodeIndex in range(1, len(x) - 1):
+                    node = x[nodeIndex]
+                    next = x[nodeIndex + 1]
+                    for link in nextLink[node]:
+                        if link.swapped() and link.contains(node) and link.contains(next):
+                            link.clearEntanglement()
+                            break
+            if len(successPath):
+                for request in self.requests:
+                    if (src, dst) == (request[0], request[1]):
+                        print('finish time:', self.timeSlot - request[2])
+                        self.waitSum += self.timeSlot - request[2]
+                        self.requests.remove(request)
+                        break
+            print('-----------------')
+            self.clearAllSwap()
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]
@@ -748,6 +741,9 @@ class REPS(AlgorithmBase):
 
         return False
 
+    def clearAllSwap(self):
+        for link in self.topo.links:
+            link.clearPhase4Swap()
 if __name__ == '__main__':
     
     topo = Topo.generate(100, 1, 5, 0, 6)
