@@ -1,6 +1,5 @@
 
 from dataclasses import dataclass
-from re import A
 import sys
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
@@ -248,10 +247,13 @@ class OnlineAlgorithm(AlgorithmBase):
                     i2 = i+1
                     n1 = majorPath[i1]
                     n2 = majorPath[i2]
+                    broken = True
                     for link in n1.links:
-                        if link.contains(n2) and link.assigned and link.notSwapped() and not link.entangled:
-                            brokenEdges.append((i1, i2))
+                        if link.contains(n2) and link.assigned and link.notSwapped() and link.entangled:
+                            broken = False
                             break
+                    if broken:
+                        brokenEdges.append((i1, i2))
             
                 
                 edgeToRps = {brokenEdge: [] for brokenEdge in brokenEdges}   # {tuple : [tuple, ...], ...}
