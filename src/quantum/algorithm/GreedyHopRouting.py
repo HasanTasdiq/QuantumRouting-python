@@ -3,6 +3,8 @@ from argon2 import PasswordHasher
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from MyAlgorithm import MyAlgorithm
+from OnlineAlgorithm import OnlineAlgorithm
+from GreedyGeographicRouting import GreedyGeographicRouting
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
@@ -136,7 +138,7 @@ class GreedyHopRouting(AlgorithmBase):
                 find = (p[0], p[-1], time)
                 if find in self.requests:
                     self.totalTime += self.timeSlot - time
-                    self.requests.remove((p[0], p[-1], time))
+                    self.requests.remove(find)
             print('----------------------')
 
         tmpTime = 0
@@ -153,8 +155,11 @@ if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     f = open('logfile.txt', 'w')
+    
     a1 = GreedyHopRouting(topo)
     a2 = MyAlgorithm(topo)
+    a3 = GreedyGeographicRouting(topo)
+    a4 = OnlineAlgorithm(topo)
     samplesPerTime = 2
 
     while samplesPerTime < 11:
@@ -163,7 +168,10 @@ if __name__ == '__main__':
         requests = {i : [] for i in range(ttime)}
         t1 = 0
         t2 = 0
+        t3 = 0
+        t4 = 0
         f.write(str(samplesPerTime/2)+' ')
+        f.flush()
         for i in range(ttime):
             if i < rtime:
                 a = sample(topo.nodes, samplesPerTime)
@@ -174,17 +182,29 @@ if __name__ == '__main__':
         for i in range(ttime):
             t1 = a1.work(requests[i], i)
         f.write(str(t1/(samplesPerTime/2*rtime))+' ')
+        f.flush()
+
+        for i in range(ttime):
+            t3 = a3.work(requests[i], i)
+        f.write(str(t3/(samplesPerTime/2*rtime))+' ')
+        f.flush()
+
+        for i in range(ttime):
+            t4 = a4.work(requests[i], i)
+        f.write(str(t4/(samplesPerTime/2*rtime))+' ')
+        f.flush()
+
         for i in range(ttime):
             t2 = a2.work(requests[i], i)
         for req in a2.requestState:
             if a2.requestState[req].state == 2:
-                a2.requestState[req].intermediate.clearIntermediate()
+                a2.requestState[req].intermediate.clearIntermediate()    
 
         f.write(str(t2/(samplesPerTime/2*rtime))+'\n')
+        f.flush()
         samplesPerTime += 2 
 
     # 5XX
     f.close()
-    
     
     

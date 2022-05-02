@@ -35,7 +35,7 @@ class MyAlgorithm(AlgorithmBase):
         self.requestState = {}          # {(src, dst, timeslot) : RequestInfo} request表 
         self.totalTime = 0
         self.factorialTable = {}        # 階層運算表
-        self.expectTabkle = {}          # {(path1, path2) : expectRound} expectRound表
+        self.expectTable = {}          # {(path1, path2) : expectRound} expectRound表
     
     def myFactorial(self, n):   
         if n in self.factorialTable:
@@ -159,13 +159,14 @@ class MyAlgorithm(AlgorithmBase):
                 path_sk = self.givenShortestPath[(src, k)]
                 path_kd = self.givenShortestPath[(k, dst)]
 
-                if ((src, k), (k, dst)) in self.expectTabkle:
-                    curMin = self.expectTabkle[((src, k), (k, dst))]
+                if ((src, k), (k, dst)) in self.expectTable:
+                    curMin = self.expectTable[((src, k), (k, dst))]
+                    print('get from table')
                 else:
                     P_sk = self.Pr(path_sk)
                     P_kd = self.Pr(path_kd)
                     curMin = self.expectedRound(P_sk, P_kd)
-                    self.expectTabkle[((src, k), (k, dst))] = curMin
+                    self.expectTable[((src, k), (k, dst))] = curMin
 
                 # print('curMin:', curMin)
                 if minNum > curMin:    # 分2段 取k中間  
@@ -179,12 +180,14 @@ class MyAlgorithm(AlgorithmBase):
         
 
     def prepare(self):
-        self.givenShortestPath.clear()
-        self.socialRelationship.clear()
         self.requestState.clear()
-        self.socialRelationship = {node: [] for node in self.topo.nodes}
-        self.establishShortestPath()
-        self.genSocialRelationship()
+        if len(self.givenShortestPath) == 0:
+            self.socialRelationship = {node: [] for node in self.topo.nodes}
+            self.establishShortestPath()
+            self.genSocialRelationship()
+        # self.givenShortestPath.clear()
+        # self.socialRelationship.clear()
+        
 
     # p2 第2次篩選
     def p2Extra(self):
@@ -369,7 +372,8 @@ class MyAlgorithm(AlgorithmBase):
         self.descideSegmentation()
 
         # 根據path長度排序 
-        sorted(self.requestState.items(), key=lambda x: x[1].pathlen)
+        # sorted(self.requestState.items(), key=lambda x: x[1].pathlen)
+        sorted(self.requestState.items(), key=lambda x: (x[0][2], x[1].pathlen))
         self.requestState = dict(self.requestState)
 
         # p2 (1)
@@ -554,18 +558,18 @@ class MyAlgorithm(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    # topo = Topo.generate(100, 0.9, 5, 0.05, 6)
-    # s = MyAlgorithm(topo)
+    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    s = MyAlgorithm(topo)
     
-    # for i in range(0, 200):
-    #     requests = []
-    #     if i < 10:
-    #         a = sample(topo.nodes, 6)
-    #         for n in range(0,6,2):
-    #             requests.append((a[n], a[n+1]))
-    #         s.work(requests, i)
-    #     else:
-    #         s.work([], i)
+    for i in range(0, 200):
+        requests = []
+        if i < 10:
+            a = sample(topo.nodes, 6)
+            for n in range(0,6,2):
+                requests.append((a[n], a[n+1]))
+            s.work(requests, i)
+        else:
+            s.work([], i)
 
-    f = open('logfile.txt', 'w')
-    f.write('aaa')
+    # f = open('logfile.txt', 'w')
+    # f.write('aaa')
