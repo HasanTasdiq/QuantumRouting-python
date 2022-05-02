@@ -8,14 +8,14 @@ from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 class ChartGenerator:
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
     def __init__(self, dataName, Ylabel, Xlabel, Ydiv, Ystart, Yend, Yinterval):
-        Ydiv = int(10 ** Ydiv)
+        div = int(10 ** Ydiv)
         print("start generator")
         color = [
             "#000000",
             "#006400",
-            "#000000",
             "#FF1493",
             "#7FFF00",   
+            "#900321",
             "#000000",
             "#000000",
             "#000000",
@@ -80,7 +80,7 @@ class ChartGenerator:
 
         for i in range(numOfAlgo):
             for j in range(numOfData):
-                y[i][j] = float(y[i][j]) / Ydiv
+                y[i][j] = float(y[i][j]) / div
 
         marker = ['o', 's', 'v', 'x', 'd']
         for i in range(numOfAlgo):
@@ -89,15 +89,15 @@ class ChartGenerator:
         plt.xticks(fontsize=Xticks_fontsize)
         plt.yticks(fontsize=Yticks_fontsize)
         
-        AlgoName = ["Greedy_hop", "Greedy_geo", "QCAST", "MyAlgo", "REPS"]
+        AlgoName = ["Greedy_hop", "MyAlgo", "Greedy_geo", "QCAST", "REPS"]
 
         leg = plt.legend(
             AlgoName[0 : numOfAlgo],
             loc=10,
             bbox_to_anchor=(0.4, 1.1),
-            prop={"size": "30", "family": "Times New Roman"},
+            prop={"size": "15", "family": "Times New Roman"},
             frameon="False",
-            labelspacing=0,
+            labelspacing=1,
             handletextpad=0.2,
             handlelength=1,
             columnspacing=0.5,
@@ -129,4 +129,4 @@ class ChartGenerator:
 
 if __name__ == "__main__":
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
-    ChartGenerator("total_time.txt", "need #round", "#Request of a round", 0, 0, 200, 50)
+    ChartGenerator("data.txt", "need #round", "#Request of a round", 0, 0, 150, 50)

@@ -13,7 +13,7 @@ from random import sample
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
-    f = open('logfile.txt', 'w')
+    f = open('../../plot/data/data.txt', 'w')
 
     algo = []
     algo.append(GreedyHopRouting(topo))
