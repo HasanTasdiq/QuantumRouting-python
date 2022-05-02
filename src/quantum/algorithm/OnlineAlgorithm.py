@@ -15,8 +15,7 @@ class RecoveryPath:
     path: list
     width: int
     taken: int 
-    available: int 
-
+    available: int
 
 class OnlineAlgorithm(AlgorithmBase):
 
@@ -28,6 +27,11 @@ class OnlineAlgorithm(AlgorithmBase):
         self.recoveryPaths = {}         # {PickedPath: [PickedPath, ...], ...}
         self.pathToRecoveryPaths = {}   # {PickedPath : [RecoveryPath, ...], ...}
         self.allowRecoveryPaths = allowRecoveryPaths
+        self.requests = []
+        self.totalTime = 0
+    
+    def prepare(self):
+        self.requests.clear()
 
     # P2
     def p2(self):
@@ -35,8 +39,12 @@ class OnlineAlgorithm(AlgorithmBase):
         self.recoveryPaths.clear()
         self.pathToRecoveryPaths.clear()
 
+        for req in self.srcDstPairs:
+            (src, dst) = req
+            self.requests.append((src, dst, self.timeSlot))
+
         while True: 
-            candidates = self.calCandidates(self.srcDstPairs) # candidates -> [PickedPath, ...]   
+            candidates = self.calCandidates(self.requests) # candidates -> [PickedPath, ...]   
             sorted(candidates, key=lambda x: x.weight)
             if len(candidates) == 0:
                 break
@@ -55,11 +63,11 @@ class OnlineAlgorithm(AlgorithmBase):
             
          
     # 對每個SD-pair找出候選路徑，目前不確定只會找一條還是可以多條
-    def calCandidates(self, pairs: list): # pairs -> [(Node, Node), ...]
-        candidates = []
-        for pair in pairs:
+    def calCandidates(self, requests: list): # pairs -> [(Node, Node), ...]
+        candidates = [] 
+        for req in requests:
             candidate = []
-            src, dst = pair[0], pair[1]
+            (src, dst, time) = req
             maxM = max(src.remainingQubits, dst.remainingQubits)
             if maxM == 0:   # not enough qubit
                 continue
@@ -131,7 +139,7 @@ class OnlineAlgorithm(AlgorithmBase):
 
                     # If find the dst add path to candidates
                     if u == dst:        
-                        candidate.append(PickedPath(E[dst.id][0], w, getPathFromSrc(dst)))
+                        candidate.append(PickedPath(E[dst.id][0], w, getPathFromSrc(dst), time))
                         break
                     
                     # Update neighbors by EXT
@@ -182,11 +190,12 @@ class OnlineAlgorithm(AlgorithmBase):
     def P2Extra(self):
         for majorPath in self.majorPaths:
             p = majorPath.path
+
             for l in range(1, self.topo.k + 1):
                 for i in range(0, len(p) - l):
                     (src, dst) = (p[i], p[i+l])
 
-                    candidates = self.calCandidates([(src, dst)]) # candidates -> [PickedPath, ...]   
+                    candidates = self.calCandidates([(src, dst, self.timeSlot)]) # candidates -> [PickedPath, ...]   
                     sorted(candidates, key=lambda x: x.weight)
                     if len(candidates) == 0:
                         continue
@@ -199,6 +208,8 @@ class OnlineAlgorithm(AlgorithmBase):
         for pathWithWidth in self.majorPaths:
             width = pathWithWidth.width
             majorPath = pathWithWidth.path
+            time = pathWithWidth.time
+            oldNumOfPairs = len(self.topo.getEstablishedEntanglements(majorPath[0], majorPath[-1]))
 
             recoveryPaths = self.recoveryPaths[pathWithWidth]   # recoveryPaths -> [pickedPath, ...]
             sorted(recoveryPaths, key=lambda x: len(x.path)*10000 + majorPath.index(x.path[0])) # sort recoveryPaths by it recoverypath length and the index of the first node in recoveryPath  
@@ -379,22 +390,36 @@ class OnlineAlgorithm(AlgorithmBase):
                         if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1):
                             nextLinks.append(link)
                             break
+                    
+                    if prevLinks == None or nextLinks == None:
+                        break
 
                     for (l1, l2) in zip(prevLinks, nextLinks):                    
                         curr.attemptSwapping(l1, l2)
                 # for swap end
             # for w end
-            r = self.topo.getEstablishedEntanglements(acc[0], acc[-1])
-            for x in r:
-                print('success:', [z.id for z in x])
+            succ = len(self.topo.getEstablishedEntanglements(acc[0], acc[-1])) - oldNumOfPairs
+            
+            if succ > 0 or len(acc) == 2:
+                find = (acc[0], acc[-1], time)
+                if find in self.requests:
+                    self.totalTime += self.timeSlot - time
+                    self.requests.remove(find)
         # for pathWithWidth end
+        tmpTime = 0
+        for req in self.requests:
+            tmpTime += self.timeSlot - req[2]
+        print('total time:', self.totalTime + tmpTime)
+        self.topo.clearAllEntanglements()
+        
+        return self.totalTime + tmpTime
 
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.01, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = OnlineAlgorithm(topo)
     for i in range(0, 100):
-        if i < 50:
+        if i < 10:
             a = sample(topo.nodes, 2)
             s.work([(a[0],a[1])], i)
         else:

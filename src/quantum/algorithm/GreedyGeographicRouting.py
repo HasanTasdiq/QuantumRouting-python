@@ -16,6 +16,9 @@ class GreedyGeographicRouting(AlgorithmBase):
         self.totalTime = 0
         self.name = "Greedy_G"
 
+    def prepare(self):
+        self.requests.clear()
+
     def p2(self):
         self.pathsSortedDynamically.clear()
 
@@ -132,7 +135,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                 find = (p[0], p[-1], time)
                 if find in self.requests:
                     self.totalTime += self.timeSlot - time
-                    self.requests.remove((p[0], p[-1], time))
+                    self.requests.remove(find)
             print('----------------------')
 
         tmpTime = 0
