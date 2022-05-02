@@ -1,5 +1,4 @@
 import sys
-from argon2 import PasswordHasher
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from topo.Topo import Topo 

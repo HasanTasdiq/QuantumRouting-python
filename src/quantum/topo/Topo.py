@@ -60,7 +60,7 @@ class Topo:
 
         # for _node in _nodes:
         #     for _node2 in _nodes:
-        #         if self.distance(_positions[_node], _positions[_node2]) <= 5:
+        #         if self.distance(_positions[_node], _positions[_node2]) <= 10:
         #             print('node 1:', _node, 'node 2:', _node2, self.distance(_positions[_node], _positions[_node2]))
 
         _edges = [] # reset edge
@@ -134,9 +134,9 @@ class Topo:
         return d ** 0.5
 
     def generate(n, q, k, a, degree):
-        dist = lambda x, y: distance(x, y)
-        # dist = lambda x, y: sum(abs((a**2 - b**2)**0.5) for a, b in zip(x, y))
-        G = nx.waxman_graph(n, beta=0.5, alpha=0.1, L=5, domain=(0, 0, 100, 100), metric=dist)
+        # dist = lambda x, y: distance(x, y)
+        dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
+        G = nx.waxman_graph(n, beta=0.5, alpha=0.1, L=5, domain=(0, 0, 50, 200), metric=dist)
 
         return Topo(G, q, k, a, degree)
 
