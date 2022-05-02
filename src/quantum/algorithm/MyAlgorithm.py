@@ -64,7 +64,7 @@ class MyAlgorithm(AlgorithmBase):
             p = math.exp(-self.topo.alpha * d)
             P *= p
 
-        return P
+        return P * (self.topo.q**(len(path) - 2))
     
     def Round(self, p1, p2, r):
         state = 0 # 0 1 2
@@ -156,15 +156,16 @@ class MyAlgorithm(AlgorithmBase):
                     continue
                 path_sk = self.givenShortestPath[(src, k)]
                 path_kd = self.givenShortestPath[(k, dst)]
+                expectKey = ((src, k), (k, dst))
 
-                if ((src, k), (k, dst)) in self.expectTable:
-                    curMin = self.expectTable[((src, k), (k, dst))]
+                if expectKey in self.expectTable:
+                    curMin = self.expectTable[expectKey]
                     print('get from table')
                 else:
                     P_sk = self.Pr(path_sk)
                     P_kd = self.Pr(path_kd)
                     curMin = self.expectedRound(P_sk, P_kd)
-                    self.expectTable[((src, k), (k, dst))] = curMin
+                    self.expectTable[expectKey] = curMin
 
                 # print('curMin:', curMin)
                 if minNum > curMin:    # 分2段 取k中間  
@@ -561,7 +562,7 @@ if __name__ == '__main__':
     
     for i in range(0, 200):
         requests = []
-        if i < 10:
+        if i < 1:
             a = sample(topo.nodes, 6)
             for n in range(0,6,2):
                 requests.append((a[n], a[n+1]))
