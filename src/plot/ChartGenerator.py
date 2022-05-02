@@ -82,14 +82,14 @@ class ChartGenerator:
             for j in range(numOfData):
                 y[i][j] = float(y[i][j]) / Ydiv
 
-        marker = ['o', 's', 'v', 'x']
+        marker = ['o', 's', 'v', 'x', 'd']
         for i in range(numOfAlgo):
             ax1.plot(x, y[i],color=color[i],lw=2.5,linestyle="-",marker=marker[i],markersize=20,markerfacecolor="none",markeredgewidth=2.5)
         # plt.show()
         plt.xticks(fontsize=Xticks_fontsize)
         plt.yticks(fontsize=Yticks_fontsize)
         
-        AlgoName = ["MyAlgo","Greedy","QCAST", "REPS"]
+        AlgoName = ["Greedy_hop", "Greedy_geo", "QCAST", "MyAlgo", "REPS"]
 
         leg = plt.legend(
             AlgoName[0 : numOfAlgo],
