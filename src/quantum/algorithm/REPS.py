@@ -18,7 +18,7 @@ class REPS(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
         self.name = "REPS"
-        self.waitSum = 0
+        self.totalTime = 0
         self.requests = []
         if not self.checkConnected():
             print("[REPS]Graph is not connected")
@@ -60,7 +60,7 @@ class REPS(AlgorithmBase):
         remainTime = 0
         for request in self.requests:
             remainTime += (self.timeSlot - request[2])
-        print("total time:", self.waitSum + remainTime)
+        print("total time:", self.totalTime + remainTime)
         print("remain request:", len(self.requests))
         print("current Timeslot:", self.timeSlot)
 
@@ -87,6 +87,10 @@ class REPS(AlgorithmBase):
         self.ELS()
         print('[REPS]p4 end') 
         self.printResult()
+        remainTime = 0
+        for request in self.requests:
+            remainTime += (self.timeSlot - request[2])
+        return self.totalTime + remainTime
 
     
     # return fi(u, v)
@@ -578,7 +582,7 @@ class REPS(AlgorithmBase):
                 for request in self.requests:
                     if (src, dst) == (request[0], request[1]):
                         print('finish time:', self.timeSlot - request[2])
-                        self.waitSum += self.timeSlot - request[2]
+                        self.totalTime += self.timeSlot - request[2]
                         self.requests.remove(request)
                         break
                 print('-----------------')
