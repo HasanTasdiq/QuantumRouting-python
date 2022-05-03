@@ -54,18 +54,19 @@ if __name__ == '__main__':
         #             a = sample(topo.nodes, 2)
         #             requests[i].append((a[0], a[1]))
 
+        ids = {i : [] for i in range(ttime)}
+        for i in range(ttime):
+            if i < rtime:
+                for _ in range(numOfRequestPerRound):
+                    a = sample([i for i in range(100)], 2)
+                    ids[i].append((a[0], a[1]))
+        
         for algoIndex in range(len(algorithms)):
             algo = copy.deepcopy(algorithms[algoIndex])
-            # Job = threading.Thread(target = run, args = (algo, requests.copy(), algoIndex, numOfRequestPerRound, ttime))
-            # threads[numOfRequestPerRound].append(Job)
-
             requests = {i : [] for i in range(ttime)}
-            for i in range(ttime):
-                if i < rtime:
-                    for _ in range(numOfRequestPerRound):
-                        a = sample([i for i in range(100)], 2)
-                        requests[i].append((algo.topo.nodes[a[0]], algo.topo.nodes[a[1]]))
-            
+            for i in range(rtime):
+                for (src, dst) in ids[i]:
+                    requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
             Job = threading.Thread(target = run, args = (algo, requests, algoIndex, numOfRequestPerRound, ttime))
             threads[numOfRequestPerRound].append(Job)
 
@@ -82,7 +83,7 @@ if __name__ == '__main__':
         f.write(str(numOfRequestPerRound))
         for algoIndex in range(len(algorithms)):
             f.write(' ')
-            f.write(str(numOfRequestPerRound))
+            f.write(str(t[numOfRequestPerRound][algoIndex]))
         f.write('\n')
     # 5XX
     f.close()

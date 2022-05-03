@@ -447,8 +447,9 @@ class REPS(AlgorithmBase):
         Ci = self.pathForELS
         self.y = {(u, v) : 0 for u in self.topo.nodes for v in self.topo.nodes}
         self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
-        needLink = {SDpair : [] for SDpair in self.srcDstPairs}
+        needLink = {}
         nextLink = {node : [] for node in self.topo.nodes}
+        Pi = {SDpair : [] for SDpair in self.srcDstPairs}
         T = [SDpair for SDpair in self.srcDstPairs]
 
         while len(T) > 0:
@@ -492,6 +493,8 @@ class REPS(AlgorithmBase):
                     targetPath = path
                     minR = r
             
+            Pi[SDpair].append(targetPath)
+            needLink[targetPath] = []
             for nodeIndex in range(1, len(targetPath) - 2):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -507,7 +510,9 @@ class REPS(AlgorithmBase):
                 self.y[((next, node))] += 1
                 self.y[((node, prev))] += 1
                 self.y[((prev, node))] += 1
-                needLink[i].append((node, targetLink1, targetLink2))
+
+                nextLink[node].append(targetLink1)
+                needLink[targetPath].append((node, targetLink1, targetLink2))
 
             T.remove(i)
 
@@ -557,7 +562,8 @@ class REPS(AlgorithmBase):
                 self.y[((next, node))] += 1
                 self.y[((node, prev))] += 1
                 self.y[((prev, node))] += 1
-                needLink[i].append((node, targetLink1, targetLink2))
+                nextLink[node].append(targetLink1)
+                needLink[targetPath].append((node, targetLink1, targetLink2))
             T.remove(i)
         
         print('[REPS]ELS end')
@@ -565,30 +571,31 @@ class REPS(AlgorithmBase):
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
-            for (node, link1, link2) in needLink[SDpair]:
-                node.attemptSwapping(link1, link2)
-                nextLink[node].append(link1)
-            successPath = self.topo.getEstablishedEntanglements(src, dst)
-            for x in successPath:
-                print('success:', [z.id for z in x])
-                for nodeIndex in range(1, len(x) - 1):
-                    node = x[nodeIndex]
-                    next = x[nodeIndex + 1]
-                    for link in nextLink[node]:
-                        if link.swapped() and link.contains(node) and link.contains(next):
-                            link.clearEntanglement()
+
+            for path in Pi[SDpair]:
+                for (node, link1, link2) in needLink[path]:
+                    node.attemptSwapping(link1, link2)
+                successPath = self.topo.getEstablishedEntanglements(src, dst)
+                for x in successPath:
+                    print('success:', [z.id for z in x])
+                    for nodeIndex in range(1, len(x) - 1):
+                        node = x[nodeIndex]
+                        next = x[nodeIndex + 1]
+                        for link in nextLink[node]:
+                            if link.swapped() and link.contains(node) and link.contains(next):
+                                link.clearEntanglement()
+                                break
+                if len(successPath):
+                    for request in self.requests:
+                        if (src, dst) == (request[0], request[1]):
+                            print('finish time:', self.timeSlot - request[2])
+                            self.totalTime += self.timeSlot - request[2]
+                            self.requests.remove(request)
                             break
-            if len(successPath):
-                for request in self.requests:
-                    if (src, dst) == (request[0], request[1]):
-                        print('finish time:', self.timeSlot - request[2])
-                        self.totalTime += self.timeSlot - request[2]
-                        self.requests.remove(request)
-                        break
-                print('-----------------')
-            for (node, link1, link2) in needLink[SDpair]:
-                link1.clearPhase4Swap()
-                link2.clearPhase4Swap()
+                    print('-----------------')
+                for (node, link1, link2) in needLink[path]:
+                    link1.clearPhase4Swap()
+                    link2.clearPhase4Swap()
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]
