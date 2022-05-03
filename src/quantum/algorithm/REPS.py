@@ -433,9 +433,9 @@ class REPS(AlgorithmBase):
                     select = (width / self.tki[SDpair][k]) >= random.random()
                     if not select:
                         continue
-                    
+                    path = path[:-1]
                     self.pathForELS[SDpair].append(path)
-                    pathLen = len(path) - 1
+                    pathLen = len(path)
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
                         next = path[nodeIndex + 1]
@@ -456,7 +456,7 @@ class REPS(AlgorithmBase):
             for SDpair in self.srcDstPairs:
                 removePaths = []
                 for path in Ci[SDpair]:
-                    pathLen = len(path) - 1
+                    pathLen = len(path)
                     noResource = False
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
@@ -477,8 +477,8 @@ class REPS(AlgorithmBase):
             minLength = math.inf
             for SDpair in T:
                 for path in Ci[SDpair]:
-                    if len(path) - 1 < minLength:
-                        minLength = len(path) - 1
+                    if len(path) < minLength:
+                        minLength = len(path)
                         i = SDpair
             
             src = i[0]
@@ -487,14 +487,16 @@ class REPS(AlgorithmBase):
             minR = math.inf
             for path in Ci[i]:
                 r = 0
-                for k in range(len(path) - 1):
-                    r += self.weightOfNode[path[k]]
+                for node in path:
+                    r += self.weightOfNode[node]
                 if minR > r:
                     targetPath = path
                     minR = r
             
-            Pi[SDpair].append(targetPath)
-            needLink[targetPath] = []
+            pathIndex = len(Pi[i])
+            needLink[(i, pathIndex)] = []
+
+            Pi[i].append(targetPath)
             for nodeIndex in range(1, len(targetPath) - 2):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -512,7 +514,7 @@ class REPS(AlgorithmBase):
                 self.y[((prev, node))] += 1
 
                 nextLink[node].append(targetLink1)
-                needLink[targetPath].append((node, targetLink1, targetLink2))
+                needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
 
             T.remove(i)
 
@@ -521,7 +523,7 @@ class REPS(AlgorithmBase):
             for SDpair in self.srcDstPairs:
                 removePaths = []
                 for path in Ci[SDpair]:
-                    pathLen = len(path) - 1
+                    pathLen = len(path)
                     noResource = False
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
@@ -547,6 +549,9 @@ class REPS(AlgorithmBase):
             dst = i[1]
 
             targetPath = self.findPathForELS(i)
+            pathIndex = len(Pi[i])
+            needLink[(i, pathIndex)] = []
+            Pi[i].append(targetPath)
             for nodeIndex in range(1, len(targetPath) - 1):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -563,28 +568,24 @@ class REPS(AlgorithmBase):
                 self.y[((node, prev))] += 1
                 self.y[((prev, node))] += 1
                 nextLink[node].append(targetLink1)
-                needLink[targetPath].append((node, targetLink1, targetLink2))
+                needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
             T.remove(i)
         
         print('[REPS]ELS end')
-
+        print([(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
 
-            for path in Pi[SDpair]:
-                for (node, link1, link2) in needLink[path]:
+            for pathIndex in range(len(Pi[SDpair])):
+                path = Pi[SDpair][pathIndex]
+                print('attempt:', [node.id for node in path])
+                for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     node.attemptSwapping(link1, link2)
                 successPath = self.topo.getEstablishedEntanglements(src, dst)
                 for x in successPath:
                     print('success:', [z.id for z in x])
-                    for nodeIndex in range(1, len(x) - 1):
-                        node = x[nodeIndex]
-                        next = x[nodeIndex + 1]
-                        for link in nextLink[node]:
-                            if link.swapped() and link.contains(node) and link.contains(next):
-                                link.clearEntanglement()
-                                break
+
                 if len(successPath):
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
@@ -593,7 +594,7 @@ class REPS(AlgorithmBase):
                             self.requests.remove(request)
                             break
                     print('-----------------')
-                for (node, link1, link2) in needLink[path]:
+                for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     link1.clearPhase4Swap()
                     link2.clearPhase4Swap()
 
@@ -789,9 +790,10 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 1, 5, 0, 6)
     s = REPS(topo)
     for i in range(0, 100):
-        if i < 50:
+        if i < 10:
             a = sample(topo.nodes, 6)
-            s.work([], i)
+            requests = [(a[n], a[n + 1]) for n in range(0, len(a), 2)]
+            s.work(requests, i)
             # s.work([(a[0],a[1]), (a[2], a[3])], i)
         else:
             s.work([], i)
