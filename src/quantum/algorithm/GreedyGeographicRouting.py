@@ -16,6 +16,7 @@ class GreedyGeographicRouting(AlgorithmBase):
         self.name = "Greedy_G"
 
     def prepare(self):
+        self.totalTime = 0
         self.requests.clear()
 
     def p2(self):
@@ -137,15 +138,15 @@ class GreedyGeographicRouting(AlgorithmBase):
                     self.requests.remove(find)
             print('----------------------')
 
-        tmpTime = 0
+        remainTime = 0
         for req in self.requests:
-            tmpTime += self.timeSlot - req[2]
-        print('total time:', self.totalTime + tmpTime)
+            remainTime += self.timeSlot - req[2]
+        print('total time:', self.totalTime + remainTime)
         print('p4 end')
 
         self.topo.clearAllEntanglements()      
                     
-        return self.totalTime + tmpTime
+        return self.totalTime + remainTime
                     
 if __name__ == '__main__':
 

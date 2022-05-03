@@ -19,6 +19,7 @@ class GreedyHopRouting(AlgorithmBase):
         self.name = "Greedy_H"
 
     def prepare(self):
+        self.totalTime = 0
         self.requests.clear()
         
     def p2(self):
@@ -83,7 +84,7 @@ class GreedyHopRouting(AlgorithmBase):
                 sorted(self.pathsSortedDynamically, key=lambda x: x[1])
 
                 # Assign Qubits for links in path 
-                for i in range(0, width):
+                for _ in range(0, width):
                     for s in range(0, len(p) - 1):
                         n1 = p[s]
                         n2 = p[s+1]
@@ -140,15 +141,15 @@ class GreedyHopRouting(AlgorithmBase):
                     self.requests.remove(find)
             print('----------------------')
 
-        tmpTime = 0
+        remainTime = 0
         for req in self.requests:
-            tmpTime += self.timeSlot - req[2]
-        print('total time:', self.totalTime + tmpTime)
+            remainTime += self.timeSlot - req[2]
+        print('total time:', self.totalTime + remainTime)
         print('p4 end')
 
         self.topo.clearAllEntanglements() 
         
-        return self.totalTime + tmpTime
+        return self.totalTime + remainTime
         
 if __name__ == '__main__':
 
@@ -156,54 +157,62 @@ if __name__ == '__main__':
     f = open('logfile.txt', 'w')
     
     a1 = GreedyHopRouting(topo)
-    a2 = MyAlgorithm(topo)
-    a3 = GreedyGeographicRouting(topo)
-    a4 = OnlineAlgorithm(topo)
-    samplesPerTime = 2
+    # a2 = MyAlgorithm(topo)
+    # a3 = GreedyGeographicRouting(topo)
+    # a4 = OnlineAlgorithm(topo)
+    # samplesPerTime = 2
 
-    while samplesPerTime < 11:
-        ttime = 200
-        rtime = 10
-        requests = {i : [] for i in range(ttime)}
-        t1 = 0
-        t2 = 0
-        t3 = 0
-        t4 = 0
-        f.write(str(samplesPerTime/2)+' ')
-        f.flush()
-        for i in range(ttime):
-            if i < rtime:
-                a = sample(topo.nodes, samplesPerTime)
-                for n in range(0,samplesPerTime,2):
-                    requests[i].append((a[n], a[n+1]))
+    # while samplesPerTime < 11:
+    #     ttime = 200
+    #     rtime = 10
+    #     requests = {i : [] for i in range(ttime)}
+    #     t1 = 0
+    #     t2 = 0
+    #     t3 = 0
+    #     t4 = 0
+    #     f.write(str(samplesPerTime/2)+' ')
+    #     f.flush()
+    #     for i in range(ttime):
+    #         if i < rtime:
+    #             a = sample(topo.nodes, samplesPerTime)
+    #             for n in range(0,samplesPerTime,2):
+    #                 requests[i].append((a[n], a[n+1]))
             
 
-        for i in range(ttime):
-            t1 = a1.work(requests[i], i)
-        f.write(str(t1/(samplesPerTime/2*rtime))+' ')
-        f.flush()
+    #     for i in range(ttime):
+    #         t1 = a1.work(requests[i], i)
+    #     f.write(str(t1/(samplesPerTime/2*rtime))+' ')
+    #     f.flush()
 
-        for i in range(ttime):
-            t3 = a3.work(requests[i], i)
-        f.write(str(t3/(samplesPerTime/2*rtime))+' ')
-        f.flush()
+    #     for i in range(ttime):
+    #         t3 = a3.work(requests[i], i)
+    #     f.write(str(t3/(samplesPerTime/2*rtime))+' ')
+    #     f.flush()
 
-        for i in range(ttime):
-            t4 = a4.work(requests[i], i)
-        f.write(str(t4/(samplesPerTime/2*rtime))+' ')
-        f.flush()
+    #     for i in range(ttime):
+    #         t4 = a4.work(requests[i], i)
+    #     f.write(str(t4/(samplesPerTime/2*rtime))+' ')
+    #     f.flush()
 
-        for i in range(ttime):
-            t2 = a2.work(requests[i], i)
-        for req in a2.requestState:
-            if a2.requestState[req].state == 2:
-                a2.requestState[req].intermediate.clearIntermediate()    
+    #     for i in range(ttime):
+    #         t2 = a2.work(requests[i], i)
+    #     for req in a2.requestState:
+    #         if a2.requestState[req].state == 2:
+    #             a2.requestState[req].intermediate.clearIntermediate()    
 
-        f.write(str(t2/(samplesPerTime/2*rtime))+'\n')
-        f.flush()
-        samplesPerTime += 2 
+    #     f.write(str(t2/(samplesPerTime/2*rtime))+'\n')
+    #     f.flush()
+    #     samplesPerTime += 2 
 
-    # 5XX
-    f.close()
+    # # 5XX
+    # f.close()
     
-    
+    for i in range(0, 200):
+        requests = []
+        if i < 1:
+            for j in range(50):
+                a = sample(topo.nodes, 2)
+                requests.append((a[0], a[1]))
+            a1.work(requests, i)
+        else:
+            a1.work([], i)

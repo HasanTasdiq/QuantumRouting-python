@@ -28,12 +28,18 @@ class MyAlgorithm(AlgorithmBase):
         self.pathsSortedDynamically = []
         self.name = "My"
         self.r = 40                     # 暫存回合
-        self.givenShortestPath = {}     # {(src, dst): path, ...} path表
-        self.socialRelationship = {}    # {Node : [Node, ...], ...} social表
-        self.requestState = {}          # {(src, dst, timeslot) : RequestInfo} request表 
+        self.givenShortestPath = {}     # {(src, dst): path, ...}               path表
+        # self.socialRelationship = {}    # {Node : [Node, ...], ...}             node-social表
+        self.requestState = {}          # {(src, dst, timeslot) : RequestInfo}  request表 
         self.totalTime = 0
+        self.idleTime = 0
         self.factorialTable = {}        # 階層運算表
-        self.expectTable = {}          # {(path1, path2) : expectRound} expectRound表
+        self.expectTable = {}           # {(path1, path2) : expectRound}        expectRound表
+        self.SN = {}                    # social network
+
+        self.socialRelationship = {node: [] for node in self.topo.nodes}
+        self.establishShortestPath()
+        self.genSocialRelationship()
     
     def myFactorial(self, n):   
         if n in self.factorialTable:
@@ -120,17 +126,44 @@ class MyAlgorithm(AlgorithmBase):
         print('expect:', roundSum / times)
         return roundSum / times
 
-
     def genSocialRelationship(self):
-        for i in range(0, len(self.topo.nodes)):
+        # for i in range(len(self.topo.nodes)):
+        #     for j in range(i+1, len(self.topo.nodes)):
+        #         n1 = self.topo.nodes[i]
+        #         n2 = self.topo.nodes[j]
+        #         p = random.random() 
+        #         if p <= 0.5:
+        #             self.socialRelationship[n1].append(n2)
+        #             self.socialRelationship[n2].append(n1)
+        #             print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
+        userNum = 8
+        node2user = {}
+        self.genSocialNetwork(userNum, 0.5)
+        users = [i for i in range(userNum)]
+        for i in range(len(self.topo.nodes)):
+            user = sample(users, 1)
+            node2user[i] = user[0]
+        
+        for i in range(len(self.topo.nodes)):
             for j in range(i+1, len(self.topo.nodes)):
-                n1 = self.topo.nodes[i]
-                n2 = self.topo.nodes[j]
-                p = random.random() + 0.05
-                if p >= 0.5:
+                user1 = node2user[i]
+                user2 = node2user[j]     
+                if user1 in self.SN[user2]:
+                    n1 = self.topo.nodes[i]
+                    n2 = self.topo.nodes[j]
                     self.socialRelationship[n1].append(n2)
                     self.socialRelationship[n2].append(n1)
                     print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
+    
+    def genSocialNetwork(self, userNum, density):
+        self.SN = {i: [] for i in range(userNum)}
+        for i in range(userNum):
+            for j in range(i+1, userNum):
+                p = random.random()
+                if p <= density:
+                    self.SN[i].append(j)
+                    self.SN[j].append(i)
+        
 
     # p1
     def descideSegmentation(self):
@@ -180,10 +213,11 @@ class MyAlgorithm(AlgorithmBase):
 
     def prepare(self):
         self.requestState.clear()
-        if len(self.givenShortestPath) == 0:
-            self.socialRelationship = {node: [] for node in self.topo.nodes}
-            self.establishShortestPath()
-            self.genSocialRelationship()
+        self.totalTime = 0
+        # if len(self.givenShortestPath) == 0:
+        #     self.socialRelationship = {node: [] for node in self.topo.nodes}
+        #     self.establishShortestPath()
+        #     self.genSocialRelationship()
         # self.givenShortestPath.clear()
         # self.socialRelationship.clear()
         
@@ -372,7 +406,7 @@ class MyAlgorithm(AlgorithmBase):
 
         # 根據path長度排序 
         # sorted(self.requestState.items(), key=lambda x: x[1].pathlen)
-        sorted(self.requestState.items(), key=lambda x: (x[0][2], x[1].pathlen))
+        sorted(self.requestState.items(), key=lambda x: (-x[1].state, x[0][2], x[1].pathlen))
         self.requestState = dict(self.requestState)
 
         # p2 (1)
@@ -545,30 +579,37 @@ class MyAlgorithm(AlgorithmBase):
             self.requestState.pop(req)
         self.srcDstPairs.clear()
 
-        tmpTime = 0
+        remainTime = 0
         for req in self.requestState:
-            tmpTime += self.timeSlot - req[2]
+            remainTime += self.timeSlot - req[2]
         print('----------------------')
-        print('total time:', self.totalTime + tmpTime)
+        print('total time:', self.totalTime + remainTime)
         print('remaining request:', len(self.requestState))
         print('----------------------')
         self.topo.clearAllEntanglements() 
-        return self.totalTime + tmpTime
+        return self.totalTime + remainTime
     
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = MyAlgorithm(topo)
     
+    # for i in range(0, 200):
+    #     requests = []
+    #     if i < 1:
+    #         for j in range(50):
+    #             a = sample(topo.nodes, 2)
+    #             requests.append((a[0], a[1]))
+    #         s.work(requests, i)
+    #     else:
+    #         s.work([], i)
+
+    
     for i in range(0, 200):
         requests = []
-        if i < 1:
-            a = sample(topo.nodes, 6)
-            for n in range(0,6,2):
-                requests.append((a[n], a[n+1]))
+        if i < 2:
+            for n in range(0,2,2):
+                requests.append((topo.nodes[0], topo.nodes[1]))
             s.work(requests, i)
         else:
             s.work([], i)
-
-    # f = open('logfile.txt', 'w')
-    # f.write('aaa')

@@ -30,6 +30,7 @@ class OnlineAlgorithm(AlgorithmBase):
         self.totalTime = 0
     
     def prepare(self):
+        self.totalTime = 0
         self.requests.clear()
 
     # P2
@@ -408,19 +409,19 @@ class OnlineAlgorithm(AlgorithmBase):
                     self.totalTime += self.timeSlot - time
                     self.requests.remove(find)
         # for pathWithWidth end
-        tmpTime = 0
+        remainTime = 0
         for req in self.requests:
-            tmpTime += self.timeSlot - req[2]
-        print('total time:', self.totalTime + tmpTime)
+            remainTime += self.timeSlot - req[2]
+        print('total time:', self.totalTime + remainTime)
         self.topo.clearAllEntanglements()
         
-        return self.totalTime + tmpTime
+        return self.totalTime + remainTime
 
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = OnlineAlgorithm(topo)
-    for i in range(0, 100):
+    for i in range(0, 200):
         if i < 10:
             a = sample(topo.nodes, 2)
             s.work([(a[0],a[1])], i)
