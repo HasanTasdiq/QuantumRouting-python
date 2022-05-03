@@ -1,3 +1,4 @@
+import threading
 import sys
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
@@ -10,52 +11,61 @@ from topo.Topo import Topo
 from topo.Node import Node 
 from topo.Link import Link
 from random import sample
-if __name__ == '__main__':
 
+
+def run(algo, requests, algoIndex, numOfRequestPerRound, ttime):            
+    for i in range(ttime):
+        result = algo.work(requests[i], i)
+    if algoIndex == 1:
+        for req in algo.requestState:
+            if algo.requestState[req].state == 2:
+                algo.requestState[req].intermediate.clearIntermediate()
+    t[numOfRequestPerRound][algo] = result
+
+if __name__ == '__main__':
+    global t
     topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     f = open('../../plot/data/data.txt', 'w')
 
-    algo = []
-    algo.append(GreedyHopRouting(topo))
-    algo.append(MyAlgorithm(topo))
-    algo.append(GreedyGeographicRouting(topo))
-    algo.append(OnlineAlgorithm(topo))
-    algo.append(REPS(topo))
+    algorithms = []
+    algorithms.append(GreedyHopRouting(topo))
+    algorithms.append(MyAlgorithm(topo))
+    algorithms.append(GreedyGeographicRouting(topo))
+    algorithms.append(OnlineAlgorithm(topo))
+    algorithms.append(REPS(topo))
 
-    numOfAlgo = len(algo)
-    samplesPerTime = 2
+    numOfRequestPerRoundMax = 2
+    t = [{algo : 0 for algo in algorithms} for _ in range(numOfRequestPerRoundMax + 1)]
+    ttime = 200
+    rtime = 10
 
-    while samplesPerTime < 11:
-        ttime = 200
-        rtime = 10
+    threads = [[] for _ in range(numOfRequestPerRoundMax + 1)]
+
+    for numOfRequestPerRound in range(1, numOfRequestPerRoundMax + 1):
+        samplesPerTime = 2 * numOfRequestPerRound
         requests = {i : [] for i in range(ttime)}
-        t = {a : 0 for a in algo}
-
-        f.write(str(samplesPerTime/2)+' ')
-        f.flush()
         for i in range(ttime):
             if i < rtime:
                 a = sample(topo.nodes, samplesPerTime)
                 for n in range(0,samplesPerTime,2):
                     requests[i].append((a[n], a[n+1]))
-            
+        
+        for algoIndex in range(len(algorithms)):
+            algo = algorithms[algoIndex]
+            Job = threading.Thread(target = run, args = (algo, requests, algoIndex, numOfRequestPerRound, ttime))
+            threads[numOfRequestPerRound].append(Job)
+            Job.start()
 
-        for algoIndex in range(numOfAlgo):
-            a = algo[algoIndex]
-            for i in range(ttime):
-                t[a] = a.work(requests[i], i)
-            if algoIndex == 1:
-                for req in a.requestState:
-                    if a.requestState[req].state == 2:
-                        a.requestState[req].intermediate.clearIntermediate()    
-                
+    for numOfRequestPerRound in range(1, numOfRequestPerRoundMax + 1):
+        for algoIndex in range(len(algorithms)):
+            threads[numOfRequestPerRound][algoIndex].join()
+
+    for numOfRequestPerRound in range(1, numOfRequestPerRoundMax + 1):
+        for algoIndex in range(len(algorithms)):
             if algoIndex > 0:
                 f.write(' ')
-            f.write(str(t[a]/(samplesPerTime/2*rtime)))
-            f.flush()
+            f.write(str(numOfRequestPerRound))
         f.write('\n')
-        samplesPerTime += 2 
-
     # 5XX
     f.close()
     
