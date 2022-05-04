@@ -363,18 +363,18 @@ class OnlineAlgorithm(AlgorithmBase):
                             break   
                     for i in range(startDelete, endDelete):
                         toDelete.add((acc[i], acc[i+1]))
-                    # print('s:', startDelete, 'e:', endDelete)
+                    print('s:', startDelete, 'e:', endDelete)
                     edgesOfNewPathAndCycles = (toOrigin - toDelete) | toAdd
-                    # print('acc size:', len(acc))
-                    # print('acc:', [x.id for x in acc])
-                    # print('rp:', [x.id for x in rp])
-                    # print('origin:', [(x[0].id, x[1].id) for x in toOrigin])
-                    # print('delete:', [(x[0].id, x[1].id) for x in toDelete])
-                    # print('add:', [(x[0].id, x[1].id) for x in toAdd])
+                    print('acc size:', len(acc))
+                    print('acc:', [x.id for x in acc])
+                    print('rp:', [x.id for x in rp])
+                    print('origin:', [(x[0].id, x[1].id) for x in toOrigin])
+                    print('delete:', [(x[0].id, x[1].id) for x in toDelete])
+                    print('add:', [(x[0].id, x[1].id) for x in toAdd])
                     p = self.topo.shortestPath(acc[0], acc[-1], 'Hop', edgesOfNewPathAndCycles)
                     acc = p[1]
-                    # print('new acc size:', len(acc))
-                    # print('new acc:', [x.id for x in acc])
+                    print('new acc size:', len(acc))
+                    print('new acc:', [x.id for x in acc])
 
                 #swap
                 for i in range(1, len(acc) - 1):
