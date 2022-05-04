@@ -278,8 +278,8 @@ class Topo:
 
         while stack:
             (incoming, current) = stack.pop()
-            if incoming != None:
-                print(incoming.n1.id, incoming.n2.id, current.id)
+            # if incoming != None:
+            #     print(incoming.n1.id, incoming.n2.id, current.id)
 
             if current == n2:
                 path = []
