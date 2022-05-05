@@ -60,7 +60,7 @@ class Topo:
 
         # for _node in _nodes:
         #     for _node2 in _nodes:
-        #         if self.distance(_positions[_node], _positions[_node2]) <= 5:
+        #         if self.distance(_positions[_node], _positions[_node2]) <= 10:
         #             print('node 1:', _node, 'node 2:', _node2, self.distance(_positions[_node], _positions[_node2]))
 
         _edges = [] # reset edge
@@ -113,7 +113,7 @@ class Topo:
         linkId = 0
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
-            rand = int(random.random()*5+3) # 3~8
+            rand = int(random.random()*4+3) # 3~7
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
                 self.links.append(link)
@@ -134,9 +134,9 @@ class Topo:
         return d ** 0.5
 
     def generate(n, q, k, a, degree):
-        dist = lambda x, y: distance(x, y)
-        # dist = lambda x, y: sum(abs((a**2 - b**2)**0.5) for a, b in zip(x, y))
-        G = nx.waxman_graph(n, beta=0.5, alpha=0.1, L=5, domain=(0, 0, 100, 100), metric=dist)
+        # dist = lambda x, y: distance(x, y)
+        dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
+        G = nx.waxman_graph(n, beta=0.5, alpha=0.1, L=5, domain=(0, 0, 50, 200), metric=dist)
 
         return Topo(G, q, k, a, degree)
 
@@ -168,7 +168,7 @@ class Topo:
         fStateMetric = {}   # {edge: fstate}
         fStateMetric.clear()
         if edges != None:
-            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges} 
+            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in edges} 
         elif greedyType == 'Hop' and edges == None:
             fStateMetric = {edge : 1 for edge in self.edges}
         else: 
@@ -278,8 +278,8 @@ class Topo:
 
         while stack:
             (incoming, current) = stack.pop()
-            if incoming != None:
-                print(incoming.n1.id, incoming.n2.id, current.id)
+            # if incoming != None:
+            #     print(incoming.n1.id, incoming.n2.id, current.id)
 
             if current == n2:
                 path = []

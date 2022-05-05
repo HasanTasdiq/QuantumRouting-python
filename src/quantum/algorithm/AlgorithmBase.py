@@ -37,15 +37,18 @@ class AlgorithmBase:
         
         self.tryEntanglement()
 
-        self.p4()
+        t = self.p4()
 
-        self.srcDstPairs = []
+        self.srcDstPairs.clear()
+
+        return t
 
 @dataclass
 class PickedPath:
     weight: float
     width: int
     path: list
+    time: int
 
     def __hash__(self):
         return hash((self.weight, self.width, self.path[0], self.path[-1]))
