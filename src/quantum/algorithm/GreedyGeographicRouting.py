@@ -1,12 +1,10 @@
 import sys
-
-from argon2 import PasswordHasher
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
-
+from random import sample
 
 class GreedyGeographicRouting(AlgorithmBase):
 
@@ -14,7 +12,12 @@ class GreedyGeographicRouting(AlgorithmBase):
         super().__init__(topo)
         self.pathsSortedDynamically = []
         self.requests = []
+        self.totalTime = 0
         self.name = "Greedy_G"
+
+    def prepare(self):
+        self.totalTime = 0
+        self.requests.clear()
 
     def p2(self):
         self.pathsSortedDynamically.clear()
@@ -59,7 +62,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                             next = selectedNeighbor
 
                     # If have cycle, break
-                    if next == topo.sentinel or next in p:
+                    if next == self.topo.sentinel or next in p:
                         break 
                     p.append(next)
                 # while end
@@ -68,7 +71,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                     continue
                 
                 # Caculate width for p
-                width = topo.widthPhase2(p)
+                width = self.topo.widthPhase2(p)
             
                 if width == 0:
                     continue
@@ -96,6 +99,7 @@ class GreedyGeographicRouting(AlgorithmBase):
     def p4(self):
         for path in self.pathsSortedDynamically:
             _, width, p, time = path
+            oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
@@ -115,25 +119,47 @@ class GreedyGeographicRouting(AlgorithmBase):
                     if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1) and w > 0:
                         nextLinks.append(link)
                         w -= 1
+                
+                if prevLinks == None or nextLinks == None:
+                    break
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     curr.attemptSwapping(l1, l2)
 
+            print('----------------------')
             print('path:', [x.id for x in p])
-            r = self.topo.getEstablishedEntanglements(p[0], p[-1])
-            for x in r:
-                print('success:', [z.id for z in x])
-            
-            if len(r) > 0:
+            succ = len(self.topo.getEstablishedEntanglements(p[0], p[-1])) - oldNumOfPairs
+        
+            if succ > 0 or len(p) == 2:
                 print('finish time:', self.timeSlot - time)
                 find = (p[0], p[-1], time)
                 if find in self.requests:
-                    self.requests.remove((p[0], p[-1], time))      
+                    self.totalTime += self.timeSlot - time
+                    self.requests.remove(find)
+            print('----------------------')
+
+        remainTime = 0
+        for req in self.requests:
+            remainTime += self.timeSlot - req[2]
+        print('total time:', self.totalTime + remainTime)
+        print('p4 end')
+
+        self.topo.clearAllEntanglements()      
                     
-        print('p4 end') 
+        return self.totalTime + remainTime
                     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.035, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = GreedyGeographicRouting(topo)
-    s.work([(topo.nodes[3],topo.nodes[99])], 0)
+    for i in range(0, 200):
+        requests = []
+        if i < 10:
+            a = sample(topo.nodes, 6)
+            for n in range(0,6,2):
+                requests.append((a[n], a[n+1]))
+            s.work(requests, i)
+        else:
+            s.work([], i)
+    
+  

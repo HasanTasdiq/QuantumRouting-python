@@ -1,4 +1,3 @@
-import re
 import sys
 import math
 import random
@@ -19,14 +18,52 @@ class REPS(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
         self.name = "REPS"
-        self.F = open("output.txt", "w")
+        self.totalTime = 0
         self.requests = []
+        if not self.checkConnected():
+            print("[REPS]Graph is not connected")
+            exit(0)
+        if not self.checkEdge():
+            print("[REPS]Edge error")
+            exit(0)
+
+    def checkEdge(self):
+        for node in self.topo.nodes:
+            for link in node.links:
+                neighbor = link.theOtherEndOf(node)
+                if (node, neighbor) not in self.topo.edges and (neighbor, node) not in self.topo.edges:
+                    return False
+        return True
+
+    def checkConnected(self):
+        self.visited = {node : False for node in self.topo.nodes}
+        self.DFS(self.topo.nodes[0])
+        for node in self.topo.nodes:
+            if not self.visited[node]:
+                return False
+        return True
+
+    def DFS(self, currentNode):
+        self.visited[currentNode] = True
+        for link in currentNode.links:
+            nextNode = link.theOtherEndOf(currentNode)
+            if not self.visited[nextNode]:
+                self.DFS(nextNode)
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
     def genNameByBbracket(self, varName: str, parName: list):
         return (varName + str(parName)).replace(' ', '').replace(',', '][')
     
+    def printResult(self):
+        self.topo.clearAllEntanglements() 
+        remainTime = 0
+        for request in self.requests:
+            remainTime += (self.timeSlot - request[2])
+        print("total time:", self.totalTime + remainTime)
+        print("remain request:", len(self.requests))
+        print("current Timeslot:", self.timeSlot)
+
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
             self.requests.append((src, dst, self.timeSlot))
@@ -36,35 +73,30 @@ class REPS(AlgorithmBase):
             src = request[0]
             dst = request[1]
             if (src, dst) not in self.srcDstPairs:
-                self.srcDstPairs.append((request[0], request[1]))
+                self.srcDstPairs.append((src, dst))
 
     def p2(self):
         self.AddNewSDpairs()
+        # if len(self.srcDstPairs) == 0:
+        #     return
         self.PFT() # compute (self.ti, self.fi)
-        for SDpair in self.srcDstPairs:
-            for edge in self.topo.edges:
-                u = edge[0]
-                v = edge[1]
-                need = self.fi[SDpair][(u, v)] + self.fi[SDpair][(u, v)]
-                if self.fi[SDpair][edge]:
-                    assignCount = 0
-                    for link in u.links:
-                        if link.contains(v) and link.assignable():
-                            # link(u, v) for u, v in edgeIndices)
-                            assignCount += 1
-                            if assignCount == need:
-                                break
-        print('p2 end')
+        print('[REPS]p2 end')
     
     def p4(self):
         self.EPS()
         self.ELS()
-        print('p4 end') 
-        self.topo.clearAllEntanglements() 
+        print('[REPS]p4 end') 
+        self.printResult()
+        remainTime = 0
+        for request in self.requests:
+            remainTime += (self.timeSlot - request[2])
+        return self.totalTime + remainTime
+
     
     # return fi(u, v)
 
     def LP1(self):
+        print('[REPS]LP1 start')
         # initialize fi(u, v) ans ti
 
         self.fi_LP = {SDpair : {} for SDpair in self.srcDstPairs}
@@ -85,6 +117,7 @@ class REPS(AlgorithmBase):
         # LP
 
         m = gp.Model('REPS for PFT')
+        m.setParam("OutputFlag", 0)
         f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "f")
         t = m.addVars(numOfSDpairs, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "t")
         x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "x")
@@ -150,7 +183,7 @@ class REPS(AlgorithmBase):
             
             varName = self.genNameByComma('t', [i])
             self.ti_LP[SDpair] = m.getVarByName(varName).x
-        
+        print('[REPS]LP1 end')
     def edgeCapacity(self, u, v):
         capacity = 0
         for link in u.links:
@@ -198,9 +231,9 @@ class REPS(AlgorithmBase):
                     if width == 0:
                         continue
                     failedFindPath = False
-                    for i in range(pathLen - 1):
-                        node = Pi[SDpair][k][i]
-                        next = Pi[SDpair][k][i + 1]
+                    for nodeIndex in range(pathLen - 1):
+                        node = Pi[SDpair][k][nodeIndex]
+                        next = Pi[SDpair][k][nodeIndex + 1]
                         self.fi[SDpair][(node, next)] += width
 
             sorted(paths, key = self.widthForSort)
@@ -210,30 +243,45 @@ class REPS(AlgorithmBase):
                 width = path[-1]
                 SDpair = (path[0], path[-2])
                 isable = True
-                for i in range(pathLen - 1):
-                    node = path[i]
-                    next = path[i + 1]
-                    if self.edgeCapacity(node, next) >= 1:
+                for nodeIndex in range(pathLen - 1):
+                    node = path[nodeIndex]
+                    next = path[nodeIndex + 1]
+                    if self.edgeCapacity(node, next) < 1:
                         isable = False
                 
                 if not isable:
-                    for i in range(pathLen - 1):
-                        node = path[i]
-                        next = path[i + 1]
+                    for nodeIndex in range(pathLen - 1):
+                        node = path[nodeIndex]
+                        next = path[nodeIndex + 1]
                         self.fi_LP[SDpair][(node, next)] -= width
                     continue
                 
                 failedFindPath = False
                 self.ti[SDpair] += 1
-                for i in range(pathLen - 1):
-                    node = path[i]
-                    next = path[i + 1]
+                for nodeIndex in range(pathLen - 1):
+                    node = path[nodeIndex]
+                    next = path[nodeIndex + 1]
                     self.fi[SDpair][(node, next)] += 1
 
-        print('PFT end')
-
+        print('[REPS]PFT end')
+        for SDpair in self.srcDstPairs:
+            for edge in self.topo.edges:
+                u = edge[0]
+                v = edge[1]
+                need = self.fi[SDpair][(u, v)] + self.fi[SDpair][(v, u)]
+                if need:
+                    assignCount = 0
+                    for link in u.links:
+                        if link.contains(v) and link.assignable():
+                            # link(u, v) for u, v in edgeIndices)
+                            link.assignQubits()
+                            assignCount += 1
+                            if assignCount == need:
+                                break
             
     def edgeSuccessfulEntangle(self, u, v):
+        if u == v:
+            return 0
         capacity = 0
         for link in u.links:
             if link.contains(v) and link.entangled:
@@ -241,12 +289,16 @@ class REPS(AlgorithmBase):
         return capacity
 
     def LP2(self):
+        print('[REPS]LP2 start')
         # initialize fi(u, v) ans ti
 
         numOfNodes = len(self.topo.nodes)
         numOfSDpairs = len(self.srcDstPairs)
         numOfFlow = [self.ti[self.srcDstPairs[i]] for i in range(numOfSDpairs)]
-        maxK = max(numOfFlow)
+        if len(numOfFlow):
+            maxK = max(numOfFlow)
+        else:
+            maxK = 0
         self.fki_LP = {SDpair : [{} for _ in range(maxK)] for SDpair in self.srcDstPairs}
         self.tki_LP = {SDpair : [0] * maxK for SDpair in self.srcDstPairs}
         
@@ -261,8 +313,8 @@ class REPS(AlgorithmBase):
                     notEdge.append((u, v))
 
         m = gp.Model('REPS for EPS')
+        m.setParam("OutputFlag", 0)
 
-        
         f = [0] * numOfSDpairs
         for i in range(numOfSDpairs):
             f[i] = [0] * maxK
@@ -271,10 +323,8 @@ class REPS(AlgorithmBase):
                 for u in range(numOfNodes):
                     f[i][k][u] = [0] * numOfNodes 
                     for v in range(numOfNodes):
-                        if k < numOfFlow[i]:
+                        if k < numOfFlow[i] and ((u, v) in edgeIndices or (v, u) in edgeIndices):
                             f[i][k][u][v] = m.addVar(lb = 0, ub = 1, vtype = gp.GRB.CONTINUOUS, name = "f[%d][%d][%d][%d]" % (i, k, u, v))
-                        else:
-                            f[i][k][u][v] = m.addVar(lb = 0, ub = 0, vtype = gp.GRB.CONTINUOUS, name = "f[%d][%d][%d][%d]" % (i, k, u, v))
 
 
         t = [0] * numOfSDpairs
@@ -295,22 +345,34 @@ class REPS(AlgorithmBase):
             d = self.srcDstPairs[i][1].id
             
             for k in range(numOfFlow[i]):
-                m.addConstr(quicksum(f[i][k][s][v] for v in range(numOfNodes)) - quicksum(f[i][k][v][s] for v in range(numOfNodes)) == t[i][k])
-                m.addConstr(quicksum(f[i][k][d][v] for v in range(numOfNodes)) - quicksum(f[i][k][v][d] for v in range(numOfNodes)) == -t[i][k])
+                neighborOfS = []
+                neighborOfD = []
+
+                for edge in edgeIndices:
+                    if edge[0] == s:
+                        neighborOfS.append(edge[1])
+                    elif edge[1] == s:
+                        neighborOfS.append(edge[0])
+                    if edge[0] == d:
+                        neighborOfD.append(edge[1])
+                    elif edge[1] == d:
+                        neighborOfD.append(edge[0])
+                    
+                m.addConstr(quicksum(f[i][k][s][v] for v in neighborOfS) - quicksum(f[i][k][v][s] for v in neighborOfS) == t[i][k])
+                m.addConstr(quicksum(f[i][k][d][v] for v in neighborOfD) - quicksum(f[i][k][v][d] for v in neighborOfD) == -t[i][k])
 
                 for u in range(numOfNodes):
                     if u not in [s, d]:
-                        m.addConstr(quicksum(f[i][k][u][v] for v in range(numOfNodes)) - quicksum(f[i][k][v][u] for v in range(numOfNodes)) == 0)
+                        edgeUV = []
+                        for v in range(numOfNodes):
+                            if v not in [s, d]:
+                                edgeUV.append(v)
+                        m.addConstr(quicksum(f[i][k][u][v] for v in edgeUV) - quicksum(f[i][k][v][u] for v in edgeUV) == 0)
 
         
         for (u, v) in edgeIndices:
             capacity = self.edgeSuccessfulEntangle(self.topo.nodes[u], self.topo.nodes[v])
-            m.addConstr(quicksum(f[i][k][u][v] + f[i][k][v][u] for k in range(numOfFlow[i]) for i in range(numOfSDpairs)) <= capacity)
-
-        for (u, v) in notEdge:
-            for i in range(numOfSDpairs):
-                for k in range(numOfFlow[i]):
-                    m.addConstr(f[i][k][u][v] == 0)
+            m.addConstr(quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
 
         m.optimize()
 
@@ -330,20 +392,21 @@ class REPS(AlgorithmBase):
                     varName = self.genNameByBbracket('f', [i, k, u.id, v.id])
                     self.fki_LP[SDpair][k][(u, v)] = m.getVarByName(varName).x
 
-                for (u, v) in notEdge:
-                    u = self.topo.nodes[u]
-                    v = self.topo.nodes[v]
-                    self.fki_LP[SDpair][k][(u, v)] = 0
+                # for (u, v) in notEdge:
+                #     u = self.topo.nodes[u]
+                #     v = self.topo.nodes[v]
+                #     self.fki_LP[SDpair][k][(u, v)] = 0
             
             
                 varName = self.genNameByBbracket('t', [i, k])
                 self.tki_LP[SDpair][k] = m.getVarByName(varName).x
-    
+        print('[REPS]LP2 end')
+
     def EPS(self):
         self.LP2()
         # initialize fki(u, v), tki
         numOfFlow = {SDpair : self.ti[SDpair] for SDpair in self.srcDstPairs}
-        self.fki = {SDpair : [{} for _ in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
+        self.fki = {SDpair : [{} for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.tki = {SDpair : [0 for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.pathForELS = {SDpair : [] for SDpair in self.srcDstPairs}
 
@@ -370,33 +433,34 @@ class REPS(AlgorithmBase):
                     select = (width / self.tki[SDpair][k]) >= random.random()
                     if not select:
                         continue
-                    
+                    path = path[:-1]
                     self.pathForELS[SDpair].append(path)
-                    pathLen = len(path) - 1
-                    for i in range(pathLen - 1):
-                        node = path[i]
-                        next = path[i + 1]
+                    pathLen = len(path)
+                    for nodeIndex in range(pathLen - 1):
+                        node = path[nodeIndex]
+                        next = path[nodeIndex + 1]
                         self.fki[SDpair][k][(node, next)] = 1
                 
-
-        print('EPS end')
+        print('[REPS]EPS end')
 
     def ELS(self):
         Ci = self.pathForELS
         self.y = {(u, v) : 0 for u in self.topo.nodes for v in self.topo.nodes}
-        self.weightOfNode = {node : -ln(node.remainingQubits) for node in self.topo.nodes}
+        self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
+        needLink = {}
+        nextLink = {node : [] for node in self.topo.nodes}
+        Pi = {SDpair : [] for SDpair in self.srcDstPairs}
         T = [SDpair for SDpair in self.srcDstPairs]
 
         while len(T) > 0:
             for SDpair in self.srcDstPairs:
                 removePaths = []
                 for path in Ci[SDpair]:
-                    pathLen = len(path) - 1
+                    pathLen = len(path)
                     noResource = False
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
                         next = path[nodeIndex + 1]
-                        # print(y[(node, next)], self.edgeSuccessfulEntangle(node, next))
                         if self.y[(node, next)] >= self.edgeSuccessfulEntangle(node, next):
                             noResource = True
                     if noResource:
@@ -413,8 +477,8 @@ class REPS(AlgorithmBase):
             minLength = math.inf
             for SDpair in T:
                 for path in Ci[SDpair]:
-                    if len(path) - 1 < minLength:
-                        minLength = len(path) - 1
+                    if len(path) < minLength:
+                        minLength = len(path)
                         i = SDpair
             
             src = i[0]
@@ -423,51 +487,43 @@ class REPS(AlgorithmBase):
             minR = math.inf
             for path in Ci[i]:
                 r = 0
-                for k in range(len(path) - 1):
-                    r += self.weightOfNode[path[k]]
+                for node in path:
+                    r += self.weightOfNode[node]
                 if minR > r:
                     targetPath = path
                     minR = r
             
+            pathIndex = len(Pi[i])
+            needLink[(i, pathIndex)] = []
+
+            Pi[i].append(targetPath)
             for nodeIndex in range(1, len(targetPath) - 2):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
                 next = targetPath[nodeIndex + 1]
                 for link in node.links:
-                    if link.contains(next) and link.entangled:
+                    if link.contains(next) and link.entangled and link.notSwapped():
                         targetLink1 = link
                     
-                    if link.contains(prev) and link.entangled:
+                    if link.contains(prev) and link.entangled and link.notSwapped():
                         targetLink2 = link
                 
                 self.y[((node, next))] += 1
                 self.y[((next, node))] += 1
                 self.y[((node, prev))] += 1
                 self.y[((prev, node))] += 1
-                node.attemptSwapping(targetLink1, targetLink2)
-            
-            if len(targetPath):
-                print('-----------------')
-                print('path:', [x.id for x in targetPath])
-                successPath = self.topo.getEstablishedEntanglements(src, dst)
-                for x in successPath:
-                    print('success:', [z.id for z in x])
-                if len(successPath):
-                    for request in self.requests:
-                        if (src, dst) == (request[0], request[1]):
-                            print('finish time:', self.timeSlot - request[2])
-                            self.requests.remove(request)
-                            break
-                print('-----------------')
+
+                nextLink[node].append(targetLink1)
+                needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
 
             T.remove(i)
 
         T = [SDpair for SDpair in self.srcDstPairs]
-        while len(T):
+        while len(T) > 0:
             for SDpair in self.srcDstPairs:
                 removePaths = []
                 for path in Ci[SDpair]:
-                    pathLen = len(path) - 1
+                    pathLen = len(path)
                     noResource = False
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
@@ -478,12 +534,7 @@ class REPS(AlgorithmBase):
                         removePaths.append(path)
                 for path in removePaths:
                     Ci[SDpair].remove(path)
-                if len(Ci[SDpair]) == 0 and SDpair in T:
-                    T.remove(SDpair)
             
-            if len(T) == 0:
-                break
-
             i = -1
             minLength = math.inf
             for SDpair in T:
@@ -491,12 +542,16 @@ class REPS(AlgorithmBase):
                     if len(path) - 1 < minLength:
                         minLength = len(path) - 1
                         i = SDpair
+                if len(Ci[SDpair]) == 0 and i == -1:
+                    i = SDpair
             
             src = i[0]
             dst = i[1]
 
-            targetPath = self.findPathForELS(src, dst)
-            
+            targetPath = self.findPathForELS(i)
+            pathIndex = len(Pi[i])
+            needLink[(i, pathIndex)] = []
+            Pi[i].append(targetPath)
             for nodeIndex in range(1, len(targetPath) - 1):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -512,11 +567,21 @@ class REPS(AlgorithmBase):
                 self.y[((next, node))] += 1
                 self.y[((node, prev))] += 1
                 self.y[((prev, node))] += 1
-                node.attemptSwapping(targetLink1, targetLink2)
+                nextLink[node].append(targetLink1)
+                needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
+            T.remove(i)
+        
+        print('[REPS]ELS end')
+        print([(src.id, dst.id) for (src, dst) in self.srcDstPairs])
+        for SDpair in self.srcDstPairs:
+            src = SDpair[0]
+            dst = SDpair[1]
 
-            if len(targetPath):
-                print('-----------------')
-                print('path:', [x.id for x in targetPath])
+            for pathIndex in range(len(Pi[SDpair])):
+                path = Pi[SDpair][pathIndex]
+                print('attempt:', [node.id for node in path])
+                for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
+                    node.attemptSwapping(link1, link2)
                 successPath = self.topo.getEstablishedEntanglements(src, dst)
                 for x in successPath:
                     print('success:', [z.id for z in x])
@@ -525,13 +590,13 @@ class REPS(AlgorithmBase):
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
                             print('finish time:', self.timeSlot - request[2])
+                            self.totalTime += self.timeSlot - request[2]
                             self.requests.remove(request)
                             break
-                print('-----------------')
-            T.remove(i)
-        
-        print('ELS end')
-
+                    print('-----------------')
+                for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
+                    link1.clearPhase4Swap()
+                    link2.clearPhase4Swap()
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]
@@ -632,11 +697,10 @@ class REPS(AlgorithmBase):
         dst = SDpair[1]
         self.parent = {node : self.topo.sentinel for node in self.topo.nodes}
         adjcentList = {node : set() for node in self.topo.nodes}
-        for node in self.topo.nodes:
-            for link in node.links:
-                if link.entangled:
-                    neighbor = link.theOtherEndOf(node)
-                    adjcentList[node].add(neighbor)
+        for node1 in self.topo.nodes:
+            for node2 in self.topo.nodes:
+                if self.edgeSuccessfulEntangle(node1, node2) > 0:
+                    adjcentList[node1].add(node2)
         
         distance = {node : 0 for node in self.topo.nodes}
         visited = {node : False for node in self.topo.nodes}
@@ -673,10 +737,10 @@ class REPS(AlgorithmBase):
 
         return width
     
-    def findPathForELS(self, SDpair, k):
+    def findPathForELS(self, SDpair):
         src = SDpair[0]
         dst = SDpair[1]
-        if self.DijkstraForELS(SDpair, k):
+        if self.DijkstraForELS(SDpair):
             path = []
             currentNode = dst
             while currentNode != self.topo.sentinel:
@@ -687,16 +751,15 @@ class REPS(AlgorithmBase):
         else:
             return []
     
-    def DijkstraForELS(self, SDpair, k):
+    def DijkstraForELS(self, SDpair):
         src = SDpair[0]
         dst = SDpair[1]
         self.parent = {node : self.topo.sentinel for node in self.topo.nodes}
         adjcentList = {node : set() for node in self.topo.nodes}
-        for node in self.topo.nodes:
-            for link in node.links:
-                if link.entangled:
-                    neighbor = link.theOtherEndOf(node)
-                    adjcentList[node].add(neighbor)
+        for node1 in self.topo.nodes:
+            for node2 in self.topo.nodes:
+                if self.y[(node1, node2)] < self.edgeSuccessfulEntangle(node1, node2):
+                    adjcentList[node1].add(node2)
         
         distance = {node : math.inf for node in self.topo.nodes}
         visited = {node : False for node in self.topo.nodes}
@@ -722,14 +785,15 @@ class REPS(AlgorithmBase):
                     pq.put((distance[next], next.id))
 
         return False
-
 if __name__ == '__main__':
     
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 1, 5, 0, 6)
     s = REPS(topo)
     for i in range(0, 100):
-        if i < 50:
-            a = sample(topo.nodes, 4)
-            s.work([(a[0],a[1]), (a[2], a[3])], i)
+        if i < 10:
+            a = sample(topo.nodes, 6)
+            requests = [(a[n], a[n + 1]) for n in range(0, len(a), 2)]
+            s.work(requests, i)
+            # s.work([(a[0],a[1]), (a[2], a[3])], i)
         else:
             s.work([], i)
