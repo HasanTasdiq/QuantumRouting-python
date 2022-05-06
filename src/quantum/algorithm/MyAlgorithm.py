@@ -595,6 +595,8 @@ class MyAlgorithm(AlgorithmBase):
         print('idle time:', self.result.idleTime)
         print('remaining request:', len(self.requestState))
         print('----------------------')
+
+        return self.result
     
 if __name__ == '__main__':
 

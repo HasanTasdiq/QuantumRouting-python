@@ -160,6 +160,8 @@ class GreedyHopRouting(AlgorithmBase):
         print('waiting time:', self.result.waitingTime)
         print('idle time:', self.result.idleTime)
         print('p4 end')
+
+        return self.result
         
 if __name__ == '__main__':
 
