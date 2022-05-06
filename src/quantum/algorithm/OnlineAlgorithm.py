@@ -60,7 +60,17 @@ class OnlineAlgorithm(AlgorithmBase):
                 print('P2Extra')
                 self.P2Extra()
                 print('P2Extra end')
-            
+        
+        for req in self.requests:
+            pick = False
+            for pathWithWidth in self.majorPaths:
+                p = pathWithWidth.path
+                if (p[0], p[-1], pathWithWidth.time) == req:
+                    pick = True
+                    break
+                    
+            if not pick:
+                self.result.idleTime += 1
          
     # 對每個SD-pair找出候選路徑，目前不確定只會找一條還是可以多條
     def calCandidates(self, requests: list): # pairs -> [(Node, Node), ...]
@@ -412,10 +422,13 @@ class OnlineAlgorithm(AlgorithmBase):
         remainTime = 0
         for req in self.requests:
             remainTime += self.timeSlot - req[2]
-        print('total time:', self.totalTime + remainTime)
+
         self.topo.clearAllEntanglements()
-        
-        return self.totalTime + remainTime
+        self.result.waitingTime = self.totalTime + remainTime
+
+        print('waiting time:', self.result.waitingTime)
+        print('idle time:', self.result.idleTime)
+
 
 if __name__ == '__main__':
 

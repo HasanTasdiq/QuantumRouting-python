@@ -94,6 +94,15 @@ class GreedyGeographicRouting(AlgorithmBase):
             if not found:
                 break
         # while end
+        for req in self.requests:
+            pick = False
+            for path in self.pathsSortedDynamically:
+                _, width, p, time = path
+                if (p[0], p[-1], time) == req:
+                    pick = True
+                    break               
+            if not pick:
+                self.result.idleTime += 1
         print('p2 end')
     
     def p4(self):
@@ -141,12 +150,13 @@ class GreedyGeographicRouting(AlgorithmBase):
         remainTime = 0
         for req in self.requests:
             remainTime += self.timeSlot - req[2]
-        print('total time:', self.totalTime + remainTime)
-        print('p4 end')
 
-        self.topo.clearAllEntanglements()      
-                    
-        return self.totalTime + remainTime
+        self.topo.clearAllEntanglements()                     
+        self.result.waitingTime = self.totalTime + remainTime
+
+        print('waiting time:', self.result.waitingTime)
+        print('idle time:', self.result.idleTime)
+        print('p4 end')
                     
 if __name__ == '__main__':
 
