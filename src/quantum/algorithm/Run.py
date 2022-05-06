@@ -3,6 +3,7 @@ import sys
 import copy
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
+from AlgorithmBase import AlgorithmResult
 from MyAlgorithm import MyAlgorithm
 from OnlineAlgorithm import OnlineAlgorithm
 from GreedyGeographicRouting import GreedyGeographicRouting
@@ -14,22 +15,19 @@ from topo.Link import Link
 from random import sample
 
 
-def run(algo, requests, algoIndex, numOfRequestPerRound, ttime):
-    global t
+def runThread(algo, requests, algoIndex, ttime):
+    global results
     for i in range(ttime):
         result = algo.work(requests[i], i)
     if algoIndex == 1:
         for req in algo.requestState:
             if algo.requestState[req].state == 2:
                 algo.requestState[req].intermediate.clearIntermediate()
-    t[numOfRequestPerRound][algoIndex] += result
+    results[algoIndex].append(result)
 
-if __name__ == '__main__':
-    global t
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
-    f = open('../../plot/data/data.txt', 'w')
-
-    numOfRequestPerRoundMax = 10
+def Run(numOfRequestPerRound = 1, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05, density = 0.5, mapSize = (50, 200), rtime = 20):
+    global results
+    topo = Topo.generate(numOfNode, q, 5, alpha, 6)
 
     # make copy
     algorithms = []
@@ -39,54 +37,75 @@ if __name__ == '__main__':
     algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
     algorithms.append(REPS(copy.deepcopy(topo)))
 
-    times = 5
-    t = [[0 for _ in range(len(algorithms))] for _ in range(numOfRequestPerRoundMax + 1)]
-    ttime = 200
-    rtime = 20
+    algorithms[1].r = r
+    algorithms[1].density = density
 
-    threads = [[] for _ in range(numOfRequestPerRoundMax + 1)]
+    times = 5
+    results = [[] for _ in range(len(algorithms))]
+    ttime = 200
+
+    threads = []
 
     for _ in range(times):
-        for numOfRequestPerRound in range(1, numOfRequestPerRoundMax + 1):
-            # samplesPerTime = 2 * numOfRequestPerRound
-            # requests = {i : [] for i in range(ttime)}
-            # for i in range(ttime):
-            #     if i < rtime:
-            #         for _ in range(numOfRequestPerRound):
-            #             a = sample(topo.nodes, 2)
-            #             requests[i].append((a[0], a[1]))
-
-            ids = {i : [] for i in range(ttime)}
-            for i in range(ttime):
-                if i < rtime:
-                    for _ in range(numOfRequestPerRound):
-                        a = sample([i for i in range(100)], 2)
-                        ids[i].append((a[0], a[1]))
-            
-            for algoIndex in range(len(algorithms)):
-                algo = copy.deepcopy(algorithms[algoIndex])
-                requests = {i : [] for i in range(ttime)}
-                for i in range(rtime):
-                    for (src, dst) in ids[i]:
-                        requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
-                Job = threading.Thread(target = run, args = (algo, requests, algoIndex, numOfRequestPerRound, ttime))
-                threads[numOfRequestPerRound].append(Job)
-
-        for numOfRequestPerRound in range(1, numOfRequestPerRoundMax + 1):
-            for algoIndex in range(len(algorithms)):
-                threads[numOfRequestPerRound][algoIndex].start()
-
-
-        for numOfRequestPerRound in range(1, numOfRequestPerRoundMax + 1):
-            for algoIndex in range(len(algorithms)):
-                threads[numOfRequestPerRound][algoIndex].join()
-
-    for numOfRequestPerRound in range(1, numOfRequestPerRoundMax + 1):
-        f.write(str(numOfRequestPerRound))
+        ids = {i : [] for i in range(ttime)}
+        for i in range(ttime):
+            if i < rtime:
+                for _ in range(numOfRequestPerRound):
+                    a = sample([i for i in range(100)], 2)
+                    ids[i].append((a[0], a[1]))
+        
         for algoIndex in range(len(algorithms)):
-            f.write(' ')
-            f.write(str(t[numOfRequestPerRound][algoIndex] / (rtime * numOfRequestPerRound * times)))
-        f.write('\n')
-    # 5XX
-    f.close()
+            algo = copy.deepcopy(algorithms[algoIndex])
+            requests = {i : [] for i in range(ttime)}
+            for i in range(rtime):
+                for (src, dst) in ids[i]:
+                    requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
+            Job = threading.Thread(target = runThread, args = (algo, requests, algoIndex, ttime))
+            threads[numOfRequestPerRound].append(Job)
+
+        for algoIndex in range(len(algorithms)):
+            threads[numOfRequestPerRound][algoIndex].start()
+
+
+        for algoIndex in range(len(algorithms)):
+            threads[numOfRequestPerRound][algoIndex].join()
+
+    for algoIndex in len(algorithms):
+        results[algoIndex] = AlgorithmResult.Avg(results[algoIndex])
+
+    # results[0] = result of GreedyHopRouting = a AlgorithmResult
+    # results[1] = result of MyAlgorithm
+    # results[2] = result of GreedyGeographicRouting
+    # results[3] = result of OnlineAlgorithm
+    # results[4] = result of REPS
+
+    return results
     
+
+if __name__ == '__main__':
+    targetFilePath = "../../plot/data/"
+
+    temp = AlgorithmResult()
+    Ylabels = temp.Ylabels
+    # Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
+    
+    numOfNodes = [10, 20, 50, 100]
+    Xlabel = "numOfnodes"
+    Ydata = []
+    for numOfNode in numOfNodes:
+        result = Run(numOfNode = numOfNode)
+        Ydata.append(result)
+
+    # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
+    # Ydata[1] = numOfNode = 20 algo1Result algo2Result ... 
+    # Ydata[2] = numOfNode = 50 algo1Result algo2Result ... 
+    # Ydata[3] = numOfNode = 100 algo1Result algo2Result ... 
+
+    for Ylabel in Ylabels:
+        filename = Xlabel + "_" + Ylabel + ".txt"
+        F = open(targetFilePath + filename, "w")
+        for i in range(numOfNodes):
+            Xaxis = numOfNodes[i]
+            Yaxis = [algoResult.toDict[Ylabel] for algoResult in Ydata[i]]
+            Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+            F.write(Xaxis + Yaxis)
