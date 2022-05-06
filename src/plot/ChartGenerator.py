@@ -89,7 +89,7 @@ class ChartGenerator:
         plt.xticks(fontsize=Xticks_fontsize)
         plt.yticks(fontsize=Yticks_fontsize)
         
-        AlgoName = ["Greedy_hop", "MyAlgo", "Greedy_geo", "QCAST", "REPS"]
+        AlgoName = ["MyAlgo", "Greedy_hop", "Greedy_geo", "QCAST", "REPS"]
 
         leg = plt.legend(
             AlgoName[0 : numOfAlgo],
@@ -129,4 +129,4 @@ class ChartGenerator:
 
 if __name__ == "__main__":
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
-    ChartGenerator("data.txt", "need #round", "#Request of a round", 0, 0, 150, 50)
+    ChartGenerator("numOfnodes_waitingTime.txt", "need #round", "#Request of a round", 0, 0, 25, 5)
