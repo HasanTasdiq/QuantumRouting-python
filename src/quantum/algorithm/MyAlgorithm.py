@@ -32,7 +32,7 @@ class MyAlgorithm(AlgorithmBase):
         # self.socialRelationship = {}    # {Node : [Node, ...], ...}             node-social表
         self.requestState = {}          # {(src, dst, timeslot) : RequestInfo}  request表 
         self.totalTime = 0
-        self.idleTime = 0
+        self.density = 0.5
         self.factorialTable = {}        # 階層運算表
         self.expectTable = {}           # {(path1, path2) : expectRound}        expectRound表
         self.SN = {}                    # social network
@@ -74,7 +74,7 @@ class MyAlgorithm(AlgorithmBase):
     
     def Round(self, p1, p2, r):
         state = 0 # 0 1 2
-        maxRound = 10000
+        maxRound = 5000
         currentRound = 0
         currentMaintain = 0
         while state != 2:
@@ -118,7 +118,7 @@ class MyAlgorithm(AlgorithmBase):
         # return a
     
         # 大數法則
-        times = 500
+        times = 250
         roundSum = 0
         for _ in range(times):
             roundSum += self.Round(p1, p2, self.r)
@@ -138,7 +138,7 @@ class MyAlgorithm(AlgorithmBase):
         #             print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
         userNum = 8
         node2user = {}
-        self.genSocialNetwork(userNum, 0.5)
+        self.genSocialNetwork(userNum, self.density)
         users = [i for i in range(userNum)]
         for i in range(len(self.topo.nodes)):
             user = sample(users, 1)
@@ -475,6 +475,10 @@ class MyAlgorithm(AlgorithmBase):
         # p2 繼續找路徑分配資源 
         self.p2Extra()
 
+        for req in self.requestState:
+            requestInfo = self.requestState[req]
+            if requestInfo.taken == False:
+                self.result.idleTime += 1
   
     # p4 & p5
     def p4(self):
@@ -582,12 +586,15 @@ class MyAlgorithm(AlgorithmBase):
         remainTime = 0
         for req in self.requestState:
             remainTime += self.timeSlot - req[2]
+
+        self.topo.clearAllEntanglements() 
+        self.result.waitingTime = self.totalTime + remainTime
+
         print('----------------------')
-        print('total time:', self.totalTime + remainTime)
+        print('waiting time:',  self.result.waitingTime)
+        print('idle time:', self.result.idleTime)
         print('remaining request:', len(self.requestState))
         print('----------------------')
-        self.topo.clearAllEntanglements() 
-        return self.totalTime + remainTime
     
 if __name__ == '__main__':
 
@@ -607,9 +614,12 @@ if __name__ == '__main__':
     
     for i in range(0, 200):
         requests = []
-        if i < 2:
+        if i < 10:
             for n in range(0,2,2):
                 requests.append((topo.nodes[0], topo.nodes[1]))
             s.work(requests, i)
         else:
             s.work([], i)
+
+
+ 
