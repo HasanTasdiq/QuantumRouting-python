@@ -3,6 +3,15 @@ import sys
 sys.path.append("..")
 from topo.Topo import Topo  
 
+class AlgorithmResult:
+    def __init__(self):
+        self.algorithmRuntime = 0
+        self.waitingTime = 0
+        self.unfinishedRequest = 0
+        self.idleTime = 0
+        self.usedQubits = 0
+        self.temporaryRatio = 0
+
 class AlgorithmBase:
 
     def __init__(self, topo):
@@ -11,6 +20,7 @@ class AlgorithmBase:
         self.srcDstPairs = []
         self.finishedSrcDstPairs = []
         self.timeSlot = 0
+        self.result = AlgorithmResult()
 
     def prepare(self):
         pass
