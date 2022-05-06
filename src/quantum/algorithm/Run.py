@@ -25,33 +25,34 @@ def runThread(algo, requests, algoIndex, ttime):
                 algo.requestState[req].intermediate.clearIntermediate()
     results[algoIndex].append(result)
 
-def Run(numOfRequestPerRound = 1, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05, density = 0.5, mapSize = (50, 200), rtime = 20):
+def Run(numOfRequestPerRound = 2, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05, density = 0.5, mapSize = (50, 200), rtime = 20):
     global results
     topo = Topo.generate(numOfNode, q, 5, alpha, 6)
 
     # make copy
     algorithms = []
-    algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
     algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
     algorithms.append(REPS(copy.deepcopy(topo)))
 
-    algorithms[1].r = r
-    algorithms[1].density = density
+    algorithms[0].r = r
+    algorithms[0].density = density
 
-    times = 5
+    times = 2
     results = [[] for _ in range(len(algorithms))]
-    ttime = 200
+    ttime = 10
 
-    threads = []
 
     for _ in range(times):
+        
+        threads = []
         ids = {i : [] for i in range(ttime)}
         for i in range(ttime):
             if i < rtime:
                 for _ in range(numOfRequestPerRound):
-                    a = sample([i for i in range(100)], 2)
+                    a = sample([i for i in range(numOfNode)], 2)
                     ids[i].append((a[0], a[1]))
         
         for algoIndex in range(len(algorithms)):
@@ -61,16 +62,16 @@ def Run(numOfRequestPerRound = 1, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05
                 for (src, dst) in ids[i]:
                     requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
             Job = threading.Thread(target = runThread, args = (algo, requests, algoIndex, ttime))
-            threads[numOfRequestPerRound].append(Job)
+            threads.append(Job)
 
         for algoIndex in range(len(algorithms)):
-            threads[numOfRequestPerRound][algoIndex].start()
+            threads[algoIndex].start()
 
 
         for algoIndex in range(len(algorithms)):
-            threads[numOfRequestPerRound][algoIndex].join()
+            threads[algoIndex].join()
 
-    for algoIndex in len(algorithms):
+    for algoIndex in range(len(algorithms)):
         results[algoIndex] = AlgorithmResult.Avg(results[algoIndex])
 
     # results[0] = result of GreedyHopRouting = a AlgorithmResult
@@ -83,8 +84,8 @@ def Run(numOfRequestPerRound = 1, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05
     
 
 if __name__ == '__main__':
+    print("start")
     targetFilePath = "../../plot/data/"
-
     temp = AlgorithmResult()
     Ylabels = temp.Ylabels
     # Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
@@ -93,7 +94,7 @@ if __name__ == '__main__':
     Xlabel = "numOfnodes"
     Ydata = []
     for numOfNode in numOfNodes:
-        result = Run(numOfNode = numOfNode)
+        result = Run(numOfNode = numOfNode, rtime=2)
         Ydata.append(result)
 
     # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
@@ -104,8 +105,8 @@ if __name__ == '__main__':
     for Ylabel in Ylabels:
         filename = Xlabel + "_" + Ylabel + ".txt"
         F = open(targetFilePath + filename, "w")
-        for i in range(numOfNodes):
-            Xaxis = numOfNodes[i]
-            Yaxis = [algoResult.toDict[Ylabel] for algoResult in Ydata[i]]
+        for i in range(len(numOfNodes)):
+            Xaxis = str(numOfNodes[i])
+            Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
             Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
             F.write(Xaxis + Yaxis)
