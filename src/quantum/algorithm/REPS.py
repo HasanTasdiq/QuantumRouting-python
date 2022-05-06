@@ -6,6 +6,7 @@ from gurobipy import quicksum
 from queue import PriorityQueue
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
+from AlgorithmBase import AlgorithmResult
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
@@ -18,7 +19,6 @@ class REPS(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
         self.name = "REPS"
-        self.totalTime = 0
         self.requests = []
         if not self.checkConnected():
             print("[REPS]Graph is not connected")
@@ -57,10 +57,8 @@ class REPS(AlgorithmBase):
     
     def printResult(self):
         self.topo.clearAllEntanglements() 
-        remainTime = 0
-        for request in self.requests:
-            remainTime += (self.timeSlot - request[2])
-        print("total time:", self.totalTime + remainTime)
+        self.result.waitingTime += len(self.requests)
+        print("total time:", self.result.waitingTime)
         print("remain request:", len(self.requests))
         print("current Timeslot:", self.timeSlot)
 
@@ -77,8 +75,7 @@ class REPS(AlgorithmBase):
 
     def p2(self):
         self.AddNewSDpairs()
-        # if len(self.srcDstPairs) == 0:
-        #     return
+        self.result.idleTime += len(self.srcDstPairs)
         self.PFT() # compute (self.ti, self.fi)
         print('[REPS]p2 end')
     
@@ -87,10 +84,7 @@ class REPS(AlgorithmBase):
         self.ELS()
         print('[REPS]p4 end') 
         self.printResult()
-        remainTime = 0
-        for request in self.requests:
-            remainTime += (self.timeSlot - request[2])
-        return self.totalTime + remainTime
+        return self.result
 
     
     # return fi(u, v)
@@ -275,6 +269,7 @@ class REPS(AlgorithmBase):
                         if link.contains(v) and link.assignable():
                             # link(u, v) for u, v in edgeIndices)
                             link.assignQubits()
+                            self.result.usedQubits += 2
                             assignCount += 1
                             if assignCount == need:
                                 break
@@ -577,6 +572,9 @@ class REPS(AlgorithmBase):
             src = SDpair[0]
             dst = SDpair[1]
 
+            if len(Pi[SDpair]):
+                self.result.idleTime -= 1
+
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
                 print('attempt:', [node.id for node in path])
@@ -590,7 +588,6 @@ class REPS(AlgorithmBase):
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
                             print('finish time:', self.timeSlot - request[2])
-                            self.totalTime += self.timeSlot - request[2]
                             self.requests.remove(request)
                             break
                     print('-----------------')
@@ -787,13 +784,16 @@ class REPS(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(100, 1, 5, 0, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
     s = REPS(topo)
-    for i in range(0, 100):
-        if i < 10:
+    result = AlgorithmResult()
+    for i in range(0, 10):
+        if i < 1:
             a = sample(topo.nodes, 6)
             requests = [(a[n], a[n + 1]) for n in range(0, len(a), 2)]
-            s.work(requests, i)
+            result = s.work(requests, i)
             # s.work([(a[0],a[1]), (a[2], a[3])], i)
         else:
-            s.work([], i)
+            result = s.work([], i)
+
+    print(result.waitingTime)
