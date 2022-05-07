@@ -19,7 +19,7 @@ def runThread(algo, requests, algoIndex, ttime):
     global results
     for i in range(ttime):
         result = algo.work(requests[i], i)
-    if algoIndex == 1:
+    if algoIndex == 0:
         for req in algo.requestState:
             if algo.requestState[req].state == 2:
                 algo.requestState[req].intermediate.clearIntermediate()

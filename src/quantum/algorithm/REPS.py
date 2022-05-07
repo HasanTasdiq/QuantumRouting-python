@@ -425,7 +425,7 @@ class REPS(AlgorithmBase):
                     
                 for path in paths:
                     width = path[-1]
-                    select = (width / self.tki[SDpair][k]) >= random.random()
+                    select = (width / self.tki_LP[SDpair][k]) >= random.random()
                     if not select:
                         continue
                     path = path[:-1]
