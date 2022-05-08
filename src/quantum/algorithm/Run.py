@@ -25,7 +25,7 @@ def runThread(algo, requests, algoIndex, ttime):
                 algo.requestState[req].intermediate.clearIntermediate()
     results[algoIndex].append(result)
 
-def Run(numOfRequestPerRound = 2, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05, density = 0.5, mapSize = (50, 200), rtime = 20):
+def Run(numOfRequestPerRound = 2, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05, SocialNetworkDensity = 0.5, mapSize = (50, 200), rtime = 20):
     global results
     topo = Topo.generate(numOfNode, q, 5, alpha, 6)
 
@@ -84,29 +84,59 @@ def Run(numOfRequestPerRound = 2, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05
     
 
 if __name__ == '__main__':
-    print("start")
+    print("start Run and Generate data.txt")
     targetFilePath = "../../plot/data/"
     temp = AlgorithmResult()
-    Ylabels = temp.Ylabels
-    # Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
+    Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
     
+    numOfRequestPerRound = [1, 2, 3, 4, 5]
+    totalRequest = [10, 25, 50, 100]
     numOfNodes = [10, 20, 50, 100]
-    Xlabel = "numOfnodes"
-    Ydata = []
-    for numOfNode in numOfNodes:
-        result = Run(numOfNode = numOfNode, rtime=2)
-        Ydata.append(result)
+    r = [10, 20, 30, 40]
+    q = [0.5, 0.75, 0.8, 0.9]
+    SocialNetworkDensity = [0.2, 0.5, 0.75, 0.9]
+    mapSize = [(50, 50), (100, 100), (50, 200), (10, 1000)]
 
-    # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
-    # Ydata[1] = numOfNode = 20 algo1Result algo2Result ... 
-    # Ydata[2] = numOfNode = 50 algo1Result algo2Result ... 
-    # Ydata[3] = numOfNode = 100 algo1Result algo2Result ... 
+    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "SocialNetworkDensity", "mapSize"]
+    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, SocialNetworkDensity, mapSize]
 
-    for Ylabel in Ylabels:
-        filename = Xlabel + "_" + Ylabel + ".txt"
-        F = open(targetFilePath + filename, "w")
-        for i in range(len(numOfNodes)):
-            Xaxis = str(numOfNodes[i])
-            Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
-            Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-            F.write(Xaxis + Yaxis)
+    for XlabelIndex in range(len(Xlabels)):
+        Xlabel = Xlabel[XlabelIndex]
+        Ydata = []
+        for Xparam in Xparameters[XlabelIndex]:
+            if XlabelIndex == 0:
+                result = Run(numOfRequestPerRound = Xparam)
+                Ydata.append(result)
+            if XlabelIndex == 1:
+                result = Run(numOfRequestPerRound = Xparam, rtime = 1)
+                Ydata.append(result)
+            if XlabelIndex == 2:
+                result = Run(numOfNode = Xparam)
+                Ydata.append(result)
+            if XlabelIndex == 3:
+                result = Run(r = Xparam)
+                Ydata.append(result)
+            if XlabelIndex == 4:
+                result = Run(q = Xparam)
+                Ydata.append(result)
+            if XlabelIndex == 5:
+                result = Run(SocialNetworkDensity = Xparam)
+                Ydata.append(result)            
+            if XlabelIndex == 6:
+                result = Run(mapSize = Xparam)
+                Ydata.append(result)
+
+
+        # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
+        # Ydata[1] = numOfNode = 20 algo1Result algo2Result ... 
+        # Ydata[2] = numOfNode = 50 algo1Result algo2Result ... 
+        # Ydata[3] = numOfNode = 100 algo1Result algo2Result ... 
+
+        for Ylabel in Ylabels:
+            filename = Xlabel + "_" + Ylabel + ".txt"
+            F = open(targetFilePath + filename, "w")
+            for i in range(len(numOfNodes)):
+                Xaxis = str(numOfNodes[i])
+                Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
+                Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+                F.write(Xaxis + Yaxis)
