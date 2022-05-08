@@ -25,7 +25,7 @@ def runThread(algo, requests, algoIndex, ttime):
                 algo.requestState[req].intermediate.clearIntermediate()
     results[algoIndex].append(result)
 
-def Run(numOfRequestPerRound = 2, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05, SocialNetworkDensity = 0.5, mapSize = (50, 200), rtime = 20):
+def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05, SocialNetworkDensity = 0.5, mapSize = (50, 200), rtime = 10):
     global results
     topo = Topo.generate(numOfNode, q, 5, alpha, 6)
 
@@ -38,7 +38,7 @@ def Run(numOfRequestPerRound = 2, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05
     algorithms.append(REPS(copy.deepcopy(topo)))
 
     algorithms[0].r = r
-    algorithms[0].density = density
+    algorithms[0].density = SocialNetworkDensity
 
     times = 2
     results = [[] for _ in range(len(algorithms))]
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, SocialNetworkDensity, mapSize]
 
     for XlabelIndex in range(len(Xlabels)):
-        Xlabel = Xlabel[XlabelIndex]
+        Xlabel = Xlabels[XlabelIndex]
         Ydata = []
         for Xparam in Xparameters[XlabelIndex]:
             if XlabelIndex == 0:
