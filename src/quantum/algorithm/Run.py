@@ -25,9 +25,9 @@ def runThread(algo, requests, algoIndex, ttime):
                 algo.requestState[req].intermediate.clearIntermediate()
     results[algoIndex].append(result)
 
-def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 40, q = 0.9, alpha = 0.05, SocialNetworkDensity = 0.5, mapSize = (50, 200), rtime = 10):
+def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 10):
     global results
-    topo = Topo.generate(numOfNode, q, 5, alpha, 6)
+    topo = Topo.generate(numOfNode, q, 5, alpha, 4)
 
     # make copy
     algorithms = []
@@ -42,7 +42,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 40, q = 0.9, alpha = 0.0
 
     times = 3
     results = [[] for _ in range(len(algorithms))]
-    ttime = 10
+    ttime = 200
 
 
     for _ in range(times):
@@ -90,15 +90,16 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
     
     numOfRequestPerRound = [1, 2, 3, 4, 5]
-    totalRequest = [10, 25, 50, 100]
-    numOfNodes = [10, 20, 50, 100]
+    totalRequest = [10, 20, 30, 40, 50]
+    numOfNodes = [50, 100, 150, 200]
     r = [10, 20, 30, 40]
-    q = [0.5, 0.75, 0.8, 0.9]
-    SocialNetworkDensity = [0.2, 0.5, 0.75, 0.9]
-    mapSize = [(50, 50), (100, 100), (50, 200), (10, 1000)]
+    q = [0.8, 0.85, 0.9, 0.95, 1]
+    alpha = [0.0001, 0.00025, 0.0005, 0.00075, 0.001]
+    SocialNetworkDensity = [0.25, 0.5, 0.75, 0.9]
+    # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
-    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "SocialNetworkDensity", "mapSize"]
-    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, SocialNetworkDensity, mapSize]
+    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
+    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity]
 
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
@@ -120,11 +121,14 @@ if __name__ == '__main__':
                 result = Run(q = Xparam)
                 Ydata.append(result)
             if XlabelIndex == 5:
-                result = Run(SocialNetworkDensity = Xparam)
+                result = Run(alpha = Xparam)
                 Ydata.append(result)            
             if XlabelIndex == 6:
-                result = Run(mapSize = Xparam)
-                Ydata.append(result)
+                result = Run(SocialNetworkDensity = Xparam)
+                Ydata.append(result)            
+            # if XlabelIndex == 7:
+            #     result = Run(mapSize = Xparam)
+            #     Ydata.append(result)
 
 
         # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
