@@ -63,16 +63,18 @@ class Topo:
         #         if self.distance(_positions[_node], _positions[_node2]) <= 10:
         #             print('node 1:', _node, 'node 2:', _node2, self.distance(_positions[_node], _positions[_node2]))
 
-        _edges = [] # reset edge
+        # _edges = [] # reset edge
 
         # Construct neighbor table by int type
         _neighbors = {_node: [] for _node in _nodes}
-        # for _node in _nodes:
-        #     _neighbors[_node] = list(nx.neighbors(G,_node))
+        for _node in _nodes:
+            (p1, p2) = _positions[_node]
+            _positions[_node] = (p1 * 2000, p2 * 2000)
+            _neighbors[_node] = list(nx.neighbors(G,_node))
           
         # Construct Node 
         for _node in _nodes:
-            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~15
+            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -113,7 +115,7 @@ class Topo:
         linkId = 0
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
-            rand = int(random.random()*4+3) # 3~7
+            rand = int(random.random()*5+3) # 3~7
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
                 self.links.append(link)
@@ -135,8 +137,8 @@ class Topo:
 
     def generate(n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
-        dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
-        G = nx.waxman_graph(n, beta=0.5, alpha=0.1, L=5, domain=(0, 0, 50, 200), metric=dist)
+        # dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
+        G = nx.waxman_graph(n, beta=0.9, alpha=0.06, domain=(0, 0, 1, 2))
 
         return Topo(G, q, k, a, degree)
 
