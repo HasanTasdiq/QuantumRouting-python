@@ -25,10 +25,37 @@ def runThread(algo, requests, algoIndex, ttime):
                 algo.requestState[req].intermediate.clearIntermediate()
     results[algoIndex].append(result)
 
+class TopoConnectionChecker:
+    def setTopo(self, topo):
+        self.topo = topo
+
+    def checkConnected(self):
+        self.visited = {node : False for node in self.topo.nodes}
+        self.DFS(self.topo.nodes[0])
+        for node in self.topo.nodes:
+            if not self.visited[node]:
+                return False
+        return True
+
+    def DFS(self, currentNode):
+        self.visited[currentNode] = True
+        for link in currentNode.links:
+            nextNode = link.theOtherEndOf(currentNode)
+            if not self.visited[nextNode]:
+                self.DFS(nextNode)
+
 def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 10):
     global results
-    topo = Topo.generate(numOfNode, q, 5, alpha, 4)
 
+    checker = TopoConnectionChecker()
+    while True:
+        topo = Topo.generate(numOfNode, q, 5, alpha, 6)
+        checker.setTopo(topo)
+        if checker.checkConnected():
+            break
+        else:
+            print("topo is not connected", file = sys.stderr)
+            
     # make copy
     algorithms = []
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
@@ -103,6 +130,7 @@ if __name__ == '__main__':
 
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
+        print(Xlabel)
         Ydata = []
         for Xparam in Xparameters[XlabelIndex]:
             if XlabelIndex == 0:
@@ -125,7 +153,7 @@ if __name__ == '__main__':
                 Ydata.append(result)            
             if XlabelIndex == 6:
                 result = Run(SocialNetworkDensity = Xparam)
-                Ydata.append(result)            
+                Ydata.append(result)           
             # if XlabelIndex == 7:
             #     result = Run(mapSize = Xparam)
             #     Ydata.append(result)
@@ -139,8 +167,8 @@ if __name__ == '__main__':
         for Ylabel in Ylabels:
             filename = Xlabel + "_" + Ylabel + ".txt"
             F = open(targetFilePath + filename, "w")
-            for i in range(len(numOfNodes)):
-                Xaxis = str(numOfNodes[i])
+            for i in range(len(Xparameters[XlabelIndex])):
+                Xaxis = str(Xparameters[XlabelIndex][i])
                 Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
                 Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
                 F.write(Xaxis + Yaxis)
