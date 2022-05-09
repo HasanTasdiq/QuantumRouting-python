@@ -106,7 +106,7 @@ class GreedyHopRouting(AlgorithmBase):
                     break               
             if not pick:
                 self.result.idleTime += 1
-        print('p2 end')
+        print('[Greedy_H] p2 end')
     
     def p4(self):
         for path in self.pathsSortedDynamically:
@@ -157,9 +157,9 @@ class GreedyHopRouting(AlgorithmBase):
         self.topo.clearAllEntanglements()     
         self.result.waitingTime = self.totalTime + remainTime
 
-        print('waiting time:', self.result.waitingTime)
-        print('idle time:', self.result.idleTime)
-        print('p4 end')
+        print('[Greedy_H] waiting time:', self.result.waitingTime)
+        print('[Greedy_H] idle time:', self.result.idleTime)
+        print('[Greedy_H] p4 end')
 
         return self.result
         

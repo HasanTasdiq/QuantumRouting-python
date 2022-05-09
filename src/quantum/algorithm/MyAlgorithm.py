@@ -38,7 +38,9 @@ class MyAlgorithm(AlgorithmBase):
         self.SN = {}                    # social network
 
         self.socialRelationship = {node: [] for node in self.topo.nodes}
+        print("[MyAlgo] Construct path")
         self.establishShortestPath()
+        print("[MyAlgo] Construct social relationship")
         self.genSocialRelationship()
     
     def myFactorial(self, n):   
@@ -59,7 +61,7 @@ class MyAlgorithm(AlgorithmBase):
                     self.givenShortestPath[(n1, n2)] = self.topo.shortestPath(n1, n2, 'Hop')[1] 
                     if len(self.givenShortestPath[(n1, n2)]) == 0:
                         quit()
-                    print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id, ', path length ->', len(self.givenShortestPath[(n1, n2)]))
+                    # print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id, ', path length ->', len(self.givenShortestPath[(n1, n2)]))
 
     def Pr(self, path):
         P = 1
@@ -94,7 +96,7 @@ class MyAlgorithm(AlgorithmBase):
         return currentRound
       
     def expectedRound(self, p1, p2):
-        print('p1:', p1,'p2:', p2)
+        print('[MyAlgo]', 'p1:', p1,'p2:', p2)
         # prev_a = 0
         # a = 0 
         # b = 0 
@@ -123,7 +125,7 @@ class MyAlgorithm(AlgorithmBase):
         for _ in range(times):
             roundSum += self.Round(p1, p2, self.r)
 
-        print('expect:', roundSum / times)
+        print('[MyAlgo]', 'expect:', roundSum / times)
         return roundSum / times
 
     def genSocialRelationship(self):
@@ -153,7 +155,7 @@ class MyAlgorithm(AlgorithmBase):
                     n2 = self.topo.nodes[j]
                     self.socialRelationship[n1].append(n2)
                     self.socialRelationship[n2].append(n1)
-                    print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
+                    # print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
     
     def genSocialNetwork(self, userNum, density):
         self.SN = {i: [] for i in range(userNum)}
@@ -193,7 +195,7 @@ class MyAlgorithm(AlgorithmBase):
 
                 if expectKey in self.expectTable:
                     curMin = self.expectTable[expectKey]
-                    print('get from table')
+                    print('[MyAlgo] get from table')
                 else:
                     P_sk = self.Pr(path_sk)
                     P_kd = self.Pr(path_kd)
@@ -304,7 +306,7 @@ class MyAlgorithm(AlgorithmBase):
                     requestInfo.taken= True
                     
                     found = True
-                    print('P2Extra take')
+                    print('[MyAlgo] P2Extra take')
 
                 elif requestInfo.taken:
                     if src.remainingQubits < 1:
@@ -405,7 +407,7 @@ class MyAlgorithm(AlgorithmBase):
         self.descideSegmentation()
 
         # 根據path長度排序 
-        # sorted(self.requestState.items(), key=lambda x: x[1].pathlen)
+        # state2 > state1, timeslot, path長度
         sorted(self.requestState.items(), key=lambda x: (-x[1].state, x[0][2], x[1].pathlen))
         self.requestState = dict(self.requestState)
 
@@ -544,11 +546,11 @@ class MyAlgorithm(AlgorithmBase):
             success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
             print('----------------------')
-            print('success:', success)
-            print('state:', requestInfo.state)
+            print('[MyAlgo] success:', success)
+            print('[MyAlgo] state:', requestInfo.state)
             p2 = self.givenShortestPath[(req[0],req[1])]
-            print('original path:', [x.id for x in p2])
-            print('path:', [x.id for x in p])
+            print('[MyAlgo] original path:', [x.id for x in p2])
+            print('[MyAlgo] path:', [x.id for x in p])
 
             # failed
             if success == 0 and len(p) != 2:
@@ -590,17 +592,18 @@ class MyAlgorithm(AlgorithmBase):
         self.topo.clearAllEntanglements() 
         self.result.waitingTime = self.totalTime + remainTime
 
-        print('----------------------')
-        print('waiting time:',  self.result.waitingTime)
-        print('idle time:', self.result.idleTime)
-        print('remaining request:', len(self.requestState))
-        print('----------------------')
+        # print('----------------------')
+        print('[MyAlgo] waiting time:',  self.result.waitingTime)
+        print('[MyAlgo] idle time:', self.result.idleTime)
+        print('[MyAlgo] remaining request:', len(self.requestState))
+        print('[MyAlgo] p5 end')
+        # print('----------------------')
 
         return self.result
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.001, 6)
     s = MyAlgorithm(topo)
     
     # for i in range(0, 200):
