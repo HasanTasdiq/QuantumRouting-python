@@ -90,6 +90,7 @@ class GreedyHopRouting(AlgorithmBase):
                         n2 = p[s+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
+                                self.result.usedQubits += 2
                                 link.assignQubits()
                                 break    
             # SDpairs end
@@ -152,6 +153,7 @@ class GreedyHopRouting(AlgorithmBase):
 
         remainTime = 0
         for req in self.requests:
+            self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
 
         self.topo.clearAllEntanglements()     

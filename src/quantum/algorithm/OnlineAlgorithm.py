@@ -194,6 +194,7 @@ class OnlineAlgorithm(AlgorithmBase):
             sorted(links, key=lambda q: q.id)
 
             for i in range(0, width):
+                self.result.usedQubits += 2
                 links[i].assignQubits()
                 links[i].tryEntanglement() # just display
 

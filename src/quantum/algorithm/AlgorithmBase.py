@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from time import process_time, sleep
 import sys
 sys.path.append("..")
 from topo.Topo import Topo  
@@ -49,7 +50,6 @@ class AlgorithmBase:
         self.name = "Greedy"
         self.topo = topo
         self.srcDstPairs = []
-        self.finishedSrcDstPairs = []
         self.timeSlot = 0
         self.result = AlgorithmResult()
 
@@ -67,22 +67,30 @@ class AlgorithmBase:
             link.tryEntanglement()
 
     def work(self, pairs: list, time): 
-        # self.finishedSrcDstPairs.clear()
+
         self.timeSlot = time # 紀錄目前回合
         self.srcDstPairs.extend(pairs) # 任務追加進去
 
         if self.timeSlot == 0:
             self.prepare()
 
+        # start
+        start = process_time()
+
         self.p2()
         
         self.tryEntanglement()
 
-        t = self.p4()
+        res = self.p4()
+
+        # end   
+        end = process_time()
 
         self.srcDstPairs.clear()
 
-        return t
+        res.algorithmRuntime += end - start
+
+        return res
 
 @dataclass
 class PickedPath:

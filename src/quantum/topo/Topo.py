@@ -127,7 +127,6 @@ class Topo:
         # p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
         # print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
-        
 
     def distance(self, pos1: tuple, pos2: tuple): # para1 type: tuple, para2 type: tuple
         d = 0
@@ -138,7 +137,7 @@ class Topo:
     def generate(n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
         # dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
-        G = nx.waxman_graph(n, beta=0.9, alpha=0.06, domain=(0, 0, 1, 2))
+        G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
 
         return Topo(G, q, k, a, degree)
 
