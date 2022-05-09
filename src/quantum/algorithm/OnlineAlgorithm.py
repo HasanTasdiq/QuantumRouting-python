@@ -49,17 +49,17 @@ class OnlineAlgorithm(AlgorithmBase):
             if len(candidates) == 0:
                 break
             pick = candidates[-1]   # pick -> PickedPath 
-            print('pick size:', len(candidates), 'pick width:', pick.width)
-            print([x.id for x in pick.path])  
+            print('[Q-cast]', 'pick size:', len(candidates), 'pick width:', pick.width)
+            print('[Q-cast]', [x.id for x in pick.path])  
             if pick.weight > 0.0: 
                 self.pickAndAssignPath(pick)
             else:
                 break
 
             if self.allowRecoveryPaths:
-                print('P2Extra')
+                print('[Q-cast] P2Extra')
                 self.P2Extra()
-                print('P2Extra end')
+                print('[Q-cast] P2Extra end')
         
         for req in self.requests:
             pick = False
@@ -426,8 +426,8 @@ class OnlineAlgorithm(AlgorithmBase):
         self.topo.clearAllEntanglements()
         self.result.waitingTime = self.totalTime + remainTime
 
-        print('waiting time:', self.result.waitingTime)
-        print('idle time:', self.result.idleTime)
+        print('[Q-cast] waiting time:', self.result.waitingTime)
+        print('[Q-cast] idle time:', self.result.idleTime)
 
         return self.result
 
