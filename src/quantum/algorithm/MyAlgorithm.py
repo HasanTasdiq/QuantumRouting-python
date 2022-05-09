@@ -293,10 +293,12 @@ class MyAlgorithm(AlgorithmBase):
                         n2 = p[i+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
+                                self.result.usedQubits += 2
                                 link.assignQubits()
                                 break 
 
                     if requestInfo.state == 1:
+                        self.result.usedQubits += 1
                         dst.assignIntermediate()
                     
                     if requestInfo.state == 2:
@@ -347,6 +349,7 @@ class MyAlgorithm(AlgorithmBase):
                         n2 = p[i+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
+                                self.result.usedQubits += 2
                                 link.assignQubits()
                                 break
 
@@ -459,11 +462,13 @@ class MyAlgorithm(AlgorithmBase):
                 n2 = path[i+1]
                 for link in n1.links:
                     if link.contains(n2) and (not link.assigned):
+                        self.result.usedQubits += 2
                         link.assignQubits()
                         break 
 
             # 有分段 另外分配資源給中繼點
             if requestInfo.state == 1:
+                self.result.usedQubits += 1
                 dst.assignIntermediate()
             
             # take這個request
@@ -619,9 +624,10 @@ if __name__ == '__main__':
     
     for i in range(0, 200):
         requests = []
-        if i < 10:
-            for n in range(0,2,2):
-                requests.append((topo.nodes[0], topo.nodes[1]))
+        if i < 1:
+            for j in range(10):
+                a = sample(topo.nodes, 2)
+                requests.append((a[0], a[1]))
             s.work(requests, i)
         else:
             s.work([], i)

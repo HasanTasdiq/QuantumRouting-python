@@ -87,6 +87,7 @@ class GreedyGeographicRouting(AlgorithmBase):
                         n2 = p[s+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
+                                self.result.usedQubits += 2
                                 link.assignQubits()
                                 break    
             # for SDpairs end
