@@ -58,9 +58,10 @@ class REPS(AlgorithmBase):
     def printResult(self):
         self.topo.clearAllEntanglements() 
         self.result.waitingTime += len(self.requests)
-        print("total time:", self.result.waitingTime)
-        print("remain request:", len(self.requests))
-        print("current Timeslot:", self.timeSlot)
+        self.result.unfinishedRequest += len(self.requests)
+        print("[REPS]total time:", self.result.waitingTime)
+        print("[REPS]remain request:", len(self.requests))
+        print("[REPS]current Timeslot:", self.timeSlot)
 
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
@@ -75,7 +76,7 @@ class REPS(AlgorithmBase):
 
     def p2(self):
         self.AddNewSDpairs()
-        self.result.idleTime += len(self.srcDstPairs)
+        self.result.idleTime += len(self.requests)
         self.PFT() # compute (self.ti, self.fi)
         print('[REPS]p2 end')
     
@@ -567,7 +568,7 @@ class REPS(AlgorithmBase):
             T.remove(i)
         
         print('[REPS]ELS end')
-        print([(src.id, dst.id) for (src, dst) in self.srcDstPairs])
+        # print('[REPS]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -577,20 +578,19 @@ class REPS(AlgorithmBase):
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                print('attempt:', [node.id for node in path])
+                print('[REPS]attempt:', [node.id for node in path])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     node.attemptSwapping(link1, link2)
                 successPath = self.topo.getEstablishedEntanglements(src, dst)
                 for x in successPath:
-                    print('success:', [z.id for z in x])
+                    print('[REPS]success:', [z.id for z in x])
 
                 if len(successPath):
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
-                            print('finish time:', self.timeSlot - request[2])
+                            print('[REPS]finish time:', self.timeSlot - request[2])
                             self.requests.remove(request)
                             break
-                    print('-----------------')
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     link1.clearPhase4Swap()
                     link2.clearPhase4Swap()
