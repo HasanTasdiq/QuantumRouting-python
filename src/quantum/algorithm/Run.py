@@ -1,4 +1,4 @@
-import threading
+import multiprocessing
 import sys
 import copy
 sys.path.append("..")
@@ -15,15 +15,14 @@ from topo.Link import Link
 from random import sample
 
 
-def runThread(algo, requests, algoIndex, ttime):
-    global results
+def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
         result = algo.work(requests[i], i)
     if algoIndex == 0:
         for req in algo.requestState:
             if algo.requestState[req].state == 2:
                 algo.requestState[req].intermediate.clearIntermediate()
-    results[algoIndex].append(result)
+    resultDict[pid] = result
 
 class TopoConnectionChecker:
     def setTopo(self, topo):
@@ -45,7 +44,6 @@ class TopoConnectionChecker:
                 self.DFS(nextNode)
 
 def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 10):
-    global results
 
     checker = TopoConnectionChecker()
     while True:
@@ -71,10 +69,12 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.00
     results = [[] for _ in range(len(algorithms))]
     ttime = 200
 
+    resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
+    jobs = []
 
+    pid = 0
     for _ in range(times):
         
-        threads = []
         ids = {i : [] for i in range(ttime)}
         for i in range(ttime):
             if i < rtime:
@@ -88,18 +88,19 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.00
             for i in range(rtime):
                 for (src, dst) in ids[i]:
                     requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
-            Job = threading.Thread(target = runThread, args = (algo, requests, algoIndex, ttime))
-            threads.append(Job)
+            
+            pid += 1
+            job = multiprocessing.Process(target = runThread, args = (algo, requests, algoIndex, ttime, pid, resultDicts[algoIndex]))
+            jobs.append(job)
 
-        for algoIndex in range(len(algorithms)):
-            threads[algoIndex].start()
+    for job in jobs:
+        job.start()
 
-
-        for algoIndex in range(len(algorithms)):
-            threads[algoIndex].join()
+    for job in jobs:
+        job.join()
 
     for algoIndex in range(len(algorithms)):
-        results[algoIndex] = AlgorithmResult.Avg(results[algoIndex])
+        results[algoIndex] = AlgorithmResult.Avg(resultDicts[algoIndex].values())
 
     # results[0] = result of GreedyHopRouting = a AlgorithmResult
     # results[1] = result of MyAlgorithm
