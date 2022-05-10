@@ -245,16 +245,16 @@ class Topo:
         start = s
         if sum(oldP) == 0:
             for m in range(0, width+1):
-                oldP[m] = math.comb(m, width) * math.pow(p[1], m) * math.pow(1-p[1], width-m)
+                oldP[m] = math.comb(width, m) * math.pow(p[1], m) * math.pow(1-p[1], width-m)
                 start = 2
         
         for k in range(start, s+1):
             for i in range(0, width+1):
-                exactlyM = math.comb(i, width) *  math.pow(p[k], i) * math.pow(1-p[k], width-i)
+                exactlyM = math.comb(width, i) *  math.pow(p[k], i) * math.pow(1-p[k], width-i)
                 atLeastM = exactlyM
 
                 for j in range(i+1, width+1):
-                    atLeastM += (math.comb(j, width) * math.pow(p[k], j) * math.pow(1-p[1], width-j))
+                    atLeastM += (math.comb(width, j) * math.pow(p[k], j) * math.pow(1-p[k], width-j))
 
                 acc = 0
                 for j in range(i+1, width+1):
