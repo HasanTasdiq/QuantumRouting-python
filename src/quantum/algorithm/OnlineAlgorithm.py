@@ -8,6 +8,7 @@ from topo.Topo import Topo
 from topo.Node import Node 
 from topo.Link import Link
 from random import sample
+import copy
 
 @dataclass
 class RecoveryPath:
@@ -50,7 +51,8 @@ class OnlineAlgorithm(AlgorithmBase):
                 break
             pick = candidates[-1]   # pick -> PickedPath 
             print('[Q-cast]', 'pick size:', len(candidates), 'pick width:', pick.width)
-            print('[Q-cast]', [x.id for x in pick.path])  
+            for c in candidates:
+                print('[Q-cast]', [x.id for x in c.path])  
             if pick.weight > 0.0: 
                 self.pickAndAssignPath(pick)
             else:
@@ -154,7 +156,8 @@ class OnlineAlgorithm(AlgorithmBase):
                     
                     # Update neighbors by EXT
                     for neighbor in neighborsOf[u]:
-                        tmp = E[u.id][1]
+                        tmp = copy.deepcopy(E[u.id][1])
+                        # tmp = E[u.id][1]
                         p = getPathFromSrc(u)
                         p.append(neighbor)
                         e = self.topo.e(p, w, tmp)
@@ -434,7 +437,7 @@ class OnlineAlgorithm(AlgorithmBase):
 
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
     s = OnlineAlgorithm(topo)
     for i in range(0, 200):
         if i < 10:
