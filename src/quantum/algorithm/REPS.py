@@ -21,10 +21,10 @@ class REPS(AlgorithmBase):
         self.name = "REPS"
         self.requests = []
         if not self.checkConnected():
-            print("[REPS]Graph is not connected")
+            print("[REPS] Graph is not connected")
             exit(0)
         if not self.checkEdge():
-            print("[REPS]Edge error")
+            print("[REPS] Edge error")
             exit(0)
 
     def checkEdge(self):
@@ -59,9 +59,9 @@ class REPS(AlgorithmBase):
         self.topo.clearAllEntanglements() 
         self.result.waitingTime += len(self.requests)
         self.result.unfinishedRequest += len(self.requests)
-        print("[REPS]total time:", self.result.waitingTime)
-        print("[REPS]remain request:", len(self.requests))
-        print("[REPS]current Timeslot:", self.timeSlot)
+        print("[REPS] total time:", self.result.waitingTime)
+        print("[REPS] remain request:", len(self.requests))
+        print("[REPS] current Timeslot:", self.timeSlot)
 
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
@@ -78,12 +78,12 @@ class REPS(AlgorithmBase):
         self.AddNewSDpairs()
         self.result.idleTime += len(self.requests)
         self.PFT() # compute (self.ti, self.fi)
-        print('[REPS]p2 end')
+        print('[REPS] p2 end')
     
     def p4(self):
         self.EPS()
         self.ELS()
-        print('[REPS]p4 end') 
+        print('[REPS] p4 end') 
         self.printResult()
         return self.result
 
@@ -91,7 +91,7 @@ class REPS(AlgorithmBase):
     # return fi(u, v)
 
     def LP1(self):
-        print('[REPS]LP1 start')
+        print('[REPS] LP1 start')
         # initialize fi(u, v) ans ti
 
         self.fi_LP = {SDpair : {} for SDpair in self.srcDstPairs}
@@ -178,7 +178,7 @@ class REPS(AlgorithmBase):
             
             varName = self.genNameByComma('t', [i])
             self.ti_LP[SDpair] = m.getVarByName(varName).x
-        print('[REPS]LP1 end')
+        print('[REPS] LP1 end')
     def edgeCapacity(self, u, v):
         capacity = 0
         for link in u.links:
@@ -258,7 +258,7 @@ class REPS(AlgorithmBase):
                     next = path[nodeIndex + 1]
                     self.fi[SDpair][(node, next)] += 1
 
-        print('[REPS]PFT end')
+        print('[REPS] PFT end')
         for SDpair in self.srcDstPairs:
             for edge in self.topo.edges:
                 u = edge[0]
@@ -285,7 +285,7 @@ class REPS(AlgorithmBase):
         return capacity
 
     def LP2(self):
-        print('[REPS]LP2 start')
+        print('[REPS] LP2 start')
         # initialize fi(u, v) ans ti
 
         numOfNodes = len(self.topo.nodes)
@@ -396,7 +396,7 @@ class REPS(AlgorithmBase):
             
                 varName = self.genNameByBbracket('t', [i, k])
                 self.tki_LP[SDpair][k] = m.getVarByName(varName).x
-        print('[REPS]LP2 end')
+        print('[REPS] LP2 end')
 
     def EPS(self):
         self.LP2()
@@ -437,7 +437,7 @@ class REPS(AlgorithmBase):
                         next = path[nodeIndex + 1]
                         self.fki[SDpair][k][(node, next)] = 1
                 
-        print('[REPS]EPS end')
+        print('[REPS] EPS end')
 
     def ELS(self):
         Ci = self.pathForELS
@@ -567,7 +567,7 @@ class REPS(AlgorithmBase):
                 needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
             T.remove(i)
         
-        print('[REPS]ELS end')
+        print('[REPS] ELS end')
         # print('[REPS]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
@@ -578,17 +578,17 @@ class REPS(AlgorithmBase):
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                print('[REPS]attempt:', [node.id for node in path])
+                print('[REPS] attempt:', [node.id for node in path])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     node.attemptSwapping(link1, link2)
                 successPath = self.topo.getEstablishedEntanglements(src, dst)
                 for x in successPath:
-                    print('[REPS]success:', [z.id for z in x])
+                    print('[REPS] success:', [z.id for z in x])
 
                 if len(successPath):
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
-                            print('[REPS]finish time:', self.timeSlot - request[2])
+                            print('[REPS] finish time:', self.timeSlot - request[2])
                             self.requests.remove(request)
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
