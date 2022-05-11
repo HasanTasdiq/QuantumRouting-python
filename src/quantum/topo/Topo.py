@@ -43,6 +43,25 @@ class Edge(Node):
     def equals(self, other):
         return other is Edge and (other.n1 == self.n1 and other.n2 == self.n2 or other.n1 == self.n2 and other.n2 == self.n1)
 
+class TopoConnectionChecker:
+    def setTopo(self, topo):
+        self.topo = topo
+
+    def checkConnected(self):
+        self.visited = {node : False for node in self.topo.nodes}
+        self.DFS(self.topo.nodes[0])
+        for node in self.topo.nodes:
+            if not self.visited[node]:
+                return False
+        return True
+
+    def DFS(self, currentNode):
+        self.visited[currentNode] = True
+        for link in currentNode.links:
+            nextNode = link.theOtherEndOf(currentNode)
+            if not self.visited[nextNode]:
+                self.DFS(nextNode)
+
 class Topo:
 
     def __init__(self, G, q, k, a, degree):
@@ -137,9 +156,17 @@ class Topo:
     def generate(n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
         # dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
-        G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-
-        return Topo(G, q, k, a, degree)
+        
+        checker = TopoConnectionChecker()
+        while True:
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            topo = Topo(G, q, k, a, degree)
+            checker.setTopo(topo)
+            if checker.checkConnected():
+                break
+            else:
+                print("topo is not connected", file = sys.stderr)
+        return topo
 
     def widthPhase2(self, path):
         curMinWidth = min(path[0].remainingQubits, path[-1].remainingQubits)
