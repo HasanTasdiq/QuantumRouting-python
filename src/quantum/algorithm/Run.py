@@ -65,7 +65,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.00
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 3
+    times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = 200
 
@@ -131,33 +131,30 @@ if __name__ == '__main__':
 
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
-        print(Xlabel)
+        statusFile = open("status.txt", "w")
+        print(Xlabel, file = statusFile)
+        statusFile.flush()
+        statusFile.close()
+
         Ydata = []
         for Xparam in Xparameters[XlabelIndex]:
             if XlabelIndex == 0:
                 result = Run(numOfRequestPerRound = Xparam)
-                Ydata.append(result)
             if XlabelIndex == 1:
                 result = Run(numOfRequestPerRound = Xparam, rtime = 1)
-                Ydata.append(result)
             if XlabelIndex == 2:
                 result = Run(numOfNode = Xparam)
-                Ydata.append(result)
             if XlabelIndex == 3:
                 result = Run(r = Xparam)
-                Ydata.append(result)
             if XlabelIndex == 4:
                 result = Run(q = Xparam)
-                Ydata.append(result)
             if XlabelIndex == 5:
                 result = Run(alpha = Xparam)
-                Ydata.append(result)            
             if XlabelIndex == 6:
                 result = Run(SocialNetworkDensity = Xparam)
-                Ydata.append(result)           
             # if XlabelIndex == 7:
             #     result = Run(mapSize = Xparam)
-            #     Ydata.append(result)
+            Ydata.append(result)           
 
 
         # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
