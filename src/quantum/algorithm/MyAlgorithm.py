@@ -592,6 +592,7 @@ class MyAlgorithm(AlgorithmBase):
 
         remainTime = 0
         for req in self.requestState:
+            self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
 
         self.topo.clearAllEntanglements() 

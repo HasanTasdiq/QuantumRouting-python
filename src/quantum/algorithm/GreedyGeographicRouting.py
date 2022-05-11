@@ -150,6 +150,7 @@ class GreedyGeographicRouting(AlgorithmBase):
 
         remainTime = 0
         for req in self.requests:
+            self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
 
         self.topo.clearAllEntanglements()                     
