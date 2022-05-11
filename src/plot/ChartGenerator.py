@@ -10,8 +10,9 @@ class ChartGenerator:
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
     def __init__(self, dataName, Ylabel, Xlabel):
         # Ydiv, Ystart, Yend, Yinterval
-        Ydiv = 0
-        div = int(10 ** Ydiv)
+        Ypow = 0
+        Xpow = 0
+
         print("start generator")
         color = [
             "#000000",
@@ -62,8 +63,6 @@ class ChartGenerator:
         _y = []
         numOfData = 0
 
-
-
         for line in lines:
             line = line.replace('\n','')
             data = line.split(' ')
@@ -87,13 +86,22 @@ class ChartGenerator:
         maxData = 0
         minData = math.inf
 
+        if float(x[numOfData - 1]) <= 0.001:
+            Xpow = -4
+
+        Ydiv = float(10 ** Ypow)
+        Xdiv = float(10 ** Xpow)
+        
+        for i in range(numOfData):
+            x[i] = float(x[i]) / Xdiv
+
         for i in range(numOfAlgo):
             for j in range(numOfData):
-                y[i][j] = float(y[i][j]) / div
+                y[i][j] = float(y[i][j]) / Ydiv
                 maxData = max(maxData, y[i][j])
                 minData = min(minData, y[i][j])
 
-        Ystart = int(max(0, minData - 5))
+        Ystart = int(max(0, minData - 1))
         Yend = int(maxData + 5)
         Yinterval = int((Yend - Ystart) // 5)
 
@@ -122,7 +130,8 @@ class ChartGenerator:
 
         leg.get_frame().set_linewidth(0.0)
         
-        Ylabel += self.genMultiName(Ydiv)
+        Ylabel += self.genMultiName(Ypow)
+        Xlabel += self.genMultiName(Xpow)
         
         plt.yticks(np.arange(Ystart, Yend, step=Yinterval), fontsize=Yticks_fontsize)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize)
