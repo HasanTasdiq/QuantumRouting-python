@@ -58,15 +58,16 @@ class OnlineAlgorithm(AlgorithmBase):
             else:
                 break
 
-            if self.allowRecoveryPaths:
-                print('[Q-cast] P2Extra')
-                self.P2Extra()
-                print('[Q-cast] P2Extra end')
+        if self.allowRecoveryPaths:
+            print('[Q-cast] P2Extra')
+            self.P2Extra()
+            print('[Q-cast] P2Extra end')
         
         for req in self.requests:
             pick = False
             for pathWithWidth in self.majorPaths:
                 p = pathWithWidth.path
+                print('[Q-cast]', 'pick', [x.id for x in p])
                 if (p[0], p[-1], pathWithWidth.time) == req:
                     pick = True
                     break
@@ -78,9 +79,18 @@ class OnlineAlgorithm(AlgorithmBase):
     def calCandidates(self, requests: list): # pairs -> [(Node, Node), ...]
         candidates = [] 
         for req in requests:
+
+            # found = False
+            # for pathWithWidth in self.majorPaths:
+            #     p = pathWithWidth.path
+            #     if (p[0], p[-1], pathWithWidth.time) == req:
+            #         found = True
+            # if found:
+            #     continue
+
             candidate = []
             (src, dst, time) = req
-            maxM = max(src.remainingQubits, dst.remainingQubits)
+            maxM = min(src.remainingQubits, dst.remainingQubits)
             if maxM == 0:   # not enough qubit
                 continue
 
@@ -96,30 +106,30 @@ class OnlineAlgorithm(AlgorithmBase):
 
                 # collect edges with links 
                 for link in self.topo.links:
-                    if link.n2.id < link.n1.id:
-                        link.n1, link.n2 = link.n2, link.n1
+                    # if link.n2.id < link.n1.id:
+                    #     link.n1, link.n2 = link.n2, link.n1
                     if not link.assigned and link.n1 not in failNodes and link.n2 not in failNodes:
                         if not edges.__contains__((link.n1, link.n2)):
                             edges[(link.n1, link.n2)] = []
                         edges[(link.n1, link.n2)].append(link)
 
-                neighborsOf = {} # neighborsOf -> {Node: [Node, ...], ...}
-                neighborsOf[src] = []
-                neighborsOf[dst] = []
+                neighborsOf = {node: [] for node in self.topo.nodes} # neighborsOf -> {Node: [Node, ...], ...}
+                # neighborsOf[src] = []
+                # neighborsOf[dst] = []
 
                 # filter available links satisfy width w
                 for edge in edges:
                     links = edges[edge]
                     if len(links) >= w:
-                        if not neighborsOf.__contains__(edge[0]):
-                            neighborsOf[edge[0]] = []
-                        if not neighborsOf.__contains__(edge[1]):
-                            neighborsOf[edge[1]] = []
+                        # if not neighborsOf.__contains__(edge[0]):
+                        #     neighborsOf[edge[0]] = []
+                        # if not neighborsOf.__contains__(edge[1]):
+                        #     neighborsOf[edge[1]] = []
 
                         neighborsOf[edge[0]].append(edge[1])
                         neighborsOf[edge[1]].append(edge[0])
-                        neighborsOf[edge[0]] = list(set(neighborsOf[edge[0]]))
-                        neighborsOf[edge[1]] = list(set(neighborsOf[edge[1]]))
+                        # neighborsOf[edge[0]] = list(set(neighborsOf[edge[0]]))
+                        # neighborsOf[edge[1]] = list(set(neighborsOf[edge[1]]))
                                              
                 if (len(neighborsOf[src]) == 0 or len(neighborsOf[dst]) == 0):
                     continue
@@ -269,8 +279,10 @@ class OnlineAlgorithm(AlgorithmBase):
                             break
                     if broken:
                         brokenEdges.append((i1, i2))
-            
-                
+
+                        # if link.contains(n2) and link.assigned and link.notSwapped() and not link.entangled:
+                        #     brokenEdges.append((i1, i2))
+
                 edgeToRps = {brokenEdge: [] for brokenEdge in brokenEdges}   # {tuple : [tuple, ...], ...}
                 rpToEdges = {tuple(recoveryPath.path): [] for recoveryPath in recoveryPaths}    # {tuple : [tuple, ...], ...}
 
@@ -425,6 +437,7 @@ class OnlineAlgorithm(AlgorithmBase):
         # for pathWithWidth end
         remainTime = 0
         for req in self.requests:
+            self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
 
         self.topo.clearAllEntanglements()
