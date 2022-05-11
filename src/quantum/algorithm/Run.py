@@ -24,36 +24,16 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
                 algo.requestState[req].intermediate.clearIntermediate()
     resultDict[pid] = result
 
-class TopoConnectionChecker:
-    def setTopo(self, topo):
-        self.topo = topo
 
-    def checkConnected(self):
-        self.visited = {node : False for node in self.topo.nodes}
-        self.DFS(self.topo.nodes[0])
-        for node in self.topo.nodes:
-            if not self.visited[node]:
-                return False
-        return True
 
-    def DFS(self, currentNode):
-        self.visited[currentNode] = True
-        for link in currentNode.links:
-            nextNode = link.theOtherEndOf(currentNode)
-            if not self.visited[nextNode]:
-                self.DFS(nextNode)
+def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 20, topo = None):
 
-def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 10):
-
-    checker = TopoConnectionChecker()
-    while True:
+    if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
-        checker.setTopo(topo)
-        if checker.checkConnected():
-            break
-        else:
-            print("topo is not connected", file = sys.stderr)
-            
+    
+    topo.q = q
+    topo.alpha = alpha
+
     # make copy
     algorithms = []
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
@@ -121,13 +101,15 @@ if __name__ == '__main__':
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
     r = [10, 20, 30, 40]
-    q = [0.8, 0.85, 0.9, 0.95, 1]
-    alpha = [0.0001, 0.00025, 0.0005, 0.00075, 0.001]
+    q = [0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 0.9]
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity]
+
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
 
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
@@ -138,20 +120,20 @@ if __name__ == '__main__':
 
         Ydata = []
         for Xparam in Xparameters[XlabelIndex]:
-            if XlabelIndex == 0:
-                result = Run(numOfRequestPerRound = Xparam)
-            if XlabelIndex == 1:
-                result = Run(numOfRequestPerRound = Xparam, rtime = 1)
-            if XlabelIndex == 2:
+            if XlabelIndex == 0: # #RequestPerRound
+                result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
+            if XlabelIndex == 1: # totalRequest
+                result = Run(numOfRequestPerRound = Xparam, rtime = 1, topo = copy.deepcopy(topo))
+            if XlabelIndex == 2: # #nodes
                 result = Run(numOfNode = Xparam)
-            if XlabelIndex == 3:
-                result = Run(r = Xparam)
-            if XlabelIndex == 4:
-                result = Run(q = Xparam)
-            if XlabelIndex == 5:
-                result = Run(alpha = Xparam)
-            if XlabelIndex == 6:
-                result = Run(SocialNetworkDensity = Xparam)
+            if XlabelIndex == 3: # r
+                result = Run(r = Xparam, topo = copy.deepcopy(topo))
+            if XlabelIndex == 4: # swapProbability
+                result = Run(q = Xparam, topo = copy.deepcopy(topo))
+            if XlabelIndex == 5: # alpha
+                result = Run(alpha = Xparam, topo = copy.deepcopy(topo))
+            if XlabelIndex == 6: # SocialNetworkDensity
+                result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
             # if XlabelIndex == 7:
             #     result = Run(mapSize = Xparam)
             Ydata.append(result)           
