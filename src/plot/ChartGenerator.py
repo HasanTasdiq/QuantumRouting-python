@@ -139,7 +139,7 @@ class ChartGenerator:
         # plt.show()
         plt.tight_layout()
         pdfName = dataName[0:-4]
-        plt.savefig('./pdf/{}.pdf'.format(pdfName)) 
+        plt.savefig('./pdf/{}.jpg'.format(pdfName)) 
         # Xlabel = Xlabel.replace(' (%)','')
         # Xlabel = Xlabel.replace('# ','')
         # Ylabel = Ylabel.replace('# ','')
