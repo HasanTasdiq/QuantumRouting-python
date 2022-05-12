@@ -102,8 +102,8 @@ class ChartGenerator:
                 minData = min(minData, y[i][j])
 
         Ystart = int(max(0, minData - 1))
-        Yend = int(maxData + 5)
-        Yinterval = int((Yend - Ystart) // 5)
+        Yend = int(maxData + 1)
+        Yinterval = float((Yend - Ystart) / 5)
 
         marker = ['o', 's', 'v', 'x', 'd']
         for i in range(numOfAlgo):
@@ -112,20 +112,21 @@ class ChartGenerator:
         plt.xticks(fontsize=Xticks_fontsize)
         plt.yticks(fontsize=Yticks_fontsize)
         
-        AlgoName = ["MyAlgo", "Greedy_hop", "Greedy_geo", "QCAST", "REPS"]
+        # AlgoName = ["MyAlgo", "Greedy_hop", "Greedy_geo", "QCAST", "REPS"]
+        AlgoName = ["MyAlgo", "Greedy_hop", "QCAST", "REPS"]
 
         leg = plt.legend(
             AlgoName[0 : numOfAlgo],
-            loc=10,
-            bbox_to_anchor=(0.4, 1.1),
+            loc = 10,
+            bbox_to_anchor = (0.4, 1.1),
             prop={"size": "15", "family": "Times New Roman"},
-            frameon="False",
-            labelspacing=1,
-            handletextpad=0.2,
-            handlelength=1,
-            columnspacing=0.5,
-            ncol=4,
-            facecolor="None",
+            frameon = "False",
+            labelspacing = 1,
+            handletextpad = 0.2,
+            handlelength = 1,
+            columnspacing = 0.5,
+            ncol = 4,
+            facecolor = "None",
         )
 
         leg.get_frame().set_linewidth(0.0)

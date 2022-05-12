@@ -38,7 +38,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.00
     algorithms = []
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
-    algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
+    # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
     algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
     algorithms.append(REPS(copy.deepcopy(topo)))
 
