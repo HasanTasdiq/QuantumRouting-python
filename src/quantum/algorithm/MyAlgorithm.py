@@ -33,6 +33,8 @@ class MyAlgorithm(AlgorithmBase):
         self.requestState = {}          # {(src, dst, timeslot) : RequestInfo}  request表 
         self.totalTime = 0
         self.density = 0.5
+        self.takeTemporary = 0          # 選擇分段的request數量
+        self.totalNumOfReq = 0          # 總request數量
         self.factorialTable = {}        # 階層運算表
         self.expectTable = {}           # {(path1, path2) : expectRound}        expectRound表
         self.SN = {}                    # social network
@@ -176,7 +178,7 @@ class MyAlgorithm(AlgorithmBase):
             if self.requestState[req].state == 1:
                 k = self.requestState[req].intermediate
                 nodeRemainingQubits[k] -= 1
-
+            
         # 針對新的req 決定要不要拆
         for req in self.srcDstPairs:
             src, dst = req[0], req[1]
@@ -211,7 +213,10 @@ class MyAlgorithm(AlgorithmBase):
             k = self.requestState[(src, dst, self.timeSlot)].intermediate
             if k == None: continue
             nodeRemainingQubits[k] -= 1
+            self.takeTemporary += 1
         
+        self.totalNumOfReq += len(self.srcDstPairs)
+        self.result.temporaryRatio = self.takeTemporary / self.totalNumOfReq
 
     def prepare(self):
         self.requestState.clear()
@@ -482,11 +487,13 @@ class MyAlgorithm(AlgorithmBase):
         # p2 繼續找路徑分配資源 
         self.p2Extra()
 
+
         for req in self.requestState:
             requestInfo = self.requestState[req]
             if requestInfo.taken == False:
                 self.result.idleTime += 1
-  
+
+
     # p4 & p5
     def p4(self):
         
