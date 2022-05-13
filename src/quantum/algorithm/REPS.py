@@ -21,6 +21,7 @@ class REPS(AlgorithmBase):
         self.name = "REPS"
         self.requests = []
         self.numOfrequest = 0
+        self.totalUsedQubits = 0
         self.totalWaitingTime = 0
 
     def genNameByComma(self, varName, parName):
@@ -32,6 +33,7 @@ class REPS(AlgorithmBase):
         self.topo.clearAllEntanglements()
         self.result.unfinishedRequest += len(self.requests)
         self.result.waitingTime = self.totalWaitingTime / self.numOfrequest
+        self.result.usedQubits = self.totalUsedQubits / self.numOfrequest
         print("[REPS] total time:", self.result.waitingTime)
         print("[REPS] remain request:", len(self.requests))
         print("[REPS] current Timeslot:", self.timeSlot)
@@ -248,7 +250,7 @@ class REPS(AlgorithmBase):
                         if link.contains(v) and link.assignable():
                             # link(u, v) for u, v in edgeIndices)
                             link.assignQubits()
-                            self.result.usedQubits += 2
+                            self.result.totalUsedQubits += 2
                             assignCount += 1
                             if assignCount == need:
                                 break
