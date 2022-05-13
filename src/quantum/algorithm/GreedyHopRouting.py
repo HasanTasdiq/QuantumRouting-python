@@ -16,6 +16,7 @@ class GreedyHopRouting(AlgorithmBase):
         self.pathsSortedDynamically = []
         self.requests = []
         self.totalTime = 0
+        self.totalNumOfReq = 0
         self.name = "Greedy_H"
 
     def prepare(self):
@@ -27,7 +28,11 @@ class GreedyHopRouting(AlgorithmBase):
 
         for req in self.srcDstPairs:
             (src, dst) = req
+            self.totalNumOfReq += 1
             self.requests.append((src, dst, self.timeSlot))
+        
+        if len(self.requests) > 0:
+            self.result.numOfTimeslot += 1
 
         while True:
             found = False   # record this round whether find new path
@@ -157,7 +162,7 @@ class GreedyHopRouting(AlgorithmBase):
             remainTime += self.timeSlot - req[2]
 
         self.topo.clearAllEntanglements()     
-        self.result.waitingTime = self.totalTime + remainTime
+        self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
 
         print('[Greedy_H] waiting time:', self.result.waitingTime)
         print('[Greedy_H] idle time:', self.result.idleTime)
@@ -167,13 +172,13 @@ class GreedyHopRouting(AlgorithmBase):
         
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
-    f = open('logfile.txt', 'w')
+    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
+    # f = open('logfile.txt', 'w')
     
     a1 = GreedyHopRouting(topo)
     # a2 = MyAlgorithm(topo)
     # a3 = GreedyGeographicRouting(topo)
-    # a4 = OnlineAlgorithm(topo)
+    a4 = OnlineAlgorithm(topo)
     # samplesPerTime = 2
 
     # while samplesPerTime < 11:
@@ -221,12 +226,19 @@ if __name__ == '__main__':
     # # 5XX
     # f.close()
     
-    for i in range(0, 200):
-        requests = []
-        if i < 1:
-            for j in range(50):
-                a = sample(topo.nodes, 2)
-                requests.append((a[0], a[1]))
-            a1.work(requests, i)
-        else:
-            a1.work([], i)
+    samplesPerTime = 4
+    ttime = 100
+    rtime = 10
+    requests = {i : [] for i in range(ttime)}
+
+    for i in range(ttime):
+        if i < rtime:
+            a = sample(topo.nodes, samplesPerTime)
+            for n in range(0,samplesPerTime,2):
+                requests[i].append((a[n], a[n+1]))
+
+    for i in range(ttime):
+        t3 = a4.work(requests[i], i)
+    
+    for i in range(ttime):
+        t1 = a1.work(requests[i], i)

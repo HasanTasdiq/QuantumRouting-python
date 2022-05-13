@@ -29,6 +29,7 @@ class OnlineAlgorithm(AlgorithmBase):
         self.allowRecoveryPaths = allowRecoveryPaths
         self.requests = []
         self.totalTime = 0
+        self.totalNumOfReq = 0
     
     def prepare(self):
         self.totalTime = 0
@@ -42,7 +43,11 @@ class OnlineAlgorithm(AlgorithmBase):
 
         for req in self.srcDstPairs:
             (src, dst) = req
+            self.totalNumOfReq += 1
             self.requests.append((src, dst, self.timeSlot))
+        
+        if len(self.requests) > 0:
+            self.result.numOfTimeslot += 1
 
         while True: 
             candidates = self.calCandidates(self.requests) # candidates -> [PickedPath, ...]   
@@ -441,7 +446,7 @@ class OnlineAlgorithm(AlgorithmBase):
             remainTime += self.timeSlot - req[2]
 
         self.topo.clearAllEntanglements()
-        self.result.waitingTime = self.totalTime + remainTime
+        self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
 
         print('[Q-cast] waiting time:', self.result.waitingTime)
         print('[Q-cast] idle time:', self.result.idleTime)
