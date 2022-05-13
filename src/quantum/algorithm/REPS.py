@@ -20,35 +20,8 @@ class REPS(AlgorithmBase):
         super().__init__(topo)
         self.name = "REPS"
         self.requests = []
-        if not self.checkConnected():
-            print("[REPS] Graph is not connected")
-            exit(0)
-        if not self.checkEdge():
-            print("[REPS] Edge error")
-            exit(0)
-
-    def checkEdge(self):
-        for node in self.topo.nodes:
-            for link in node.links:
-                neighbor = link.theOtherEndOf(node)
-                if (node, neighbor) not in self.topo.edges and (neighbor, node) not in self.topo.edges:
-                    return False
-        return True
-
-    def checkConnected(self):
-        self.visited = {node : False for node in self.topo.nodes}
-        self.DFS(self.topo.nodes[0])
-        for node in self.topo.nodes:
-            if not self.visited[node]:
-                return False
-        return True
-
-    def DFS(self, currentNode):
-        self.visited[currentNode] = True
-        for link in currentNode.links:
-            nextNode = link.theOtherEndOf(currentNode)
-            if not self.visited[nextNode]:
-                self.DFS(nextNode)
+        self.numOfrequest = 0
+        self.totalWaitingTime = 0
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
@@ -56,15 +29,16 @@ class REPS(AlgorithmBase):
         return (varName + str(parName)).replace(' ', '').replace(',', '][')
     
     def printResult(self):
-        self.topo.clearAllEntanglements() 
-        self.result.waitingTime += len(self.requests)
+        self.topo.clearAllEntanglements()
         self.result.unfinishedRequest += len(self.requests)
+        self.result.waitingTime = self.totalWaitingTime / self.numOfrequest
         print("[REPS] total time:", self.result.waitingTime)
         print("[REPS] remain request:", len(self.requests))
         print("[REPS] current Timeslot:", self.timeSlot)
 
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
+            self.numOfrequest += 1
             self.requests.append((src, dst, self.timeSlot))
 
         self.srcDstPairs = []
@@ -76,13 +50,17 @@ class REPS(AlgorithmBase):
 
     def p2(self):
         self.AddNewSDpairs()
+        self.totalWaitingTime += len(self.requests)
         self.result.idleTime += len(self.requests)
-        self.PFT() # compute (self.ti, self.fi)
+        if len(self.srcDstPairs) > 0:
+            self.result.numOfTimeslot += 1
+            self.PFT() # compute (self.ti, self.fi)
         print('[REPS] p2 end')
     
     def p4(self):
-        self.EPS()
-        self.ELS()
+        if len(self.srcDstPairs) > 0:
+            self.EPS()
+            self.ELS()
         print('[REPS] p4 end') 
         self.printResult()
         return self.result
@@ -792,7 +770,6 @@ if __name__ == '__main__':
             a = sample(topo.nodes, 6)
             requests = [(a[n], a[n + 1]) for n in range(0, len(a), 2)]
             result = s.work(requests, i)
-            # s.work([(a[0],a[1]), (a[2], a[3])], i)
         else:
             result = s.work([], i)
 
