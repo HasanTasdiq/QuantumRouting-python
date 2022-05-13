@@ -762,15 +762,22 @@ class REPS(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = REPS(topo)
     result = AlgorithmResult()
-    for i in range(0, 10):
-        if i < 1:
-            a = sample(topo.nodes, 6)
-            requests = [(a[n], a[n + 1]) for n in range(0, len(a), 2)]
-            result = s.work(requests, i)
-        else:
-            result = s.work([], i)
+    samplesPerTime = 2
+    ttime = 100
+    rtime = 2
+    requests = {i : [] for i in range(ttime)}
 
-    print(result.waitingTime)
+    for i in range(ttime):
+        if i < rtime:
+            a = sample(topo.nodes, samplesPerTime)
+            for n in range(0,samplesPerTime,2):
+                requests[i].append((a[n], a[n+1]))
+
+    for i in range(ttime):
+        result = s.work(requests[i], i)
+    
+
+    print(result.waitingTime, result.numOfTimeslot)
