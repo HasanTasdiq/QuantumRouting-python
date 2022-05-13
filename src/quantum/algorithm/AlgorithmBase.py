@@ -12,6 +12,8 @@ class AlgorithmResult:
         self.idleTime = 0
         self.usedQubits = 0
         self.temporaryRatio = 0
+        self.numOfTimeslot = 0
+        self.totalRuntime = 0
         self.Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
 
     def toDict(self):
@@ -88,7 +90,8 @@ class AlgorithmBase:
 
         self.srcDstPairs.clear()
 
-        res.algorithmRuntime += end - start
+        res.totalRuntime += (end - start)
+        res.algorithmRuntime /= res.numOfTimeslot
 
         return res
 
