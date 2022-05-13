@@ -419,6 +419,9 @@ class MyAlgorithm(AlgorithmBase):
         sorted(self.requestState.items(), key=lambda x: (-x[1].state, x[0][2], x[1].pathlen))
         self.requestState = dict(self.requestState)
 
+        if len(self.requestState) > 0:
+            self.result.numOfTimeslot += 1
+
         # p2 (1)
         for req in self.requestState:
             requestInfo = self.requestState[req]
@@ -603,7 +606,7 @@ class MyAlgorithm(AlgorithmBase):
             remainTime += self.timeSlot - req[2]
 
         self.topo.clearAllEntanglements() 
-        self.result.waitingTime = self.totalTime + remainTime
+        self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
 
         # print('----------------------')
         print('[MyAlgo] waiting time:',  self.result.waitingTime)
