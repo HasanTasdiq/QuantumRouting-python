@@ -447,6 +447,7 @@ class OnlineAlgorithm(AlgorithmBase):
 
         self.topo.clearAllEntanglements()
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
+        self.result.usedQubits /= self.totalNumOfReq
 
         print('[Q-cast] waiting time:', self.result.waitingTime)
         print('[Q-cast] idle time:', self.result.idleTime)
