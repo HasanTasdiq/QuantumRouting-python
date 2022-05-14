@@ -607,6 +607,7 @@ class MyAlgorithm(AlgorithmBase):
 
         self.topo.clearAllEntanglements() 
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
+        self.result.usedQubits /= self.totalNumOfReq
 
         # print('----------------------')
         print('[MyAlgo] waiting time:',  self.result.waitingTime)
@@ -619,7 +620,7 @@ class MyAlgorithm(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.001, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
     s = MyAlgorithm(topo)
     
     # for i in range(0, 200):
