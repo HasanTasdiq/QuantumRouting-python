@@ -6,6 +6,7 @@ from gurobipy import quicksum
 from queue import PriorityQueue
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
+from AlgorithmBase import AlgorithmResult
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
@@ -18,37 +19,10 @@ class REPS(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
         self.name = "REPS"
-        self.totalTime = 0
         self.requests = []
-        if not self.checkConnected():
-            print("[REPS]Graph is not connected")
-            exit(0)
-        if not self.checkEdge():
-            print("[REPS]Edge error")
-            exit(0)
-
-    def checkEdge(self):
-        for node in self.topo.nodes:
-            for link in node.links:
-                neighbor = link.theOtherEndOf(node)
-                if (node, neighbor) not in self.topo.edges and (neighbor, node) not in self.topo.edges:
-                    return False
-        return True
-
-    def checkConnected(self):
-        self.visited = {node : False for node in self.topo.nodes}
-        self.DFS(self.topo.nodes[0])
-        for node in self.topo.nodes:
-            if not self.visited[node]:
-                return False
-        return True
-
-    def DFS(self, currentNode):
-        self.visited[currentNode] = True
-        for link in currentNode.links:
-            nextNode = link.theOtherEndOf(currentNode)
-            if not self.visited[nextNode]:
-                self.DFS(nextNode)
+        self.numOfrequest = 0
+        self.totalUsedQubits = 0
+        self.totalWaitingTime = 0
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
@@ -56,16 +30,17 @@ class REPS(AlgorithmBase):
         return (varName + str(parName)).replace(' ', '').replace(',', '][')
     
     def printResult(self):
-        self.topo.clearAllEntanglements() 
-        remainTime = 0
-        for request in self.requests:
-            remainTime += (self.timeSlot - request[2])
-        print("total time:", self.totalTime + remainTime)
-        print("remain request:", len(self.requests))
-        print("current Timeslot:", self.timeSlot)
+        self.topo.clearAllEntanglements()
+        self.result.unfinishedRequest += len(self.requests)
+        self.result.waitingTime = self.totalWaitingTime / self.numOfrequest
+        self.result.usedQubits = self.totalUsedQubits / self.numOfrequest
+        print("[REPS] total time:", self.result.waitingTime)
+        print("[REPS] remain request:", len(self.requests))
+        print("[REPS] current Timeslot:", self.timeSlot)
 
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
+            self.numOfrequest += 1
             self.requests.append((src, dst, self.timeSlot))
 
         self.srcDstPairs = []
@@ -77,26 +52,26 @@ class REPS(AlgorithmBase):
 
     def p2(self):
         self.AddNewSDpairs()
-        # if len(self.srcDstPairs) == 0:
-        #     return
-        self.PFT() # compute (self.ti, self.fi)
-        print('[REPS]p2 end')
+        self.totalWaitingTime += len(self.requests)
+        self.result.idleTime += len(self.requests)
+        if len(self.srcDstPairs) > 0:
+            self.result.numOfTimeslot += 1
+            self.PFT() # compute (self.ti, self.fi)
+        print('[REPS] p2 end')
     
     def p4(self):
-        self.EPS()
-        self.ELS()
-        print('[REPS]p4 end') 
+        if len(self.srcDstPairs) > 0:
+            self.EPS()
+            self.ELS()
+        print('[REPS] p4 end') 
         self.printResult()
-        remainTime = 0
-        for request in self.requests:
-            remainTime += (self.timeSlot - request[2])
-        return self.totalTime + remainTime
+        return self.result
 
     
     # return fi(u, v)
 
     def LP1(self):
-        print('[REPS]LP1 start')
+        print('[REPS] LP1 start')
         # initialize fi(u, v) ans ti
 
         self.fi_LP = {SDpair : {} for SDpair in self.srcDstPairs}
@@ -183,7 +158,7 @@ class REPS(AlgorithmBase):
             
             varName = self.genNameByComma('t', [i])
             self.ti_LP[SDpair] = m.getVarByName(varName).x
-        print('[REPS]LP1 end')
+        print('[REPS] LP1 end')
     def edgeCapacity(self, u, v):
         capacity = 0
         for link in u.links:
@@ -263,7 +238,7 @@ class REPS(AlgorithmBase):
                     next = path[nodeIndex + 1]
                     self.fi[SDpair][(node, next)] += 1
 
-        print('[REPS]PFT end')
+        print('[REPS] PFT end')
         for SDpair in self.srcDstPairs:
             for edge in self.topo.edges:
                 u = edge[0]
@@ -275,6 +250,7 @@ class REPS(AlgorithmBase):
                         if link.contains(v) and link.assignable():
                             # link(u, v) for u, v in edgeIndices)
                             link.assignQubits()
+                            self.result.totalUsedQubits += 2
                             assignCount += 1
                             if assignCount == need:
                                 break
@@ -289,7 +265,7 @@ class REPS(AlgorithmBase):
         return capacity
 
     def LP2(self):
-        print('[REPS]LP2 start')
+        print('[REPS] LP2 start')
         # initialize fi(u, v) ans ti
 
         numOfNodes = len(self.topo.nodes)
@@ -400,7 +376,7 @@ class REPS(AlgorithmBase):
             
                 varName = self.genNameByBbracket('t', [i, k])
                 self.tki_LP[SDpair][k] = m.getVarByName(varName).x
-        print('[REPS]LP2 end')
+        print('[REPS] LP2 end')
 
     def EPS(self):
         self.LP2()
@@ -430,7 +406,7 @@ class REPS(AlgorithmBase):
                     
                 for path in paths:
                     width = path[-1]
-                    select = (width / self.tki[SDpair][k]) >= random.random()
+                    select = (width / self.tki_LP[SDpair][k]) >= random.random()
                     if not select:
                         continue
                     path = path[:-1]
@@ -441,7 +417,7 @@ class REPS(AlgorithmBase):
                         next = path[nodeIndex + 1]
                         self.fki[SDpair][k][(node, next)] = 1
                 
-        print('[REPS]EPS end')
+        print('[REPS] EPS end')
 
     def ELS(self):
         Ci = self.pathForELS
@@ -571,29 +547,30 @@ class REPS(AlgorithmBase):
                 needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
             T.remove(i)
         
-        print('[REPS]ELS end')
-        print([(src.id, dst.id) for (src, dst) in self.srcDstPairs])
+        print('[REPS] ELS end')
+        # print('[REPS]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
 
+            if len(Pi[SDpair]):
+                self.result.idleTime -= 1
+
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                print('attempt:', [node.id for node in path])
+                print('[REPS] attempt:', [node.id for node in path])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     node.attemptSwapping(link1, link2)
                 successPath = self.topo.getEstablishedEntanglements(src, dst)
                 for x in successPath:
-                    print('success:', [z.id for z in x])
+                    print('[REPS] success:', [z.id for z in x])
 
                 if len(successPath):
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
-                            print('finish time:', self.timeSlot - request[2])
-                            self.totalTime += self.timeSlot - request[2]
+                            print('[REPS] finish time:', self.timeSlot - request[2])
                             self.requests.remove(request)
                             break
-                    print('-----------------')
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     link1.clearPhase4Swap()
                     link2.clearPhase4Swap()
@@ -787,13 +764,22 @@ class REPS(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(100, 1, 5, 0, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = REPS(topo)
-    for i in range(0, 100):
-        if i < 10:
-            a = sample(topo.nodes, 6)
-            requests = [(a[n], a[n + 1]) for n in range(0, len(a), 2)]
-            s.work(requests, i)
-            # s.work([(a[0],a[1]), (a[2], a[3])], i)
-        else:
-            s.work([], i)
+    result = AlgorithmResult()
+    samplesPerTime = 2
+    ttime = 100
+    rtime = 2
+    requests = {i : [] for i in range(ttime)}
+
+    for i in range(ttime):
+        if i < rtime:
+            a = sample(topo.nodes, samplesPerTime)
+            for n in range(0,samplesPerTime,2):
+                requests[i].append((a[n], a[n+1]))
+
+    for i in range(ttime):
+        result = s.work(requests[i], i)
+    
+
+    print(result.waitingTime, result.numOfTimeslot)

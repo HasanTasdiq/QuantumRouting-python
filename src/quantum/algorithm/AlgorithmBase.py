@@ -1,7 +1,50 @@
 from dataclasses import dataclass
+from time import process_time, sleep
 import sys
 sys.path.append("..")
 from topo.Topo import Topo  
+
+class AlgorithmResult:
+    def __init__(self):
+        self.algorithmRuntime = 0
+        self.waitingTime = 0
+        self.unfinishedRequest = 0
+        self.idleTime = 0
+        self.usedQubits = 0
+        self.temporaryRatio = 0
+        self.numOfTimeslot = 0
+        self.totalRuntime = 0
+        self.Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
+
+    def toDict(self):
+        dic = {}
+        dic[self.Ylabels[0]] = self.algorithmRuntime
+        dic[self.Ylabels[1]] = self.waitingTime
+        dic[self.Ylabels[2]] = self.unfinishedRequest
+        dic[self.Ylabels[3]] = self.idleTime
+        dic[self.Ylabels[4]] = self.usedQubits
+        dic[self.Ylabels[5]] = self.temporaryRatio
+        return dic
+    
+    def Avg(results: list):
+        AvgResult = AlgorithmResult()
+
+        for result in results:
+            AvgResult.algorithmRuntime += result.algorithmRuntime
+            AvgResult.waitingTime += result.waitingTime
+            AvgResult.unfinishedRequest += result.unfinishedRequest
+            AvgResult.idleTime += result.idleTime
+            AvgResult.usedQubits += result.usedQubits
+            AvgResult.temporaryRatio += result.temporaryRatio
+
+        AvgResult.algorithmRuntime /= len(results)
+        AvgResult.waitingTime /= len(results)
+        AvgResult.unfinishedRequest /= len(results)
+        AvgResult.idleTime /= len(results)
+        AvgResult.usedQubits /= len(results)
+        AvgResult.temporaryRatio /= len(results)
+
+        return AvgResult
 
 class AlgorithmBase:
 
@@ -9,8 +52,8 @@ class AlgorithmBase:
         self.name = "Greedy"
         self.topo = topo
         self.srcDstPairs = []
-        self.finishedSrcDstPairs = []
         self.timeSlot = 0
+        self.result = AlgorithmResult()
 
     def prepare(self):
         pass
@@ -26,22 +69,31 @@ class AlgorithmBase:
             link.tryEntanglement()
 
     def work(self, pairs: list, time): 
-        # self.finishedSrcDstPairs.clear()
+
         self.timeSlot = time # 紀錄目前回合
         self.srcDstPairs.extend(pairs) # 任務追加進去
 
         if self.timeSlot == 0:
             self.prepare()
 
+        # start
+        start = process_time()
+
         self.p2()
         
         self.tryEntanglement()
 
-        t = self.p4()
+        res = self.p4()
+
+        # end   
+        end = process_time()
 
         self.srcDstPairs.clear()
 
-        return t
+        res.totalRuntime += (end - start)
+        res.algorithmRuntime /= res.numOfTimeslot
+
+        return res
 
 @dataclass
 class PickedPath:
