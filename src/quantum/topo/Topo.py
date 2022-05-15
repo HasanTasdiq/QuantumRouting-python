@@ -43,6 +43,25 @@ class Edge(Node):
     def equals(self, other):
         return other is Edge and (other.n1 == self.n1 and other.n2 == self.n2 or other.n1 == self.n2 and other.n2 == self.n1)
 
+class TopoConnectionChecker:
+    def setTopo(self, topo):
+        self.topo = topo
+
+    def checkConnected(self):
+        self.visited = {node : False for node in self.topo.nodes}
+        self.DFS(self.topo.nodes[0])
+        for node in self.topo.nodes:
+            if not self.visited[node]:
+                return False
+        return True
+
+    def DFS(self, currentNode):
+        self.visited[currentNode] = True
+        for link in currentNode.links:
+            nextNode = link.theOtherEndOf(currentNode)
+            if not self.visited[nextNode]:
+                self.DFS(nextNode)
+
 class Topo:
 
     def __init__(self, G, q, k, a, degree):
@@ -63,16 +82,18 @@ class Topo:
         #         if self.distance(_positions[_node], _positions[_node2]) <= 10:
         #             print('node 1:', _node, 'node 2:', _node2, self.distance(_positions[_node], _positions[_node2]))
 
-        _edges = [] # reset edge
+        # _edges = [] # reset edge
 
         # Construct neighbor table by int type
         _neighbors = {_node: [] for _node in _nodes}
-        # for _node in _nodes:
-        #     _neighbors[_node] = list(nx.neighbors(G,_node))
+        for _node in _nodes:
+            (p1, p2) = _positions[_node]
+            _positions[_node] = (p1 * 2000, p2 * 2000)
+            _neighbors[_node] = list(nx.neighbors(G,_node))
           
         # Construct Node 
         for _node in _nodes:
-            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~15
+            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -113,7 +134,7 @@ class Topo:
         linkId = 0
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
-            rand = int(random.random()*4+3) # 3~7
+            rand = int(random.random()*5+3) # 3~7
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
                 self.links.append(link)
@@ -125,7 +146,6 @@ class Topo:
         # p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
         # print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
-        
 
     def distance(self, pos1: tuple, pos2: tuple): # para1 type: tuple, para2 type: tuple
         d = 0
@@ -135,10 +155,18 @@ class Topo:
 
     def generate(n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
-        dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
-        G = nx.waxman_graph(n, beta=0.5, alpha=0.1, L=5, domain=(0, 0, 50, 200), metric=dist)
-
-        return Topo(G, q, k, a, degree)
+        # dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
+        
+        checker = TopoConnectionChecker()
+        while True:
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            topo = Topo(G, q, k, a, degree)
+            checker.setTopo(topo)
+            if checker.checkConnected():
+                break
+            else:
+                print("topo is not connected", file = sys.stderr)
+        return topo
 
     def widthPhase2(self, path):
         curMinWidth = min(path[0].remainingQubits, path[-1].remainingQubits)
@@ -244,16 +272,16 @@ class Topo:
         start = s
         if sum(oldP) == 0:
             for m in range(0, width+1):
-                oldP[m] = math.comb(m, width) * math.pow(p[1], m) * math.pow(1-p[1], width-m)
+                oldP[m] = math.comb(width, m) * math.pow(p[1], m) * math.pow(1-p[1], width-m)
                 start = 2
         
         for k in range(start, s+1):
             for i in range(0, width+1):
-                exactlyM = math.comb(i, width) *  math.pow(p[k], i) * math.pow(1-p[k], width-i)
+                exactlyM = math.comb(width, i) *  math.pow(p[k], i) * math.pow(1-p[k], width-i)
                 atLeastM = exactlyM
 
                 for j in range(i+1, width+1):
-                    atLeastM += (math.comb(j, width) * math.pow(p[k], j) * math.pow(1-p[1], width-j))
+                    atLeastM += (math.comb(width, j) * math.pow(p[k], j) * math.pow(1-p[k], width-j))
 
                 acc = 0
                 for j in range(i+1, width+1):

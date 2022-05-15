@@ -8,6 +8,7 @@ from topo.Topo import Topo
 from topo.Node import Node 
 from topo.Link import Link
 from random import sample
+import copy
 
 @dataclass
 class RecoveryPath:
@@ -28,6 +29,7 @@ class OnlineAlgorithm(AlgorithmBase):
         self.allowRecoveryPaths = allowRecoveryPaths
         self.requests = []
         self.totalTime = 0
+        self.totalNumOfReq = 0
     
     def prepare(self):
         self.totalTime = 0
@@ -41,7 +43,11 @@ class OnlineAlgorithm(AlgorithmBase):
 
         for req in self.srcDstPairs:
             (src, dst) = req
+            self.totalNumOfReq += 1
             self.requests.append((src, dst, self.timeSlot))
+        
+        if len(self.requests) > 0:
+            self.result.numOfTimeslot += 1
 
         while True: 
             candidates = self.calCandidates(self.requests) # candidates -> [PickedPath, ...]   
@@ -49,26 +55,47 @@ class OnlineAlgorithm(AlgorithmBase):
             if len(candidates) == 0:
                 break
             pick = candidates[-1]   # pick -> PickedPath 
-            print('pick size:', len(candidates), 'pick width:', pick.width)
-            print([x.id for x in pick.path])  
+            print('[Q-cast]', 'pick size:', len(candidates), 'pick width:', pick.width)
+            for c in candidates:
+                print('[Q-cast]', [x.id for x in c.path])  
             if pick.weight > 0.0: 
                 self.pickAndAssignPath(pick)
             else:
                 break
 
-            if self.allowRecoveryPaths:
-                print('P2Extra')
-                self.P2Extra()
-                print('P2Extra end')
-            
+        if self.allowRecoveryPaths:
+            print('[Q-cast] P2Extra')
+            self.P2Extra()
+            print('[Q-cast] P2Extra end')
+        
+        for req in self.requests:
+            pick = False
+            for pathWithWidth in self.majorPaths:
+                p = pathWithWidth.path
+                print('[Q-cast]', 'pick', [x.id for x in p])
+                if (p[0], p[-1], pathWithWidth.time) == req:
+                    pick = True
+                    break
+                    
+            if not pick:
+                self.result.idleTime += 1
          
     # 對每個SD-pair找出候選路徑，目前不確定只會找一條還是可以多條
     def calCandidates(self, requests: list): # pairs -> [(Node, Node), ...]
         candidates = [] 
         for req in requests:
+
+            # found = False
+            # for pathWithWidth in self.majorPaths:
+            #     p = pathWithWidth.path
+            #     if (p[0], p[-1], pathWithWidth.time) == req:
+            #         found = True
+            # if found:
+            #     continue
+
             candidate = []
             (src, dst, time) = req
-            maxM = max(src.remainingQubits, dst.remainingQubits)
+            maxM = min(src.remainingQubits, dst.remainingQubits)
             if maxM == 0:   # not enough qubit
                 continue
 
@@ -84,30 +111,30 @@ class OnlineAlgorithm(AlgorithmBase):
 
                 # collect edges with links 
                 for link in self.topo.links:
-                    if link.n2.id < link.n1.id:
-                        link.n1, link.n2 = link.n2, link.n1
+                    # if link.n2.id < link.n1.id:
+                    #     link.n1, link.n2 = link.n2, link.n1
                     if not link.assigned and link.n1 not in failNodes and link.n2 not in failNodes:
                         if not edges.__contains__((link.n1, link.n2)):
                             edges[(link.n1, link.n2)] = []
                         edges[(link.n1, link.n2)].append(link)
 
-                neighborsOf = {} # neighborsOf -> {Node: [Node, ...], ...}
-                neighborsOf[src] = []
-                neighborsOf[dst] = []
+                neighborsOf = {node: [] for node in self.topo.nodes} # neighborsOf -> {Node: [Node, ...], ...}
+                # neighborsOf[src] = []
+                # neighborsOf[dst] = []
 
                 # filter available links satisfy width w
                 for edge in edges:
                     links = edges[edge]
                     if len(links) >= w:
-                        if not neighborsOf.__contains__(edge[0]):
-                            neighborsOf[edge[0]] = []
-                        if not neighborsOf.__contains__(edge[1]):
-                            neighborsOf[edge[1]] = []
+                        # if not neighborsOf.__contains__(edge[0]):
+                        #     neighborsOf[edge[0]] = []
+                        # if not neighborsOf.__contains__(edge[1]):
+                        #     neighborsOf[edge[1]] = []
 
                         neighborsOf[edge[0]].append(edge[1])
                         neighborsOf[edge[1]].append(edge[0])
-                        neighborsOf[edge[0]] = list(set(neighborsOf[edge[0]]))
-                        neighborsOf[edge[1]] = list(set(neighborsOf[edge[1]]))
+                        # neighborsOf[edge[0]] = list(set(neighborsOf[edge[0]]))
+                        # neighborsOf[edge[1]] = list(set(neighborsOf[edge[1]]))
                                              
                 if (len(neighborsOf[src]) == 0 or len(neighborsOf[dst]) == 0):
                     continue
@@ -144,7 +171,8 @@ class OnlineAlgorithm(AlgorithmBase):
                     
                     # Update neighbors by EXT
                     for neighbor in neighborsOf[u]:
-                        tmp = E[u.id][1]
+                        tmp = copy.deepcopy(E[u.id][1])
+                        # tmp = E[u.id][1]
                         p = getPathFromSrc(u)
                         p.append(neighbor)
                         e = self.topo.e(p, w, tmp)
@@ -184,6 +212,7 @@ class OnlineAlgorithm(AlgorithmBase):
             sorted(links, key=lambda q: q.id)
 
             for i in range(0, width):
+                self.result.usedQubits += 2
                 links[i].assignQubits()
                 links[i].tryEntanglement() # just display
 
@@ -255,8 +284,10 @@ class OnlineAlgorithm(AlgorithmBase):
                             break
                     if broken:
                         brokenEdges.append((i1, i2))
-            
-                
+
+                        # if link.contains(n2) and link.assigned and link.notSwapped() and not link.entangled:
+                        #     brokenEdges.append((i1, i2))
+
                 edgeToRps = {brokenEdge: [] for brokenEdge in brokenEdges}   # {tuple : [tuple, ...], ...}
                 rpToEdges = {tuple(recoveryPath.path): [] for recoveryPath in recoveryPaths}    # {tuple : [tuple, ...], ...}
 
@@ -411,15 +442,21 @@ class OnlineAlgorithm(AlgorithmBase):
         # for pathWithWidth end
         remainTime = 0
         for req in self.requests:
+            self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
-        print('total time:', self.totalTime + remainTime)
+
         self.topo.clearAllEntanglements()
-        
-        return self.totalTime + remainTime
+        self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
+        self.result.usedQubits /= self.totalNumOfReq
+
+        print('[Q-cast] waiting time:', self.result.waitingTime)
+        print('[Q-cast] idle time:', self.result.idleTime)
+
+        return self.result
 
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.05, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
     s = OnlineAlgorithm(topo)
     for i in range(0, 200):
         if i < 10:

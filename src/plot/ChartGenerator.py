@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 import matplotlib.transforms
 # import latex
@@ -7,8 +8,11 @@ from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 
 class ChartGenerator:
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
-    def __init__(self, dataName, Ylabel, Xlabel, Ydiv, Ystart, Yend, Yinterval):
-        div = int(10 ** Ydiv)
+    def __init__(self, dataName, Ylabel, Xlabel):
+        # Ydiv, Ystart, Yend, Yinterval
+        Ypow = 0
+        Xpow = 0
+
         print("start generator")
         color = [
             "#000000",
@@ -58,6 +62,7 @@ class ChartGenerator:
         x = []
         _y = []
         numOfData = 0
+
         for line in lines:
             line = line.replace('\n','')
             data = line.split(' ')
@@ -78,9 +83,27 @@ class ChartGenerator:
         print(x)
         print(y)
 
+        maxData = 0
+        minData = math.inf
+
+        if float(x[numOfData - 1]) <= 0.001:
+            Xpow = -4
+
+        Ydiv = float(10 ** Ypow)
+        Xdiv = float(10 ** Xpow)
+        
+        for i in range(numOfData):
+            x[i] = float(x[i]) / Xdiv
+
         for i in range(numOfAlgo):
             for j in range(numOfData):
-                y[i][j] = float(y[i][j]) / div
+                y[i][j] = float(y[i][j]) / Ydiv
+                maxData = max(maxData, y[i][j])
+                minData = min(minData, y[i][j])
+
+        Ystart = int(max(0, minData - 1))
+        Yend = int(maxData + 1)
+        Yinterval = float((Yend - Ystart) / 5)
 
         marker = ['o', 's', 'v', 'x', 'd']
         for i in range(numOfAlgo):
@@ -89,25 +112,27 @@ class ChartGenerator:
         plt.xticks(fontsize=Xticks_fontsize)
         plt.yticks(fontsize=Yticks_fontsize)
         
-        AlgoName = ["Greedy_hop", "MyAlgo", "Greedy_geo", "QCAST", "REPS"]
+        # AlgoName = ["MyAlgo", "Greedy_hop", "Greedy_geo", "QCAST", "REPS"]
+        AlgoName = ["MyAlgo", "Greedy_hop", "QCAST", "REPS"]
 
         leg = plt.legend(
             AlgoName[0 : numOfAlgo],
-            loc=10,
-            bbox_to_anchor=(0.4, 1.1),
+            loc = 10,
+            bbox_to_anchor = (0.4, 1.1),
             prop={"size": "15", "family": "Times New Roman"},
-            frameon="False",
-            labelspacing=1,
-            handletextpad=0.2,
-            handlelength=1,
-            columnspacing=0.5,
-            ncol=4,
-            facecolor="None",
+            frameon = "False",
+            labelspacing = 1,
+            handletextpad = 0.2,
+            handlelength = 1,
+            columnspacing = 0.5,
+            ncol = 4,
+            facecolor = "None",
         )
 
         leg.get_frame().set_linewidth(0.0)
         
-        Ylabel += self.genMultiName(Ydiv)
+        Ylabel += self.genMultiName(Ypow)
+        Xlabel += self.genMultiName(Xpow)
         
         plt.yticks(np.arange(Ystart, Yend, step=Yinterval), fontsize=Yticks_fontsize)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize)
@@ -115,7 +140,7 @@ class ChartGenerator:
         # plt.show()
         plt.tight_layout()
         pdfName = dataName[0:-4]
-        plt.savefig('./pdf/{}.pdf'.format(pdfName)) 
+        plt.savefig('./pdf/{}.jpg'.format(pdfName)) 
         # Xlabel = Xlabel.replace(' (%)','')
         # Xlabel = Xlabel.replace('# ','')
         # Ylabel = Ylabel.replace('# ','')
@@ -129,4 +154,11 @@ class ChartGenerator:
 
 if __name__ == "__main__":
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
-    ChartGenerator("data.txt", "need #round", "#Request of a round", 0, 0, 150, 50)
+    # ChartGenerator("numOfnodes_waitingTime.txt", "need #round", "#Request of a round", 0, 0, 25, 5)
+    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
+    Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
+    
+    for Xlabel in Xlabels:
+        for Ylabel in Ylabels:
+            dataFileName = Xlabel + '_' + Ylabel + '.txt'
+            ChartGenerator(dataFileName, Ylabel, Xlabel)
