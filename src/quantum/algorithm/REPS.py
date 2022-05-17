@@ -250,7 +250,7 @@ class REPS(AlgorithmBase):
                         if link.contains(v) and link.assignable():
                             # link(u, v) for u, v in edgeIndices)
                             link.assignQubits()
-                            self.result.totalUsedQubits += 2
+                            self.totalUsedQubits += 2
                             assignCount += 1
                             if assignCount == need:
                                 break
