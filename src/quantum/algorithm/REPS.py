@@ -228,7 +228,6 @@ class REPS(AlgorithmBase):
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
                         next = path[nodeIndex + 1]
-                        self.fi_LP[SDpair][(node, next)] -= width
                     continue
                 
                 failedFindPath = False
