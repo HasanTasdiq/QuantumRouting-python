@@ -103,7 +103,7 @@ if __name__ == '__main__':
     r = [10, 20, 30, 40]
     q = [0.5, 0.6, 0.7, 0.8, 0.9, 1]
     alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
-    SocialNetworkDensity = [0.25, 0.5, 0.75, 0.9]
+    SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
