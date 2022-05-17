@@ -29,7 +29,7 @@ class MyAlgorithm(AlgorithmBase):
         self.name = "My"
         self.r = 40                     # 暫存回合
         self.givenShortestPath = {}     # {(src, dst): path, ...}               path表
-        # self.socialRelationship = {}    # {Node : [Node, ...], ...}             node-social表
+        # self.socialRelationship = {}  # {Node : [Node, ...], ...}             node-social表
         self.requestState = {}          # {(src, dst, timeslot) : RequestInfo}  request表 
         self.totalTime = 0
         self.density = 0.5
@@ -38,6 +38,11 @@ class MyAlgorithm(AlgorithmBase):
         self.factorialTable = {}        # 階層運算表
         self.expectTable = {}           # {(path1, path2) : expectRound}        expectRound表
         self.SN = {}                    # social network
+        self.community1 = [0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 2, 2, 2, 2, 3, 2, 2, 2, 3, 2]  # 0.25
+        self.community2 = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1]  # 0.50
+        self.community3 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]  # 0.75
+        self.community4 = [0 for _ in range(20)]                                        # 1.00
+        self.community = {0.25 : self.community1, 0.50 : self.community2, 0.75 : self.community3, 1.00 : self.community4}
 
         self.socialRelationship = {node: [] for node in self.topo.nodes}
         print("[MyAlgo] Construct path")
@@ -140,7 +145,7 @@ class MyAlgorithm(AlgorithmBase):
         #             self.socialRelationship[n1].append(n2)
         #             self.socialRelationship[n2].append(n1)
         #             print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
-        userNum = 8
+        userNum = 20
         node2user = {}
         self.genSocialNetwork(userNum, self.density)
         users = [i for i in range(userNum)]
@@ -161,12 +166,17 @@ class MyAlgorithm(AlgorithmBase):
     
     def genSocialNetwork(self, userNum, density):
         self.SN = {i: [] for i in range(userNum)}
+        community = self.community[density]
         for i in range(userNum):
             for j in range(i+1, userNum):
-                p = random.random()
-                if p <= density:
+                # p = random.random()
+                # if p <= density:
+                #     self.SN[i].append(j)
+                #     self.SN[j].append(i)
+                if community[i] == community[j]:
                     self.SN[i].append(j)
                     self.SN[j].append(i)
+
         
 
     # p1
