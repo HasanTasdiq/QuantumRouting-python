@@ -159,10 +159,11 @@ class GreedyHopRouting(AlgorithmBase):
 
         remainTime = 0
         for req in self.requests:
-            self.result.unfinishedRequest += 1
+            # self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
 
-        self.topo.clearAllEntanglements()     
+        self.topo.clearAllEntanglements()
+        self.result.remainRequestPerRound.append(len(self.requests)/self.totalNumOfReq)     
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
         self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
 
