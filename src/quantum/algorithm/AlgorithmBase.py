@@ -28,6 +28,8 @@ class AlgorithmResult:
     def Avg(results: list):
         AvgResult = AlgorithmResult()
 
+        ttime = 200
+        AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
             AvgResult.waitingTime += result.waitingTime
@@ -35,12 +37,23 @@ class AlgorithmResult:
             AvgResult.usedQubits += result.usedQubits
             AvgResult.temporaryRatio += result.temporaryRatio
 
+            Len = len(result.remainRequestPerRound)
+            if ttime != Len:
+                print("the length of RRPR error:", Len, file = sys.stderr)
+            
+            for i in range(ttime):
+                AvgResult.remainRequestPerRound[i] += result.remainRequstPerRound[i]
+
+
         AvgResult.algorithmRuntime /= len(results)
         AvgResult.waitingTime /= len(results)
         AvgResult.idleTime /= len(results)
         AvgResult.usedQubits /= len(results)
         AvgResult.temporaryRatio /= len(results)
 
+        for i in range(ttime):
+            AvgResult.remainRequestPerRound /= len(results)
+            
         return AvgResult
 
 class AlgorithmBase:
