@@ -16,6 +16,7 @@ class GreedyHopRouting(AlgorithmBase):
         self.pathsSortedDynamically = []
         self.requests = []
         self.totalTime = 0
+        self.totalUsedQubits = 0
         self.totalNumOfReq = 0
         self.name = "Greedy_H"
 
@@ -95,7 +96,7 @@ class GreedyHopRouting(AlgorithmBase):
                         n2 = p[s+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
-                                self.result.usedQubits += 2
+                                self.totalUsedQubits += 2
                                 link.assignQubits()
                                 break    
             # SDpairs end
@@ -163,7 +164,7 @@ class GreedyHopRouting(AlgorithmBase):
 
         self.topo.clearAllEntanglements()     
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
-        self.result.usedQubits /= self.totalNumOfReq
+        self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
 
         print('[Greedy_H] waiting time:', self.result.waitingTime)
         print('[Greedy_H] idle time:', self.result.idleTime)

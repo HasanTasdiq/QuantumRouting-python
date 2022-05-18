@@ -91,7 +91,7 @@ class AlgorithmBase:
         self.srcDstPairs.clear()
 
         res.totalRuntime += (end - start)
-        res.algorithmRuntime /= res.numOfTimeslot
+        res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
 
         return res
 

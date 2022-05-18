@@ -32,6 +32,7 @@ class MyAlgorithm(AlgorithmBase):
         # self.socialRelationship = {}  # {Node : [Node, ...], ...}             node-social表
         self.requestState = {}          # {(src, dst, timeslot) : RequestInfo}  request表 
         self.totalTime = 0
+        self.totalUsedQubits = 0
         self.density = 0.5
         self.takeTemporary = 0          # 選擇分段的request數量
         self.totalNumOfReq = 0          # 總request數量
@@ -308,12 +309,12 @@ class MyAlgorithm(AlgorithmBase):
                         n2 = p[i+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
-                                self.result.usedQubits += 2
+                                self.totalUsedQubits += 2
                                 link.assignQubits()
                                 break 
 
                     if requestInfo.state == 1:
-                        self.result.usedQubits += 1
+                        self.totalUsedQubits += 1
                         dst.assignIntermediate()
                     
                     if requestInfo.state == 2:
@@ -364,7 +365,7 @@ class MyAlgorithm(AlgorithmBase):
                         n2 = p[i+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
-                                self.result.usedQubits += 2
+                                self.totalUsedQubits += 2
                                 link.assignQubits()
                                 break
 
@@ -480,13 +481,13 @@ class MyAlgorithm(AlgorithmBase):
                 n2 = path[i+1]
                 for link in n1.links:
                     if link.contains(n2) and (not link.assigned):
-                        self.result.usedQubits += 2
+                        self.totalUsedQubits += 2
                         link.assignQubits()
                         break 
 
             # 有分段 另外分配資源給中繼點
             if requestInfo.state == 1:
-                self.result.usedQubits += 1
+                self.totalUsedQubits += 1
                 dst.assignIntermediate()
             
             # take這個request
@@ -617,7 +618,7 @@ class MyAlgorithm(AlgorithmBase):
 
         self.topo.clearAllEntanglements() 
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
-        self.result.usedQubits /= self.totalNumOfReq
+        self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
 
         # print('----------------------')
         print('[MyAlgo] waiting time:',  self.result.waitingTime)

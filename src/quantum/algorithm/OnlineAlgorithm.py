@@ -29,6 +29,7 @@ class OnlineAlgorithm(AlgorithmBase):
         self.allowRecoveryPaths = allowRecoveryPaths
         self.requests = []
         self.totalTime = 0
+        self.totalUsedQubits = 0
         self.totalNumOfReq = 0
     
     def prepare(self):
@@ -212,7 +213,7 @@ class OnlineAlgorithm(AlgorithmBase):
             sorted(links, key=lambda q: q.id)
 
             for i in range(0, width):
-                self.result.usedQubits += 2
+                self.totalUsedQubits += 2
                 links[i].assignQubits()
                 links[i].tryEntanglement() # just display
 
@@ -447,7 +448,7 @@ class OnlineAlgorithm(AlgorithmBase):
 
         self.topo.clearAllEntanglements()
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
-        self.result.usedQubits /= self.totalNumOfReq
+        self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
 
         print('[Q-cast] waiting time:', self.result.waitingTime)
         print('[Q-cast] idle time:', self.result.idleTime)
