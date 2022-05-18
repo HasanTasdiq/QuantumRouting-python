@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import os
 import matplotlib.pyplot as plt
 import matplotlib.transforms
 # import latex
@@ -13,7 +14,6 @@ class ChartGenerator:
         Ypow = 0
         Xpow = 0
 
-        print("start generator")
         color = [
             "#000000",
             "#006400",
@@ -55,9 +55,16 @@ class ChartGenerator:
         fig, ax1 = plt.subplots(figsize=(9, 6), dpi=600)
         
         filename = './data/' + dataName
+
+        if not os.path.exists(filename):
+            print("file doesn't exist")
+            return
+        
         with open(filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             
+        print("start generator")
+
         ##data start##
         x = []
         _y = []
