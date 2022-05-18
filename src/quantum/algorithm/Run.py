@@ -102,7 +102,7 @@ if __name__ == '__main__':
     numOfNodes = [50, 100, 150, 200]
     r = [10, 20, 30, 40]
     q = [0.5, 0.6, 0.7, 0.8, 0.9, 1]
-    alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
+    alpha = [0.0000, 0.0005, 0.001, 0.002, 0.003]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
@@ -113,13 +113,17 @@ if __name__ == '__main__':
 
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
-        statusFile = open("status.txt", "w")
-        print(Xlabel, file = statusFile)
-        statusFile.flush()
-        statusFile.close()
 
         Ydata = []
         for Xparam in Xparameters[XlabelIndex]:
+            
+            # check schedule
+            statusFile = open("status.txt", "w")
+            print(Xlabel + str(Xparam), file = statusFile)
+            statusFile.flush()
+            statusFile.close()
+            # ------
+
             if XlabelIndex == 0: # #RequestPerRound
                 result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
             if XlabelIndex == 1: # totalRequest
@@ -152,3 +156,17 @@ if __name__ == '__main__':
                 Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
                 Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
                 F.write(Xaxis + Yaxis)
+
+
+    # write remainRequestPerRound
+    results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
+    sampleRounds = [0, 25, 50, 75, 100]
+    
+    filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
+    F = open(targetFilePath + filename, "w")
+    for roundIndex in sampleRounds:
+
+        Xaxis = str(roundIndex)
+        Yaxis = [str(result.remainRequestPerRound[roundIndex]) for result in results]
+        Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+        F.write(Xaxis + Yaxis)

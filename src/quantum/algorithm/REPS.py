@@ -20,7 +20,7 @@ class REPS(AlgorithmBase):
         super().__init__(topo)
         self.name = "REPS"
         self.requests = []
-        self.numOfrequest = 0
+        self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
 
@@ -31,16 +31,18 @@ class REPS(AlgorithmBase):
     
     def printResult(self):
         self.topo.clearAllEntanglements()
-        self.result.unfinishedRequest += len(self.requests)
-        self.result.waitingTime = self.totalWaitingTime / self.numOfrequest
-        self.result.usedQubits = self.totalUsedQubits / self.numOfrequest
+        self.result.waitingTime = self.totalWaitingTime / self.totalRequest
+        self.result.usedQubits = self.totalUsedQubits / self.totalRequest
+        
+        self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
+        
         print("[REPS] total time:", self.result.waitingTime)
         print("[REPS] remain request:", len(self.requests))
         print("[REPS] current Timeslot:", self.timeSlot)
 
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
-            self.numOfrequest += 1
+            self.totalRequest += 1
             self.requests.append((src, dst, self.timeSlot))
 
         self.srcDstPairs = []
