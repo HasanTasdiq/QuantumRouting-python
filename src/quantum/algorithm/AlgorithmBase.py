@@ -42,7 +42,7 @@ class AlgorithmResult:
                 print("the length of RRPR error:", Len, file = sys.stderr)
             
             for i in range(ttime):
-                AvgResult.remainRequestPerRound[i] += result.remainRequstPerRound[i]
+                AvgResult.remainRequestPerRound[i] += result.remainRequestPerRound[i]
 
 
         AvgResult.algorithmRuntime /= len(results)
@@ -52,7 +52,7 @@ class AlgorithmResult:
         AvgResult.temporaryRatio /= len(results)
 
         for i in range(ttime):
-            AvgResult.remainRequestPerRound /= len(results)
+            AvgResult.remainRequestPerRound[i] /= len(results)
             
         return AvgResult
 

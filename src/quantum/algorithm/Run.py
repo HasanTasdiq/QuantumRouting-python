@@ -95,7 +95,7 @@ if __name__ == '__main__':
     print("start Run and Generate data.txt")
     targetFilePath = "../../plot/data/"
     temp = AlgorithmResult()
-    Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
+    Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     numOfRequestPerRound = [1, 2, 3, 4, 5]
     totalRequest = [10, 20, 30, 40, 50]
@@ -156,6 +156,7 @@ if __name__ == '__main__':
                 Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
                 Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
                 F.write(Xaxis + Yaxis)
+            F.close()
 
 
     # write remainRequestPerRound
@@ -170,3 +171,4 @@ if __name__ == '__main__':
         Yaxis = [str(result.remainRequestPerRound[roundIndex]) for result in results]
         Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
         F.write(Xaxis + Yaxis)
+    F.close()
