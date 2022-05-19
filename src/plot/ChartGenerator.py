@@ -163,9 +163,15 @@ if __name__ == "__main__":
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
     # ChartGenerator("numOfnodes_waitingTime.txt", "need #round", "#Request of a round", 0, 0, 25, 5)
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
-    Ylabels = ["algorithmRuntime", "waitingTime", "unfinishedRequest", "idleTime", "usedQubits", "temporaryRatio"]
+    Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     for Xlabel in Xlabels:
         for Ylabel in Ylabels:
             dataFileName = Xlabel + '_' + Ylabel + '.txt'
             ChartGenerator(dataFileName, Ylabel, Xlabel)
+
+
+    Xlabel = "Timeslot"
+    Ylabel = "#remainRequest"
+    dataFileName = Xlabel + "_" + Ylabel + ".txt"
+    ChartGenerator(dataFileName, Ylabel, Xlabel)
