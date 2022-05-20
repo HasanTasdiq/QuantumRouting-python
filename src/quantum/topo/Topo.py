@@ -385,3 +385,13 @@ class Topo:
     def updateNodes(self):
         for node in self.nodes:
             node.q = self.q
+
+    def setAlpha(self, alpha):
+        self.alpha = alpha
+        self.updateLinks()
+        self.updateNodes()
+
+    def setQ(self, q):
+        self.q = q
+        self.updateLinks()
+        self.updateNodes()
