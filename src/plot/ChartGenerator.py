@@ -51,8 +51,9 @@ class ChartGenerator:
         # "text.usetex": True,
         # "figure.dpi": 100,
         }
+        
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize=(9, 6), dpi=600)
+        fig, ax1 = plt.subplots(figsize = (9, 6), dpi = 600)
         
         filename = './data/' + dataName
 
@@ -63,7 +64,7 @@ class ChartGenerator:
         with open(filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             
-        print("start generator")
+        print("start generate", filename)
 
         ##data start##
         x = []
@@ -93,8 +94,9 @@ class ChartGenerator:
         maxData = 0
         minData = math.inf
 
-        if float(x[numOfData - 1]) <= 0.001:
-            Xpow = -4
+        for i in range(-10, -1, 1):
+            if float(x[numOfData - 1]) <= 10 ** i:
+                Xpow = (i - 1)
 
         Ydiv = float(10 ** Ypow)
         Xdiv = float(10 ** Xpow)
