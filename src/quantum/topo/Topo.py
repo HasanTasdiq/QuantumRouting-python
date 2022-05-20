@@ -375,3 +375,13 @@ class Topo:
     def clearAllEntanglements(self):
         for link in self.links:
             link.clearEntanglement()
+
+    def updateLinks(self):
+        for link in self.links:
+            l = self.distance(link.n1.loc, link.n2.loc)
+            link.alpha = self.alpha
+            link.p = math.exp(-self.alpha * l)
+    
+    def updateNodes(self):
+        for node in self.nodes:
+            node.q = self.q
