@@ -13,6 +13,7 @@ from topo.Topo import Topo
 from topo.Node import Node
 from topo.Link import Link
 from random import sample
+from numpy import log as ln
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
@@ -31,8 +32,8 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.00
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
     
-    topo.q = q
-    topo.alpha = alpha
+    topo.setQ(q)
+    topo.setAlpha(alpha)
 
     # make copy
     algorithms = []
@@ -161,14 +162,14 @@ if __name__ == '__main__':
 
     # write remainRequestPerRound
     results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
-    sampleRounds = [0, 25, 50, 75, 100]
-    
+    result.remainRequestPerRound.insert(1, 0) # push_front(1)
+    sampleRounds = [0, 5, 10, 15, 20, 25]
     filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
     F = open(targetFilePath + filename, "w")
     for roundIndex in sampleRounds:
 
         Xaxis = str(roundIndex)
-        Yaxis = [str(result.remainRequestPerRound[roundIndex]) for result in results]
+        Yaxis = [result.remainRequestPerRound[roundIndex] for result in results]
         Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
         F.write(Xaxis + Yaxis)
     F.close()
