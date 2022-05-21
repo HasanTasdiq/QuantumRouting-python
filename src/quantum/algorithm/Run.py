@@ -116,7 +116,7 @@ if __name__ == '__main__':
         Xlabel = Xlabels[XlabelIndex]
 
         Ydata = []
-        if XlabelIndex != 3:
+        if XlabelIndex != 5:
             continue
         for Xparam in Xparameters[XlabelIndex]:
             
