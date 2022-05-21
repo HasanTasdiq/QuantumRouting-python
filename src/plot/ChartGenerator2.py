@@ -40,7 +40,7 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 32
+        fontsize = 30
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
         Xticks_fontsize = fontsize
@@ -71,14 +71,14 @@ class ChartGenerator:
         }
         
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize = (7, 6), dpi = 600)
+        fig, ax1 = plt.subplots(figsize = (6, 5.35), dpi = 600)
         # ax1.spines['top'].set_position(('axes', 0.5)
         # ax1.spines['right'].set_linewidth(1.5)
         # ax1.spines['bottom'].set_linewidth(1.5)
         # ax1.spines['left'].set_linewidth(1.5)
         ax1.tick_params(direction = "in")
         ax1.tick_params(bottom = True, top = True, left = True, right = True)
-        ax1.tick_params(pad = 15)
+        ax1.tick_params(pad = 20)
         ##data start##
         x = []
         _y = []
@@ -121,7 +121,7 @@ class ChartGenerator:
 
         marker = ['o', 's', 'v', 'x', 'd']
         for i in range(numOfAlgo):
-            ax1.plot(x, y[i], color = color[i], lw = 2.5, linestyle = "-", marker = marker[i], markersize = 20, markerfacecolor = "none", markeredgewidth = 2.5)
+            ax1.plot(x, y[i], color = color[i], lw = 2.5, linestyle = "-", marker = marker[i], markersize = 15, markerfacecolor = "none", markeredgewidth = 2.5)
         # plt.show()
 
         plt.xticks(fontsize = Xticks_fontsize)
@@ -138,7 +138,7 @@ class ChartGenerator:
             labelspacing = 0.2,
             handletextpad = 0.2,
             handlelength = 1,
-            columnspacing = 0.2,
+            columnspacing = 0.8,
             ncol = 2,
             facecolor = "None",
         )
@@ -153,7 +153,7 @@ class ChartGenerator:
 
         plt.yticks(np.arange(Ystart, Yend + Yinterval, step = Yinterval), fontsize = Yticks_fontsize)
         plt.xticks(x)
-        plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 50)
+        plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 35)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
         # plt.show()
         # plt.tight_layout()
@@ -199,14 +199,23 @@ if __name__ == "__main__":
     # 4 temporaryRatio
 
 
+    beta = "$\\it{\\beta}$ (# requests / time slots)"
+    waiting = "Avg. Waiting Time"
+    swap = "Succ. Prob. of Swap. $\\it{q}$"
+    runtime = "Runtime (s)"
+    ratio = "Temp. Sto. Ratio (%)"
+    alpha = "$\\it{\\alpha}$ "
     # rpr + waiting
-    ChartGenerator(getFilename(0, 1), "$\\it{\\beta}$(#requests / time slots)", "Waiting Time", 0, 0, 0, 15, 3)
+    ChartGenerator(getFilename(0, 1), beta, waiting, 0, 0, 0, 15, 3)
     
     # alpha + ratio
-    ChartGenerator(getFilename(5, 4), "$\\it{\\alpha}$", "Temporary Ratio", -4, 0, 0, 1, 0.2)
+    ChartGenerator(getFilename(5, 4), alpha, ratio, -4, 0, 0, 1, 0.2)
     
     # q + waiting
-    ChartGenerator(getFilename(4, 1), "$\\it{q}$(swap probability)", "Waiting Time", 0, 0, 0, 120, 24)
+    ChartGenerator(getFilename(4, 1), swap, waiting, 0, 0, 0, 125, 25)
     
     # q + ratio
-    ChartGenerator(getFilename(4, 4), "$\\it{q}$(swap probability)", "Temporary Ratio", 0, 0, 0, 1, 0.2)
+    ChartGenerator(getFilename(4, 4), swap, ratio, 0, 0, 0, 1, 0.2)
+
+    # alpha + waiting
+    ChartGenerator(getFilename(5, 1), alpha, waiting, -4, 0, 0, 30, 6)

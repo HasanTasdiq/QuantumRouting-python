@@ -82,7 +82,7 @@ class ChartGenerator:
         # ax1.spines['left'].set_linewidth(1.5)
         ax1.tick_params(direction = "in")
         ax1.tick_params(bottom = True, top = True, left = True, right = True)
-        ax1.tick_params(pad = 15)
+        ax1.tick_params(pad = 20)
 
 
         ##data start##
@@ -129,18 +129,17 @@ class ChartGenerator:
                 maxData = max(maxData, y[i][j])
                 minData = min(minData, y[i][j])
 
-        Ystart = 0
-        Yend = 1
+        Ystart = maxData + 1
+        Yend = max(0, minData)
 
-        # if Yinterval > 1:
-        #     Yinterval = int(math.ceil(Yinterval))
-        # elif maxData <= 1.1:
-        #     Yinterval = 0.2
-        Yinterval = 0.2
+        if Yinterval > 1:
+            Yinterval = int(math.ceil(Yinterval))
+        elif maxData <= 1.1:
+            Yinterval = 0.2
 
         marker = ['o', 's', 'v', 'x', 'd']
         for i in range(numOfAlgo):
-            ax1.plot(x, y[i], color = color[i], lw = 2.5, linestyle = "-", marker = marker[i], markersize = 20, markerfacecolor = "none", markeredgewidth = 2.5)
+            ax1.plot(x, y[i], color = color[i], lw = 2.5, linestyle = "-", marker = marker[i], markersize = 15, markerfacecolor = "none", markeredgewidth = 2.5)
         # plt.show()
 
         plt.xticks(fontsize = Xticks_fontsize)
@@ -172,7 +171,7 @@ class ChartGenerator:
 
         plt.yticks(np.arange(Ystart, Yend + Yinterval, step = Yinterval), fontsize = Yticks_fontsize)
         plt.xticks(x)
-        plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 50)
+        plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 35)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
         # plt.show()
         # plt.tight_layout()
