@@ -116,6 +116,8 @@ if __name__ == '__main__':
         Xlabel = Xlabels[XlabelIndex]
 
         Ydata = []
+        if XlabelIndex != 3:
+            continue
         for Xparam in Xparameters[XlabelIndex]:
             
             # check schedule
@@ -124,7 +126,6 @@ if __name__ == '__main__':
             statusFile.flush()
             statusFile.close()
             # ------
-
             if XlabelIndex == 0: # #RequestPerRound
                 result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
             if XlabelIndex == 1: # totalRequest
@@ -162,7 +163,7 @@ if __name__ == '__main__':
 
     # write remainRequestPerRound
     results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
-    result.remainRequestPerRound.insert(1, 0) # push_front(1)
+    results.remainRequestPerRound.insert(1, 0) # push_front(1)
     sampleRounds = [0, 5, 10, 15, 20, 25]
     filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
     F = open(targetFilePath + filename, "w")
