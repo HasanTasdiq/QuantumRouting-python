@@ -42,12 +42,12 @@ class ChartGenerator:
             "#900321",
         ]
         # matplotlib.rcParams['text.usetex'] = True
-        Xlabel_fontsize = 38
-        Ylabel_fontsize = 38
-        Xticks_fontsize = 38
-        Yticks_fontsize = 38
 
-        plt.rcParams["font.family"] = "Times New Roman"
+        fontsize = 32
+        Xlabel_fontsize = fontsize
+        Ylabel_fontsize = fontsize
+        Xticks_fontsize = fontsize
+        Yticks_fontsize = fontsize
             
         # matplotlib.rcParams['text.usetex'] = True
         # fig, ax = plt.subplots(figsize=(8, 6), dpi=600) 
@@ -64,12 +64,18 @@ class ChartGenerator:
         "ytick.labelsize": 20,
         "axes.labelsize": 20,
         "axes.titlesize": 20,
+        "font.family": "Times New Roman",
+        "mathtext.it": "Times New Roman:italic",
+        "mathtext.default": "regular",
+        "mathtext.fontset": "custom"
+        # "mathtext.fontset": "custom"
+        # "figure.autolayout": True
         # "text.usetex": True,
         # "figure.dpi": 100,
         }
         
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize = (8, 7), dpi = 600)
+        fig, ax1 = plt.subplots(figsize = (7, 6), dpi = 600)
         # ax1.spines['top'].set_linewidth(1.5)
         # ax1.spines['right'].set_linewidth(1.5)
         # ax1.spines['bottom'].set_linewidth(1.5)
@@ -101,8 +107,8 @@ class ChartGenerator:
         for i in range(numOfData * numOfAlgo):
             y[i % numOfAlgo].append(_y[i])
 
-        print(x)
-        print(y)
+        # print(x)
+        # print(y)
 
         maxData = 0
         minData = math.inf
@@ -143,10 +149,10 @@ class ChartGenerator:
         AlgoName = ["SEER", "Greedy", "Q-CAST", "REPS"]
 
         leg = plt.legend(
-            AlgoName[0 : numOfAlgo],
+            AlgoName,
             loc = 10,
-            bbox_to_anchor = (0.4, 1.2),
-            prop = {"size": "38", "family": "Times New Roman"},
+            bbox_to_anchor = (0.4, 1.25),
+            prop = {"size": fontsize, "family": "Times New Roman"},
             frameon = "False",
             labelspacing = 0.2,
             handletextpad = 0.2,
@@ -157,16 +163,19 @@ class ChartGenerator:
         )
 
         leg.get_frame().set_linewidth(0.0)
-        Ylabel = "Temporary Ratio"
         Ylabel += self.genMultiName(Ypow)
-        Xlabel = "$\\alpha$"
         Xlabel += self.genMultiName(Xpow)
-        
+        plt.subplots_adjust(top = 0.75)
+        plt.subplots_adjust(left = 0.3)
+        plt.subplots_adjust(right = 0.95)
+        plt.subplots_adjust(bottom = 0.25)
+
         plt.yticks(np.arange(Ystart, Yend + Yinterval, step = Yinterval), fontsize = Yticks_fontsize)
+        plt.xticks(x)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 50)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
         # plt.show()
-        plt.tight_layout()
+        # plt.tight_layout()
         pdfName = dataName[0:-4]
         plt.savefig('./pdf/{}.eps'.format(pdfName)) 
         plt.savefig('./pdf/{}.jpg'.format(pdfName)) 
@@ -180,14 +189,6 @@ class ChartGenerator:
             return str()
         else:
             return "($" + "10" + "^{" + str(multiple) + "}" + "$)"
-
-    def myRound(self, x):
-        if x < 1:
-            return x
-        x = int(x)
-        head = int(str(x)[0])
-        digit = len(str(x))
-        return int((head + 1) * (10 ** (digit - 1)))
 
 if __name__ == "__main__":
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
