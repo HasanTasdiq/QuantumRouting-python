@@ -114,10 +114,8 @@ if __name__ == '__main__':
 
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
-
+        break
         Ydata = []
-        if XlabelIndex != 5:
-            continue
         for Xparam in Xparameters[XlabelIndex]:
             
             # check schedule
@@ -163,12 +161,13 @@ if __name__ == '__main__':
 
     # write remainRequestPerRound
     results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
-    results.remainRequestPerRound.insert(1, 0) # push_front(1)
+    for result in results:
+        result.remainRequestPerRound.insert(1, 0)
+    
     sampleRounds = [0, 5, 10, 15, 20, 25]
     filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
     F = open(targetFilePath + filename, "w")
     for roundIndex in sampleRounds:
-
         Xaxis = str(roundIndex)
         Yaxis = [result.remainRequestPerRound[roundIndex] for result in results]
         Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
