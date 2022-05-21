@@ -1,10 +1,9 @@
-from cmath import log10
 import numpy as np
 import math
 import os
+import latex
 import matplotlib.pyplot as plt
 import matplotlib.transforms
-# import latex
 import matplotlib
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 
@@ -41,7 +40,7 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 35
+        fontsize = 32
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
         Xticks_fontsize = fontsize
@@ -62,22 +61,24 @@ class ChartGenerator:
         "axes.labelsize": 20,
         "axes.titlesize": 20,
         "font.family": "Times New Roman",
-        "mathtext.default": "default"
+        "mathtext.it": "Times New Roman:italic",
+        "mathtext.default": "regular",
+        "mathtext.fontset": "custom"
+        # "mathtext.fontset": "custom"
+        # "figure.autolayout": True
         # "text.usetex": True,
         # "figure.dpi": 100,
         }
         
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize = (8, 7), dpi = 600)
-        # ax1.spines['top'].set_linewidth(1.5)
+        fig, ax1 = plt.subplots(figsize = (7, 6), dpi = 600)
+        # ax1.spines['top'].set_position(('axes', 0.5)
         # ax1.spines['right'].set_linewidth(1.5)
         # ax1.spines['bottom'].set_linewidth(1.5)
         # ax1.spines['left'].set_linewidth(1.5)
         ax1.tick_params(direction = "in")
         ax1.tick_params(bottom = True, top = True, left = True, right = True)
         ax1.tick_params(pad = 15)
-
-
         ##data start##
         x = []
         _y = []
@@ -129,9 +130,9 @@ class ChartGenerator:
         AlgoName = ["SEER", "Greedy", "Q-CAST", "REPS"]
 
         leg = plt.legend(
-            AlgoName[0 : numOfAlgo],
+            AlgoName,
             loc = 10,
-            bbox_to_anchor = (0.4, 1.2),
+            bbox_to_anchor = (0.4, 1.25),
             prop = {"size": fontsize, "family": "Times New Roman"},
             frameon = "False",
             labelspacing = 0.2,
@@ -145,15 +146,20 @@ class ChartGenerator:
         leg.get_frame().set_linewidth(0.0)
         Ylabel += self.genMultiName(Ypow)
         Xlabel += self.genMultiName(Xpow)
-        
+        plt.subplots_adjust(top = 0.75)
+        plt.subplots_adjust(left = 0.3)
+        plt.subplots_adjust(right = 0.95)
+        plt.subplots_adjust(bottom = 0.25)
+
         plt.yticks(np.arange(Ystart, Yend + Yinterval, step = Yinterval), fontsize = Yticks_fontsize)
+        plt.xticks(x)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 50)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
         # plt.show()
-        plt.tight_layout()
+        # plt.tight_layout()
         pdfName = dataName[0:-4].replace('#', '')
         plt.savefig('./pdf/Q_{}.eps'.format(pdfName)) 
-        plt.savefig('./pdf/Q_{}.jpg'.format(pdfName)) 
+        plt.savefig('./pdf/{}.jpg'.format(pdfName)) 
         # Xlabel = Xlabel.replace(' (%)','')
         # Xlabel = Xlabel.replace('# ','')
         # Ylabel = Ylabel.replace('# ','')
@@ -164,14 +170,6 @@ class ChartGenerator:
             return str()
         else:
             return "($" + "10" + "^{" + str(multiple) + "}" + "$)"
-
-    def myRound(self, x):
-        if x < 1:
-            return x
-        x = int(x)
-        head = int(str(x)[0])
-        digit = len(str(x))
-        return int((head + 1) * (10 ** (digit - 1)))
 
 def getFilename(x, y):
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
@@ -201,9 +199,14 @@ if __name__ == "__main__":
     # 4 temporaryRatio
 
 
-    # rpr + waitingtime
-    ChartGenerator(getFilename(0, 1), "$\\beta$(#requests / time slots)", "Waiting Time", 0, 0, 0, 15, 3)
+    # rpr + waiting
+    ChartGenerator(getFilename(0, 1), "$\\it{\\beta}$(#requests / time slots)", "Waiting Time", 0, 0, 0, 15, 3)
     
     # alpha + ratio
-    ChartGenerator(getFilename(5, 4), "$\\alpha$", "Temporary Ratio", -4, 0, 0, 1, 0.2)
+    ChartGenerator(getFilename(5, 4), "$\\it{\\alpha}$", "Temporary Ratio", -4, 0, 0, 1, 0.2)
     
+    # q + waiting
+    ChartGenerator(getFilename(4, 1), "$\\it{q}$(swap probability)", "Waiting Time", 0, 0, 0, 120, 24)
+    
+    # q + ratio
+    ChartGenerator(getFilename(4, 4), "$\\it{q}$(swap probability)", "Temporary Ratio", 0, 0, 0, 1, 0.2)
