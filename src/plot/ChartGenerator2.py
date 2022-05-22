@@ -205,6 +205,8 @@ if __name__ == "__main__":
     runtime = "Runtime (s)"
     ratio = "Temp. Sto. Ratio (%)"
     alpha = "$\\it{\\alpha}$ "
+    timeslot = "Timeslot"
+    remain = "# Remain Req."
     # rpr + waiting
     ChartGenerator(getFilename(0, 1), beta, waiting, 0, 0, 0, 15, 3)
     
@@ -219,3 +221,6 @@ if __name__ == "__main__":
 
     # alpha + waiting
     ChartGenerator(getFilename(5, 1), alpha, waiting, -4, 0, 0, 30, 6)
+
+    # timeslot + remain
+    ChartGenerator("Timeslot_#remainRequest.txt", timeslot, remain, 0, 0, 0, 1, 0.2)
