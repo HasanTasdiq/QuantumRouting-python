@@ -40,7 +40,7 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 30
+        fontsize = 26
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
         Xticks_fontsize = fontsize
@@ -62,16 +62,17 @@ class ChartGenerator:
         "axes.titlesize": 20,
         "font.family": "Times New Roman",
         "mathtext.it": "Times New Roman:italic",
+        "mathtext.cal": "Times New Roman:italic",
         "mathtext.default": "regular",
         "mathtext.fontset": "custom"
-        # "mathtext.fontset": "custom"
+        # "mathtext.fontset": "regular"
         # "figure.autolayout": True
         # "text.usetex": True,
         # "figure.dpi": 100,
         }
         
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize = (6, 5.35), dpi = 600)
+        fig, ax1 = plt.subplots(figsize = (6, 4.5), dpi = 600)
         # ax1.spines['top'].set_position(('axes', 0.5)
         # ax1.spines['right'].set_linewidth(1.5)
         # ax1.spines['bottom'].set_linewidth(1.5)
@@ -127,13 +128,13 @@ class ChartGenerator:
         plt.xticks(fontsize = Xticks_fontsize)
         plt.yticks(fontsize = Yticks_fontsize)
         
-        AlgoName = ["SEER", "Greedy", "Q-CAST", "REPS"]
+        AlgoName = ["SEER", "GREEDY", "Q-CAST", "REPS"]
 
         leg = plt.legend(
             AlgoName,
             loc = 10,
-            bbox_to_anchor = (0.4, 1.25),
-            prop = {"size": fontsize, "family": "Times New Roman"},
+            bbox_to_anchor = (0.4, 1.2),
+            prop = {"size": fontsize - 5, "family": "Times New Roman"},
             frameon = "False",
             labelspacing = 0.2,
             handletextpad = 0.2,
@@ -144,17 +145,17 @@ class ChartGenerator:
         )
 
         leg.get_frame().set_linewidth(0.0)
-        Ylabel += self.genMultiName(Ypow)
+        # Ylabel += self.genMultiName(Ypow)
         Xlabel += self.genMultiName(Xpow)
-        plt.subplots_adjust(top = 0.75)
+        plt.subplots_adjust(top = 0.81)
         plt.subplots_adjust(left = 0.3)
         plt.subplots_adjust(right = 0.95)
-        plt.subplots_adjust(bottom = 0.25)
+        plt.subplots_adjust(bottom = 0.26)
 
         plt.yticks(np.arange(Ystart, Yend + Yinterval, step = Yinterval), fontsize = Yticks_fontsize)
         plt.xticks(x)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 35)
-        plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
+        plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 5)
         # plt.show()
         # plt.tight_layout()
         pdfName = dataName[0:-4].replace('#', '')
@@ -199,28 +200,28 @@ if __name__ == "__main__":
     # 4 temporaryRatio
 
 
-    beta = "$\\it{\\beta}$ (# requests / time slots)"
+    beta = "$\\it{\\beta}$ (# Req. / Time Slots)"
     waiting = "Avg. Waiting Time"
-    swap = "Succ. Prob. of Swap. $\\it{q}$"
+    swap = "Succ. Prob. of Swap. $\\mathcal{Q(v)}$"
     runtime = "Runtime (s)"
     ratio = "Temp. Sto. Ratio (%)"
     alpha = "$\\it{\\alpha}$ "
-    timeslot = "Timeslot"
-    remain = "# Remain Req."
+    timeslot = "Time Slot"
+    remain = "# Remain. Req."
     # rpr + waiting
     ChartGenerator(getFilename(0, 1), beta, waiting, 0, 0, 0, 15, 3)
     
     # alpha + ratio
-    ChartGenerator(getFilename(5, 4), alpha, ratio, -4, 0, 0, 1, 0.2)
+    ChartGenerator(getFilename(5, 4), alpha, ratio, -4, -2, 0, 100, 20)
     
     # q + waiting
     ChartGenerator(getFilename(4, 1), swap, waiting, 0, 0, 0, 125, 25)
     
     # q + ratio
-    ChartGenerator(getFilename(4, 4), swap, ratio, 0, 0, 0, 1, 0.2)
+    ChartGenerator(getFilename(4, 4), swap, ratio, 0, -2, 0, 100, 20)
 
     # alpha + waiting
     ChartGenerator(getFilename(5, 1), alpha, waiting, -4, 0, 0, 30, 6)
 
     # timeslot + remain
-    ChartGenerator("Timeslot_#remainRequest.txt", timeslot, remain, 0, 0, 0, 1, 0.2)
+    ChartGenerator("Timeslot_#remainRequest.txt", timeslot, remain + " (%)", 0, -2, 0, 100, 20)
