@@ -8,7 +8,7 @@ from MyAlgorithm import MyAlgorithm
 from OnlineAlgorithm import OnlineAlgorithm
 from GreedyGeographicRouting import GreedyGeographicRouting
 from GreedyHopRouting import GreedyHopRouting
-from REPS import REPS
+# from REPS import REPS
 from topo.Topo import Topo
 from topo.Node import Node
 from topo.Link import Link
@@ -27,7 +27,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 20, topo = None):
+def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 20, topo = None, FixedRequests = None):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -46,7 +46,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.00
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 20
+    times = 100
     results = [[] for _ in range(len(algorithms))]
     ttime = 200
 
@@ -55,13 +55,15 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.00
 
     pid = 0
     for _ in range(times):
-        
         ids = {i : [] for i in range(ttime)}
-        for i in range(ttime):
-            if i < rtime:
-                for _ in range(numOfRequestPerRound):
-                    a = sample([i for i in range(numOfNode)], 2)
-                    ids[i].append((a[0], a[1]))
+        if FixedRequests != None:
+            ids = FixedRequests
+        else:
+            for i in range(ttime):
+                if i < rtime:
+                    for _ in range(numOfRequestPerRound):
+                        a = sample([i for i in range(numOfNode)], 2)
+                        ids[i].append((a[0], a[1]))
         
         for algoIndex in range(len(algorithms)):
             algo = copy.deepcopy(algorithms[algoIndex])
@@ -101,7 +103,7 @@ if __name__ == '__main__':
     numOfRequestPerRound = [1, 2, 3, 4, 5]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
-    r = [10, 20, 30, 40]
+    r = [1, 2, 3, 4, 5]
     q = [0, 0.2, 0.4, 0.6, 0.8, 1]
     alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
@@ -112,10 +114,17 @@ if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
 
+    tmp_ids = {i : [] for i in range(200)}
+    for i in range(200):
+        if i < 20:
+            for _ in range(5):
+                a = sample([i for i in range(100)], 2)
+                tmp_ids[i].append((a[0], a[1]))
+               
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
-        if XlabelIndex != 4:
+        if XlabelIndex != 3:
             continue
         for Xparam in Xparameters[XlabelIndex]:
             
@@ -132,7 +141,7 @@ if __name__ == '__main__':
             if XlabelIndex == 2: # #nodes
                 result = Run(numOfNode = Xparam)
             if XlabelIndex == 3: # r
-                result = Run(r = Xparam, topo = copy.deepcopy(topo))
+                result = Run(r = Xparam, topo = copy.deepcopy(topo), FixedRequests = tmp_ids)
             if XlabelIndex == 4: # swapProbability
                 result = Run(q = Xparam, topo = copy.deepcopy(topo))
             if XlabelIndex == 5: # alpha
