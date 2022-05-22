@@ -198,7 +198,7 @@ class MyAlgorithm(AlgorithmBase):
             # print('minNum:', minNum)
             
             for k in self.socialRelationship[src]:
-                if nodeRemainingQubits[k] <= 1 or k == dst:
+                if nodeRemainingQubits[k] <= 1 or k == dst or self.r < 1:
                     continue
                 path_sk = self.givenShortestPath[(src, k)]
                 path_kd = self.givenShortestPath[(k, dst)]
