@@ -162,7 +162,7 @@ if __name__ == '__main__':
     # write remainRequestPerRound
     results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
     for result in results:
-        result.remainRequestPerRound.insert(1, 0)
+        result.remainRequestPerRound.insert(0, 1)
     
     # sampleRounds = [0, 5, 10, 15, 20, 25]
     sampleRounds = [0, 2, 4, 6, 8, 10]
