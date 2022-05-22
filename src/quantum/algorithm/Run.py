@@ -164,7 +164,8 @@ if __name__ == '__main__':
     for result in results:
         result.remainRequestPerRound.insert(1, 0)
     
-    sampleRounds = [0, 5, 10, 15, 20, 25]
+    # sampleRounds = [0, 5, 10, 15, 20, 25]
+    sampleRounds = [0, 2, 4, 6, 8, 10]
     filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
     F = open(targetFilePath + filename, "w")
     for roundIndex in sampleRounds:
