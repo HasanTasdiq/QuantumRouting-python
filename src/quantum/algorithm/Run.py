@@ -38,10 +38,10 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 40, q = 0.9, alpha = 0.00
     # make copy
     algorithms = []
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
+    # algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
-    algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
-    algorithms.append(REPS(copy.deepcopy(topo)))
+    # algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(REPS(copy.deepcopy(topo)))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
     r = [10, 20, 30, 40]
-    q = [0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    q = [0, 0.2, 0.4, 0.6, 0.8, 1]
     alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
@@ -114,8 +114,9 @@ if __name__ == '__main__':
 
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
-        break
         Ydata = []
+        if XlabelIndex != 4:
+            continue
         for Xparam in Xparameters[XlabelIndex]:
             
             # check schedule
@@ -158,7 +159,7 @@ if __name__ == '__main__':
                 F.write(Xaxis + Yaxis)
             F.close()
 
-
+    exit(0)
     # write remainRequestPerRound
     results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
     for result in results:
