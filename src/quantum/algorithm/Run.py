@@ -104,7 +104,7 @@ if __name__ == '__main__':
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
     r = [1, 2, 3, 4, 5]
-    q = [0.000001, 0.2, 0.4, 0.6, 0.8, 1]
+    q = [0.5, 0.6, 0.7, 0.8, 0.9, 1]
     alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
@@ -121,7 +121,7 @@ if __name__ == '__main__':
                 a = sample([i for i in range(100)], 2)
                 tmp_ids[i].append((a[0], a[1]))
                
-    skipXlabel = [1, 2, 3, 6]
+    skipXlabel = [1, 2, 3, 5, 6]
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
