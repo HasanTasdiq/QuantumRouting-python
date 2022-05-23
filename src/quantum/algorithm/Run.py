@@ -159,7 +159,7 @@ if __name__ == '__main__':
         # Ydata[3] = numOfNode = 100 algo1Result algo2Result ... 
 
         for Ylabel in Ylabels:
-            filename = Xlabel + "_" + Ylabel + "2.txt"
+            filename = Xlabel + "_" + Ylabel + ".txt"
             F = open(targetFilePath + filename, "w")
             for i in range(len(Xparameters[XlabelIndex])):
                 Xaxis = str(Xparameters[XlabelIndex][i])
