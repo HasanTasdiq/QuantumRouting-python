@@ -153,6 +153,21 @@ if __name__ == '__main__':
             #     result = Run(mapSize = Xparam)
             Ydata.append(result)
 
+        # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
+        # Ydata[1] = numOfNode = 20 algo1Result algo2Result ... 
+        # Ydata[2] = numOfNode = 50 algo1Result algo2Result ... 
+        # Ydata[3] = numOfNode = 100 algo1Result algo2Result ... 
+
+        for Ylabel in Ylabels:
+            filename = Xlabel + "_" + Ylabel + "2.txt"
+            F = open(targetFilePath + filename, "w")
+            for i in range(len(Xparameters[XlabelIndex])):
+                Xaxis = str(Xparameters[XlabelIndex][i])
+                Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
+                Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+                F.write(Xaxis + Yaxis)
+            F.close()
+
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
