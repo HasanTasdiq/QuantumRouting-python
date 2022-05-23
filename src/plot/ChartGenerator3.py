@@ -160,6 +160,8 @@ class ChartGenerator:
         plt.xticks(x)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 35)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 5)
+        ax1.yaxis.set_label_coords(-0.3, 0.5)
+        ax1.xaxis.set_label_coords(0.45, -0.27)
         # plt.show()
         # plt.tight_layout()
         pdfName = dataName[0:-4].replace('#', '')
@@ -204,7 +206,7 @@ if __name__ == "__main__":
     # 4 temporaryRatio
 
 
-    beta = "$\\it{\\beta}$ (# Req. / Time Slots) "
+    beta = "$\\it{\\beta}$ (# Req. per Time Slot) "
     waiting = "Avg. Waiting Time "
     # swap = "Succ. Prob. of Swap. $\\mathcal{Q(v)}$ "
     swap = "$\\mathcal{Q(v)}$ "
