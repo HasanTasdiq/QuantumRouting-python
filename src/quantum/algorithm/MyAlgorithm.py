@@ -96,7 +96,7 @@ class MyAlgorithm(AlgorithmBase):
                     state = 1
             elif state == 1:
                 currentMaintain += 1
-                if currentMaintain >= r:
+                if currentMaintain > r:
                     state = 0
                     currentMaintain = 0
                 elif random.random() <= p2:
@@ -164,7 +164,7 @@ class MyAlgorithm(AlgorithmBase):
                     self.socialRelationship[n1].append(n2)
                     self.socialRelationship[n2].append(n1)
                     # print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
-    
+
     def genSocialNetwork(self, userNum, density):
         self.SN = {i: [] for i in range(userNum)}
         community = self.community[density]
@@ -177,8 +177,6 @@ class MyAlgorithm(AlgorithmBase):
                 if community[i] == community[j]:
                     self.SN[i].append(j)
                     self.SN[j].append(i)
-
-        
 
     # p1
     def descideSegmentation(self):
@@ -200,7 +198,7 @@ class MyAlgorithm(AlgorithmBase):
             # print('minNum:', minNum)
             
             for k in self.socialRelationship[src]:
-                if nodeRemainingQubits[k] <= 1 or k == dst:
+                if nodeRemainingQubits[k] <= 1 or k == dst or self.r < 1:
                     continue
                 path_sk = self.givenShortestPath[(src, k)]
                 path_kd = self.givenShortestPath[(k, dst)]
@@ -239,7 +237,6 @@ class MyAlgorithm(AlgorithmBase):
         # self.givenShortestPath.clear()
         # self.socialRelationship.clear()
         
-
     # p2 第2次篩選
     def p2Extra(self):
 
