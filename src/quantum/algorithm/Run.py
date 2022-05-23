@@ -121,7 +121,7 @@ if __name__ == '__main__':
                 a = sample([i for i in range(100)], 2)
                 tmp_ids[i].append((a[0], a[1]))
                
-    skipXlabel = [1, 2, 3, 5, 6]
+    skipXlabel = [0, 1, 2, 3, 5, 6]
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
