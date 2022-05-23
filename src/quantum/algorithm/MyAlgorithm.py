@@ -87,6 +87,10 @@ class MyAlgorithm(AlgorithmBase):
         maxRound = 5000
         currentRound = 0
         currentMaintain = 0
+
+        if p1 < 0.0002 or p2 < 0.0002:
+            return maxRound
+
         while state != 2:
             if currentRound >= maxRound:
                 break
