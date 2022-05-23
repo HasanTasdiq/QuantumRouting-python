@@ -60,11 +60,11 @@ class ChartGenerator:
         "ytick.labelsize": 20,
         "axes.labelsize": 20,
         "axes.titlesize": 20,
+        "mathtext.fontset": "custom",
         "font.family": "Times New Roman",
+        "mathtext.default": "default",
         "mathtext.it": "Times New Roman:italic",
         "mathtext.cal": "Times New Roman:italic",
-        "mathtext.default": "regular",
-        "mathtext.fontset": "custom"
         # "mathtext.fontset": "regular"
         # "figure.autolayout": True
         # "text.usetex": True,
@@ -80,6 +80,7 @@ class ChartGenerator:
         ax1.tick_params(direction = "in")
         ax1.tick_params(bottom = True, top = True, left = True, right = True)
         ax1.tick_params(pad = 20)
+
         ##data start##
         x = []
         _y = []
@@ -154,8 +155,10 @@ class ChartGenerator:
 
         plt.yticks(np.arange(Ystart, Yend + Yinterval, step = Yinterval), fontsize = Yticks_fontsize)
         plt.xticks(x)
-        plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 35)
-        plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 5)
+        plt.ylabel(Ylabel, fontsize = Ylabel_fontsize)
+        plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 500)
+        ax1.yaxis.set_label_coords(-0.3, 0.5)
+        ax1.xaxis.set_label_coords(0.45, -0.27)
         # plt.show()
         # plt.tight_layout()
         pdfName = dataName[0:-4].replace('#', '')
@@ -200,7 +203,7 @@ if __name__ == "__main__":
     # 4 temporaryRatio
 
 
-    beta = "$\\it{\\beta}$ (# Req. / Time Slots)"
+    beta = "$\\it{\\beta}$ (# Req. per Time Slot) "
     waiting = "Avg. Waiting Time"
     swap = "Succ. Prob. of Swap. $\\mathcal{Q(v)}$"
     runtime = "Runtime (s)"
@@ -208,20 +211,25 @@ if __name__ == "__main__":
     alpha = "$\\it{\\alpha}$ "
     timeslot = "Time Slot"
     remain = "# Remain. Req."
+    r = "Max. Sto. Time $\\it{r}$ (# Time Slots)"
+
     # rpr + waiting
     ChartGenerator(getFilename(0, 1), beta, waiting, 0, 0, 0, 15, 3)
     
     # alpha + ratio
-    ChartGenerator(getFilename(5, 4), alpha, ratio, -4, -2, 0, 100, 20)
+    # ChartGenerator(getFilename(5, 4), alpha, ratio, -4, -2, 0, 100, 20)
     
     # q + waiting
     ChartGenerator(getFilename(4, 1), swap, waiting, 0, 0, 0, 125, 25)
     
     # q + ratio
-    ChartGenerator(getFilename(4, 4), swap, ratio, 0, -2, 0, 100, 20)
+    # ChartGenerator(getFilename(4, 4), swap, ratio, 0, -2, 0, 100, 20)
 
     # alpha + waiting
-    ChartGenerator(getFilename(5, 1), alpha, waiting, -4, 0, 0, 30, 6)
+    ChartGenerator(getFilename(5, 1), alpha, waiting, -3, 0, 0, 30, 6)
 
+    # r + waiting
+    ChartGenerator(getFilename(3, 1), r, waiting, 0, 0, 1.9, 2.4, 0.2)
+    
     # timeslot + remain
     ChartGenerator("Timeslot_#remainRequest.txt", timeslot, remain + " (%)", 0, -2, 0, 100, 20)

@@ -66,7 +66,7 @@ class ChartGenerator:
         "axes.titlesize": 20,
         "font.family": "Times New Roman",
         "mathtext.it": "Times New Roman:italic",
-        "mathtext.default": "regular",
+        # "mathtext.default": "regular",
         "mathtext.fontset": "custom"
         # "mathtext.fontset": "custom"
         # "figure.autolayout": True
@@ -129,12 +129,16 @@ class ChartGenerator:
                 maxData = max(maxData, y[i][j])
                 minData = min(minData, y[i][j])
 
-        Ystart = maxData + 1
-        Yend = max(0, minData)
+        Yend = math.ceil(maxData)
+        Ystart = 0
+        Yinterval = (Yend - Ystart) / 5
 
-        if Yinterval > 1:
+        if maxData > 1.1:
             Yinterval = int(math.ceil(Yinterval))
-        elif maxData <= 1.1:
+            Yend = int(Yend)
+        else:
+            Yend = 1
+            Ystart = 0
             Yinterval = 0.2
 
         marker = ['o', 's', 'v', 'x', 'd']
@@ -173,10 +177,12 @@ class ChartGenerator:
         plt.xticks(x)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 35)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
+        ax1.yaxis.set_label_coords(-0.3, 0.5)
+        ax1.xaxis.set_label_coords(0.45, -0.27)
         # plt.show()
         # plt.tight_layout()
         pdfName = dataName[0:-4]
-        plt.savefig('./pdf/{}.eps'.format(pdfName)) 
+        # plt.savefig('./pdf/{}.eps'.format(pdfName)) 
         plt.savefig('./pdf/{}.jpg'.format(pdfName)) 
         # Xlabel = Xlabel.replace(' (%)','')
         # Xlabel = Xlabel.replace('# ','')
