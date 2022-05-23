@@ -151,7 +151,38 @@ if __name__ == '__main__':
                 result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
             # if XlabelIndex == 7:
             #     result = Run(mapSize = Xparam)
-            Ydata.append(result)           
+            Ydata.append(result)
+
+    for XlabelIndex in range(len(Xlabels)):
+        Xlabel = Xlabels[XlabelIndex]
+        Ydata = []
+        if XlabelIndex in skipXlabel:
+            continue
+        for Xparam in Xparameters[XlabelIndex]:
+            
+            # check schedule
+            statusFile = open("status.txt", "w")
+            print(Xlabel + str(Xparam), file = statusFile)
+            statusFile.flush()
+            statusFile.close()
+            # ------
+            if XlabelIndex == 0: # #RequestPerRound
+                result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
+            if XlabelIndex == 1: # totalRequest
+                result = Run(numOfRequestPerRound = Xparam, rtime = 1, topo = copy.deepcopy(topo))
+            if XlabelIndex == 2: # #nodes
+                result = Run(numOfNode = Xparam)
+            if XlabelIndex == 3: # r
+                result = Run(r = Xparam, alpha = 0.0004, topo = copy.deepcopy(topo), FixedRequests = tmp_ids)
+            if XlabelIndex == 4: # swapProbability
+                result = Run(q = Xparam, topo = copy.deepcopy(topo))
+            if XlabelIndex == 5: # alpha
+                result = Run(alpha = Xparam, topo = copy.deepcopy(topo))
+            if XlabelIndex == 6: # SocialNetworkDensity
+                result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
+            # if XlabelIndex == 7:
+            #     result = Run(mapSize = Xparam)
+            Ydata.append(result)
 
 
         # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
@@ -160,7 +191,7 @@ if __name__ == '__main__':
         # Ydata[3] = numOfNode = 100 algo1Result algo2Result ... 
 
         for Ylabel in Ylabels:
-            filename = Xlabel + "_" + Ylabel + ".txt"
+            filename = Xlabel + "_" + Ylabel + "2.txt"
             F = open(targetFilePath + filename, "w")
             for i in range(len(Xparameters[XlabelIndex])):
                 Xaxis = str(Xparameters[XlabelIndex][i])
