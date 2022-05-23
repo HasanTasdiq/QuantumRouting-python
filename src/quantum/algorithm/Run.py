@@ -121,7 +121,7 @@ if __name__ == '__main__':
                 a = sample([i for i in range(100)], 2)
                 tmp_ids[i].append((a[0], a[1]))
                
-    skipXlabel = [0, 1, 2, 3, 5, 6]
+    skipXlabel = [0, 1, 2, 4, 5, 6]
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
@@ -169,6 +169,7 @@ if __name__ == '__main__':
                 F.write(Xaxis + Yaxis)
             F.close()
 
+    exit(0)
     # write remainRequestPerRound
     results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
     for result in results:
