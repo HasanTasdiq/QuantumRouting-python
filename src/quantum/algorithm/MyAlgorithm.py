@@ -29,15 +29,21 @@ class MyAlgorithm(AlgorithmBase):
         self.name = "My"
         self.r = 40                     # 暫存回合
         self.givenShortestPath = {}     # {(src, dst): path, ...}               path表
-        # self.socialRelationship = {}    # {Node : [Node, ...], ...}             node-social表
+        # self.socialRelationship = {}  # {Node : [Node, ...], ...}             node-social表
         self.requestState = {}          # {(src, dst, timeslot) : RequestInfo}  request表 
         self.totalTime = 0
+        self.totalUsedQubits = 0
         self.density = 0.5
         self.takeTemporary = 0          # 選擇分段的request數量
         self.totalNumOfReq = 0          # 總request數量
         self.factorialTable = {}        # 階層運算表
         self.expectTable = {}           # {(path1, path2) : expectRound}        expectRound表
         self.SN = {}                    # social network
+        self.community1 = [0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 2, 2, 2, 2, 3, 2, 2, 2, 3, 2]  # 0.25
+        self.community2 = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1]  # 0.50
+        self.community3 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]  # 0.75
+        self.community4 = [0 for _ in range(20)]                                        # 1.00
+        self.community = {0.25 : self.community1, 0.50 : self.community2, 0.75 : self.community3, 1.00 : self.community4}
 
         self.socialRelationship = {node: [] for node in self.topo.nodes}
         print("[MyAlgo] Construct path")
@@ -81,6 +87,10 @@ class MyAlgorithm(AlgorithmBase):
         maxRound = 5000
         currentRound = 0
         currentMaintain = 0
+
+        if p1 < 0.0002 or p2 < 0.0002:
+            return maxRound
+
         while state != 2:
             if currentRound >= maxRound:
                 break
@@ -90,7 +100,7 @@ class MyAlgorithm(AlgorithmBase):
                     state = 1
             elif state == 1:
                 currentMaintain += 1
-                if currentMaintain >= r:
+                if currentMaintain > r:
                     state = 0
                     currentMaintain = 0
                 elif random.random() <= p2:
@@ -140,7 +150,7 @@ class MyAlgorithm(AlgorithmBase):
         #             self.socialRelationship[n1].append(n2)
         #             self.socialRelationship[n2].append(n1)
         #             print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
-        userNum = 8
+        userNum = 20
         node2user = {}
         self.genSocialNetwork(userNum, self.density)
         users = [i for i in range(userNum)]
@@ -158,16 +168,19 @@ class MyAlgorithm(AlgorithmBase):
                     self.socialRelationship[n1].append(n2)
                     self.socialRelationship[n2].append(n1)
                     # print('[system] Construct social relationship: node 1 ->', n1.id, ', node 2 ->', n2.id)
-    
+
     def genSocialNetwork(self, userNum, density):
         self.SN = {i: [] for i in range(userNum)}
+        community = self.community[density]
         for i in range(userNum):
             for j in range(i+1, userNum):
-                p = random.random()
-                if p <= density:
+                # p = random.random()
+                # if p <= density:
+                #     self.SN[i].append(j)
+                #     self.SN[j].append(i)
+                if community[i] == community[j]:
                     self.SN[i].append(j)
                     self.SN[j].append(i)
-        
 
     # p1
     def descideSegmentation(self):
@@ -189,7 +202,7 @@ class MyAlgorithm(AlgorithmBase):
             # print('minNum:', minNum)
             
             for k in self.socialRelationship[src]:
-                if nodeRemainingQubits[k] <= 1 or k == dst:
+                if nodeRemainingQubits[k] <= 1 or k == dst or self.r < 1:
                     continue
                 path_sk = self.givenShortestPath[(src, k)]
                 path_kd = self.givenShortestPath[(k, dst)]
@@ -228,7 +241,6 @@ class MyAlgorithm(AlgorithmBase):
         # self.givenShortestPath.clear()
         # self.socialRelationship.clear()
         
-
     # p2 第2次篩選
     def p2Extra(self):
 
@@ -298,12 +310,12 @@ class MyAlgorithm(AlgorithmBase):
                         n2 = p[i+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
-                                self.result.usedQubits += 2
+                                self.totalUsedQubits += 2
                                 link.assignQubits()
                                 break 
 
                     if requestInfo.state == 1:
-                        self.result.usedQubits += 1
+                        self.totalUsedQubits += 1
                         dst.assignIntermediate()
                     
                     if requestInfo.state == 2:
@@ -354,7 +366,7 @@ class MyAlgorithm(AlgorithmBase):
                         n2 = p[i+1]
                         for link in n1.links:
                             if link.contains(n2) and (not link.assigned):
-                                self.result.usedQubits += 2
+                                self.totalUsedQubits += 2
                                 link.assignQubits()
                                 break
 
@@ -470,13 +482,13 @@ class MyAlgorithm(AlgorithmBase):
                 n2 = path[i+1]
                 for link in n1.links:
                     if link.contains(n2) and (not link.assigned):
-                        self.result.usedQubits += 2
+                        self.totalUsedQubits += 2
                         link.assignQubits()
                         break 
 
             # 有分段 另外分配資源給中繼點
             if requestInfo.state == 1:
-                self.result.usedQubits += 1
+                self.totalUsedQubits += 1
                 dst.assignIntermediate()
             
             # take這個request
@@ -602,12 +614,13 @@ class MyAlgorithm(AlgorithmBase):
 
         remainTime = 0
         for req in self.requestState:
-            self.result.unfinishedRequest += 1
+            # self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
 
-        self.topo.clearAllEntanglements() 
+        self.topo.clearAllEntanglements()
+        self.result.remainRequestPerRound.append(len(self.requestState)/self.totalNumOfReq)  
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
-        self.result.usedQubits /= self.totalNumOfReq
+        self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
 
         # print('----------------------')
         print('[MyAlgo] waiting time:',  self.result.waitingTime)
