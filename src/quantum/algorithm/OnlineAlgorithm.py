@@ -9,6 +9,7 @@ from topo.Node import Node
 from topo.Link import Link
 from random import sample
 import copy
+import time
 
 @dataclass
 class RecoveryPath:
@@ -46,6 +47,7 @@ class OnlineAlgorithm(AlgorithmBase):
             (src, dst) = req
             self.totalNumOfReq += 1
             self.requests.append((src, dst, self.timeSlot))
+        print('###self.requests ' , len(self.requests))
         
         if len(self.requests) > 0:
             self.result.numOfTimeslot += 1
@@ -56,9 +58,11 @@ class OnlineAlgorithm(AlgorithmBase):
             if len(candidates) == 0:
                 break
             pick = candidates[-1]   # pick -> PickedPath 
-            print('[Q-cast]', 'pick size:', len(candidates), 'pick width:', pick.width)
+            # print('[Q-cast]', 'pick size:', len(candidates), 'pick width:', pick.width)
+            # print('pick: ' ,[x.id for x in pick.path])
             for c in candidates:
                 print('[Q-cast]', [x.id for x in c.path])  
+            # time.sleep(1000)
             if pick.weight > 0.0: 
                 self.pickAndAssignPath(pick)
             else:
@@ -73,7 +77,7 @@ class OnlineAlgorithm(AlgorithmBase):
             pick = False
             for pathWithWidth in self.majorPaths:
                 p = pathWithWidth.path
-                print('[Q-cast]', 'pick', [x.id for x in p])
+                # print('[Q-cast]', 'pick', [x.id for x in p])
                 if (p[0], p[-1], pathWithWidth.time) == req:
                     pick = True
                     break
@@ -453,6 +457,12 @@ class OnlineAlgorithm(AlgorithmBase):
 
         print('[Q-cast] waiting time:', self.result.waitingTime)
         print('[Q-cast] idle time:', self.result.idleTime)
+        print('[Q-cast] totalTime:', self.totalTime)
+        print('[Q-cast] remainTime:', remainTime)
+        print('[Q-cast] totalNumOfReq:', self.totalNumOfReq)
+        print('[Q-cast] remainRequestPerRound:', self.result.remainRequestPerRound)
+        print('[Q-cast] self.requests:', len(self.requests))
+        print('[Q-cast] avg usedQubits:', self.result.usedQubits)
 
         return self.result
 
@@ -460,10 +470,18 @@ if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
     s = OnlineAlgorithm(topo)
-    for i in range(0, 200):
+    for i in range(0, 5):
+        print('==================================')
+
         if i < 10:
-            a = sample(topo.nodes, 2)
-            s.work([(a[0],a[1])], i)
+            reqs = []
+            for j in range(4):
+                a = sample(topo.nodes, 2)
+                reqs.append((a[0] , a[1]))
+            # a = sample(topo.nodes, 2)
+            # print('[Q-cast] S/D:', a[0].id , a[1].id )
+            # s.work([(a[0],a[1])], i)
+            s.work(reqs, i)
         else:
             s.work([], i)
 

@@ -8,7 +8,7 @@ from MyAlgorithm import MyAlgorithm
 from OnlineAlgorithm import OnlineAlgorithm
 from GreedyGeographicRouting import GreedyGeographicRouting
 from GreedyHopRouting import GreedyHopRouting
-# from REPS import REPS
+from REPS import REPS
 from topo.Topo import Topo
 from topo.Node import Node
 from topo.Link import Link
@@ -46,7 +46,8 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 100
+    times = 1
+    # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = 200
 
@@ -101,8 +102,10 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     numOfRequestPerRound = [1, 2, 3, 4, 5]
+    # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
+    # numOfNodes = [20]
     r = [0, 2, 4, 6, 8, 10]
     q = [0.000001, 0.2, 0.4, 0.6, 0.8, 1]
     alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
@@ -121,7 +124,7 @@ if __name__ == '__main__':
                 a = sample([i for i in range(100)], 2)
                 tmp_ids[i].append((a[0], a[1]))
                
-    skipXlabel = [0, 1, 2, 4, 5, 6]
+    skipXlabel = [ 1, 2,3, 4, 5, 6]
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
