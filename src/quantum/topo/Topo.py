@@ -3,7 +3,6 @@ import random
 import heapq
 import math
 from queue import PriorityQueue
-from tkinter.tix import AUTO
 import networkx as nx
 from .Node import Node
 from .Link import Link
@@ -73,6 +72,7 @@ class Topo:
         self.alpha = a
         self.k = k
         self.sentinel = Node(-1, (-1.0, -1.0), -1, self)
+        self.cacheTable = {}
 
         # for pos in _positions:
         #     print(_positions[pos])
@@ -268,6 +268,52 @@ class Topo:
         for i in range(0, s):
             l = self.distance(path[i].loc, path[i+1].loc)
             p[i+1] = math.exp(-self.alpha * l)
+            print('+++++=====++++ ent prob ' ,p[i+1] , len(self.getEstablishedEntanglements(path[i] , path[i+1])))
+
+        start = s
+        if sum(oldP) == 0:
+            for m in range(0, width+1):
+                oldP[m] = math.comb(width, m) * math.pow(p[1], m) * math.pow(1-p[1], width-m)
+                start = 2
+        
+        for k in range(start, s+1):
+            for i in range(0, width+1):
+                exactlyM = math.comb(width, i) *  math.pow(p[k], i) * math.pow(1-p[k], width-i)
+                atLeastM = exactlyM
+
+                for j in range(i+1, width+1):
+                    atLeastM += (math.comb(width, j) * math.pow(p[k], j) * math.pow(1-p[k], width-j))
+
+                acc = 0
+                for j in range(i+1, width+1):
+                    acc += oldP[j]
+                
+                P[i] = oldP[i] * atLeastM + exactlyM * acc
+            
+            for i in range(0, width+1):
+                oldP[i] = P[i]
+        
+        acc = 0
+        for m in range(1, width+1):
+            acc += m * oldP[m]
+        
+        return acc * math.pow(self.q, s-1)
+
+
+
+    def e2(self, path: list, width: int, oldP: list):
+        s = len(path) - 1
+        P = [0.0 for _ in range(0,width+1)]
+        p = [0 for _ in range(0, s+1)]  # Entanglement percentage
+        
+        for i in range(0, s):
+            if len(self.getEstablishedEntanglements(path[i] , path[i+1])) > 0:
+                p[i+1] = 1
+                # print('+++++=====++++ ent prob ' ,p[i+1] , len(self.getEstablishedEntanglements(path[i] , path[i+1])))
+
+            else:
+                l = self.distance(path[i].loc, path[i+1].loc)
+                p[i+1] = math.exp(-self.alpha * l)
 
         start = s
         if sum(oldP) == 0:
@@ -375,6 +421,12 @@ class Topo:
     def clearAllEntanglements(self):
         for link in self.links:
             link.clearEntanglement()
+    def preEntanglement(self):
+        for link in self.cacheTable:
+            if self.cacheTable[link] > self.t_val:
+                for _ in range(10):
+                    if link.tryEntanglement():
+                        break
 
     def updateLinks(self):
         for link in self.links:
