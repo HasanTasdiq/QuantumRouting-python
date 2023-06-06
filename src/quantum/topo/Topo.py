@@ -73,6 +73,7 @@ class Topo:
         self.k = k
         self.sentinel = Node(-1, (-1.0, -1.0), -1, self)
         self.cacheTable = {}
+        self.t_val = 2
 
         # for pos in _positions:
         #     print(_positions[pos])
@@ -268,7 +269,6 @@ class Topo:
         for i in range(0, s):
             l = self.distance(path[i].loc, path[i+1].loc)
             p[i+1] = math.exp(-self.alpha * l)
-            print('+++++=====++++ ent prob ' ,p[i+1] , len(self.getEstablishedEntanglements(path[i] , path[i+1])))
 
         start = s
         if sum(oldP) == 0:
@@ -307,13 +307,15 @@ class Topo:
         p = [0 for _ in range(0, s+1)]  # Entanglement percentage
         
         for i in range(0, s):
-            if len(self.getEstablishedEntanglements(path[i] , path[i+1])) > 0:
-                p[i+1] = 1
-                # print('+++++=====++++ ent prob ' ,p[i+1] , len(self.getEstablishedEntanglements(path[i] , path[i+1])))
+            # if len(self.getEstablishedEntanglements(path[i] , path[i+1])) > 0:
+            #     p[i+1] = 1
+            #     # print('+++++=====++++ ent prob ' ,p[i+1] , len(self.getEstablishedEntanglements(path[i] , path[i+1])))
 
-            else:
-                l = self.distance(path[i].loc, path[i+1].loc)
-                p[i+1] = math.exp(-self.alpha * l)
+            # else:
+            #     l = self.distance(path[i].loc, path[i+1].loc)
+            #     p[i+1] = math.exp(-self.alpha * l)
+            l = self.distance(path[i].loc, path[i+1].loc)
+            p[i+1] = math.exp(-self.alpha * l)
 
         start = s
         if sum(oldP) == 0:
@@ -422,11 +424,28 @@ class Topo:
         for link in self.links:
             link.clearEntanglement()
     def preEntanglement(self):
-        for link in self.cacheTable:
-            if self.cacheTable[link] > self.t_val:
-                for _ in range(10):
-                    if link.tryEntanglement():
-                        break
+        for sd in self.cacheTable:
+            if self.cacheTable[sd] > self.t_val:
+                print('[Cache Ent]')
+                links = []
+                n1, n2 = sd[0] ,sd[1]
+
+                for link in n1.links:
+                    if link.contains(n2) and not link.assigned:
+                        links.append(link)
+                for link in links:
+                    link.assigned = True
+                    for _ in range(1):
+                        if link.tryEntanglement():
+                            break
+                    if link.entangled:
+                        print('Ent established :D ')
+                    else:
+                        print('Ent not established :() ')
+
+                    link.assigned = False
+                    print('ent prob ' , link.p , link.entangled)
+                    
 
     def updateLinks(self):
         for link in self.links:

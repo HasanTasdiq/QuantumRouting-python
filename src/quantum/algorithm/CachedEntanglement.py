@@ -36,7 +36,11 @@ class CachedEntanglement(AlgorithmBase):
     def prepare(self):
         self.totalTime = 0
         self.requests.clear()
-        
+
+
+    def preEntanglement(self):
+        print('@@@@@@@@@@@@ in prep ' , self.timeSlot , len(self.topo.cacheTable))
+        self.topo.preEntanglement()
 
     # P2
     def p2(self):
@@ -58,10 +62,10 @@ class CachedEntanglement(AlgorithmBase):
             if len(candidates) == 0:
                 break
             pick = candidates[-1]   # pick -> PickedPath 
-            print('[Q-cast]', 'pick size:', len(candidates), 'pick width:', pick.width)
-            print('pick: ' ,[x.id for x in pick.path])
-            for c in candidates:
-                print('[Q-cast]', [x.id for x in c.path])  
+            # print('[Q-cast]', 'pick size:', len(candidates), 'pick width:', pick.width)
+            # print('pick: ' ,[x.id for x in pick.path])
+            # for c in candidates:
+            #     print('[Q-cast]', [x.id for x in c.path])  
             # time.sleep(1000)
             if pick.weight > 0.0: 
                 self.pickAndAssignPath(pick)
@@ -77,7 +81,7 @@ class CachedEntanglement(AlgorithmBase):
             pick = False
             for pathWithWidth in self.majorPaths:
                 p = pathWithWidth.path
-                print('[Q-cast]', 'pick', [x.id for x in p])
+                # print('[Q-cast]', 'pick', [x.id for x in p])
                 if (p[0], p[-1], pathWithWidth.time) == req:
                     pick = True
                     break
@@ -206,6 +210,7 @@ class CachedEntanglement(AlgorithmBase):
             self.recoveryPaths[pick] = list()
             
         width = pick.width
+        # print('!!!!@@@@@@@@@@!!!!!!!!!!!!!!!!! ' , width)
 
         for i in range(0, len(pick.path) - 1):
             links = []
@@ -216,11 +221,20 @@ class CachedEntanglement(AlgorithmBase):
                     links.append(link)
             sorted(links, key=lambda q: q.id)
 
-            for i in range(0, width):
-                self.totalUsedQubits += 2
-                links[i].assignQubits()
-                links[i].tryEntanglement() # just display
+            # for j in range(0, width):
+            #     # print('************* ' , links[j].n1.id , links[j].n2.id , links[j].id)
 
+            #     if links[j].tryEntanglement(): # just display
+            #         self.totalUsedQubits += 2
+            #         links[j].assignQubits()
+
+            for j in range(0, width):
+                self.totalUsedQubits += 2
+                links[j].assignQubits()
+                links[j].tryEntanglement() # just display
+
+                    
+                    
     def P2Extra(self):
         for majorPath in self.majorPaths:
             p = majorPath.path
@@ -445,12 +459,15 @@ class CachedEntanglement(AlgorithmBase):
                     self.totalTime += self.timeSlot - time
                     self.requests.remove(find)
 
-                    sd = (find[0] , find[1])
-                    if sd not in self.topo.cacheTable:
-                        self.topo.cacheTable[sd] = 1
-                    else:
-                        self.topo.cacheTable[sd] += 1
-                    print('@@@@@@@@@@@@@@@@@@@@sd ' , [x.id for x in sd] ,'picked:' , [x.id for x in acc])
+
+                    print('len of acc ' , len(acc))
+                    for k in  range(len(acc) - 1):
+                        sd = (acc[k] , acc[k + 1])
+                        if sd not in self.topo.cacheTable:
+                            self.topo.cacheTable[sd] = 1
+                        else:
+                            self.topo.cacheTable[sd] += 1
+                    # print('@@@@@@@@@@@@@@@@@@@@sd ' , [x.id for x in sd] ,'picked:' , [x.id for x in acc])
 
         # for pathWithWidth end
         remainTime = 0

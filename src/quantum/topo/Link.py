@@ -28,8 +28,7 @@ class Link:
         return self.s1 or self.s2
     def notSwapped(self):  
         return not self.swapped()
-    def entangled(self):
-        return self.entangled
+
 
 
     def assignQubits(self):
@@ -71,6 +70,8 @@ class Link:
                         self.n2.internalLinks.remove(internalLink)
          
     def tryEntanglement(self):
+        if self.entangled:
+            return True
         b = self.assigned and self.p >= random.random()
         self.entangled = b
         return b
