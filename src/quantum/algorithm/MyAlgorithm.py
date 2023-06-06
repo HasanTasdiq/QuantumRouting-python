@@ -23,8 +23,8 @@ class RequestInfo:
 
 class MyAlgorithm(AlgorithmBase):
 
-    def __init__(self, topo):
-        super().__init__(topo)
+    def __init__(self, topo , preEnt = False):
+        super().__init__(topo , preEnt)
         self.pathsSortedDynamically = []
         self.name = "My"
         self.r = 40                     # 暫存回合
@@ -593,6 +593,7 @@ class MyAlgorithm(AlgorithmBase):
             
             # succeed
             if success > 0 or len(p) == 2:
+                self.result.usedPaths.append(p) #added for pre-entanglement 
                 if requestInfo.state == 0:      # 0
                     self.totalTime += self.timeSlot - req[2]
                     finishedRequest.append(req)
@@ -634,7 +635,7 @@ class MyAlgorithm(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
-    s = MyAlgorithm(topo)
+    s = MyAlgorithm(topo , preEnt=True)
     
     # for i in range(0, 200):
     #     requests = []
@@ -647,9 +648,9 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 200):
+    for i in range(0, 10):
         requests = []
-        if i < 1:
+        if i < 5:
             for j in range(10):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))

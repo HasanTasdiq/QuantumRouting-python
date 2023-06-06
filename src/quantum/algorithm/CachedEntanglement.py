@@ -20,8 +20,8 @@ class RecoveryPath:
 
 class CachedEntanglement(AlgorithmBase):
 
-    def __init__(self, topo, allowRecoveryPaths = True):
-        super().__init__(topo)
+    def __init__(self, topo, allowRecoveryPaths = True , preEnt=False):
+        super().__init__(topo , preEnt)
         self.pathsSortedDynamically = []
         self.name = "Online"
         self.majorPaths = []            # [PickedPath, ...]
@@ -38,9 +38,9 @@ class CachedEntanglement(AlgorithmBase):
         self.requests.clear()
 
 
-    def preEntanglement(self):
-        print('@@@@@@@@@@@@ in prep ' , self.timeSlot , len(self.topo.cacheTable))
-        self.topo.preEntanglement()
+    # def preEntanglement(self):
+    #     print('@@@@@@@@@@@@ in prep ' , self.timeSlot , len(self.topo.cacheTable))
+    #     self.topo.preEntanglement()
 
     # P2
     def p2(self):
@@ -459,14 +459,9 @@ class CachedEntanglement(AlgorithmBase):
                     self.totalTime += self.timeSlot - time
                     self.requests.remove(find)
 
+                    self.result.usedPaths.append(acc)
 
-                    print('len of acc ' , len(acc))
-                    for k in  range(len(acc) - 1):
-                        sd = (acc[k] , acc[k + 1])
-                        if sd not in self.topo.cacheTable:
-                            self.topo.cacheTable[sd] = 1
-                        else:
-                            self.topo.cacheTable[sd] += 1
+
                     # print('@@@@@@@@@@@@@@@@@@@@sd ' , [x.id for x in sd] ,'picked:' , [x.id for x in acc])
 
         # for pathWithWidth end
@@ -485,16 +480,15 @@ class CachedEntanglement(AlgorithmBase):
         print('[Q-cast] totalTime:', self.totalTime)
         print('[Q-cast] remainTime:', remainTime)
         print('[Q-cast] totalNumOfReq:', self.totalNumOfReq)
-        print('[Q-cast] remainRequestPerRound:', self.result.remainRequestPerRound)
+        # print('[Q-cast] remainRequestPerRound:', self.result.remainRequestPerRound)
         print('[Q-cast] self.requests:', len(self.requests))
         print('[Q-cast] avg usedQubits:', self.result.usedQubits)
-        print('self.topo.cacheTable ' , len(self.topo.cacheTable))
         return self.result
 
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
-    s = CachedEntanglement(topo)
+    s = CachedEntanglement(topo , preEnt=True)
     for i in range(0, 20):
         print('==================================')
 
@@ -506,6 +500,7 @@ if __name__ == '__main__':
             # a = sample(topo.nodes, 2)
             # print('[Q-cast] S/D:', a[0].id , a[1].id )
             # s.work([(a[0],a[1])], i)
+            print('[Q-cast] S/D:' , i , [(a[0].id , a[1].id) for a in reqs])
             s.work(reqs, i)
         else:
             s.work([], i)

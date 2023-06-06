@@ -20,8 +20,8 @@ class RecoveryPath:
 
 class OnlineAlgorithm(AlgorithmBase):
 
-    def __init__(self, topo, allowRecoveryPaths = True):
-        super().__init__(topo)
+    def __init__(self, topo, allowRecoveryPaths = True , preEnt = False):
+        super().__init__(topo , preEnt)
         self.pathsSortedDynamically = []
         self.name = "Online"
         self.majorPaths = []            # [PickedPath, ...]
