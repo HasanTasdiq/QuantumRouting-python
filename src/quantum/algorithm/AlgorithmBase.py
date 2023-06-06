@@ -15,6 +15,7 @@ class AlgorithmResult:
         self.totalRuntime = 0
         self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
         self.remainRequestPerRound = []
+        self.usedPaths=[]
 
     def toDict(self):
         dic = {}
@@ -58,12 +59,13 @@ class AlgorithmResult:
 
 class AlgorithmBase:
 
-    def __init__(self, topo):
+    def __init__(self, topo , preEnt = False):
         self.name = "Greedy"
         self.topo = topo
         self.srcDstPairs = []
         self.timeSlot = 0
         self.result = AlgorithmResult()
+        self.preEnt = preEnt
 
     def prepare(self):
         pass
@@ -78,7 +80,25 @@ class AlgorithmBase:
         for link in self.topo.links:
             link.tryEntanglement()
     def preEntanglement(self):
-        pass
+        self.topo.preEntanglement()
+
+        # pass
+    def updateCacheTable(self):
+        for path in self.result.usedPaths:
+            # print('len of acc ' , len(path))
+            for k in  range(len(path) - 1):
+                sd = (path[k] , path[k + 1])
+                if sd not in self.topo.cacheTable:
+                    self.topo.cacheTable[sd] = 1
+                else:
+                    self.topo.cacheTable[sd] += 1
+        print('self.topo.cacheTable ' , len(self.topo.cacheTable) , 'preEnt ' , self.preEnt)
+        count = 0
+        for link in self.topo.cacheTable:
+            if self.topo.cacheTable[sd] > 1:
+                count +=1
+        # print('link to generate ent ' , self.topo.cacheTable)
+        
 
     def work(self, pairs: list, time): 
 
@@ -91,13 +111,17 @@ class AlgorithmBase:
         # start
         start = process_time()
 
-        self.preEntanglement()
+        if self.preEnt:
+            self.preEntanglement()
 
         self.p2()
         
         self.tryEntanglement()
 
         res = self.p4()
+
+        if self.preEnt:
+            self.updateCacheTable()
 
         # end   
         end = process_time()

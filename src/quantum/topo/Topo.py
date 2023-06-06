@@ -307,15 +307,15 @@ class Topo:
         p = [0 for _ in range(0, s+1)]  # Entanglement percentage
         
         for i in range(0, s):
-            # if len(self.getEstablishedEntanglements(path[i] , path[i+1])) > 0:
-            #     p[i+1] = 1
-            #     # print('+++++=====++++ ent prob ' ,p[i+1] , len(self.getEstablishedEntanglements(path[i] , path[i+1])))
+            if len(self.getEstablishedEntanglements(path[i] , path[i+1])) > 0:
+                p[i+1] = 1
+                # print('+++++=====++++ ent prob ' ,p[i+1] , len(self.getEstablishedEntanglements(path[i] , path[i+1])))
 
-            # else:
-            #     l = self.distance(path[i].loc, path[i+1].loc)
-            #     p[i+1] = math.exp(-self.alpha * l)
-            l = self.distance(path[i].loc, path[i+1].loc)
-            p[i+1] = math.exp(-self.alpha * l)
+            else:
+                l = self.distance(path[i].loc, path[i+1].loc)
+                p[i+1] = math.exp(-self.alpha * l)
+            # l = self.distance(path[i].loc, path[i+1].loc)
+            # p[i+1] = math.exp(-self.alpha * l)
 
         start = s
         if sum(oldP) == 0:
@@ -426,7 +426,7 @@ class Topo:
     def preEntanglement(self):
         for sd in self.cacheTable:
             if self.cacheTable[sd] > self.t_val:
-                print('[Cache Ent]')
+                # print('[Cache Ent]')
                 links = []
                 n1, n2 = sd[0] ,sd[1]
 
@@ -435,16 +435,16 @@ class Topo:
                         links.append(link)
                 for link in links:
                     link.assigned = True
-                    for _ in range(1):
+                    for _ in range(20):
                         if link.tryEntanglement():
                             break
-                    if link.entangled:
-                        print('Ent established :D ')
-                    else:
-                        print('Ent not established :() ')
+                    # if link.entangled:
+                    #     print('Ent established :D ')
+                    # else:
+                    #     print('Ent not established :() ')
 
                     link.assigned = False
-                    print('ent prob ' , link.p , link.entangled)
+                    # print('ent prob ' , link.p , link.entangled)
                     
 
     def updateLinks(self):
