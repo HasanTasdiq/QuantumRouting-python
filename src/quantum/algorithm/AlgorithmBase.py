@@ -77,6 +77,8 @@ class AlgorithmBase:
     def tryEntanglement(self):
         for link in self.topo.links:
             link.tryEntanglement()
+    def preEntanglement(self):
+        pass
 
     def work(self, pairs: list, time): 
 
@@ -88,6 +90,8 @@ class AlgorithmBase:
 
         # start
         start = process_time()
+
+        self.preEntanglement()
 
         self.p2()
         

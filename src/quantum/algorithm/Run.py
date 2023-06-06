@@ -9,6 +9,7 @@ from OnlineAlgorithm import OnlineAlgorithm
 from GreedyGeographicRouting import GreedyGeographicRouting
 from GreedyHopRouting import GreedyHopRouting
 from REPS import REPS
+from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 from topo.Node import Node
 from topo.Link import Link
@@ -40,7 +41,9 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     # algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
-    # algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(CachedEntanglement(copy.deepcopy(topo)))
+    
     # algorithms.append(REPS(copy.deepcopy(topo)))
 
     algorithms[0].r = r
