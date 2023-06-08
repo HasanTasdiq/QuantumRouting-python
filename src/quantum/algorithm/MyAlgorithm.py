@@ -496,11 +496,14 @@ class MyAlgorithm(AlgorithmBase):
                 requestInfo.pathseg2 = path
             else:
                 requestInfo.pathseg1 = path
+            self.result.usedPaths.append(path) #added for pre-entanglement 
+            
             requestInfo.taken= True
             requestInfo.width = 1
         
         # p2 繼續找路徑分配資源 
-        self.p2Extra()
+        if not self.preEnt:
+            self.p2Extra()
 
 
         for req in self.requestState:
@@ -593,7 +596,7 @@ class MyAlgorithm(AlgorithmBase):
             
             # succeed
             if success > 0 or len(p) == 2:
-                self.result.usedPaths.append(p) #added for pre-entanglement 
+                # self.result.usedPaths.append(p) #added for pre-entanglement 
                 if requestInfo.state == 0:      # 0
                     self.totalTime += self.timeSlot - req[2]
                     finishedRequest.append(req)

@@ -28,10 +28,15 @@ class CachedEntanglement(AlgorithmBase):
         self.recoveryPaths = {}         # {PickedPath: [PickedPath, ...], ...}
         self.pathToRecoveryPaths = {}   # {PickedPath : [RecoveryPath, ...], ...}
         self.allowRecoveryPaths = allowRecoveryPaths
+        self.allowRecoveryPaths = not preEnt
+        
         self.requests = []
         self.totalTime = 0
         self.totalUsedQubits = 0
         self.totalNumOfReq = 0
+
+        # if preEnt:
+        #     self.topo.k = int(self.topo.k / 2) 
     
     def prepare(self):
         self.totalTime = 0
@@ -69,6 +74,8 @@ class CachedEntanglement(AlgorithmBase):
             # time.sleep(1000)
             if pick.weight > 0.0: 
                 self.pickAndAssignPath(pick)
+                self.result.usedPaths.append(pick.path)
+
             else:
                 break
 
@@ -298,10 +305,16 @@ class CachedEntanglement(AlgorithmBase):
                     n2 = majorPath[i2]
                     broken = True
                     for link in n1.links:
+                        # if link.entangled and not link.assigned:
+                            # print('entangled but not assigned ' , self.timeSlot , n1.id , n2.id)
+                            # print('major path ',[x.id for x in majorPath])
                         if link.contains(n2) and link.assigned and link.notSwapped() and link.entangled:
+
                             broken = False
                             break
                     if broken:
+                        # print('!! broken entangled but not assigned ' , self.timeSlot , n1.id , n2.id)
+                        # print('!! broken major path ',[x.id for x in majorPath])
                         brokenEdges.append((i1, i2))
 
                         # if link.contains(n2) and link.assigned and link.notSwapped() and not link.entangled:
@@ -459,7 +472,7 @@ class CachedEntanglement(AlgorithmBase):
                     self.totalTime += self.timeSlot - time
                     self.requests.remove(find)
 
-                    self.result.usedPaths.append(acc)
+                    # self.result.usedPaths.append(acc)
 
 
                     # print('@@@@@@@@@@@@@@@@@@@@sd ' , [x.id for x in sd] ,'picked:' , [x.id for x in acc])
@@ -487,14 +500,14 @@ class CachedEntanglement(AlgorithmBase):
 
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
-    s = CachedEntanglement(topo , preEnt=True)
-    for i in range(0, 20):
+    topo = Topo.generate(10, 0.9, 5, 0.0001, 6)
+    s = CachedEntanglement(topo , preEnt=False)
+    for i in range(0, 5):
         print('==================================')
 
         if i < 5:
             reqs = []
-            for j in range(4):
+            for j in range(10):
                 a = sample(topo.nodes, 2)
                 reqs.append((a[0] , a[1]))
             # a = sample(topo.nodes, 2)

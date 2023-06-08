@@ -44,13 +44,13 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
     # algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
-    algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
 
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo)))
     # #with pre entanglement
-    algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
+    # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPS(copy.deepcopy(topo)))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
@@ -58,7 +58,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     times = 1
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 200
+    ttime = 20
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
     jobs = []
@@ -92,8 +92,10 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     for job in jobs:
         job.join()
 
+    # print(resultDicts)
     for algoIndex in range(len(algorithms)):
         results[algoIndex] = AlgorithmResult.Avg(resultDicts[algoIndex].values())
+
 
     # results[0] = result of GreedyHopRouting = a AlgorithmResult
     # results[1] = result of MyAlgorithm
@@ -134,7 +136,7 @@ if __name__ == '__main__':
                 a = sample([i for i in range(100)], 2)
                 tmp_ids[i].append((a[0], a[1]))
                
-    skipXlabel = [ 1, 2,3, 4, 5, 6]
+    skipXlabel = [ 0, 1, 2,3, 4, 6]
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
