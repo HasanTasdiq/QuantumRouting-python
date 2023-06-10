@@ -9,7 +9,7 @@ from topo.Node import Node
 from topo.Link import Link
 from random import sample
 import copy
-import time
+import time as t
 
 @dataclass
 class RecoveryPath:
@@ -238,7 +238,7 @@ class CachedEntanglement(AlgorithmBase):
             for j in range(0, width):
                 self.totalUsedQubits += 2
                 links[j].assignQubits()
-                links[j].tryEntanglement() # just display
+                # links[j].tryEntanglement() # just display
 
                     
                     
@@ -265,6 +265,8 @@ class CachedEntanglement(AlgorithmBase):
             majorPath = pathWithWidth.path
             time = pathWithWidth.time
             oldNumOfPairs = len(self.topo.getEstablishedEntanglements(majorPath[0], majorPath[-1]))
+            
+            
 
             recoveryPaths = self.recoveryPaths[pathWithWidth]   # recoveryPaths -> [pickedPath, ...]
             sorted(recoveryPaths, key=lambda x: len(x.path)*10000 + majorPath.index(x.path[0])) # sort recoveryPaths by it recoverypath length and the index of the first node in recoveryPath  
@@ -279,7 +281,7 @@ class CachedEntanglement(AlgorithmBase):
                     n2 = p[i+1]
                     cnt = 0
                     for link in n1.links:
-                        if link.contains(n2) and link.entangled:
+                        if link.contains(n2) and link.isEntangled(self.timeSlot):
                             cnt += 1
                     if cnt < available:
                         available = cnt
@@ -308,7 +310,7 @@ class CachedEntanglement(AlgorithmBase):
                         # if link.entangled and not link.assigned:
                             # print('entangled but not assigned ' , self.timeSlot , n1.id , n2.id)
                             # print('major path ',[x.id for x in majorPath])
-                        if link.contains(n2) and link.assigned and link.notSwapped() and link.entangled:
+                        if link.contains(n2) and link.assigned and link.notSwapped() and link.isEntangled(self.timeSlot):
 
                             broken = False
                             break
@@ -448,12 +450,12 @@ class CachedEntanglement(AlgorithmBase):
                     nextLinks = []
                     
                     for link in curr.links:
-                        if link.entangled and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
+                        if link.isEntangled(self.timeSlot) and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
                             prevLinks.append(link)
                             break
 
                     for link in curr.links:
-                        if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1):
+                        if link.isEntangled(self.timeSlot) and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1):
                             nextLinks.append(link)
                             break
                     
@@ -461,9 +463,22 @@ class CachedEntanglement(AlgorithmBase):
                         break
 
                     for (l1, l2) in zip(prevLinks, nextLinks):                    
-                        curr.attemptSwapping(l1, l2)
+                        swapped = curr.attemptSwapping(l1, l2)
+                        if swapped:
+                            self.topo.usedLinks.add(l1)
+                            self.topo.usedLinks.add(l2)
                 # for swap end
             # for w end
+            # print([[y.id for y in x] for x in self.topo.getEstablishedEntanglements(acc[0], acc[-1])])
+            # print([x.id for x in acc ])
+            # print('----------------------------------')
+            # print([[y.id for y in x] for x in self.topo.getEstablishedEntanglements(majorPath[0], majorPath[-1])])
+            # print([x.id for x in majorPath ])
+
+            # print(acc[0].id, acc[-1].id)
+            # print(majorPath[0].id, majorPath[-1].id)
+            # t.sleep(60)
+            
             succ = len(self.topo.getEstablishedEntanglements(acc[0], acc[-1])) - oldNumOfPairs
             
             if succ > 0 or len(acc) == 2:
@@ -483,7 +498,8 @@ class CachedEntanglement(AlgorithmBase):
             # self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
 
-        self.topo.clearAllEntanglements()
+        # self.topo.clearAllEntanglements()
+        self.topo.resetEntanglement()
         self.result.remainRequestPerRound.append(len(self.requests)/self.totalNumOfReq)   
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
         self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
@@ -502,12 +518,12 @@ if __name__ == '__main__':
 
     topo = Topo.generate(10, 0.9, 5, 0.0001, 6)
     s = CachedEntanglement(topo , preEnt=False)
-    for i in range(0, 5):
+    for i in range(0, 10):
         print('==================================')
 
         if i < 5:
             reqs = []
-            for j in range(10):
+            for j in range(5):
                 a = sample(topo.nodes, 2)
                 reqs.append((a[0] , a[1]))
             # a = sample(topo.nodes, 2)
