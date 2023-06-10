@@ -20,10 +20,10 @@ from numpy import log as ln
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
         result = algo.work(requests[i], i)
-    if algoIndex == 0:
-        for req in algo.requestState:
-            if algo.requestState[req].state == 2:
-                algo.requestState[req].intermediate.clearIntermediate()
+    # if algoIndex == 0:
+    #     for req in algo.requestState:
+    #         if algo.requestState[req].state == 2:
+    #             algo.requestState[req].intermediate.clearIntermediate()
     resultDict[pid] = result
 
 
@@ -38,24 +38,24 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
 
     # make copy
     algorithms = []
-    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
     # algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
-    # algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
 
-    # algorithms.append(CachedEntanglement(copy.deepcopy(topo)))
+    algorithms.append(CachedEntanglement(copy.deepcopy(topo)))
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    algorithms.append(REPS(copy.deepcopy(topo)))
+    # algorithms.append(REPS(copy.deepcopy(topo)))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 1
+    times = 5
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = 20
@@ -120,7 +120,8 @@ if __name__ == '__main__':
     # numOfNodes = [20]
     r = [0, 2, 4, 6, 8, 10]
     q = [0.000001, 0.2, 0.4, 0.6, 0.8, 1]
-    alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
+    # alpha = [0.0000, 0.0002, 0.0004, 0.0006, 0.0008, 0.001]
+    alpha = [0.001 , 0.003 , 0.005 , 0.007 , 0.009 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 

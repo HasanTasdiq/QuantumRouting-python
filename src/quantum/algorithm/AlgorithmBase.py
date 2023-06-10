@@ -78,7 +78,7 @@ class AlgorithmBase:
 
     def tryEntanglement(self):
         for link in self.topo.links:
-            link.tryEntanglement()
+            link.tryEntanglement(self.timeSlot)
     def preEntanglement(self):
         self.topo.preEntanglement()
 
@@ -111,8 +111,8 @@ class AlgorithmBase:
         # start
         start = process_time()
 
-        if self.preEnt:
-            self.preEntanglement()
+        # if self.preEnt:
+        #     self.preEntanglement()
 
         self.p2()
         
@@ -120,8 +120,8 @@ class AlgorithmBase:
 
         res = self.p4()
 
-        if self.preEnt:
-            self.updateCacheTable()
+        # if self.preEnt:
+        #     self.updateCacheTable()
 
         # end   
         end = process_time()

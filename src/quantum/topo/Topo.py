@@ -74,6 +74,8 @@ class Topo:
         self.sentinel = Node(-1, (-1.0, -1.0), -1, self)
         self.cacheTable = {}
         self.t_val = 2
+        self.usedLinks = set()
+
 
         # for pos in _positions:
         #     print(_positions[pos])
@@ -423,6 +425,13 @@ class Topo:
     def clearAllEntanglements(self):
         for link in self.links:
             link.clearEntanglement()
+
+    def resetEntanglement(self):
+        for link in self.usedLinks:
+            link.clearEntanglement()
+        for link in set(self.links).difference(self.usedLinks):
+            link.keepEntanglementOnly()
+
     def preEntanglement(self):
         for sd in self.cacheTable:
             if self.cacheTable[sd] > self.t_val:
