@@ -516,12 +516,12 @@ class CachedEntanglement(AlgorithmBase):
 
 if __name__ == '__main__':
 
-    topo = Topo.generate(10, 0.9, 5, 0.0001, 6)
+    topo = Topo.generate(10, 0.9, 5, 0.0005, 6)
     s = CachedEntanglement(topo , preEnt=False)
-    for i in range(0, 10):
+    for i in range(0, 200):
         print('==================================')
 
-        if i < 5:
+        if i < 20:
             reqs = []
             for j in range(5):
                 a = sample(topo.nodes, 2)

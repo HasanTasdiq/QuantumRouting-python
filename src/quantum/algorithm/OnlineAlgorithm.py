@@ -219,7 +219,7 @@ class OnlineAlgorithm(AlgorithmBase):
             for i in range(0, width):
                 self.totalUsedQubits += 2
                 links[i].assignQubits()
-                links[i].tryEntanglement() # just display
+                # links[i].tryEntanglement() # just display
 
     def P2Extra(self):
         for majorPath in self.majorPaths:
@@ -470,10 +470,10 @@ if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
     s = OnlineAlgorithm(topo)
-    for i in range(0, 5):
+    for i in range(0, 10):
         print('==================================')
 
-        if i < 10:
+        if i < 5:
             reqs = []
             for j in range(4):
                 a = sample(topo.nodes, 2)
