@@ -92,6 +92,7 @@ class Link:
                         self.n2.internalLinks.remove(internalLink)
          
     def tryEntanglement(self , timeSlot = 0):
+        # print('ent prob', self.p)
         if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
             return True
         b = self.assigned and self.p >= random.random()

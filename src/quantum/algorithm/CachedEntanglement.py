@@ -97,6 +97,8 @@ class CachedEntanglement(AlgorithmBase):
                 self.result.idleTime += 1
          
     # 對每個SD-pair找出候選路徑，目前不確定只會找一條還是可以多條
+    def calCount(self , requests , req):
+        return sum(r[0]== req[0] and r[1] == req[1] for r in requests)
     def calCandidates(self, requests: list): # pairs -> [(Node, Node), ...]
         candidates = [] 
         for req in requests:
@@ -108,6 +110,14 @@ class CachedEntanglement(AlgorithmBase):
             #         found = True
             # if found:
             #     continue
+
+            foundCount = 0
+            for pathWithWidth in self.majorPaths:
+                p = pathWithWidth.path
+                if (p[0], p[-1]) == (req[0] , req[1]):
+                    foundCount += 1
+            if foundCount > self.calCount( requests , req):
+                continue
 
             candidate = []
             (src, dst, time) = req
@@ -509,21 +519,21 @@ class CachedEntanglement(AlgorithmBase):
         print('[Q-cast] totalTime:', self.totalTime)
         print('[Q-cast] remainTime:', remainTime)
         print('[Q-cast] totalNumOfReq:', self.totalNumOfReq)
-        # print('[Q-cast] remainRequestPerRound:', self.result.remainRequestPerRound)
+        print('[Q-cast] remainRequestPerRound:', self.result.remainRequestPerRound)
         print('[Q-cast] self.requests:', len(self.requests))
         print('[Q-cast] avg usedQubits:', self.result.usedQubits)
         return self.result
 
 if __name__ == '__main__':
 
-    topo = Topo.generate(10, 0.9, 5, 0.0005, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
     s = CachedEntanglement(topo , preEnt=False)
-    for i in range(0, 200):
+    for i in range(0, 10):
         print('==================================')
 
-        if i < 20:
+        if i < 5:
             reqs = []
-            for j in range(5):
+            for j in range(4):
                 a = sample(topo.nodes, 2)
                 reqs.append((a[0] , a[1]))
             # a = sample(topo.nodes, 2)

@@ -85,6 +85,8 @@ class OnlineAlgorithm(AlgorithmBase):
             if not pick:
                 self.result.idleTime += 1
          
+    def calCount(self , requests , req):
+        return sum(r[0]== req[0] and r[1] == req[1] for r in requests)
     # 對每個SD-pair找出候選路徑，目前不確定只會找一條還是可以多條
     def calCandidates(self, requests: list): # pairs -> [(Node, Node), ...]
         candidates = [] 
@@ -97,6 +99,14 @@ class OnlineAlgorithm(AlgorithmBase):
             #         found = True
             # if found:
             #     continue
+
+            foundCount = 0
+            for pathWithWidth in self.majorPaths:
+                p = pathWithWidth.path
+                if (p[0], p[-1]) == (req[0] , req[1]):
+                    foundCount += 1
+            if foundCount > self.calCount( requests , req):
+                continue
 
             candidate = []
             (src, dst, time) = req

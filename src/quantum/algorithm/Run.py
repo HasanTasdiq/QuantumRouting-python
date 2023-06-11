@@ -20,15 +20,15 @@ from numpy import log as ln
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
         result = algo.work(requests[i], i)
-    # if algoIndex == 0:
-    #     for req in algo.requestState:
-    #         if algo.requestState[req].state == 2:
-    #             algo.requestState[req].intermediate.clearIntermediate()
+    if algo.name == "My":
+        for req in algo.requestState:
+            if algo.requestState[req].state == 2:
+                algo.requestState[req].intermediate.clearIntermediate()
     resultDict[pid] = result
 
 
 
-def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 20, topo = None, FixedRequests = None):
+def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 100, topo = None, FixedRequests = None):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -55,10 +55,10 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 1
+    times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 40
+    ttime = 200
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
     jobs = []
@@ -112,8 +112,8 @@ if __name__ == '__main__':
     temp = AlgorithmResult()
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
-    numOfRequestPerRound = [1, 2, 3, 4, 5]
-    # numOfRequestPerRound = [2,4,6,8,10]
+    # numOfRequestPerRound = [1, 2, 3, 4, 5]
+    numOfRequestPerRound = [10,20,30]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
@@ -137,7 +137,7 @@ if __name__ == '__main__':
                 a = sample([i for i in range(100)], 2)
                 tmp_ids[i].append((a[0], a[1]))
                
-    skipXlabel = [ 0, 1, 2,3, 4, 6]
+    skipXlabel = [ 1, 2,3, 4,5, 6]
     for XlabelIndex in range(len(Xlabels)):
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
