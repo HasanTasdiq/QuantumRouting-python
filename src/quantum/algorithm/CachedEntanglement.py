@@ -514,14 +514,14 @@ class CachedEntanglement(AlgorithmBase):
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
         self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
 
-        print('[Q-cast] waiting time:', self.result.waitingTime)
-        print('[Q-cast] idle time:', self.result.idleTime)
-        print('[Q-cast] totalTime:', self.totalTime)
-        print('[Q-cast] remainTime:', remainTime)
-        print('[Q-cast] totalNumOfReq:', self.totalNumOfReq)
-        print('[Q-cast] remainRequestPerRound:', self.result.remainRequestPerRound)
-        print('[Q-cast] self.requests:', len(self.requests))
-        print('[Q-cast] avg usedQubits:', self.result.usedQubits)
+        print('[Q-cast-cache] waiting time:', self.result.waitingTime)
+        print('[Q-cast-cache] idle time:', self.result.idleTime)
+        print('[Q-cast-cache] totalTime:', self.totalTime)
+        print('[Q-cast-cache] remainTime:', remainTime)
+        print('[Q-cast-cache] totalNumOfReq:', self.totalNumOfReq)
+        print('[Q-cast-cache] remainRequestPerRound:', self.result.remainRequestPerRound)
+        print('[Q-cast-cache] self.requests:', len(self.requests))
+        print('[Q-cast-cache] avg usedQubits:', self.result.usedQubits)
         return self.result
 
 if __name__ == '__main__':
