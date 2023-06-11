@@ -47,7 +47,7 @@ class OnlineAlgorithm(AlgorithmBase):
             (src, dst) = req
             self.totalNumOfReq += 1
             self.requests.append((src, dst, self.timeSlot))
-        print('###self.requests ' , len(self.requests))
+        # print('###self.requests ' , len(self.requests))
         
         if len(self.requests) > 0:
             self.result.numOfTimeslot += 1
@@ -60,8 +60,8 @@ class OnlineAlgorithm(AlgorithmBase):
             pick = candidates[-1]   # pick -> PickedPath 
             # print('[Q-cast]', 'pick size:', len(candidates), 'pick width:', pick.width)
             # print('pick: ' ,[x.id for x in pick.path])
-            for c in candidates:
-                print('[Q-cast]', [x.id for x in c.path])  
+            # for c in candidates:
+            #     print('[Q-cast]', [x.id for x in c.path])  
             # time.sleep(1000)
             if pick.weight > 0.0: 
                 self.pickAndAssignPath(pick)
@@ -69,9 +69,9 @@ class OnlineAlgorithm(AlgorithmBase):
                 break
 
         if self.allowRecoveryPaths:
-            print('[Q-cast] P2Extra')
+            # print('[Q-cast] P2Extra')
             self.P2Extra()
-            print('[Q-cast] P2Extra end')
+            # print('[Q-cast] P2Extra end')
         
         for req in self.requests:
             pick = False

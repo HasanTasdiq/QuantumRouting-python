@@ -230,7 +230,7 @@ if __name__ == '__main__':
     #             Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
     #             F.write(Xaxis + Yaxis)
     #         F.close()
-
+    print('--DONE--')
     exit(0)
     # write remainRequestPerRound
     results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
