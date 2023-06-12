@@ -29,7 +29,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 50, topo = None, FixedRequests = None):
+def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 50, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -59,10 +59,10 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 3
+    times = 10
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 30
+    ttime = 50
     rtime = ttime
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
@@ -110,7 +110,8 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
 
     return results
     
-
+def mainThreadReqPerTime(Xparam , topo, result):
+    Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo) , results=result)
 if __name__ == '__main__':
     print("start Run and Generate data.txt")
     targetFilePath = "../../plot/data/"
@@ -118,7 +119,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3, 4, 5]
-    numOfRequestPerRound = [3,4,5]
+    numOfRequestPerRound = [5,10,15]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
@@ -134,6 +135,7 @@ if __name__ == '__main__':
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity]
 
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
+    jobs = []
 
     tmp_ids = {i : [] for i in range(200)}
     for i in range(200):
@@ -157,6 +159,9 @@ if __name__ == '__main__':
             statusFile.close()
             # ------
             if XlabelIndex == 0: # #RequestPerRound
+                # result =[]
+                # job = multiprocessing.Process(target = mainThreadReqPerTime, args = (Xparam , topo , result))
+                # jobs.append(job)
                 result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
             if XlabelIndex == 1: # totalRequest
                 result = Run(numOfRequestPerRound = Xparam, rtime = 1, topo = copy.deepcopy(topo))
