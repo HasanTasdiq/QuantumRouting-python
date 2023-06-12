@@ -349,7 +349,7 @@ class Topo:
         return acc * math.pow(self.q, s-1)
     
 
-    def getEstablishedEntanglements(self, n1: Node, n2: Node):
+    def getEstablishedEntanglements(self, n1: Node, n2: Node , cache = False):
         stack = []
         stack.append((None, n1)) #Pair[Link, Node]
         result = []

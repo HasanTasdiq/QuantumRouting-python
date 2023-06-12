@@ -9,6 +9,7 @@ from OnlineAlgorithm import OnlineAlgorithm
 from GreedyGeographicRouting import GreedyGeographicRouting
 from GreedyHopRouting import GreedyHopRouting
 from REPS import REPS
+from REPS_cache import REPSCACHE
 from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 from topo.Node import Node
@@ -44,21 +45,24 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
     # algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
-    algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
 
-    algorithms.append(CachedEntanglement(copy.deepcopy(topo)))
+
+    # algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(CachedEntanglement(copy.deepcopy(topo)))
+
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo)))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 3
+    times = 10
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 200
+    ttime = 100
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
     jobs = []
@@ -113,7 +117,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3, 4, 5]
-    numOfRequestPerRound = [10,20,30]
+    numOfRequestPerRound = [3,4,5]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
