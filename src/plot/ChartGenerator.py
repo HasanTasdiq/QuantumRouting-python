@@ -150,9 +150,9 @@ class ChartGenerator:
         plt.yticks(fontsize = Yticks_fontsize)
         
         # AlgoName = ["SEER", "Greedy", "Q-CAST", "REPS"]
-        AlgoName = [ "Q-CAST", "Cache", "REPS"]
+        # AlgoName = [ "Q-CAST", "Cache", "REPS"]
         # AlgoName = ["SEER","SEER-Cache", "Q-CAST", "Q-CAST-Cache", "REPS"]
-        # AlgoName = ["SEER","REPS"]
+        AlgoName = ["REPS","REPS-cache"]
 
         leg = plt.legend(
             AlgoName,

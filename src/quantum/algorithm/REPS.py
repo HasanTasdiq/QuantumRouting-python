@@ -40,6 +40,12 @@ class REPS(AlgorithmBase):
         print("[REPS] remain request:", len(self.requests))
         print("[REPS] current Timeslot:", self.timeSlot)
 
+
+
+        print('[REPS] idle time:', self.result.idleTime)
+        print('[REPS] remainRequestPerRound:', self.result.remainRequestPerRound)
+        print('[REPS] avg usedQubits:', self.result.usedQubits)
+
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
             self.totalRequest += 1
@@ -769,18 +775,32 @@ if __name__ == '__main__':
     s = REPS(topo)
     result = AlgorithmResult()
     samplesPerTime = 2
-    ttime = 100
-    rtime = 2
+    ttime = 1
+    rtime = 1
     requests = {i : [] for i in range(ttime)}
 
     for i in range(ttime):
         if i < rtime:
-            a = sample(topo.nodes, samplesPerTime)
-            for n in range(0,samplesPerTime,2):
-                requests[i].append((a[n], a[n+1]))
+
+            ids = [(63, 93), (89, 13), (82, 77), (96, 71), (99, 40)]
+            for (p,q) in ids:
+                source = None
+                dest = None
+                for node in topo.nodes:
+
+                    if node.id == p:
+                        source = node
+                    if node.id == q:
+                        dest = node
+                requests[i].append((source , dest))
+
+            # a = sample(topo.nodes, samplesPerTime)
+            # for n in range(0,samplesPerTime,2):
+            #     requests[i].append((a[n], a[n+1]))
+        print('[REPS] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
 
     for i in range(ttime):
         result = s.work(requests[i], i)
     
 
-    print(result.waitingTime, result.numOfTimeslot)
+    # print(result.waitingTime, result.numOfTimeslot)

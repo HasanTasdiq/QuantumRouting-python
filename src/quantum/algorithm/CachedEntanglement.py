@@ -84,6 +84,9 @@ class CachedEntanglement(AlgorithmBase):
             self.P2Extra()
             print('[Q-cast] P2Extra end')
         
+        for m in self.majorPaths:
+            print('[Q-cast-cache]', [x.id for x in m.path])  
+            print('[Q-cast-cache]', m.width)
         for req in self.requests:
             pick = False
             for pathWithWidth in self.majorPaths:
@@ -116,7 +119,7 @@ class CachedEntanglement(AlgorithmBase):
                 p = pathWithWidth.path
                 if (p[0], p[-1]) == (req[0] , req[1]):
                     foundCount += 1
-            if foundCount > self.calCount( requests , req):
+            if foundCount >= self.calCount( requests , req):
                 continue
 
             candidate = []
@@ -257,6 +260,7 @@ class CachedEntanglement(AlgorithmBase):
             p = majorPath.path
 
             for l in range(1, self.topo.k + 1):
+                # for i in range(0, len(p) - l):
                 for i in range(0, len(p) - l):
                     (src, dst) = (p[i], p[i+l])
 
@@ -514,13 +518,13 @@ class CachedEntanglement(AlgorithmBase):
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
         self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
 
-        print('[Q-cast-cache] waiting time:', self.result.waitingTime)
+        print('[Q-cast-cache]' , self.timeSlot ,' waiting time:', self.result.waitingTime)
         print('[Q-cast-cache] idle time:', self.result.idleTime)
         print('[Q-cast-cache] totalTime:', self.totalTime)
         print('[Q-cast-cache] remainTime:', remainTime)
         print('[Q-cast-cache] totalNumOfReq:', self.totalNumOfReq)
         print('[Q-cast-cache] remainRequestPerRound:', self.result.remainRequestPerRound)
-        print('[Q-cast-cache] self.requests:', len(self.requests))
+        print('[Q-cast-cache] remain requests:', len(self.requests))
         print('[Q-cast-cache] avg usedQubits:', self.result.usedQubits)
         return self.result
 
@@ -528,14 +532,25 @@ if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
     s = CachedEntanglement(topo , preEnt=False)
-    for i in range(0, 10):
+    for i in range(0, 1):
         print('==================================')
 
-        if i < 5:
+        if i < 1:
             reqs = []
-            for j in range(4):
-                a = sample(topo.nodes, 2)
-                reqs.append((a[0] , a[1]))
+            ids = [(63, 93), (89, 13), (82, 77), (96, 71), (99, 40)]
+            for (p,q) in ids:
+                source = None
+                dest = None
+                for node in topo.nodes:
+
+                    if node.id == p:
+                        source = node
+                    if node.id == q:
+                        dest = node
+                reqs.append((source , dest))
+            # for j in range(5):
+            #     a = sample(topo.nodes, 2)
+            #     reqs.append((a[0] , a[1]))
             # a = sample(topo.nodes, 2)
             # print('[Q-cast] S/D:', a[0].id , a[1].id )
             # s.work([(a[0],a[1])], i)

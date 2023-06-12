@@ -72,7 +72,11 @@ class OnlineAlgorithm(AlgorithmBase):
             # print('[Q-cast] P2Extra')
             self.P2Extra()
             # print('[Q-cast] P2Extra end')
-        
+
+        for m in self.majorPaths:
+            print('[Q-cast-cache]', [x.id for x in m.path])  
+            print('[Q-cast-cache]', m.width)
+            
         for req in self.requests:
             pick = False
             for pathWithWidth in self.majorPaths:
@@ -100,13 +104,13 @@ class OnlineAlgorithm(AlgorithmBase):
             # if found:
             #     continue
 
-            foundCount = 0
-            for pathWithWidth in self.majorPaths:
-                p = pathWithWidth.path
-                if (p[0], p[-1]) == (req[0] , req[1]):
-                    foundCount += 1
-            if foundCount > self.calCount( requests , req):
-                continue
+            # foundCount = 0
+            # for pathWithWidth in self.majorPaths:
+            #     p = pathWithWidth.path
+            #     if (p[0], p[-1]) == (req[0] , req[1]):
+            #         foundCount += 1
+            # if foundCount > self.calCount( requests , req):
+            #     continue
 
             candidate = []
             (src, dst, time) = req
@@ -471,7 +475,7 @@ class OnlineAlgorithm(AlgorithmBase):
         print('[Q-cast] remainTime:', remainTime)
         print('[Q-cast] totalNumOfReq:', self.totalNumOfReq)
         print('[Q-cast] remainRequestPerRound:', self.result.remainRequestPerRound)
-        print('[Q-cast] self.requests:', len(self.requests))
+        print('[Q-cast] remain requests:', len(self.requests))
         print('[Q-cast] avg usedQubits:', self.result.usedQubits)
 
         return self.result
@@ -480,17 +484,31 @@ if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
     s = OnlineAlgorithm(topo)
-    for i in range(0, 10):
+    for i in range(0, 1):
         print('==================================')
 
-        if i < 5:
+        if i < 1:
             reqs = []
-            for j in range(4):
-                a = sample(topo.nodes, 2)
-                reqs.append((a[0] , a[1]))
+            ids = [(63, 93), (89, 13), (82, 77), (96, 71), (99, 40)]
+            for (p,q) in ids:
+                source = None
+                dest = None
+                for node in topo.nodes:
+
+                    if node.id == p:
+                        source = node
+                    if node.id == q:
+                        dest = node
+                reqs.append((source , dest))
+
+            # for j in range(4):
+            #     a = sample(topo.nodes, 2)
+            #     reqs.append((a[0] , a[1]))
             # a = sample(topo.nodes, 2)
             # print('[Q-cast] S/D:', a[0].id , a[1].id )
             # s.work([(a[0],a[1])], i)
+            print('[Q-cast] S/D:' , i , [(a[0].id , a[1].id) for a in reqs])
+
             s.work(reqs, i)
         else:
             s.work([], i)
