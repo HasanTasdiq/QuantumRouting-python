@@ -349,7 +349,7 @@ class Topo:
         return acc * math.pow(self.q, s-1)
     
 
-    def getEstablishedEntanglements(self, n1: Node, n2: Node , cache = False):
+    def getEstablishedEntanglements(self, n1: Node, n2: Node , timeSlot = 0):
         stack = []
         stack.append((None, n1)) #Pair[Link, Node]
         result = []
@@ -399,7 +399,7 @@ class Topo:
             outgoingLinks = []
             if incoming is None:
                 for links in current.links:
-                    if links.entangled and not links.swappedAt(current):
+                    if links.isEntangled(timeSlot) and not links.swappedAt(current):
                         outgoingLinks.append(links)
             else:
                 for internalLinks in current.internalLinks:
