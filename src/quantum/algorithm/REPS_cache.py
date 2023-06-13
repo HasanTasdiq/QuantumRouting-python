@@ -66,13 +66,13 @@ class REPSCACHE(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
             self.PFT() # compute (self.ti, self.fi)
-        print('[REPS-CACHE] p2 end')
+        # print('[REPS-CACHE] p2 end')
     
     def p4(self):
         if len(self.srcDstPairs) > 0:
             self.EPS()
             self.ELS()
-        print('[REPS-CACHE] p4 end') 
+        # print('[REPS-CACHE] p4 end') 
         self.printResult()
         return self.result
 
@@ -80,7 +80,7 @@ class REPSCACHE(AlgorithmBase):
     # return fi(u, v)
 
     def LP1(self):
-        print('[REPS-CACHE] LP1 start')
+        # print('[REPS-CACHE] LP1 start')
         # initialize fi(u, v) ans ti
 
         self.fi_LP = {SDpair : {} for SDpair in self.srcDstPairs}
@@ -167,7 +167,7 @@ class REPSCACHE(AlgorithmBase):
             
             varName = self.genNameByComma('t', [i])
             self.ti_LP[SDpair] = m.getVarByName(varName).x
-        print('[REPS-CACHE] LP1 end')
+        # print('[REPS-CACHE] LP1 end')
     def edgeCapacity(self, u, v):
         capacity = 0
         for link in u.links:
@@ -246,7 +246,7 @@ class REPSCACHE(AlgorithmBase):
                     next = path[nodeIndex + 1]
                     self.fi[SDpair][(node, next)] += 1
 
-        print('[REPS-CACHE] PFT end')
+        # print('[REPS-CACHE] PFT end')
         for SDpair in self.srcDstPairs:
             for edge in self.topo.edges:
                 u = edge[0]
@@ -273,7 +273,7 @@ class REPSCACHE(AlgorithmBase):
         return capacity
 
     def LP2(self):
-        print('[REPS-CACHE] LP2 start')
+        # print('[REPS-CACHE] LP2 start')
         # initialize fi(u, v) ans ti
 
         numOfNodes = len(self.topo.nodes)
@@ -384,7 +384,7 @@ class REPSCACHE(AlgorithmBase):
             
                 varName = self.genNameByBbracket('t', [i, k])
                 self.tki_LP[SDpair][k] = m.getVarByName(varName).x
-        print('[REPS-CACHE] LP2 end')
+        # print('[REPS-CACHE] LP2 end')
 
     def EPS(self):
         self.LP2()
@@ -425,7 +425,7 @@ class REPSCACHE(AlgorithmBase):
                         next = path[nodeIndex + 1]
                         self.fki[SDpair][k][(node, next)] = 1
                 
-        print('[REPS-CACHE] EPS end')
+        # print('[REPS-CACHE] EPS end')
 
     def ELS(self):
         Ci = self.pathForELS
@@ -555,7 +555,7 @@ class REPSCACHE(AlgorithmBase):
                 needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
             T.remove(i)
         
-        print('[REPS-CACHE] ELS end')
+        # print('[REPS-CACHE] ELS end')
         # print('[REPS-CACHE]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
@@ -566,7 +566,7 @@ class REPSCACHE(AlgorithmBase):
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                print('[REPS-CACHE] attempt:', [node.id for node in path])
+                # print('[REPS-CACHE] attempt:', [node.id for node in path])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     swapped = node.attemptSwapping(link1, link2)
                     if swapped:
@@ -574,13 +574,13 @@ class REPSCACHE(AlgorithmBase):
                         self.topo.usedLinks.add(link2)
 
                 successPath = self.topo.getEstablishedEntanglements(src, dst , self.timeSlot)
-                for x in successPath:
-                    print('[REPS-CACHE] success:', [z.id for z in x])
+                # for x in successPath:
+                    # print('[REPS-CACHE] success:', [z.id for z in x])
 
                 if len(successPath):
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
-                            print('[REPS-CACHE] finish time:', self.timeSlot - request[2])
+                            # print('[REPS-CACHE] finish time:', self.timeSlot - request[2])
                             self.requests.remove(request)
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
