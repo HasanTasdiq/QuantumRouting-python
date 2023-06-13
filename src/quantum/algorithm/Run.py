@@ -62,7 +62,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 50
+    ttime = 10
     rtime = ttime
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
@@ -145,54 +145,54 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
     skipXlabel = [ 1, 2,3, 4,5, 6]
-    for XlabelIndex in range(len(Xlabels)):
-        Xlabel = Xlabels[XlabelIndex]
-        Ydata = []
-        if XlabelIndex in skipXlabel:
-            continue
-        for Xparam in Xparameters[XlabelIndex]:
+    # for XlabelIndex in range(len(Xlabels)):
+    #     Xlabel = Xlabels[XlabelIndex]
+    #     Ydata = []
+    #     if XlabelIndex in skipXlabel:
+    #         continue
+    #     for Xparam in Xparameters[XlabelIndex]:
             
-            # check schedule
-            statusFile = open("status.txt", "w")
-            print(Xlabel + str(Xparam), file = statusFile)
-            statusFile.flush()
-            statusFile.close()
-            # ------
-            if XlabelIndex == 0: # #RequestPerRound
-                # result =[]
-                # job = multiprocessing.Process(target = mainThreadReqPerTime, args = (Xparam , topo , result))
-                # jobs.append(job)
-                result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
-            if XlabelIndex == 1: # totalRequest
-                result = Run(numOfRequestPerRound = Xparam, rtime = 1, topo = copy.deepcopy(topo))
-            if XlabelIndex == 2: # #nodes
-                result = Run(numOfNode = Xparam)
-            if XlabelIndex == 3: # r
-                result = Run(r = Xparam, topo = copy.deepcopy(topo), FixedRequests = tmp_ids)
-            if XlabelIndex == 4: # swapProbability
-                result = Run(q = Xparam, topo = copy.deepcopy(topo))
-            if XlabelIndex == 5: # alpha
-                result = Run(alpha = Xparam, topo = copy.deepcopy(topo))
-            if XlabelIndex == 6: # SocialNetworkDensity
-                result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
-            # if XlabelIndex == 7:
-            #     result = Run(mapSize = Xparam)
-            Ydata.append(result)
+    #         # check schedule
+    #         statusFile = open("status.txt", "w")
+    #         print(Xlabel + str(Xparam), file = statusFile)
+    #         statusFile.flush()
+    #         statusFile.close()
+    #         # ------
+    #         if XlabelIndex == 0: # #RequestPerRound
+    #             # result =[]
+    #             # job = multiprocessing.Process(target = mainThreadReqPerTime, args = (Xparam , topo , result))
+    #             # jobs.append(job)
+    #             result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
+    #         if XlabelIndex == 1: # totalRequest
+    #             result = Run(numOfRequestPerRound = Xparam, rtime = 1, topo = copy.deepcopy(topo))
+    #         if XlabelIndex == 2: # #nodes
+    #             result = Run(numOfNode = Xparam)
+    #         if XlabelIndex == 3: # r
+    #             result = Run(r = Xparam, topo = copy.deepcopy(topo), FixedRequests = tmp_ids)
+    #         if XlabelIndex == 4: # swapProbability
+    #             result = Run(q = Xparam, topo = copy.deepcopy(topo))
+    #         if XlabelIndex == 5: # alpha
+    #             result = Run(alpha = Xparam, topo = copy.deepcopy(topo))
+    #         if XlabelIndex == 6: # SocialNetworkDensity
+    #             result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
+    #         # if XlabelIndex == 7:
+    #         #     result = Run(mapSize = Xparam)
+    #         Ydata.append(result)
 
-        # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
-        # Ydata[1] = numOfNode = 20 algo1Result algo2Result ... 
-        # Ydata[2] = numOfNode = 50 algo1Result algo2Result ... 
-        # Ydata[3] = numOfNode = 100 algo1Result algo2Result ... 
+    #     # Ydata[0] = numOfNode = 10 algo1Result algo2Result ... 
+    #     # Ydata[1] = numOfNode = 20 algo1Result algo2Result ... 
+    #     # Ydata[2] = numOfNode = 50 algo1Result algo2Result ... 
+    #     # Ydata[3] = numOfNode = 100 algo1Result algo2Result ... 
 
-        for Ylabel in Ylabels:
-            filename = Xlabel + "_" + Ylabel + ".txt"
-            F = open(targetFilePath + filename, "w")
-            for i in range(len(Xparameters[XlabelIndex])):
-                Xaxis = str(Xparameters[XlabelIndex][i])
-                Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
-                Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-                F.write(Xaxis + Yaxis)
-            F.close()
+    #     for Ylabel in Ylabels:
+    #         filename = Xlabel + "_" + Ylabel + ".txt"
+    #         F = open(targetFilePath + filename, "w")
+    #         for i in range(len(Xparameters[XlabelIndex])):
+    #             Xaxis = str(Xparameters[XlabelIndex][i])
+    #             Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
+    #             Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+    #             F.write(Xaxis + Yaxis)
+    #         F.close()
 
     # for XlabelIndex in range(len(Xlabels)):
     #     Xlabel = Xlabels[XlabelIndex]
@@ -240,15 +240,20 @@ if __name__ == '__main__':
     #             Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
     #             F.write(Xaxis + Yaxis)
     #         F.close()
-    print('--DONE--')
-    exit(0)
+    # print('--DONE--')
+    # exit(0)
     # write remainRequestPerRound
-    results = Run(numOfRequestPerRound = 50, rtime = 1) # algo1Result algo2Result ...
+    rtime = 100
+    print('starting.. ')
+    # sampleRounds = [0, 2, 4, 6, 8, 10]
+    sampleRounds = [i for i in range(0 , rtime , int(rtime/10))]
+    print(sampleRounds)
+    results = Run(numOfRequestPerRound = 10, rtime = rtime) # algo1Result algo2Result ...
     for result in results:
         result.remainRequestPerRound.insert(0, 1)
     
     # sampleRounds = [0, 5, 10, 15, 20, 25]
-    sampleRounds = [0, 2, 4, 6, 8, 10]
+
     filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
     F = open(targetFilePath + filename, "w")
     for roundIndex in sampleRounds:
@@ -257,3 +262,6 @@ if __name__ == '__main__':
         Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
         F.write(Xaxis + Yaxis)
     F.close()
+
+    print('--DONE--')
+

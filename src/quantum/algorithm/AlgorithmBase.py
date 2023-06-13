@@ -13,7 +13,7 @@ class AlgorithmResult:
         self.temporaryRatio = 0
         self.numOfTimeslot = 0
         self.totalRuntime = 0
-        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
+        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'remainRequestPerRound']
         self.remainRequestPerRound = []
         self.usedPaths=[]
 
@@ -24,12 +24,13 @@ class AlgorithmResult:
         dic[self.Ylabels[2]] = self.idleTime
         dic[self.Ylabels[3]] = self.usedQubits
         dic[self.Ylabels[4]] = self.temporaryRatio
+        dic[self.Ylabels[5]] = self.remainRequestPerRound
         return dic
     
     def Avg(results: list):
         AvgResult = AlgorithmResult()
 
-        ttime = 50
+        ttime = 10
         AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
