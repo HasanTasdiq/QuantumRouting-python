@@ -34,7 +34,8 @@ class REPS(AlgorithmBase):
         self.result.waitingTime = self.totalWaitingTime / self.totalRequest
         self.result.usedQubits = self.totalUsedQubits / self.totalRequest
         
-        self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
+        # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
+        self.result.remainRequestPerRound.append(len(self.requests))
         
         print("[REPS] total time:", self.result.waitingTime)
         print("[REPS] remain request:", len(self.requests))

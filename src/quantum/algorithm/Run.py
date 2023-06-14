@@ -62,7 +62,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 100
+    ttime = 20
     rtime = ttime
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
@@ -243,12 +243,12 @@ if __name__ == '__main__':
     # print('--DONE--')
     # exit(0)
     # write remainRequestPerRound
-    rtime = 100
+    rtime = 20
     print('starting.. ')
     # sampleRounds = [0, 2, 4, 6, 8, 10]
     sampleRounds = [i for i in range(0 , rtime , int(rtime/10))]
     print(sampleRounds)
-    results = Run(numOfRequestPerRound = 10, rtime = rtime) # algo1Result algo2Result ...
+    results = Run(numOfRequestPerRound = 5, rtime = rtime) # algo1Result algo2Result ...
     for result in results:
         result.remainRequestPerRound.insert(0, 1)
     
