@@ -35,7 +35,8 @@ class REPSCACHE(AlgorithmBase):
         self.result.waitingTime = self.totalWaitingTime / self.totalRequest
         self.result.usedQubits = self.totalUsedQubits / self.totalRequest
         
-        self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
+        # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
+        self.result.remainRequestPerRound.append(len(self.requests))
         
         print("[REPS-CACHE] total time:", self.result.waitingTime)
         print("[REPS-CACHE] remain request:", len(self.requests))
@@ -124,6 +125,18 @@ class REPSCACHE(AlgorithmBase):
         for (u, v) in edgeIndices:
             dis = self.topo.distance(self.topo.nodes[u].loc, self.topo.nodes[v].loc)
             probability = math.exp(-self.topo.alpha * dis)
+            # print('++===+++== orig prob ' , self.timeSlot , probability)
+            links = [link for link in self.topo.links if ((link.n1.id == u and link.n2.id == v) or (link.n1.id == v and link.n2.id == u))]
+            prob = 0
+            for link in links:
+                if link.isEntangled(self.timeSlot):
+                    prob+=1
+                else:
+                    prob +=probability
+            probability = prob/len(links)
+            # print('++===+++== later prob ' , self.timeSlot , probability)
+
+            # print('++++++ ' , len(links))
             m.addConstr(quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
 
             capacity = self.edgeCapacity(self.topo.nodes[u], self.topo.nodes[v])
@@ -780,28 +793,28 @@ if __name__ == '__main__':
     s = REPSCACHE(topo)
     result = AlgorithmResult()
     samplesPerTime = 2
-    ttime = 1
-    rtime = 1
+    ttime = 10
+    rtime = 10
     requests = {i : [] for i in range(ttime)}
 
     for i in range(ttime):
         if i < rtime:
 
-            ids = [(63, 93), (89, 13), (82, 77), (96, 71), (99, 40)]
-            for (p,q) in ids:
-                source = None
-                dest = None
-                for node in topo.nodes:
+            # ids = [(63, 93), (89, 13), (82, 77), (96, 71), (99, 40)]
+            # for (p,q) in ids:
+            #     source = None
+            #     dest = None
+            #     for node in topo.nodes:
 
-                    if node.id == p:
-                        source = node
-                    if node.id == q:
-                        dest = node
-                requests[i].append((source , dest))
+            #         if node.id == p:
+            #             source = node
+            #         if node.id == q:
+            #             dest = node
+            #     requests[i].append((source , dest))
 
-            # a = sample(topo.nodes, samplesPerTime)
-            # for n in range(0,samplesPerTime,2):
-            #     requests[i].append((a[n], a[n+1]))
+            a = sample(topo.nodes, samplesPerTime)
+            for n in range(0,samplesPerTime,2):
+                requests[i].append((a[n], a[n+1]))
         print('[REPS-CACHE] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
 
     for i in range(ttime):
