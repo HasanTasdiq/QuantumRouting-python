@@ -30,6 +30,11 @@ class REPSCACHE(AlgorithmBase):
         return (varName + str(parName)).replace(' ', '').replace(',', '][')
     
     def printResult(self):
+        print('number of used links ' , len(self.topo.usedLinks))
+        print('first link ' , list(self.topo.usedLinks)[0].n1.id , list(self.topo.usedLinks)[0].n2.id)
+        print('total number of links ' , len(self.topo.links))
+        print('diff ' , len(set(self.topo.links).difference(self.topo.usedLinks)))
+
         # self.topo.clearAllEntanglements()
         self.topo.resetEntanglement()
         self.result.waitingTime = self.totalWaitingTime / self.totalRequest
@@ -47,6 +52,8 @@ class REPSCACHE(AlgorithmBase):
         print('[REPS-CACHE] idle time:', self.result.idleTime)
         print('[REPS-CACHE] remainRequestPerRound:', self.result.remainRequestPerRound)
         print('[REPS-CACHE] avg usedQubits:', self.result.usedQubits)
+
+
 
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
@@ -281,6 +288,8 @@ class REPSCACHE(AlgorithmBase):
             return 0
         capacity = 0
         for link in u.links:
+            # if link.contains(v):
+                # print('link.isEntangled({self.timeSlot}): ',  link.isEntangled(self.timeSlot))
             if link.contains(v) and link.isEntangled(self.timeSlot):
                 capacity += 1
         return capacity
@@ -792,9 +801,9 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = REPSCACHE(topo)
     result = AlgorithmResult()
-    samplesPerTime = 2
-    ttime = 10
-    rtime = 10
+    samplesPerTime = 10
+    ttime = 50
+    rtime = 50
     requests = {i : [] for i in range(ttime)}
 
     for i in range(ttime):
