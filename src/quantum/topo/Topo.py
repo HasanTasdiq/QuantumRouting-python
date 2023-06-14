@@ -431,6 +431,8 @@ class Topo:
             link.clearEntanglement()
         for link in set(self.links).difference(self.usedLinks):
             link.keepEntanglementOnly()
+        self.usedLinks.clear()
+        
 
     def preEntanglement(self):
         for sd in self.cacheTable:
