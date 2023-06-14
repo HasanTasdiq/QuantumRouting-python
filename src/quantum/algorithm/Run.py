@@ -62,7 +62,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 20
+    ttime = 50
     rtime = ttime
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
@@ -203,7 +203,7 @@ if __name__ == '__main__':
             
     #         # check schedule
     #         statusFile = open("status.txt", "w")
-    #         print(Xlabel + str(Xparam), file = statusFile)
+    #         print(Xlabel + str(Xparam), file = st10atusFile)
     #         statusFile.flush()
     #         statusFile.close()
     #         # ------
@@ -243,10 +243,10 @@ if __name__ == '__main__':
     # print('--DONE--')
     # exit(0)
     # write remainRequestPerRound
-    rtime = 20
+    rtime = 50
     print('starting.. ')
     # sampleRounds = [0, 2, 4, 6, 8, 10]
-    sampleRounds = [i for i in range(0 , rtime , int(rtime/10))]
+    sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
     print(sampleRounds)
     results = Run(numOfRequestPerRound = 5, rtime = rtime) # algo1Result algo2Result ...
     for result in results:
