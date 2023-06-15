@@ -16,6 +16,7 @@ from topo.Node import Node
 from topo.Link import Link
 from random import sample
 from numpy import log as ln
+import random
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
@@ -62,7 +63,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 50
+    ttime = 100
     rtime = ttime
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
@@ -78,7 +79,9 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
                 if i < rtime:
                     for _ in range(numOfRequestPerRound):
                         a = sample([i for i in range(numOfNode)], 2)
-                        ids[i].append((a[0], a[1]))
+                        for _ in range(int(random.random()*3+1)):
+                            ids[i].append((a[0], a[1]))
+                print('#############################  ', len(ids[i]))
         
         for algoIndex in range(len(algorithms)):
             algo = copy.deepcopy(algorithms[algoIndex])
@@ -243,7 +246,7 @@ if __name__ == '__main__':
     # print('--DONE--')
     # exit(0)
     # write remainRequestPerRound
-    rtime = 50
+    rtime = 100
     print('starting.. ')
     # sampleRounds = [0, 2, 4, 6, 8, 10]
     sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
