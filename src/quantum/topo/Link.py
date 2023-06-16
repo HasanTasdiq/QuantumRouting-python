@@ -93,12 +93,14 @@ class Link:
          
     def tryEntanglement(self , timeSlot = 0):
         # print('ent prob', self.p)
-        if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
-            return True
+
         b = self.assigned and self.p >= random.random()
         if b:
             self.entangledTimeSlot = timeSlot
-        self.entangled = b
+            self.entangled = b
+            
+        if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+            return True
         return b
     
   
