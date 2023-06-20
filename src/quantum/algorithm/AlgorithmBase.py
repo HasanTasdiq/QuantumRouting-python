@@ -30,7 +30,7 @@ class AlgorithmResult:
     def Avg(results: list):
         AvgResult = AlgorithmResult()
 
-        ttime = 101
+        ttime = 11
         AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
