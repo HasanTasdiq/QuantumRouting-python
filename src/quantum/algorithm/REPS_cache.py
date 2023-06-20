@@ -16,13 +16,17 @@ from random import sample
 
 EPS = 1e-6
 class REPSCACHE(AlgorithmBase):
-    def __init__(self, topo, param=None):
+    def __init__(self, topo, param=None, name=''):
         super().__init__(topo , param=param)
-        self.name = "REPS"
+        self.name = "REPSCACHE"
         self.requests = []
         self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
+        self.attemptSwapTimes = 1
+
+        if param == 'every':
+            self.attemptSwapTimes = 2
         # self.param = param
 
     def genNameByComma(self, varName, parName):
@@ -593,7 +597,7 @@ class REPSCACHE(AlgorithmBase):
                 path = Pi[SDpair][pathIndex]
                 # print('[REPS-CACHE] attempt:', [node.id for node in path])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
-                    swapped = node.attemptSwapping(link1, link2)
+                    swapped = node.attemptSwapping(link1, link2 , times = self.attemptSwapTimes)
                     if swapped:
                         self.topo.usedLinks.add(link1)
                         self.topo.usedLinks.add(link2)
@@ -610,8 +614,10 @@ class REPSCACHE(AlgorithmBase):
                             self.requests.remove(request)
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
-                    link1.clearPhase4Swap()
-                    link2.clearPhase4Swap()
+                    if link1 in self.topo.usedLinks:
+                        link1.clearPhase4Swap()
+                    if link2 in self.topo.usedLinks:
+                        link2.clearPhase4Swap()
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]

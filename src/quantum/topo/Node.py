@@ -14,7 +14,7 @@ class Node:
         self.neighbors = [] 
         self.links = [] 
 
-    def attemptSwapping(self, l1, l2):  # l1 -> Link, l2 -> Link
+    def attemptSwapping(self, l1, l2 , times = 1):  # l1 -> Link, l2 -> Link
         if l1.n1 == self:    
             l1.s1 = True
         else:       
@@ -25,7 +25,13 @@ class Node:
         else: 
             l2.s2 = True
         
-        b = random.random() <= self.q
+        # if (l1,l2) in self.internalLinks or (l2,l1) in self.internalLinks:
+        #     return True
+        b = False
+        for _ in range(times):
+            b = random.random() <= self.q
+            if b:
+                break
         if b:
             self.internalLinks.append((l1, l2))
         return b

@@ -142,9 +142,9 @@ class Link:
         return b
     
     def tryEntanglement(self , timeSlot = 0, param=None):
-        if param == 'every':
+        if param == 'everya':
             return self.tryEntanglement2(timeSlot)
-        elif param == 'ten':
+        elif param == 'ten' or param == 'every':
             return self.tryEntanglement1(timeSlot)
         else:
             return self.tryEntanglement3(timeSlot)
