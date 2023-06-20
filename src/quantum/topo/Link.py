@@ -91,10 +91,23 @@ class Link:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
          
-    def tryEntanglement(self , timeSlot = 0):
-        # print('ent prob', self.p)
+    # def tryEntanglement(self , timeSlot = 0):
+    #     # print('ent prob', self.p)
 
-        b = self.assigned and self.p >= random.random()
+    #     b = self.assigned and self.p >= random.random()
+    #     if b:
+    #         self.entangledTimeSlot = timeSlot
+    #         self.entangled = b
+            
+    #     if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+    #         return True
+    #     return b
+
+
+    def tryEntanglement2(self , timeSlot = 0):
+        # print('ent prob', self.p)
+        # print('+++++++++++++++++++++++ every')
+        b = self.p >= random.random()
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
@@ -102,6 +115,25 @@ class Link:
         if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
             return True
         return b
+
+    def tryEntanglement1(self , timeSlot = 0):
+        # print('ent prob', self.p)
+        if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+            return True
+        # b = self.assigned and self.p >= random.random()
+        b = self.p >= random.random()
+        if b:
+            self.entangledTimeSlot = timeSlot
+            self.entangled = b
+            
+
+        return b
+    
+    def tryEntanglement(self , timeSlot = 0, param=None):
+        if param == 'every':
+            return self.tryEntanglement2(timeSlot)
+        else:
+            return self.tryEntanglement1(timeSlot)
     
   
     def assignable(self): 

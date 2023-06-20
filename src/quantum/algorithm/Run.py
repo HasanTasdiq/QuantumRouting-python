@@ -56,6 +56,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     
     algorithms.append(REPS(copy.deepcopy(topo)))
     algorithms.append(REPSCACHE(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='every'))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
@@ -63,7 +64,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 100
+    ttime = 101
     rtime = ttime
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
@@ -81,7 +82,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
                         a = sample([i for i in range(numOfNode)], 2)
                         for _ in range(int(random.random()*3+1)):
                             ids[i].append((a[0], a[1]))
-                print('#############################  ', len(ids[i]))
+                # print('#############################  ', len(ids[i]))
         
         for algoIndex in range(len(algorithms)):
             algo = copy.deepcopy(algorithms[algoIndex])
@@ -246,12 +247,12 @@ if __name__ == '__main__':
     # print('--DONE--')
     # exit(0)
     # write remainRequestPerRound
-    rtime = 100
+    rtime = 101
     print('starting.. ')
     # sampleRounds = [0, 2, 4, 6, 8, 10]
     sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
     print(sampleRounds)
-    results = Run(numOfRequestPerRound = 5, rtime = rtime) # algo1Result algo2Result ...
+    results = Run(numOfRequestPerRound = 10, rtime = rtime) # algo1Result algo2Result ...
     for result in results:
         result.remainRequestPerRound.insert(0, 1)
     

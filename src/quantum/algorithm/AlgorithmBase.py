@@ -30,7 +30,7 @@ class AlgorithmResult:
     def Avg(results: list):
         AvgResult = AlgorithmResult()
 
-        ttime = 100
+        ttime = 101
         AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
@@ -60,13 +60,14 @@ class AlgorithmResult:
 
 class AlgorithmBase:
 
-    def __init__(self, topo , preEnt = False):
+    def __init__(self, topo , preEnt = False , param = None):
         self.name = "Greedy"
         self.topo = topo
         self.srcDstPairs = []
         self.timeSlot = 0
         self.result = AlgorithmResult()
         self.preEnt = preEnt
+        self.param = param
 
     def prepare(self):
         pass
@@ -79,7 +80,7 @@ class AlgorithmBase:
 
     def tryEntanglement(self):
         for link in self.topo.links:
-            link.tryEntanglement(self.timeSlot)
+            link.tryEntanglement(self.timeSlot, self.param)
     def preEntanglement(self):
         self.topo.preEntanglement()
 
