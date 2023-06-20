@@ -16,13 +16,14 @@ from random import sample
 
 EPS = 1e-6
 class REPSCACHE(AlgorithmBase):
-    def __init__(self, topo):
-        super().__init__(topo)
+    def __init__(self, topo, param=None):
+        super().__init__(topo , param=param)
         self.name = "REPS"
         self.requests = []
         self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
+        # self.param = param
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
@@ -583,7 +584,7 @@ class REPSCACHE(AlgorithmBase):
             src = SDpair[0]
             dst = SDpair[1]
 
-            print('##########path ' , src.id , dst.id , len(Pi[SDpair]))
+            # print('##########path ' , src.id , dst.id , len(Pi[SDpair]))
 
             if len(Pi[SDpair]):
                 self.result.idleTime -= 1
@@ -600,7 +601,7 @@ class REPSCACHE(AlgorithmBase):
                 successPath = self.topo.getEstablishedEntanglements(src, dst , self.timeSlot)
                 # for x in successPath:
                     # print('[REPS-CACHE] success:', [z.id for z in x])
-                print('[REPS-CACHE] success path :', len(successPath))
+                # print('[REPS-CACHE] success path :', len(successPath))
 
                 if len(successPath):
                     for request in self.requests:
