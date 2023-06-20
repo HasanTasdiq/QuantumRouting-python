@@ -103,7 +103,7 @@ class Link:
     #         return True
     #     return b
 
-    def tryEntanglement(self , timeSlot = 0):
+    def tryEntanglement3(self , timeSlot = 0):
         # print('ent prob', self.p)
 
         b = self.assigned and self.p >= random.random()
