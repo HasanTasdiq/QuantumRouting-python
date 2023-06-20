@@ -80,8 +80,8 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
                 if i < rtime:
                     for _ in range(numOfRequestPerRound):
                         a = sample([i for i in range(numOfNode)], 2)
-                        for _ in range(int(random.random()*3+1)):
-                            ids[i].append((a[0], a[1]))
+                        # for _ in range(int(random.random()*3+1)):
+                        ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))
         
         for algoIndex in range(len(algorithms)):
