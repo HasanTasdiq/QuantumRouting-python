@@ -25,8 +25,8 @@ class REPSCACHE(AlgorithmBase):
         self.totalWaitingTime = 0
         self.attemptSwapTimes = 1
 
-        if param == 'every':
-            self.attemptSwapTimes = 2
+        # if param == 'every':
+        #     self.attemptSwapTimes = 2
         # self.param = param
 
     def genNameByComma(self, varName, parName):
