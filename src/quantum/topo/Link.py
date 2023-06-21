@@ -125,12 +125,20 @@ class Link:
             self.entangled = b
             
         if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+            # print('tryEntanglement2 ' , self.n1.id , self.n2.id , timeSlot , True)
             return True
+
+        # print('tryEntanglement2 ', self.n1.id , self.n2.id , timeSlot , b)
         return b
 
     def tryEntanglement1(self , timeSlot = 0):
         # print('ent prob', self.p)
+        # if self.entangled:
+        #     if (timeSlot - self.entangledTimeSlot) >= 10:
+        #         print('!!!!! ++++ ==== tryEntanglement1 (timeSlot - self.entangledTimeSlot) >= 10', self.n1.id , self.n2.id , timeSlot , True)
+
         if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+            # print('tryEntanglement1 ', self.n1.id , self.n2.id , timeSlot , True)
             return True
         # b = self.assigned and self.p >= random.random()
         b = self.p >= random.random()
@@ -138,13 +146,13 @@ class Link:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
             
-
+        # print('tryEntanglement1 ', self.n1.id , self.n2.id , timeSlot , b)
         return b
     
     def tryEntanglement(self , timeSlot = 0, param=None):
-        if param == 'everya':
+        if param == 'every':
             return self.tryEntanglement2(timeSlot)
-        elif param == 'ten' or param == 'every':
+        elif param == 'ten' or param == 'everya':
             return self.tryEntanglement1(timeSlot)
         else:
             return self.tryEntanglement3(timeSlot)

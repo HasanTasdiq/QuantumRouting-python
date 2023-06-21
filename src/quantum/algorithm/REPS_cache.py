@@ -137,7 +137,7 @@ class REPSCACHE(AlgorithmBase):
         for (u, v) in edgeIndices:
             dis = self.topo.distance(self.topo.nodes[u].loc, self.topo.nodes[v].loc)
             probability = math.exp(-self.topo.alpha * dis)
-            # print('++===+++== orig prob ' , self.timeSlot , probability)
+            # print('++===+++== [', self.name , '] orig prob ' , self.timeSlot , probability)
             links = [link for link in self.topo.links if ((link.n1.id == u and link.n2.id == v) or (link.n1.id == v and link.n2.id == u))]
             prob = 0
             for link in links:
@@ -146,9 +146,9 @@ class REPSCACHE(AlgorithmBase):
                 else:
                     prob +=probability
             probability = prob/len(links)
-            # print('++===+++== later prob ' , self.timeSlot , probability)
+            # print('++===+++==[', self.name , '] later prob ' , self.timeSlot , probability)
 
-            # print('++++++ ' , len(links))
+            # print('++++++[', self.name , '] ' , len(links))
             m.addConstr(quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
 
             capacity = self.edgeCapacity(self.topo.nodes[u], self.topo.nodes[v])
