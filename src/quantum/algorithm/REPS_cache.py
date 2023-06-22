@@ -594,9 +594,9 @@ class REPSCACHE(AlgorithmBase):
                 # print('[REPS-CACHE] attempt:', [node.id for node in path])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     swapped = node.attemptSwapping(link1, link2)
-                    # if swapped:
-                    #     self.topo.usedLinks.add(link1)
-                    #     self.topo.usedLinks.add(link2)
+                    if swapped:
+                        self.topo.usedLinks.add(link1)
+                        self.topo.usedLinks.add(link2)
 
                 # successPath = self.topo.getEstablishedEntanglements(src, dst , self.timeSlot)
 
