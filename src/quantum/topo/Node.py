@@ -11,6 +11,7 @@ class Node:
         self.remainingQubits = int(nQubits)
         self.q = topo.q
         self.internalLinks = []
+        self.prevInternalLinks = []
         self.neighbors = [] 
         self.links = [] 
 
@@ -47,14 +48,15 @@ class Node:
 
 
         
-        if (l1,l2) in self.internalLinks or (l2,l1) in self.internalLinks:
-            if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
-                return True
+
         b = False
         for _ in range(times):
             b = random.random() <= self.q
             if b:
                 break
+        if (l1,l2) in self.prevInternalLinks or (l2,l1) in self.prevInternalLinks:
+            if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
+                b = True
         if b:
             if l1.n1 == self:    
                 l1.s1 = True

@@ -100,6 +100,13 @@ class AlgorithmBase:
             if self.topo.cacheTable[sd] > 1:
                 count +=1
         # print('link to generate ent ' , self.topo.cacheTable)
+    
+    def resetNodeSwaps(self):
+        for node in self.topo.nodes:
+            for preInternelLinks in node.prevInternalLinks:
+                timeSlot = preInternelLinks[2]
+                if self.timeSlot - timeSlot >=10:
+                    node.prevInternalLinks.remove(preInternelLinks)
         
 
     def work(self, pairs: list, time): 
@@ -129,6 +136,7 @@ class AlgorithmBase:
         end = process_time()
 
         self.srcDstPairs.clear()
+        self.resetNodeSwaps()
 
         res.totalRuntime += (end - start)
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
