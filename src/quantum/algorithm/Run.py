@@ -10,6 +10,7 @@ from GreedyGeographicRouting import GreedyGeographicRouting
 from GreedyHopRouting import GreedyHopRouting
 from REPS import REPS
 from REPS_cache import REPSCACHE
+from REPS_cache2 import REPSCACHE2
 from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 from topo.Node import Node
@@ -30,7 +31,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.0004, SocialNetworkDensity = 0.5, rtime = 50, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 50, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -56,7 +57,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     
     algorithms.append(REPS(copy.deepcopy(topo)))
     algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='every',name='REPSCACHE2'))
+    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity

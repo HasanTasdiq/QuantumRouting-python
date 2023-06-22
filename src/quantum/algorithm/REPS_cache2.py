@@ -593,7 +593,7 @@ class REPSCACHE2(AlgorithmBase):
             if len(Pi[SDpair]):
                 self.result.idleTime -= 1
             pathCount = 0
-            print('==[',self.name,'] len(Pi[SDpair]) ' , src.id , dst.id,len(Pi[SDpair]))
+            # print('==[',self.name,'] len(Pi[SDpair]) ' , src.id , dst.id,len(Pi[SDpair]))
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
@@ -612,11 +612,11 @@ class REPSCACHE2(AlgorithmBase):
                             self.topo.usedLinks.add(link)
                             usedLinksCount += 1
 
-                for x in successPath:
-                    print('[' , self.name, ']', ' success:', [z[0].id for z in x])
-                print('==[' , self.name, ']', ' success path :', len(successPath))
-                print('=!=[' , self.name, ']', ' usedLinksCount :', usedLinksCount if usedLinksCount ==0 else usedLinksCount )
-                print('=!=[' , self.name, ']', ' needLink[(SDpair, pathIndex)] len  :', len(needLink[(SDpair, pathIndex)]))
+                # for x in successPath:
+                #     print('[' , self.name, ']', ' success:', [z[0].id for z in x])
+                # print('==[' , self.name, ']', ' success path :', len(successPath))
+                # print('=!=[' , self.name, ']', ' usedLinksCount :', usedLinksCount if usedLinksCount ==0 else usedLinksCount )
+                # print('=!=[' , self.name, ']', ' needLink[(SDpair, pathIndex)] len  :', len(needLink[(SDpair, pathIndex)]))
 
                 if len(successPath):
                     pathCount +=len(successPath)
@@ -638,7 +638,7 @@ class REPSCACHE2(AlgorithmBase):
                     else:
                         link2.keepPhase4Swap()
 
-            print('==[',self.name,'] path count ',pathCount , '=====')
+            # print('==[',self.name,'] path count ',pathCount , '=====')
             
 
     def findPathsForPFT(self, SDpair):
