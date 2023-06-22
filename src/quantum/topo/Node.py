@@ -15,6 +15,9 @@ class Node:
         self.links = [] 
 
     def attemptSwapping(self, l1, l2 , times = 1):  # l1 -> Link, l2 -> Link
+
+    
+
         if l1.n1 == self:    
             l1.s1 = True
         else:       
@@ -33,6 +36,35 @@ class Node:
             if b:
                 break
         if b:
+            self.internalLinks.append((l1, l2))
+        return b
+
+
+
+    def attemptSwapping2(self, l1, l2 , times = 1 , timeSlot = 0):  # l1 -> Link, l2 -> Link
+
+    
+
+
+        
+        if (l1,l2) in self.internalLinks or (l2,l1) in self.internalLinks:
+            if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
+                return True
+        b = False
+        for _ in range(times):
+            b = random.random() <= self.q
+            if b:
+                break
+        if b:
+            if l1.n1 == self:    
+                l1.s1 = True
+            else:       
+                l1.s2 = True
+            
+            if l2.n1 == self:    
+                l2.s1 = True
+            else: 
+                l2.s2 = True
             self.internalLinks.append((l1, l2))
         return b
 

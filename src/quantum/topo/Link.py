@@ -90,6 +90,9 @@ class Link:
         for internalLink in self.n2.internalLinks:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
+    def keepPhase4Swap(self):
+        self.s1 = False
+        self.s2 = False
          
     # def tryEntanglement(self , timeSlot = 0):
     #     # print('ent prob', self.p)
