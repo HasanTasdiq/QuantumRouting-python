@@ -566,7 +566,7 @@ class SEERCACHE2(AlgorithmBase):
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     # usedLinks.add(l1)
                     # usedLinks.add(l2)
-                    swapped = curr.attemptSwapping2(l1, l2)
+                    swapped = curr.attemptSwapping2(l1, l2 , timeSlot = self.timeSlot)
                     if swapped:
                         attemptedLinks.add(l1)
                         attemptedLinks.add(l2)
@@ -619,7 +619,6 @@ class SEERCACHE2(AlgorithmBase):
             
             # succeed
             if success > 0 or len(p) == 2:
-                # self.result.usedPaths.append(p) #added for pre-entanglement 
                 if requestInfo.state == 0:      # 0
                     self.totalTime += self.timeSlot - req[2]
                     finishedRequest.append(req)
