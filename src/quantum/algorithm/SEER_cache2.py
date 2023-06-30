@@ -581,8 +581,7 @@ class SEERCACHE2(AlgorithmBase):
                 for link in prev.links:
                     if link.isEntangled(self.timeSlot) and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
                         usedLinks.add(link)
-                        self.topo.usedLinks.add(l2)
-
+                        self.topo.usedLinks.add(link)
                         break
          
             # p5
@@ -675,9 +674,9 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 20):
+    for i in range(0, 200):
         requests = []
-        if i < 20:
+        if i < 200:
             for j in range(5):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))

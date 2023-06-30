@@ -629,7 +629,7 @@ class MyAlgorithm(AlgorithmBase):
         # print('----------------------')
         print('[MyAlgo] waiting time:',  self.result.waitingTime)
         print('[MyAlgo] idle time:', self.result.idleTime)
-        print('[MyAlgo] remaining request:', len(self.requestState))
+        print('[MyAlgo]' , self.timeSlot, ' remaining request:', len(self.requestState))
         print('[MyAlgo] p5 end')
         # print('----------------------')
 

@@ -834,8 +834,8 @@ if __name__ == '__main__':
     s = REPSCACHE2(topo , name='REPSCACHE2',param='ten')
     result = AlgorithmResult()
     samplesPerTime = 10
-    ttime = 50
-    rtime = 50
+    ttime = 200
+    rtime = ttime
     requests = {i : [] for i in range(ttime)}
 
     for i in range(ttime):
