@@ -43,12 +43,6 @@ class Node:
 
 
     def attemptSwapping2(self, l1, l2 , times = 1 , timeSlot = 0):  # l1 -> Link, l2 -> Link
-
-    
-
-
-        
-
         b = False
         for _ in range(times):
             b = random.random() <= self.q

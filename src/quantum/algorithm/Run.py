@@ -11,6 +11,8 @@ from GreedyHopRouting import GreedyHopRouting
 from REPS import REPS
 from REPS_cache import REPSCACHE
 from REPS_cache2 import REPSCACHE2
+from SEER_cache import SEERCACHE
+from SEER_cache2 import SEERCACHE2
 from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 from topo.Node import Node
@@ -23,7 +25,7 @@ import random
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
         result = algo.work(requests[i], i)
-    if algo.name == "My":
+    if algo.name == "My" or algo.name == "SEERCACHE":
         for req in algo.requestState:
             if algo.requestState[req].state == 2:
                 algo.requestState[req].intermediate.clearIntermediate()
@@ -41,7 +43,9 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
 
     # make copy
     algorithms = []
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten'))
+    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -55,14 +59,14 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    algorithms.append(REPS(copy.deepcopy(topo)))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
-    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    # algorithms.append(REPS(copy.deepcopy(topo)))
+    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
+    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 3
+    times = 10
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = 101
