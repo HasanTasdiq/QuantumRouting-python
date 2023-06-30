@@ -242,7 +242,9 @@ class REPSCACHE(AlgorithmBase):
                         self.fi[SDpair][(node, next)] += width
 
             sorted(paths, key = self.widthForSort)
-
+            print('[PFT]###===###+==== path len for ' , SDpair[0].id , SDpair[1].id , ':' , len(paths))
+            # for path in paths:
+            #     print('[PFT]============ ' ,[n for n in path])
             for path in paths:
                 pathLen = len(path) - 1
                 width = path[-1]
@@ -431,6 +433,7 @@ class REPSCACHE(AlgorithmBase):
                     continue
                 paths = self.findPathsForEPS(SDpair, k)
 
+
                 for u in self.topo.nodes:
                     for v in self.topo.nodes:
                         self.fki[SDpair][k][(u, v)] = 0
@@ -584,14 +587,15 @@ class REPSCACHE(AlgorithmBase):
             src = SDpair[0]
             dst = SDpair[1]
 
-            # print('##########path ' , src.id , dst.id , len(Pi[SDpair]))
+            print('##########path ' , src.id , dst.id , len(Pi[SDpair]))
 
             if len(Pi[SDpair]):
                 self.result.idleTime -= 1
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                # print('[REPS-CACHE] attempt:', [node.id for node in path])
+                print('[REPS-CACHE] attempt:', [node.id for node in path])
+                print('[REPS-CACHE] (node, link1, link2) :', [(x[0].id , x[1].n1.id , x[1].n2.id , x[2].n1.id , x[2].n2.id) for x in needLink[(SDpair, pathIndex)]])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     swapped = node.attemptSwapping(link1, link2)
                     if swapped:
@@ -816,7 +820,7 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = REPSCACHE(topo)
     result = AlgorithmResult()
-    samplesPerTime = 10
+    samplesPerTime = 2
     ttime = 50
     rtime = 50
     requests = {i : [] for i in range(ttime)}
