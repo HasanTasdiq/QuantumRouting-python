@@ -97,12 +97,14 @@ class Link:
         for internalLink in self.n1.internalLinks:
             if self in internalLink:
                 self.n1.internalLinks.remove(internalLink)
-                self.n1.prevInternalLinks.append((internalLink[0] , internalLink[1] , self.entangledTimeSlot))
+                # self.n1.prevInternalLinks.append((internalLink[0] , internalLink[1] , self.entangledTimeSlot))
+                self.n1.prevInternalLinks.append((internalLink[0] , internalLink[1] ))
 
         for internalLink in self.n2.internalLinks:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
-                        self.n2.prevInternalLinks.append((internalLink[0] , internalLink[1] , self.entangledTimeSlot))
+                        # self.n2.prevInternalLinks.append((internalLink[0] , internalLink[1] , self.entangledTimeSlot))
+                        self.n2.prevInternalLinks.append((internalLink[0] , internalLink[1] ))
         
          
     # def tryEntanglement(self , timeSlot = 0):

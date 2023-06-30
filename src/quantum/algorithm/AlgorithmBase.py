@@ -30,7 +30,7 @@ class AlgorithmResult:
     def Avg(results: list):
         AvgResult = AlgorithmResult()
 
-        ttime = 501
+        ttime = 201
         AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
@@ -104,8 +104,9 @@ class AlgorithmBase:
     def resetNodeSwaps(self):
         for node in self.topo.nodes:
             for preInternelLinks in node.prevInternalLinks:
-                timeSlot = preInternelLinks[2]
-                if self.timeSlot - timeSlot >=10:
+                l1 = preInternelLinks[0]
+                l2 = preInternelLinks[1]
+                if not (l1.isEntangled(self.timeSlot) and l2.isEntangled(self.timeSlot)):
                     node.prevInternalLinks.remove(preInternelLinks)
         
 

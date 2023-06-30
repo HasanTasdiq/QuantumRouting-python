@@ -43,13 +43,18 @@ class Node:
 
 
     def attemptSwapping2(self, l1, l2 , times = 1 , timeSlot = 0):  # l1 -> Link, l2 -> Link
+        # print('#####################################################time:' , timeSlot , 'node:', self.id , 'len:', len(self.prevInternalLinks))
         b = False
         for _ in range(times):
             b = random.random() <= self.q
             if b:
                 break
         if (l1,l2) in self.prevInternalLinks or (l2,l1) in self.prevInternalLinks:
+            # print('************************###time:' , timeSlot , 'link inside')
+
             if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
+                print('************************###time:' , timeSlot , 'TRUE!!!!!!')
+
                 b = True
         if b:
             if l1.n1 == self:    
