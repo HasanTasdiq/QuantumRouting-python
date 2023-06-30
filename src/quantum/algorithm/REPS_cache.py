@@ -242,7 +242,7 @@ class REPSCACHE(AlgorithmBase):
                         self.fi[SDpair][(node, next)] += width
 
             sorted(paths, key = self.widthForSort)
-            print('[PFT]###===###+==== path len for ' , SDpair[0].id , SDpair[1].id , ':' , len(paths))
+            # print('[PFT]###===###+==== path len for ' , SDpair[0].id , SDpair[1].id , ':' , len(paths))
             # for path in paths:
             #     print('[PFT]============ ' ,[n for n in path])
             for path in paths:
@@ -587,15 +587,15 @@ class REPSCACHE(AlgorithmBase):
             src = SDpair[0]
             dst = SDpair[1]
 
-            print('##########path ' , src.id , dst.id , len(Pi[SDpair]))
+            # print('##########path ' , src.id , dst.id , len(Pi[SDpair]))
 
             if len(Pi[SDpair]):
                 self.result.idleTime -= 1
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                print('[REPS-CACHE] attempt:', [node.id for node in path])
-                print('[REPS-CACHE] (node, link1, link2) :', [(x[0].id , x[1].n1.id , x[1].n2.id , x[2].n1.id , x[2].n2.id) for x in needLink[(SDpair, pathIndex)]])
+                # print('[REPS-CACHE] attempt:', [node.id for node in path])
+                # print('[REPS-CACHE] (node, link1, link2) :', [(x[0].id , x[1].n1.id , x[1].n2.id , x[2].n1.id , x[2].n2.id) for x in needLink[(SDpair, pathIndex)]])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     swapped = node.attemptSwapping(link1, link2)
                     if swapped:

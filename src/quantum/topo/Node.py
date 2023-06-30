@@ -53,8 +53,7 @@ class Node:
             # print('************************###time:' , timeSlot , 'link inside')
 
             if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
-                print('************************###time:' , timeSlot , 'TRUE!!!!!!')
-
+                # print('************************###time:' , timeSlot , 'TRUE!!!!!!')
                 b = True
         if b:
             if l1.n1 == self:    

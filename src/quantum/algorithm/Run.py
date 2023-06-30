@@ -43,9 +43,9 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
 
     # make copy
     algorithms = []
-    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten'))
-    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten'))
+    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten'))
+    # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -59,17 +59,17 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
-    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
+    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 100
+    times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
-    ttime = 201
+    ttime = rtime
     rtime = ttime
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
@@ -252,7 +252,7 @@ if __name__ == '__main__':
     # print('--DONE--')
     # exit(0)
     # write remainRequestPerRound
-    rtime = 201
+    rtime = 101
     print('starting.. ')
     # sampleRounds = [0, 2, 4, 6, 8, 10]
     sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
