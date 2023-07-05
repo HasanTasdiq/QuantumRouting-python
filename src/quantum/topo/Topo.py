@@ -65,6 +65,7 @@ class Topo:
 
     def __init__(self, G, q, k, a, degree):
         _nodes, _edges, _positions = G.nodes(), list(G.edges()), nx.get_node_attributes(G, 'pos')
+
         self.nodes = []
         self.links = []
         self.edges = [] # (Node, Node)
@@ -75,6 +76,7 @@ class Topo:
         self.cacheTable = {}
         self.t_val = 2
         self.usedLinks = set()
+        self.G = G
 
 
         # for pos in _positions:
@@ -124,6 +126,12 @@ class Topo:
         for node in self.nodes:
             for neighbor in _neighbors[node.id]:
                 node.neighbors.append(self.nodes[neighbor])
+        
+        for edge in _edges:
+            node1, node2 = edge
+            self.G.add_edge(node1 , node2)
+            # print('in cal len ' , node1 , node2)
+            self.G.edges[node1, node2]['length'] = self.distance(_positions[node1] , _positions[node2])
 
         # for _node in _nodes:
         #     print(_node, _neighbors[_node])
@@ -155,6 +163,12 @@ class Topo:
         for a, b in zip(pos1, pos2):
             d += (a-b) ** 2
         return d ** 0.5
+    def distance_by_node(self , node1 , node2):
+        # print(node1 , node2)
+        (path_cost, sp) = nx.single_source_dijkstra(G=self.G, source=node1, target=node2 , weight='length')
+        # print('+_+_+_+_+_+_+_ ' , path_cost)
+
+        return path_cost
 
     def generate(n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
@@ -163,6 +177,8 @@ class Topo:
         checker = TopoConnectionChecker()
         while True:
             G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            # print('leeeen ' , len(G.edges))
+
             topo = Topo(G, q, k, a, degree)
             checker.setTopo(topo)
             if checker.checkConnected():
