@@ -65,19 +65,21 @@ class SEE(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.EPI() # compute (self.ti, self.fi)
+            # self.EPI() # compute (self.ti, self.fi)
+            self.EPS()
         # print('[REPS] p2 end')
     
     def p4(self):
         if len(self.srcDstPairs) > 0:
-            self.EPS()
+            # self.EPS()
             self.ELS()
         # print('[REPS] p4 end') 
         self.printResult()
         return self.result
 
-    
-    # return fi(u, v)
+
+
+# return fi(u, v)
 
     def LP1(self):
         # print('[REPS] LP1 start')
@@ -168,20 +170,7 @@ class SEE(AlgorithmBase):
             varName = self.genNameByComma('t', [i])
             self.ti_LP[SDpair] = m.getVarByName(varName).x
         # print('[REPS] LP1 end')
-    def edgeCapacity(self, u, v):
-        capacity = 0
-        for link in u.links:
-            if link.contains(v):
-                capacity += 1
-        used = 0
-        for SDpair in self.srcDstPairs:
-            used += self.fi[SDpair][(u, v)]
-            used += self.fi[SDpair][(v, u)]
-        return capacity - used
 
-    def widthForSort(self, path):
-        # path[-1] is the path of weight
-        return -path[-1]
     
     def EPI(self):
 
@@ -247,21 +236,54 @@ class SEE(AlgorithmBase):
                     self.fi[SDpair][(node, next)] += 1
 
         # print('[REPS] EPI end')
+        # for SDpair in self.srcDstPairs:
+        #     for edge in self.topo.edges:
+        #         u = edge[0]
+        #         v = edge[1]
+        #         need = self.fi[SDpair][(u, v)] + self.fi[SDpair][(v, u)]
+        #         if need:
+        #             assignCount = 0
+        #             for link in u.links:
+        #                 if link.contains(v) and link.assignable():
+        #                     # link(u, v) for u, v in edgeIndices)
+        #                     link.assignQubits()
+        #                     self.totalUsedQubits += 2
+        #                     assignCount += 1
+        #                     if assignCount == need:
+        #                         break
+
+    
+   
+    def edgeCapacity(self, u, v):
+        capacity = 0
+        for link in u.links:
+            if link.contains(v):
+                capacity += 1
+        used = 0
         for SDpair in self.srcDstPairs:
-            for edge in self.topo.edges:
-                u = edge[0]
-                v = edge[1]
-                need = self.fi[SDpair][(u, v)] + self.fi[SDpair][(v, u)]
-                if need:
-                    assignCount = 0
-                    for link in u.links:
-                        if link.contains(v) and link.assignable():
-                            # link(u, v) for u, v in edgeIndices)
-                            link.assignQubits()
-                            self.totalUsedQubits += 2
-                            assignCount += 1
-                            if assignCount == need:
-                                break
+            used += self.fi[SDpair][(u, v)]
+            used += self.fi[SDpair][(v, u)]
+        return capacity - used
+    def segmentCapacity(self, u, v):
+        min_capacity = 1000
+        for path in self.topo.k_shortest_paths(u , v , 10):
+            for i in range(len(path) - 1):
+                p1 = path[i]
+                p2 = path[i+1]
+                capacity = 0
+                for link in self.topo.nodes[p1].links:
+                    if link.contains(self.topo.nodes[p2]):
+                        capacity += 1
+                if capacity < min_capacity:
+                    min_capacity = capacity
+        return min_capacity
+
+
+    def widthForSort(self, path):
+        # path[-1] is the path of weight
+        return -path[-1]
+    
+    
             
     def edgeSuccessfulEntangle(self, u, v):
         if u == v:
@@ -291,6 +313,13 @@ class SEE(AlgorithmBase):
         edgeIndices = []
         notEdge = []
         segments = []
+        K_u_v = {}
+        for node1 in self.topo.nodes:
+            for node2 in self.topo.nodes:
+                K_u_v[(node1 , node2)] = 0
+                
+
+
         # for edge in self.topo.edges:
         #     edgeIndices.append((edge[0].id, edge[1].id))
         
@@ -334,6 +363,14 @@ class SEE(AlgorithmBase):
                     t[i][k] = m.addVar(lb = 0, ub = 1, vtype = gp.GRB.CONTINUOUS, name = "t[%d][%d]" % (i, k))
                 else:
                     t[i][k] = m.addVar(lb = 0, ub = 0, vtype = gp.GRB.CONTINUOUS, name = "t[%d][%d]" % (i, k))
+        x = [0] * numOfNodes
+        for u in range(numOfNodes):
+            x[u] = [0] * numOfNodes
+            for v in range(numOfNodes):
+                if ((u, v) in edgeIndices or (v, u) in edgeIndices):
+                    x[u][v] = [0] * len(self.topo.k_shortest_paths(u , v , 5))
+                    for k in range(len(self.topo.k_shortest_paths(u , v , 5))): #later we'll find this
+                        x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.CONTINUOUS , name = "x[%d][%d][%d]"%(u,v,k))
 
         m.update()
         
@@ -369,10 +406,26 @@ class SEE(AlgorithmBase):
                         m.addConstr(quicksum(f[i][k][u][v] for v in edgeUV) - quicksum(f[i][k][v][u] for v in edgeUV) == 0)
 
         
-        for (u, v) in edgeIndices:
-            capacity = self.edgeSuccessfulEntangle(self.topo.nodes[u], self.topo.nodes[v])
-            m.addConstr(quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
+        # for (u, v) in edgeIndices:
+        #     capacity = self.edgeSuccessfulEntangle(self.topo.nodes[u], self.topo.nodes[v])
+        #     m.addConstr(quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
 
+        for (s,d) in self.srcDstPairs:
+            u , v = s.id , d .id
+            capacity = self.segmentCapacity(u , v)
+            print('------- ' , x[u][v] , len(self.topo.k_shortest_paths(u , v , 5)))
+            m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5)))) <= capacity)
+
+        for u in range(numOfNodes):
+            edgeContainu = []
+            for (n1, n2) in edgeIndices:
+                if u in (n1, n2):
+                    edgeContainu.append((n1, n2))
+                    edgeContainu.append((n2, n1))
+            m.addConstr(quicksum(x[n1][n2][k] for (n1, n2) in edgeContainu for k in range(len(self.topo.k_shortest_paths(u , v , 5)))) <= self.topo.nodes[u].remainingQubits)
+
+
+        print('optimize start....')
         m.optimize()
 
         for i in range(numOfSDpairs):
@@ -384,16 +437,16 @@ class SEE(AlgorithmBase):
                     v = edge[1]
                     varName = self.genNameByBbracket('f', [i, k, u.id, v.id])
                     self.fki_LP[SDpair][k][(u, v)] = m.getVarByName(varName).x
-                    if self.fki_LP[SDpair][k][(u, v)] > 0:
-                        print('# ' , self.fki_LP[SDpair][k][(u, v)])
+                    # if self.fki_LP[SDpair][k][(u, v)] > 0:
+                        # print('# ' , self.fki_LP[SDpair][k][(u, v)])
 
                 for edge in segments:
                     u = edge[1]
                     v = edge[0]
                     varName = self.genNameByBbracket('f', [i, k, u.id, v.id])
                     self.fki_LP[SDpair][k][(u, v)] = m.getVarByName(varName).x
-                    if self.fki_LP[SDpair][k][(u, v)] > 0:
-                        print('# ' , self.fki_LP[SDpair][k][(u, v)])                
+                    # if self.fki_LP[SDpair][k][(u, v)] > 0:
+                    #     print('# ' , self.fki_LP[SDpair][k][(u, v)])                
 
                 # for (u, v) in notEdge:
                 #     u = self.topo.nodes[u]
@@ -403,13 +456,13 @@ class SEE(AlgorithmBase):
             
                 varName = self.genNameByBbracket('t', [i, k])
                 self.tki_LP[SDpair][k] = m.getVarByName(varName).x
-                # print('* ' , self.tki_LP[SDpair][k])
+                print('* ' , self.tki_LP[SDpair][k])
         print('[SEE] LP2 end')
 
     def EPS(self):
         self.LP2()
         # initialize fki(u, v), tki
-        numOfFlow = {SDpair : self.ti[SDpair] for SDpair in self.srcDstPairs}
+        numOfFlow = {SDpair : 2 for SDpair in self.srcDstPairs}
         self.fki = {SDpair : [{} for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.tki = {SDpair : [0 for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.pathForELS = {SDpair : [] for SDpair in self.srcDstPairs}
@@ -423,10 +476,13 @@ class SEE(AlgorithmBase):
         for SDpair in self.srcDstPairs:
             for k in range(numOfFlow[SDpair]):
                 self.tki[SDpair][k] = self.tki_LP[SDpair][k] >= random.random()
+                print('for SD ' , SDpair[0].id , SDpair[1].id , self.tki_LP[SDpair][k])
 
                 if not self.tki[SDpair][k]:
                     continue
                 paths = self.findPathsForEPS(SDpair, k)
+
+                print('for SD ' , SDpair[0].id , SDpair[1].id  , len(paths))
 
                 for u in self.topo.nodes:
                     for v in self.topo.nodes:
@@ -445,7 +501,7 @@ class SEE(AlgorithmBase):
                         next = path[nodeIndex + 1]
                         self.fki[SDpair][k][(node, next)] = 1
                 
-        # print('[REPS] EPS end')
+        print('[REPS] EPS end')
 
     def ELS(self):
         Ci = self.pathForELS
