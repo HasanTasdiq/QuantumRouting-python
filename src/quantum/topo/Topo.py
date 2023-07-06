@@ -7,6 +7,7 @@ import networkx as nx
 from .Node import Node
 from .Link import Link
 from dataclasses import dataclass
+from itertools import islice
 
 
 @dataclass
@@ -169,6 +170,11 @@ class Topo:
         # print('+_+_+_+_+_+_+_ ' , path_cost)
 
         return path_cost
+    def k_shortest_paths(self, source, target, k):
+
+        return list(
+            islice(nx.shortest_simple_paths(self.G, source, target, weight='length'), k)
+        )
 
     def generate(n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
