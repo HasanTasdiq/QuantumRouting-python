@@ -171,10 +171,30 @@ class Topo:
 
         return path_cost
     def k_shortest_paths(self, source, target, k):
+        paths_with_len=[]
 
-        return list(
+        paths =  list(
             islice(nx.shortest_simple_paths(self.G, source, target, weight='length'), k)
         )
+
+        for path in paths:
+            dist = 0
+            select = True
+            for i in range(len(path)-1):
+                n1 = path[i]
+                n2 = path[i+1]
+                edge_dist = self.distance(self.nodes[n1].loc , self.nodes[n2].loc)
+                if edge_dist > 400:
+                    select = False
+                    break
+                dist += edge_dist
+
+            if select:
+                paths_with_len.append((path , dist))
+            
+
+
+        return paths_with_len
 
     def generate(n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
