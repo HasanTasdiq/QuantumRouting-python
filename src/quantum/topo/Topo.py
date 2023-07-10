@@ -184,7 +184,7 @@ class Topo:
                 n1 = path[i]
                 n2 = path[i+1]
                 edge_dist = self.distance(self.nodes[n1].loc , self.nodes[n2].loc)
-                if edge_dist > 400:
+                if edge_dist > 1000:
                     select = False
                     break
                 dist += edge_dist

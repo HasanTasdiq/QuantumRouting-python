@@ -348,7 +348,7 @@ class SEE(AlgorithmBase):
             for node2 in self.topo.nodes:
                 if node1 == node2:
                     notEdge.append((node1.id , node2.id))
-                elif  self.topo.distance_by_node(node1.id , node2.id) <=400 and ((node1.id , node2.id) not in edgeIndices) and ((node2.id , node1.id) not in edgeIndices):
+                elif  self.topo.distance_by_node(node1.id , node2.id) <=1000 and ((node1.id , node2.id) not in edgeIndices) and ((node2.id , node1.id) not in edgeIndices):
                     edgeIndices.append((node1.id , node2.id))
                     self.segments.append((node1 , node2))
                 else:
@@ -390,7 +390,8 @@ class SEE(AlgorithmBase):
                 # if ((u, v) in edgeIndices or (v, u) in edgeIndices):
                     x[u][v] = [0] * len(self.topo.k_shortest_paths(u , v , 5))
                     for k in range(len(self.topo.k_shortest_paths(u , v , 5))): #later we'll find this
-                        x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.CONTINUOUS , name = "x[%d][%d][%d]"%(u,v,k))
+                        if ((u, v) in edgeIndices or (v, u) in edgeIndices):
+                            x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.CONTINUOUS , name = "x[%d][%d][%d]"%(u,v,k))
 
         m.update()
         
@@ -417,79 +418,71 @@ class SEE(AlgorithmBase):
                 m.addConstr(quicksum(f[i][n][s][v] for v in neighborOfS) - quicksum(f[i][n][v][s] for v in neighborOfS) == t[i][n])
                 m.addConstr(quicksum(f[i][n][d][v] for v in neighborOfD) - quicksum(f[i][n][v][d] for v in neighborOfD) == -t[i][n])
 
-                for u in range(numOfNodes):
-                    if u not in [s, d]:
-                        edgeUV = []
-                        for v in range(numOfNodes):
-                            if v not in [s, d]:
-                                edgeUV.append(v)
-                        m.addConstr(quicksum(f[i][n][u][v] for v in edgeUV) - quicksum(f[i][n][v][u] for v in edgeUV) == 0)
+                # for u in range(numOfNodes):
+                #     if u not in [s, d]:
+                #         edgeUV = []
+                #         for v in range(numOfNodes):
+                #             if v not in [s, d]:
+                #                 edgeUV.append(v)
+                        # m.addConstr(quicksum(f[i][n][u][v] for v in edgeUV) - quicksum(f[i][n][v][u] for v in edgeUV) == 0)
+                # for (u,v) in edgeIndices:
+                #     if u not in [s,d] and v not in [s,d]:
+                m.addConstr(quicksum(f[i][n][u][v] for (u,v) in edgeIndices) - quicksum(f[i][n][v][u] for (u,v) in edgeIndices) == 0)
+
 
         
         # for (u, v) in edgeIndices:
         #     m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum(self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
-        for u in range(numOfNodes):
-            for v in range(numOfNodes):
+        # for u in range(numOfNodes):
+        #     for v in range(numOfNodes):
+        #         # if ((u, v) in edgeIndices or (v, u) in edgeIndices):
+        #         # m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+        #         m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+
+        for (u,v) in edgeIndices:
                 m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
 
 
-        # for (s,d) in self.srcDstPairs:
-        #     u , v = s.id , d .id
-        # for (u,v) in edgeIndices:
-        #     paths_with_len = self.topo.self.topo.k_shortest_paths(u , v , 5)
-        #     for path, l in paths_with_len:
-        #         for i in range(len(path) - 1):
-        #             n1 = path[i]
-        #             n2 = path[i+1]
+
+        # for edge in self.topo.edges:
+        #     e1 = edge[0].id
+        #     e2 = edge[1].id
+        #     segContainingEdge = []
+        #     for (u,v) in edgeIndices:
+        #         paths_with_len = self.topo.k_shortest_paths(u , v , 5)
+        #         j=0
+        #         for path, l in paths_with_len:
+        #             for i in range(len(path) - 1):
+        #                 p1 = path[i]
+        #                 p2 = path[i+1]
+        #                 if (e1,e2) == (p1 , p2) or (e1,e2) == (p2,p1):
+        #                     # print('in 2nd constr ' , (e1,e2), (p1 , p2) )
+        #                     segContainingEdge.append((u,v , j))
+        #             j+=1
+        #     capacity = self.edgeFullCapacity(edge[0] , edge[1])
+        #     print('in cons 2 ' , segContainingEdge)
+        #     m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
+
+        for (u,v) in edgeIndices:
+            capacity = self.segmentCapacity(u,v)
+            m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= capacity)
 
 
-        #     # u , v = s.id , d .id
-        #     # print('u v ' , u , v)
-        #     capacity = self.segmentCapacity(u , v)
-        #     # print('------- ' , x[u][v] , len(self.topo.k_shortest_paths(u , v , 5)) , capacity)
-        #     m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5)))) <= capacity)
 
-
-        for edge in self.topo.edges:
-            e1 = edge[0].id
-            e2 = edge[1].id
-            segContainingEdge = []
-            for (u,v) in edgeIndices:
-                paths_with_len = self.topo.k_shortest_paths(u , v , 5)
-                j=0
-                for path, l in paths_with_len:
-                    for i in range(len(path) - 1):
-                        p1 = path[i]
-                        p2 = path[i+1]
-                        if (e1,e2) == (p1 , p2) or (e1,e2) == (p2,p1):
-                            segContainingEdge.append((u,v , j))
-                    j+=1
-            capacity = self.edgeFullCapacity(edge[0] , edge[1])
-            m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
-
-
+        for (u,v) in edgeIndices:
+            m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= min(self.topo.nodes[u].remainingQubits , self.topo.nodes[v].remainingQubits))
+            # m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[v].remainingQubits)
 
         # for u in range(numOfNodes):
-        #     edgeContainu = []
+        #     segContainu = []
         #     for (n1, n2) in edgeIndices:
-        #         if u in (n1, n2):
-        #             edgeContainu.append((n1, n2))
-        #             edgeContainu.append((n2, n1))
+        #         if u == n1:
+        #             segContainu.append((n1, n2))
+        #         elif u == n2:
+        #             segContainu.append((n2, n1))
         #     # print('len(edgeContainu)' , len(edgeContainu))
-        #     print('self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
-        #     m.addConstr(quicksum(x[n1][n2][k] for (n1, n2) in edgeContainu for k in range(len(self.topo.k_shortest_paths(n1 , n2 , 5)))) <= self.topo.nodes[u].remainingQubits)
-
-
-        for u in range(numOfNodes):
-            segContainu = []
-            for (n1, n2) in edgeIndices:
-                if u == n1:
-                    segContainu.append((n1, n2))
-                elif u == n2:
-                    segContainu.append((n2, n1))
-            # print('len(edgeContainu)' , len(edgeContainu))
-            # print('self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
-            m.addConstr(quicksum(x[n1][n2][k] for (n1, n2) in segContainu for k in range(len(self.topo.k_shortest_paths(n1 , n2 , 5)))) <= self.topo.nodes[u].remainingQubits)
+        #     # print('self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
+        #     m.addConstr(quicksum(x[n1][n2][k] for (n1, n2) in segContainu for k in range(len(self.topo.k_shortest_paths(n1 , n2 , 5)))) <= self.topo.nodes[u].remainingQubits)
 
         # for i in range(numOfSDpairs):
         #     for n in range(numOfFlow[i] - 1):
@@ -947,7 +940,7 @@ if __name__ == '__main__':
     for i in range(ttime):
         if i < rtime:
 
-            ids = [(63, 93), (89, 13), (82, 77), (96, 71), (99, 40)]
+            ids = [(96, 71), (99, 40)]
             for (p,q) in ids:
                 source = None
                 dest = None
