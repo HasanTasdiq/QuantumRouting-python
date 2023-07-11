@@ -65,13 +65,12 @@ class SEE(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            # self.EPI() # compute (self.ti, self.fi)
-            self.EPS()
+            self.EPI()
         # print('[REPS] p2 end')
     
     def p4(self):
         if len(self.srcDstPairs) > 0:
-            # self.EPS()
+            # self.EPI()
             self.ELS()
         # print('[REPS] p4 end') 
         self.printResult()
@@ -79,178 +78,10 @@ class SEE(AlgorithmBase):
 
 
 
-# return fi(u, v)
-
-    def LP1(self):
-        # print('[REPS] LP1 start')
-        # initialize fi(u, v) ans ti
-
-        self.fi_LP = {SDpair : {} for SDpair in self.srcDstPairs}
-        self.ti_LP = {SDpair : 0 for SDpair in self.srcDstPairs}
-        
-        numOfNodes = len(self.topo.nodes)
-        numOfSDpairs = len(self.srcDstPairs)
-
-        edgeIndices = []
-        notEdge = []
-        for edge in self.topo.edges:
-            edgeIndices.append((edge[0].id, edge[1].id))
-        
-        for u in range(numOfNodes):
-            for v in range(numOfNodes):
-                if (u, v) not in edgeIndices and (v, u) not in edgeIndices:
-                    notEdge.append((u, v))
-        # LP
-
-        m = gp.Model('REPS for EPI')
-        m.setParam("OutputFlag", 0)
-        f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "f")
-        t = m.addVars(numOfSDpairs, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "t")
-        x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "x")
-        m.update()
-        
-        m.setObjective(quicksum(t[i] for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
-
-        for i in range(numOfSDpairs):
-            s = self.srcDstPairs[i][0].id
-            m.addConstr(quicksum(f[i, s, v] for v in range(numOfNodes)) - quicksum(f[i, v, s] for v in range(numOfNodes)) == t[i])
-
-            d = self.srcDstPairs[i][1].id
-            m.addConstr(quicksum(f[i, d, v] for v in range(numOfNodes)) - quicksum(f[i, v, d] for v in range(numOfNodes)) == -t[i])
-
-            for u in range(numOfNodes):
-                if u not in [s, d]:
-                    m.addConstr(quicksum(f[i, u, v] for v in range(numOfNodes)) - quicksum(f[i, v, u] for v in range(numOfNodes)) == 0)
-
-        
-        for (u, v) in edgeIndices:
-            dis = self.topo.distance(self.topo.nodes[u].loc, self.topo.nodes[v].loc)
-            probability = math.exp(-self.topo.alpha * dis)
-            m.addConstr(quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
-
-            capacity = self.edgeCapacity(self.topo.nodes[u], self.topo.nodes[v])
-            m.addConstr(x[u, v] <= capacity)
-
-
-        for (u, v) in notEdge:
-            m.addConstr(x[u, v] == 0)               
-            for i in range(numOfSDpairs):
-                m.addConstr(f[i, u, v] == 0)
-
-        for u in range(numOfNodes):
-            edgeContainu = []
-            for (n1, n2) in edgeIndices:
-                if u in (n1, n2):
-                    edgeContainu.append((n1, n2))
-                    edgeContainu.append((n2, n1))
-            m.addConstr(quicksum(x[n1, n2] for (n1, n2) in edgeContainu) <= self.topo.nodes[u].remainingQubits)
-
-        m.optimize()
-
-        for i in range(numOfSDpairs):
-            SDpair = self.srcDstPairs[i]
-            for edge in self.topo.edges:
-                u = edge[0]
-                v = edge[1]
-                varName = self.genNameByComma('f', [i, u.id, v.id])
-                self.fi_LP[SDpair][(u, v)] = m.getVarByName(varName).x
-
-            for edge in self.topo.edges:
-                u = edge[1]
-                v = edge[0]
-                varName = self.genNameByComma('f', [i, u.id, v.id])
-                self.fi_LP[SDpair][(u, v)] = m.getVarByName(varName).x
-
-            for (u, v) in notEdge:
-                u = self.topo.nodes[u]
-                v = self.topo.nodes[v]
-                self.fi_LP[SDpair][(u, v)] = 0
-            
-            
-            varName = self.genNameByComma('t', [i])
-            self.ti_LP[SDpair] = m.getVarByName(varName).x
-        # print('[REPS] LP1 end')
 
     
-    def EPI(self):
-
-        # initialize fi and ti
-        self.fi = {SDpair : {} for SDpair in self.srcDstPairs}
-        self.ti = {SDpair : 0 for SDpair in self.srcDstPairs}
-
-        for SDpair in self.srcDstPairs:
-            for u in self.topo.nodes:
-                for v in self.topo.nodes:
-                    self.fi[SDpair][(u, v)] = 0
-        
-        # EPI
-        failedFindPath = False
-        while not failedFindPath:
-            self.LP1()
-            failedFindPath = True
-            Pi = {}
-            paths = []
-            for SDpair in self.srcDstPairs:
-                Pi[SDpair] = self.findPathsForEPI(SDpair)
-
-            for SDpair in self.srcDstPairs:
-                K = len(Pi[SDpair])
-                for k in range(K):
-                    width = math.floor(Pi[SDpair][k][-1])
-                    Pi[SDpair][k][-1] -= width
-                    paths.append(Pi[SDpair][k])
-                    pathLen = len(Pi[SDpair][k]) - 1
-                    self.ti[SDpair] += width
-                    if width == 0:
-                        continue
-                    failedFindPath = False
-                    for nodeIndex in range(pathLen - 1):
-                        node = Pi[SDpair][k][nodeIndex]
-                        next = Pi[SDpair][k][nodeIndex + 1]
-                        self.fi[SDpair][(node, next)] += width
-
-            sorted(paths, key = self.widthForSort)
-
-            for path in paths:
-                pathLen = len(path) - 1
-                width = path[-1]
-                SDpair = (path[0], path[-2])
-                isable = True
-                for nodeIndex in range(pathLen - 1):
-                    node = path[nodeIndex]
-                    next = path[nodeIndex + 1]
-                    if self.edgeCapacity(node, next) < 1:
-                        isable = False
-                
-                if not isable:
-                    for nodeIndex in range(pathLen - 1):
-                        node = path[nodeIndex]
-                        next = path[nodeIndex + 1]
-                    continue
-                
-                failedFindPath = False
-                self.ti[SDpair] += 1
-                for nodeIndex in range(pathLen - 1):
-                    node = path[nodeIndex]
-                    next = path[nodeIndex + 1]
-                    self.fi[SDpair][(node, next)] += 1
-
-        # print('[REPS] EPI end')
-        # for SDpair in self.srcDstPairs:
-        #     for edge in self.topo.edges:
-        #         u = edge[0]
-        #         v = edge[1]
-        #         need = self.fi[SDpair][(u, v)] + self.fi[SDpair][(v, u)]
-        #         if need:
-        #             assignCount = 0
-        #             for link in u.links:
-        #                 if link.contains(v) and link.assignable():
-        #                     # link(u, v) for u, v in edgeIndices)
-        #                     link.assignQubits()
-        #                     self.totalUsedQubits += 2
-        #                     assignCount += 1
-        #                     if assignCount == need:
-        #                         break
+    
+    
 
     
    
@@ -307,8 +138,8 @@ class SEE(AlgorithmBase):
 
         return math.exp(-self.topo.alpha * len)
 
-    def LP2(self):
-        # print('[REPS] LP2 start')
+    def LP1(self):
+        # print('[REPS] LP1 start')
         # initialize fi(u, v) ans ti
 
         numOfNodes = len(self.topo.nodes)
@@ -348,7 +179,7 @@ class SEE(AlgorithmBase):
             for node2 in self.topo.nodes:
                 if node1 == node2:
                     notEdge.append((node1.id , node2.id))
-                elif  self.topo.distance_by_node(node1.id , node2.id) <=1000 and ((node1.id , node2.id) not in edgeIndices) and ((node2.id , node1.id) not in edgeIndices):
+                elif  self.topo.distance_by_node(node1.id , node2.id) <=500 and ((node1.id , node2.id) not in edgeIndices) and ((node2.id , node1.id) not in edgeIndices):
                     edgeIndices.append((node1.id , node2.id))
                     self.segments.append((node1 , node2))
                 else:
@@ -360,7 +191,7 @@ class SEE(AlgorithmBase):
 
 
 
-        m = gp.Model('REPS for EPS')
+        m = gp.Model('REPS for EPI')
         m.setParam("OutputFlag", 0)
 
         f = [0] * numOfSDpairs
@@ -441,35 +272,42 @@ class SEE(AlgorithmBase):
 
         for (u,v) in edgeIndices:
                 m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+                # m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
 
 
+        test_dict = {(u ,v , 0):0 for (u,v) in edgeIndices}
+        for edge in self.topo.edges:
+            e1 = edge[0].id
+            e2 = edge[1].id
+            segContainingEdge = set()
+            segContainingEdgeList = [] 
+            for (u,v) in edgeIndices:
+                paths_with_len = self.topo.k_shortest_paths(u , v , 5)
+                j=0
+                for path, l in paths_with_len:
+                    for i in range(len(path) - 1):
+                        p1 = path[i]
+                        p2 = path[i+1]
+                        if (e1,e2) == (p1 , p2) or (e1,e2) == (p2,p1):
+                            # print('in 2nd constr ' , (e1,e2), (p1 , p2) )
+                            segContainingEdge.add((u,v , j))
+                            segContainingEdgeList.append((u,v , j))
+                           
+                        
+                    j+=1
+            capacity = self.edgeFullCapacity(edge[0] , edge[1])
+            m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
 
-        # for edge in self.topo.edges:
-        #     e1 = edge[0].id
-        #     e2 = edge[1].id
-        #     segContainingEdge = []
-        #     for (u,v) in edgeIndices:
-        #         paths_with_len = self.topo.k_shortest_paths(u , v , 5)
-        #         j=0
-        #         for path, l in paths_with_len:
-        #             for i in range(len(path) - 1):
-        #                 p1 = path[i]
-        #                 p2 = path[i+1]
-        #                 if (e1,e2) == (p1 , p2) or (e1,e2) == (p2,p1):
-        #                     # print('in 2nd constr ' , (e1,e2), (p1 , p2) )
-        #                     segContainingEdge.append((u,v , j))
-        #             j+=1
-        #     capacity = self.edgeFullCapacity(edge[0] , edge[1])
-        #     print('in cons 2 ' , segContainingEdge)
-        #     m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
+
+        # for (u,v) in edgeIndices:
+        #     capacity = self.segmentCapacity(u,v)
+        #     m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= capacity)
+
+
 
         for (u,v) in edgeIndices:
-            capacity = self.segmentCapacity(u,v)
-            m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= capacity)
-
-
-
-        for (u,v) in edgeIndices:
+            mu = min(self.topo.nodes[u].remainingQubits , self.topo.nodes[v].remainingQubits)
+            # print('memory for ' , (u,v) , mu)
             m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= min(self.topo.nodes[u].remainingQubits , self.topo.nodes[v].remainingQubits))
             # m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[v].remainingQubits)
 
@@ -501,16 +339,16 @@ class SEE(AlgorithmBase):
                     v = edge[1]
                     varName = self.genNameByBbracket('f', [i, n, u.id, v.id])
                     self.fki_LP[SDpair][n][(u, v)] = m.getVarByName(varName).x
-                    if self.fki_LP[SDpair][n][(u, v)] > 0:
-                        print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
+                    # if self.fki_LP[SDpair][n][(u, v)] > 0:
+                    #     print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
 
                 for edge in self.segments:
                     u = edge[1]
                     v = edge[0]
                     varName = self.genNameByBbracket('f', [i, n, u.id, v.id])
                     self.fki_LP[SDpair][n][(u, v)] = m.getVarByName(varName).x
-                    if self.fki_LP[SDpair][n][(u, v)] > 0:
-                        print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
+                    # if self.fki_LP[SDpair][n][(u, v)] > 0:
+                    #     print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
                 
 
                 # for (u, v) in notEdge:
@@ -522,10 +360,10 @@ class SEE(AlgorithmBase):
                 varName = self.genNameByBbracket('t', [i, n])
                 self.tki_LP[SDpair][n] = m.getVarByName(varName).x
                 print('* ' , self.tki_LP[SDpair][n])
-        print('[SEE] LP2 end')
+        print('[SEE] LP1 end')
 
-    def EPS(self):
-        self.LP2()
+    def EPI(self):
+        self.LP1()
         # initialize fki(u, v), tki
         numOfFlow = {SDpair : 2 for SDpair in self.srcDstPairs}
         self.fki = {SDpair : [{} for n in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
@@ -547,7 +385,7 @@ class SEE(AlgorithmBase):
                     continue
                 paths = self.findPathsForEPS(SDpair, n)
 
-                print('for SD ' , SDpair[0].id , SDpair[1].id  , len(paths))
+                # print('for SD ' , SDpair[0].id , SDpair[1].id  , len(paths))
 
                 for u in self.topo.nodes:
                     for v in self.topo.nodes:
@@ -569,8 +407,9 @@ class SEE(AlgorithmBase):
                         node = path[nodeIndex]
                         next = path[nodeIndex + 1]
                         self.fki[SDpair][n][(node, next)] = 1
+            print('path for els ' , len(self.pathForELS[SDpair]))
                 
-        print('[REPS] EPS end')
+        print('[REPS] EPI end')
 
     def ELS(self):
         Ci = self.pathForELS
@@ -728,75 +567,12 @@ class SEE(AlgorithmBase):
                     link1.clearPhase4Swap()
                     link2.clearPhase4Swap()
 
-    def findPathsForEPI(self, SDpair):
-        src = SDpair[0]
-        dst = SDpair[1]
-        pathList = []
 
-        while self.DijkstraForEPI(SDpair):
-            path = []
-            currentNode = dst
-            while currentNode != self.topo.sentinel:
-                path.append(currentNode)
-                currentNode = self.parent[currentNode]
-
-            path = path[::-1]
-            width = self.widthForEPI(path, SDpair)
-            
-            for i in range(len(path) - 1):
-                node = path[i]
-                next = path[i + 1]
-                self.fi_LP[SDpair][(node, next)] -= width
-
-            path.append(width)
-            pathList.append(path.copy())
-
-        return pathList
     
-    def DijkstraForEPI(self, SDpair):
-        src = SDpair[0]
-        dst = SDpair[1]
-        self.parent = {node : self.topo.sentinel for node in self.topo.nodes}
-        adjcentList = {node : set() for node in self.topo.nodes}
-        for node in self.topo.nodes:
-            for link in node.links:
-                neighbor = link.theOtherEndOf(node)
-                adjcentList[node].add(neighbor)
+   
         
-        distance = {node : 0 for node in self.topo.nodes}
-        visited = {node : False for node in self.topo.nodes}
-        pq = PriorityQueue()
 
-        pq.put((-math.inf, src.id))
-        while not pq.empty():
-            (dist, uid) = pq.get()
-            u = self.topo.nodes[uid]
-            if visited[u]:
-                continue
-
-            if u == dst:
-                return True
-            distance[u] = -dist
-            visited[u] = True
-            
-            for next in adjcentList[u]:
-                newDistance = min(distance[u], self.fi_LP[SDpair][(u, next)])
-                if distance[next] < newDistance:
-                    distance[next] = newDistance
-                    self.parent[next] = u
-                    pq.put((-distance[next], next.id))
-
-        return False
-
-    def widthForEPI(self, path, SDpair):
-        numOfnodes = len(path)
-        width = math.inf
-        for i in range(numOfnodes - 1):
-            currentNode = path[i]
-            nextNode = path[i + 1]
-            width = min(width, self.fi_LP[SDpair][(currentNode, nextNode)])
-
-        return width
+   
     
     def findPathsForEPS(self, SDpair, n):
         src = SDpair[0]
@@ -853,7 +629,7 @@ class SEE(AlgorithmBase):
                 return True
             distance[u] = -dist
             visited[u] = True
-            print('in while loop adjacent list for ' , u.id , [x.id for x in adjcentList[u]])
+            # print('in while loop adjacent list for ' , u.id , [x.id for x in adjcentList[u]])
             
             for next in adjcentList[u]:
                 # print('inside loop1 ' , distance[u] , self.fki_LP[SDpair][n][(u, next)] )
@@ -863,7 +639,7 @@ class SEE(AlgorithmBase):
                 if distance[next] < newDistance:
                     distance[next] = newDistance
                     self.parent[next] = u
-                    print('parent of ' , next.id , u.id)
+                    # print('parent of ' , next.id , u.id)
                     pq.put((-distance[next], next.id))
 
         return False
@@ -932,7 +708,7 @@ if __name__ == '__main__':
     s = SEE(topo)
     result = AlgorithmResult()
     samplesPerTime = 10
-    ttime = 1
+    ttime = 10
     rtime = 1
     requests = {i : [] for i in range(ttime)}
     Ni = 5
@@ -940,21 +716,21 @@ if __name__ == '__main__':
     for i in range(ttime):
         if i < rtime:
 
-            ids = [(96, 71), (99, 40)]
-            for (p,q) in ids:
-                source = None
-                dest = None
-                for node in topo.nodes:
+            # ids = [(96, 71), (99, 40)]
+            # for (p,q) in ids:
+            #     source = None
+            #     dest = None
+            #     for node in topo.nodes:
 
-                    if node.id == p:
-                        source = node
-                    if node.id == q:
-                        dest = node
-                requests[i].append((source , dest))
+            #         if node.id == p:
+            #             source = node
+            #         if node.id == q:
+            #             dest = node
+            #     requests[i].append((source , dest))
 
-            # a = sample(topo.nodes, samplesPerTime)
-            # for n in range(0,samplesPerTime,2):
-            #     requests[i].append((a[n], a[n+1]))
+            a = sample(topo.nodes, samplesPerTime)
+            for n in range(0,samplesPerTime,2):
+                requests[i].append((a[n], a[n+1]))
         print('[REPS] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
 
     for i in range(ttime):

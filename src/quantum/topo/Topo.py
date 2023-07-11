@@ -171,6 +171,7 @@ class Topo:
 
         return path_cost
     def k_shortest_paths(self, source, target, k):
+        k=2
         paths_with_len=[]
 
         paths =  list(
@@ -184,7 +185,7 @@ class Topo:
                 n1 = path[i]
                 n2 = path[i+1]
                 edge_dist = self.distance(self.nodes[n1].loc , self.nodes[n2].loc)
-                if edge_dist > 1000:
+                if edge_dist > 500:
                     select = False
                     break
                 dist += edge_dist

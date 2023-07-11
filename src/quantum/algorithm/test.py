@@ -1,17 +1,21 @@
 import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+import gurobipy as gp
+from gurobipy import quicksum
 
-message = Mail(
-    from_email='tasdiqul@nevada.unr.edu',
-    to_emails='tasdiq088@gmail.com',
-    subject='Sending with Twilio SendGrid is Fun',
-    html_content='<strong>and easy to do anywhere, even with Python</strong>')
-try:
-    sg = SendGridAPIClient(os.environ.get('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'))
-    response = sg.send(message)
-    print(response.status_code)
-    print(response.body)
-    print(response.headers)
-except Exception as e:
-    print(e.message)
+m = gp.Model("test")
+x = m.addVar(vtype=gp.GRB.BINARY, name="x")
+y = m.addVar(vtype=gp.GRB.BINARY, name="y")
+z = m.addVar(vtype=gp.GRB.BINARY, name="z")
+
+m.update()
+
+m.setObjective(x+y+2*z , gp.GRB.MAXIMIZE)
+
+m.addConstr(quicksum([x+2,y,3*z]) <=8 , "c0")
+m.addConstr(quicksum([x,y]) >=1 , "c1")
+
+
+m.optimize()
+m.printAttr("X")
