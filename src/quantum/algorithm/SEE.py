@@ -66,12 +66,13 @@ class SEE(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
             self.EPI()
+            self.ELS()
+
         # print('[REPS] p2 end')
     
     def p4(self):
-        if len(self.srcDstPairs) > 0:
+        # if len(self.srcDstPairs) > 0:
             # self.EPI()
-            self.ELS()
         # print('[REPS] p4 end') 
         self.printResult()
         return self.result
@@ -191,7 +192,7 @@ class SEE(AlgorithmBase):
 
 
 
-        m = gp.Model('REPS for EPI')
+        m = gp.Model('SEE for EPI')
         m.setParam("OutputFlag", 0)
 
         f = [0] * numOfSDpairs
@@ -385,7 +386,7 @@ class SEE(AlgorithmBase):
                     continue
                 paths = self.findPathsForEPS(SDpair, n)
 
-                # print('for SD ' , SDpair[0].id , SDpair[1].id  , len(paths))
+                print('for SD ' , SDpair[0].id , SDpair[1].id  , len(paths))
 
                 for u in self.topo.nodes:
                     for v in self.topo.nodes:
@@ -395,7 +396,7 @@ class SEE(AlgorithmBase):
 
                     width = path[-1]
                     select = (width / self.tki_LP[SDpair][n]) >= random.random()
-                    print('path ', select , path)
+                    print('path ', select , [p.id for p in path[0:-1]] , width)
 
                     if not select:
                         continue
@@ -410,6 +411,20 @@ class SEE(AlgorithmBase):
             print('path for els ' , len(self.pathForELS[SDpair]))
                 
         print('[REPS] EPI end')
+
+    def ESC(self):
+        T = self.pathForELS
+        self.x = {(u, v , k) : 0 for u in self.topo.nodes for v in self.topo.nodes for k in range(len(self.topo.k_shortest_paths(u , v , 5)))}
+        self.D = []
+        for SDPair in T:
+            for path in T[SDPair]:
+                self.D.append(path)
+                for i in range(len(path) -1):
+                    n1 = path[i]
+                    n2 = path[i+1]
+                    
+
+
 
     def ELS(self):
         Ci = self.pathForELS
@@ -704,11 +719,11 @@ class SEE(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
+    topo = Topo.generate(10, 0.9, 5, 0.0002, 6)
     s = SEE(topo)
     result = AlgorithmResult()
-    samplesPerTime = 10
-    ttime = 10
+    samplesPerTime = 2
+    ttime = 1
     rtime = 1
     requests = {i : [] for i in range(ttime)}
     Ni = 5
