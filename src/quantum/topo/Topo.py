@@ -6,6 +6,7 @@ from queue import PriorityQueue
 import networkx as nx
 from .Node import Node
 from .Link import Link
+from .Segment import Segment
 from dataclasses import dataclass
 from itertools import islice
 
@@ -69,6 +70,7 @@ class Topo:
 
         self.nodes = []
         self.links = []
+        self.segments = []
         self.edges = [] # (Node, Node)
         self.q = q
         self.alpha = a
@@ -95,7 +97,7 @@ class Topo:
         for _node in _nodes:
             (p1, p2) = _positions[_node]
             # _positions[_node] = (p1 * 2000, p2 * 2000)
-            _positions[_node] = (p1 * 100, p2 * 100)
+            _positions[_node] = (p1 * 2000, p2 * 2000)
             _neighbors[_node] = list(nx.neighbors(G,_node))
           
         # Construct Node 
@@ -154,12 +156,47 @@ class Topo:
                 self.nodes[_edge[0]].links.append(link)
                 self.nodes[_edge[1]].links.append(link)
                 linkId += 1
+        segmentId = 0
+        # for edge in self.edges:
+        #     for path,l in self.k_shortest_paths(edge[0].id , edge[1].id):
+
+        #         segment = Segment(self, self.nodes[edge[0]], self.nodes[edge[1]], False, False, segmentId, l , path)
+        #         self.segments.append(segment)
+        #         self.nodes[edge[0]].segments.append(segment)
+        #         self.nodes[edge[1]].segments.append(segment)
+        #         linkId += 1
+        for node1 in self.nodes:
+            for node2 in self.nodes:
+                if  self.distance_by_node(node1.id , node2.id) <=500 or (((node1 , node2) in self.edges) or ((node2 , node1)  in self.edges)):
+                    k = 0
+                    for path,l in self.k_shortest_paths(node1.id , node2.id):
+                        for i in range(self.segmentCapacity(path)):
+                            segment = Segment(self, node1, node2, False, False, segmentId, l , path , k)
+                            self.segments.append(segment)
+                            node1.segments.append(segment)
+                            node2.segments.append(segment)
+                            linkId += 1
+                        k+=1
+        print('****** len seg' , len(self.segments))
+
 
         # print p and width for test
         # p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
         # print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
 
+    def segmentCapacity(self, path):
+        min_capacity = 1000
+        for i in range(len(path) - 1):
+            p1 = path[i]
+            p2 = path[i+1]
+            capacity = 0
+            for link in self.nodes[p1].links:
+                if link.contains(self.nodes[p2]):
+                    capacity += 1
+            if capacity < min_capacity:
+                min_capacity = capacity
+        return min_capacity
     def distance(self, pos1: tuple, pos2: tuple): # para1 type: tuple, para2 type: tuple
         d = 0
         for a, b in zip(pos1, pos2):
@@ -171,7 +208,7 @@ class Topo:
         # print('+_+_+_+_+_+_+_ ' , path_cost)
 
         return path_cost
-    def k_shortest_paths(self, source, target, k):
+    def k_shortest_paths(self, source, target, k = 2):
         k=2
         paths_with_len=[]
 
