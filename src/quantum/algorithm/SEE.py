@@ -66,7 +66,7 @@ class SEE(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
             self.EPI()
-            self.ELS()
+            self.ESC()
 
         # print('[REPS] p2 end')
     
@@ -185,6 +185,7 @@ class SEE(AlgorithmBase):
                     self.segments.append((node1 , node2))
                 else:
                     notEdge.append((node1.id , node2.id))
+        self.x_LP = {(u,v,k):0 for (u,v) in self.segments for k in range(len(self.topo.k_shortest_paths(u,v)))}
 
         print('len(edgeIndices)' , len(edgeIndices))
         print('len(self.topo.edges)' , len(self.topo.edges))
@@ -277,32 +278,30 @@ class SEE(AlgorithmBase):
 
 
         test_dict = {(u ,v , 0):0 for (u,v) in edgeIndices}
-        for edge in self.topo.edges:
-            e1 = edge[0].id
-            e2 = edge[1].id
-            segContainingEdge = set()
-            segContainingEdgeList = [] 
-            for (u,v) in edgeIndices:
-                paths_with_len = self.topo.k_shortest_paths(u , v , 5)
-                j=0
-                for path, l in paths_with_len:
-                    for i in range(len(path) - 1):
-                        p1 = path[i]
-                        p2 = path[i+1]
-                        if (e1,e2) == (p1 , p2) or (e1,e2) == (p2,p1):
-                            # print('in 2nd constr ' , (e1,e2), (p1 , p2) )
-                            segContainingEdge.add((u,v , j))
-                            segContainingEdgeList.append((u,v , j))
+        # for edge in self.topo.edges:
+        #     e1 = edge[0].id
+        #     e2 = edge[1].id
+        #     segContainingEdge = set()
+        #     segContainingEdgeList = [] 
+        #     for (u,v) in edgeIndices:
+        #         paths_with_len = self.topo.k_shortest_paths(u , v , 5)
+        #         j=0
+        #         for path, l in paths_with_len:
+        #             for i in range(len(path) - 1):
+        #                 p1 = path[i]
+        #                 p2 = path[i+1]
+        #                 if (e1,e2) == (p1 , p2) or (e1,e2) == (p2,p1):
+        #                     # print('in 2nd constr ' , (e1,e2), (p1 , p2) )
+        #                     segContainingEdge.add((u,v , j))
+        #                     segContainingEdgeList.append((u,v , j))
                            
                         
-                    j+=1
-            capacity = self.edgeFullCapacity(edge[0] , edge[1])
-            m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
+        #             j+=1
+        #     capacity = self.edgeFullCapacity(edge[0] , edge[1])
+        #     m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
 
 
-        # for (u,v) in edgeIndices:
-        #     capacity = self.segmentCapacity(u,v)
-        #     m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= capacity)
+
 
 
 
@@ -312,16 +311,6 @@ class SEE(AlgorithmBase):
             m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= min(self.topo.nodes[u].remainingQubits , self.topo.nodes[v].remainingQubits))
             # m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[v].remainingQubits)
 
-        # for u in range(numOfNodes):
-        #     segContainu = []
-        #     for (n1, n2) in edgeIndices:
-        #         if u == n1:
-        #             segContainu.append((n1, n2))
-        #         elif u == n2:
-        #             segContainu.append((n2, n1))
-        #     # print('len(edgeContainu)' , len(edgeContainu))
-        #     # print('self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
-        #     m.addConstr(quicksum(x[n1][n2][k] for (n1, n2) in segContainu for k in range(len(self.topo.k_shortest_paths(n1 , n2 , 5)))) <= self.topo.nodes[u].remainingQubits)
 
         # for i in range(numOfSDpairs):
         #     for n in range(numOfFlow[i] - 1):
@@ -361,6 +350,12 @@ class SEE(AlgorithmBase):
                 varName = self.genNameByBbracket('t', [i, n])
                 self.tki_LP[SDpair][n] = m.getVarByName(varName).x
                 print('* ' , self.tki_LP[SDpair][n])
+        for segment in self.segments:
+            u = segment[0]    
+            v = segment[1] 
+            for k in range(self.topo.k_shortest_paths(u, v)):
+                    varName = self.genNameByBbracket('x' , [u,v,k])
+                    self.x_LP[(u,v,k)] = m.getVarByName(varName).x
         print('[SEE] LP1 end')
 
     def EPI(self):
@@ -413,15 +408,50 @@ class SEE(AlgorithmBase):
         print('[REPS] EPI end')
 
     def ESC(self):
-        T = self.pathForELS
-        self.x = {(u, v , k) : 0 for u in self.topo.nodes for v in self.topo.nodes for k in range(len(self.topo.k_shortest_paths(u , v , 5)))}
+        T=[]
+        for SDPair in self.srcDstPairs:
+            paths = self.pathForELS[SDPair]
+            T.extend(paths)
+        T = sorted(T, key=lambda x: len(x))
+        print('T ' , T)
+        self.x = {(u, v , k) : 0 for u in self.topo.nodes for v in self.topo.nodes for k in range(len(self.topo.k_shortest_paths(u.id , v.id , 5)))}
         self.D = []
-        for SDPair in T:
-            for path in T[SDPair]:
-                self.D.append(path)
-                for i in range(len(path) -1):
-                    n1 = path[i]
-                    n2 = path[i+1]
+        
+        for path in T:
+            self.D.append(path)
+            availableSegments = []
+            availableResource = True
+
+            for i in range(len(path) -1):
+                n1 = path[i]
+                n2 = path[i+1]
+                print('len(n1 seg)',len(n1.segments))
+                print('len(n2 seg)',len(n2.segments))
+                availableSegmentsn1n2 = []
+                for seg in n1.segments:
+                    if seg.contains(n2):
+                        if seg.assignable():
+                            availableSegmentsn1n2.append(seg)
+                if not len(availableSegmentsn1n2):
+                    availableResource = False
+                    break
+                else:
+                    availableSegments.extend(availableSegmentsn1n2)
+            print('availableResource ' , availableResource)
+            if not availableResource:
+                self.D.remove(path)
+            else:
+                for seg in availableSegments:
+                    seg.assignQubits()
+                    self.x[seg.n1 , seg.n2 , seg.k] +=1
+            
+
+
+        print('=========len of D ' , len(self.D))
+
+
+
+
                     
 
 
@@ -719,7 +749,7 @@ class SEE(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(10, 0.9, 5, 0.0002, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = SEE(topo)
     result = AlgorithmResult()
     samplesPerTime = 2

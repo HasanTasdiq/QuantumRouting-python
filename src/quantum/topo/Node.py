@@ -14,6 +14,7 @@ class Node:
         self.prevInternalLinks = []
         self.neighbors = [] 
         self.links = [] 
+        self.segments = []
 
     def attemptSwapping(self, l1, l2 , times = 1):  # l1 -> Link, l2 -> Link
 
