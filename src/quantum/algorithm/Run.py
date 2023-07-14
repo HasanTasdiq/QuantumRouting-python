@@ -13,6 +13,7 @@ from REPS_cache import REPSCACHE
 from REPS_cache2 import REPSCACHE2
 from SEER_cache import SEERCACHE
 from SEER_cache2 import SEERCACHE2
+from SEE import SEE
 from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 from topo.Node import Node
@@ -60,8 +61,9 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
     algorithms.append(REPS(copy.deepcopy(topo)))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
-    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
+    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
@@ -252,7 +254,7 @@ if __name__ == '__main__':
     # print('--DONE--')
     # exit(0)
     # write remainRequestPerRound
-    rtime = 101
+    rtime = 21
     print('starting.. ')
     # sampleRounds = [0, 2, 4, 6, 8, 10]
     sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
