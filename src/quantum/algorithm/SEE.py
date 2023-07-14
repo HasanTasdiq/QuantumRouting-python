@@ -19,7 +19,7 @@ EPS = 1e-6
 class SEE(AlgorithmBase):
     def __init__(self, topo):
         super().__init__(topo)
-        self.name = "REPS"
+        self.name = "SEE"
         self.requests = []
         self.totalRequest = 0
         self.totalUsedQubits = 0
@@ -38,15 +38,15 @@ class SEE(AlgorithmBase):
         # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
         self.result.remainRequestPerRound.append(len(self.requests))
         
-        print("[REPS] total time:", self.result.waitingTime)
-        print("[REPS] remain request:", len(self.requests))
-        print("[REPS] current Timeslot:", self.timeSlot)
+        print("[SEE] total time:", self.result.waitingTime)
+        print("[SEE] remain request:", len(self.requests))
+        print("[SEE] current Timeslot:", self.timeSlot)
 
 
 
-        print('[REPS] idle time:', self.result.idleTime)
-        print('[REPS] remainRequestPerRound:', self.result.remainRequestPerRound)
-        print('[REPS] avg usedQubits:', self.result.usedQubits)
+        print('[SEE] idle time:', self.result.idleTime)
+        print('[SEE] remainRequestPerRound:', self.result.remainRequestPerRound)
+        print('[SEE] avg usedQubits:', self.result.usedQubits)
 
     def AddNewSDpairs(self):
         for (src, dst) in self.srcDstPairs:
@@ -455,6 +455,8 @@ class SEE(AlgorithmBase):
 
                     
     def ECE(self):
+        if len(self.D) <=0:
+            return
         e = {(segment.n1,segment.n2):0 for segment in self.topo.segments}
         Pi = {SDpair : [] for SDpair in self.srcDstPairs}
         needLink = {}
