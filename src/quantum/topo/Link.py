@@ -148,21 +148,13 @@ class Link:
         return b
 
     def tryEntanglement1(self , timeSlot = 0):
-        # print('ent prob', self.p)
-        # if self.entangled:
-        #     if (timeSlot - self.entangledTimeSlot) >= 10:
-        #         print('!!!!! ++++ ==== tryEntanglement1 (timeSlot - self.entangledTimeSlot) >= 10', self.n1.id , self.n2.id , timeSlot , True)
-
+ 
         if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
-            # print('tryEntanglement1 ', self.n1.id , self.n2.id , timeSlot , True)
             return True
-        # b = self.assigned and self.p >= random.random()
         b = self.p >= random.random()
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
-            
-        # print('tryEntanglement1 ', self.n1.id , self.n2.id , timeSlot , b)
         return b
     
     def tryEntanglement(self , timeSlot = 0, param=None):

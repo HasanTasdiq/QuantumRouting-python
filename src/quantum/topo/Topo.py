@@ -576,6 +576,80 @@ class Topo:
 
         return result
 
+
+    def getEstablishedEntanglementsWithSegments(self, n1: Node, n2: Node , timeSlot = 0):
+        stack = []
+        stack.append((None, n1)) #Pair[Link, Node]
+        result = []
+
+        while stack:
+            (incoming, current) = stack.pop()
+            # if incoming != None:
+            #     print(incoming.n1.id, incoming.n2.id, current.id)
+
+            if current == n2:
+                path = []
+                path.append((n2, None))
+                inc = incoming
+                # prev = None
+                while inc.n1 != n1 and inc.n2 != n1:
+                    if inc.n1 == path[-1][0]:
+                        prev = inc.n2
+                    elif inc.n2 == path[-1][0]:
+                        prev = inc.n1
+                        
+                    #inc = prev.internalLinks.first { it.contains(inc) }.otherThan(inc)
+                    for internalLinks in prev.internalSegments:
+                        # if inc in internalLinks:
+                        #     for links in internalLinks:
+                        #         if inc != links:
+                        #             inc = links
+                        #             break
+                        #         else:
+                        #             continue
+                        #     break
+                        # else:
+                        #     continue
+                        (l1, l2) = internalLinks
+                        if l1 == inc:
+                            inc = l2
+                            break
+                        elif l2 == inc:
+                            inc = l1
+                            break
+
+                    path.append((prev , inc))
+
+                path.append((n1 , inc))
+                path.reverse()
+                result.append(path)
+                continue
+
+            outgoingLinks = []
+            if incoming is None:
+                for links in current.segments:
+                    if links.isEntangled(timeSlot) and not links.swappedAt(current):
+                        outgoingLinks.append(links)
+            else:
+                for internalLinks in current.internalSegments:
+                    # for links in internalLinks:
+                    #     if incoming != links:
+                    #         outgoingLinks.append(links)
+                    (l1, l2) = internalLinks
+                    if l1 == incoming:
+                        outgoingLinks.append(l2)
+                    elif l2 == incoming:
+                        outgoingLinks.append(l1)
+                    
+            
+            for l in outgoingLinks:
+                if l.n1 == current:
+                    stack.append((l, l.n2))
+                elif l.n2 == current:
+                    stack.append((l, l.n1))
+
+        return result
+
         
     def clearAllEntanglements(self):
         for link in self.links:

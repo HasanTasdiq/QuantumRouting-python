@@ -12,6 +12,7 @@ from topo.Node import Node
 from topo.Link import Link
 from numpy import log as ln
 from random import sample
+import networkx as nx
 
 
 EPS = 1e-6
@@ -71,8 +72,8 @@ class SEE(AlgorithmBase):
         # print('[REPS] p2 end')
     
     def p4(self):
-        # if len(self.srcDstPairs) > 0:
-            # self.EPI()
+        if len(self.srcDstPairs) > 0:
+            self.ECE()
         # print('[REPS] p4 end') 
         self.printResult()
         return self.result
@@ -185,7 +186,7 @@ class SEE(AlgorithmBase):
                     self.segments.append((node1 , node2))
                 else:
                     notEdge.append((node1.id , node2.id))
-        self.x_LP = {(u,v,k):0 for (u,v) in self.segments for k in range(len(self.topo.k_shortest_paths(u,v)))}
+        # self.x_LP = {(u,v,k):0 for (u,v) in self.segments for k in range(len(self.topo.k_shortest_paths(u,v)))}
 
         print('len(edgeIndices)' , len(edgeIndices))
         print('len(self.topo.edges)' , len(self.topo.edges))
@@ -350,12 +351,12 @@ class SEE(AlgorithmBase):
                 varName = self.genNameByBbracket('t', [i, n])
                 self.tki_LP[SDpair][n] = m.getVarByName(varName).x
                 print('* ' , self.tki_LP[SDpair][n])
-        for segment in self.segments:
-            u = segment[0]    
-            v = segment[1] 
-            for k in range(self.topo.k_shortest_paths(u, v)):
-                    varName = self.genNameByBbracket('x' , [u,v,k])
-                    self.x_LP[(u,v,k)] = m.getVarByName(varName).x
+        # for segment in self.segments:
+        #     u = segment[0]    
+        #     v = segment[1] 
+        #     for k in range(self.topo.k_shortest_paths(u, v)):
+        #             varName = self.genNameByBbracket('x' , [u,v,k])
+        #             self.x_LP[(u,v,k)] = m.getVarByName(varName).x
         print('[SEE] LP1 end')
 
     def EPI(self):
@@ -403,7 +404,7 @@ class SEE(AlgorithmBase):
                         node = path[nodeIndex]
                         next = path[nodeIndex + 1]
                         self.fki[SDpair][n][(node, next)] = 1
-            print('path for els ' , len(self.pathForELS[SDpair]))
+            print('path for ESC ' , len(self.pathForELS[SDpair]))
                 
         print('[REPS] EPI end')
 
@@ -453,7 +454,134 @@ class SEE(AlgorithmBase):
 
 
                     
+    def ECE(self):
+        e = {(segment.n1,segment.n2):0 for segment in self.topo.segments}
+        Pi = {SDpair : [] for SDpair in self.srcDstPairs}
+        needLink = {}
 
+        for segment in  self.topo.segments:
+            if segment.entangled:
+                e[(segment.n1,segment.n2)] += 1
+        output = []
+        for path in self.D:
+            successfulEntangledPath = True
+            for i in range(len(path) - 1):
+                n1 = path[i]
+                n2 = path[i+1]
+                print('e[(n1,n2)]' , e[(n1,n2)])
+                if e[(n1,n2)] < 1:
+                    successfulEntangledPath = False
+                    break
+            if successfulEntangledPath:
+                for i in range(len(path) - 1):
+                    n1 = path[i]
+                    n2 = path[i+1]
+                    
+                    e[(n1,n2)] -= 1
+                output.append(path)
+
+                pathIndex = len(Pi[(path[0] , path[-1])])
+                Pi[(path[0] , path[-1])].append(path)
+                needLink[((path[0] , path[-1]), pathIndex)] = []
+                for nodeIndex in range(1, len(path) - 1):
+                    prev = path[nodeIndex - 1]
+                    node = path[nodeIndex]
+                    next = path[nodeIndex + 1]
+                    for segment in node.segments:
+                        if segment.contains(next) and segment.entangled and segment.notSwapped():
+                            targetLink1 = segment
+                        
+                        if segment.contains(prev) and segment.entangled and segment.notSwapped():
+                            targetLink2 = segment
+                    
+                    # self.y[((node, next))] += 1
+                    # self.y[((next, node))] += 1
+                    # self.y[((node, prev))] += 1
+                    # self.y[((prev, node))] += 1
+
+                    needLink[((path[0] , path[-1]), pathIndex)].append((node, targetLink1, targetLink2))
+        print('len(output) befre graph' , len(output))
+
+        G2 = nx.Graph()
+        for node in self.topo.nodes:
+            G2.add_node(node.id , weight = node.q)
+        for (n1,n2) in e.keys():
+            G2.add_edge(n1.id , n2.id)
+        moreEntangledConnection = True
+        while moreEntangledConnection:
+            moreEntangledConnection = False
+            for SDPair in self.srcDstPairs:
+                s = SDPair[0]
+                d =SDPair[1]
+                if len(Pi[SDPair]) < 2:  #Ni
+                    for u,v,da in G2.edges(data=True):
+                        if e[(self.topo.nodes[u] , self.topo.nodes[v])] >=1:
+                           da['weight']=math.exp(-5)
+                        else:
+                           da['weight']=math.exp(9)
+                    print('--- ' , s.id ,d.id)
+                    length , p = nx.single_source_dijkstra(G2 , s.id , d.id , weight='weight')
+                    if len(p) > 0:
+                        for i in range(len(p) - 1):
+                            n1 = p[i]
+                            n2 = p[i+1]
+                            e[(self.topo.nodes[u] , self.topo.nodes[v])] -= 1
+                        path = [self.topo.nodes[i] for i in p ]
+                        output.append(path)
+                        
+                        pathIndex = len(Pi[(path[0] , path[-1])])
+                        Pi[(path[0] , path[-1])].append(path)
+                        needLink[((path[0] , path[-1]), pathIndex)] = []
+                        for nodeIndex in range(1, len(path) - 1):
+                            prev = path[nodeIndex - 1]
+                            node = path[nodeIndex]
+                            next = path[nodeIndex + 1]
+                            for segment in node.segments:
+                                if segment.contains(next) and segment.entangled and segment.notSwapped():
+                                    targetLink1 = segment
+                                
+                                if segment.contains(prev) and segment.entangled and segment.notSwapped():
+                                    targetLink2 = segment
+                            
+                            needLink[((path[0] , path[-1]), pathIndex)].append((node, targetLink1, targetLink2))
+
+                        moreEntangledConnection = True
+        for path in output:
+            print('()()()() ' , [p.id for p in path])
+            # print(needLink)
+            
+
+        for SDpair in self.srcDstPairs:
+            src = SDpair[0]
+            dst = SDpair[1]
+            print('len(Pi[SDpair])' , len(Pi[SDpair]))
+
+            if len(Pi[SDpair]):
+                self.result.idleTime -= 1
+
+            for pathIndex in range(len(Pi[SDpair])):
+                path = Pi[SDpair][pathIndex]
+                # print('[REPS] attempt:', [node.id for node in path])
+                for (node, segment1, segment2) in needLink[(SDpair, pathIndex)]:
+                    swapped = node.attemptSegmentSwapping(segment1, segment2)
+                    print('swapped ' , node.id , (segment1.n1.id , segment1.n2.id) , (segment2.n1.id , segment2.n2.id) , swapped)
+                successPath = self.topo.getEstablishedEntanglementsWithSegments(src, dst)
+                print('len(successPath)' , len(successPath))
+                # for x in successPath:
+                #     print('[REPS] success:', [z.id for z in x])
+
+                if len(successPath):
+                    for request in self.requests:
+                        if (src, dst) == (request[0], request[1]):
+                            # print('[REPS] finish time:', self.timeSlot - request[2])
+                            self.requests.remove(request)
+                            break
+                for (node, segment1, segment2) in needLink[(SDpair, pathIndex)]:
+                    segment1.clearPhase4Swap()
+                    segment2.clearPhase4Swap()
+
+
+        
 
 
     def ELS(self):
