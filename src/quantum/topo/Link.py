@@ -11,6 +11,7 @@ class Link:
         self.entangled = False
         self.entangledTimeSlot = 0
         self.p = math.exp(-self.alpha * l)
+        self.l = l
         # print(self.n1.id, self.n2.id, self.p)
 
     def theOtherEndOf(self, n: Node): 

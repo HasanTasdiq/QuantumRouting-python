@@ -3,6 +3,7 @@ from time import process_time, sleep
 import sys
 sys.path.append("..")
 from topo.Topo import Topo  
+import time
 
 class AlgorithmResult:
     def __init__(self):
@@ -83,8 +84,9 @@ class AlgorithmBase:
     #         link.tryEntanglement(self.timeSlot, self.param)
     def tryEntanglement(self):
         for segment in self.topo.segments:
-            segment.tryEntanglement(self.timeSlot, self.param)
-            
+            entangled = segment.tryEntanglement(self.timeSlot, self.param)
+            print('entangled ' , entangled , segment.l)
+            time.sleep(.001)
     def preEntanglement(self):
         self.topo.preEntanglement()
 
