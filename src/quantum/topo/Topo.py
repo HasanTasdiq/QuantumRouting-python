@@ -168,6 +168,7 @@ class Topo:
         for node1 in self.nodes:
             for node2 in self.nodes:
                 if  self.distance_by_node(node1.id , node2.id) <=500 or (((node1 , node2) in self.edges) or ((node2 , node1)  in self.edges)):
+                # if  (((node1 , node2) in self.edges) or ((node2 , node1)  in self.edges)):
                     k = 0
                     for path,l in self.k_shortest_paths(node1.id , node2.id):
                         for i in range(self.segmentCapacity(path)):
@@ -175,9 +176,10 @@ class Topo:
                             self.segments.append(segment)
                             node1.segments.append(segment)
                             node2.segments.append(segment)
-                            linkId += 1
+                            segmentId += 1
                         k+=1
         print('****** len seg' , len(self.segments))
+        print('****** len links' , len(self.links))
 
 
         # print p and width for test
@@ -204,12 +206,15 @@ class Topo:
         return d ** 0.5
     def distance_by_node(self , node1 , node2):
         # print(node1 , node2)
-        (path_cost, sp) = nx.single_source_dijkstra(G=self.G, source=node1, target=node2 , weight='length')
-        # print('+_+_+_+_+_+_+_ ' , path_cost)
+        try:
+            (path_cost, sp) = nx.single_source_dijkstra(G=self.G, source=node1, target=node2 , weight='length')
+            # print('+_+_+_+_+_+_+_ ' , path_cost)
 
-        return path_cost
+            return path_cost
+        except:
+            return math.inf
     def k_shortest_paths(self, source, target, k = 2):
-        k=2
+        k=1
         paths_with_len=[]
 
         paths =  list(
@@ -502,6 +507,78 @@ class Topo:
 
         return result
 
+    def getEstablishedEntanglements2(self, n1: Node, n2: Node , timeSlot = 0):
+        stack = []
+        stack.append((None, n1)) #Pair[Link, Node]
+        result = []
+
+        while stack:
+            (incoming, current) = stack.pop()
+            # if incoming != None:
+            #     print(incoming.n1.id, incoming.n2.id, current.id)
+
+            if current == n2:
+                path = []
+                path.append(n2)
+                inc = incoming
+                while inc.n1 != n1 and inc.n2 != n1:
+                    if inc.n1 == path[-1]:
+                        prev = inc.n2
+                    elif inc.n2 == path[-1]:
+                        prev = inc.n1
+                        
+                    #inc = prev.internalLinks.first { it.contains(inc) }.otherThan(inc)
+                    for internalLinks in prev.internalLinks:
+                        # if inc in internalLinks:
+                        #     for links in internalLinks:
+                        #         if inc != links:
+                        #             inc = links
+                        #             break
+                        #         else:
+                        #             continue
+                        #     break
+                        # else:
+                        #     continue
+                        (l1, l2) = internalLinks
+                        if l1 == inc:
+                            inc = l2
+                            break
+                        elif l2 == inc:
+                            inc = l1
+                            break
+
+                    path.append(prev)
+
+                path.append(n1)
+                path.reverse()
+                result.append(path)
+                continue
+
+            outgoingLinks = []
+            if incoming is None:
+                for links in current.links:
+                    if links.isEntangled(timeSlot) and not links.swappedAt(current):
+                        outgoingLinks.append(links)
+            else:
+                for internalLinks in current.internalLinks:
+                    # for links in internalLinks:
+                    #     if incoming != links:
+                    #         outgoingLinks.append(links)
+                    (l1, l2) = internalLinks
+                    if l1 == incoming:
+                        outgoingLinks.append(l2)
+                    elif l2 == incoming:
+                        outgoingLinks.append(l1)
+                    
+            
+            for l in outgoingLinks:
+                if l.n1 == current:
+                    stack.append((l, l.n2))
+                elif l.n2 == current:
+                    stack.append((l, l.n1))
+
+        return result
+
 
     def getEstablishedEntanglementsWithLinks(self, n1: Node, n2: Node , timeSlot = 0):
         stack = []
@@ -628,7 +705,7 @@ class Topo:
             outgoingLinks = []
             if incoming is None:
                 for links in current.segments:
-                    if links.isEntangled(timeSlot) and not links.swappedAt(current):
+                    if links.entangled and not links.swappedAt(current):
                         outgoingLinks.append(links)
             else:
                 for internalLinks in current.internalSegments:

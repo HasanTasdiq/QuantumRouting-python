@@ -13,6 +13,7 @@ from topo.Link import Link
 from numpy import log as ln
 from random import sample
 import networkx as nx
+import time
 
 
 EPS = 1e-6
@@ -186,7 +187,7 @@ class SEE(AlgorithmBase):
                     self.segments.append((node1 , node2))
                 else:
                     notEdge.append((node1.id , node2.id))
-        # self.x_LP = {(u,v,k):0 for (u,v) in self.segments for k in range(len(self.topo.k_shortest_paths(u,v)))}
+        self.x_LP = {(u.id,v.id,k):0 for (u,v) in self.segments for k in range(len(self.topo.k_shortest_paths(u.id,v.id)))}
 
         print('len(edgeIndices)' , len(edgeIndices))
         print('len(self.topo.edges)' , len(self.topo.edges))
@@ -248,7 +249,8 @@ class SEE(AlgorithmBase):
                         neighborOfD.append(edge[1])
                     elif edge[1] == d:
                         neighborOfD.append(edge[0])
-                    
+                # neighborOfS = [segment.theOtherEndOf(self.topo.nodes[s]).id for segment in self.topo.nodes[s].segments]
+                # neighborOfD = [segment.theOtherEndOf(self.topo.nodes[d]).id for segment in self.topo.nodes[d].segments]
                 m.addConstr(quicksum(f[i][n][s][v] for v in neighborOfS) - quicksum(f[i][n][v][s] for v in neighborOfS) == t[i][n])
                 m.addConstr(quicksum(f[i][n][d][v] for v in neighborOfD) - quicksum(f[i][n][v][d] for v in neighborOfD) == -t[i][n])
 
@@ -261,57 +263,48 @@ class SEE(AlgorithmBase):
                         # m.addConstr(quicksum(f[i][n][u][v] for v in edgeUV) - quicksum(f[i][n][v][u] for v in edgeUV) == 0)
                 # for (u,v) in edgeIndices:
                 #     if u not in [s,d] and v not in [s,d]:
-                m.addConstr(quicksum(f[i][n][u][v] for (u,v) in edgeIndices) - quicksum(f[i][n][v][u] for (u,v) in edgeIndices) == 0)
+                for u in range(numOfNodes):
+                    if u not in [s,d]:    
+                        m.addConstr(quicksum(f[i][n][u][v] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) - quicksum(f[i][n][v][u] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) == 0)
 
 
         
-        # for (u, v) in edgeIndices:
-        #     m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum(self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
-        # for u in range(numOfNodes):
-        #     for v in range(numOfNodes):
-        #         # if ((u, v) in edgeIndices or (v, u) in edgeIndices):
-        #         # m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
-        #         m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
-
-        for (u,v) in edgeIndices:
+        for u in range(numOfNodes):
+            for v in range(numOfNodes):
                 m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
-                # m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
 
 
         test_dict = {(u ,v , 0):0 for (u,v) in edgeIndices}
-        # for edge in self.topo.edges:
-        #     e1 = edge[0].id
-        #     e2 = edge[1].id
-        #     segContainingEdge = set()
-        #     segContainingEdgeList = [] 
-        #     for (u,v) in edgeIndices:
-        #         paths_with_len = self.topo.k_shortest_paths(u , v , 5)
-        #         j=0
-        #         for path, l in paths_with_len:
-        #             for i in range(len(path) - 1):
-        #                 p1 = path[i]
-        #                 p2 = path[i+1]
-        #                 if (e1,e2) == (p1 , p2) or (e1,e2) == (p2,p1):
-        #                     # print('in 2nd constr ' , (e1,e2), (p1 , p2) )
-        #                     segContainingEdge.add((u,v , j))
-        #                     segContainingEdgeList.append((u,v , j))
+        for edge in self.topo.edges:
+            e1 = edge[0].id
+            e2 = edge[1].id
+            segContainingEdge = set()
+            segContainingEdgeList = [] 
+            for (u,v) in edgeIndices:
+                paths_with_len = self.topo.k_shortest_paths(u , v , 5)
+                j=0
+                for path, l in paths_with_len:
+                    for i in range(len(path) - 1):
+                        p1 = path[i]
+                        p2 = path[i+1]
+                        if (e1,e2) == (p1 , p2) or (e1,e2) == (p2,p1):
+                            # print('in 2nd constr ' , (e1,e2), (p1 , p2) )
+                            segContainingEdge.add((u,v , j))
+                            segContainingEdgeList.append((u,v , j))
                            
                         
-        #             j+=1
-        #     capacity = self.edgeFullCapacity(edge[0] , edge[1])
-        #     m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
+                    j+=1
+            capacity = self.edgeFullCapacity(edge[0] , edge[1])
+            m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
 
 
 
 
 
 
-        for (u,v) in edgeIndices:
-            mu = min(self.topo.nodes[u].remainingQubits , self.topo.nodes[v].remainingQubits)
-            # print('memory for ' , (u,v) , mu)
-            m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= min(self.topo.nodes[u].remainingQubits , self.topo.nodes[v].remainingQubits))
-            # m.addConstr(quicksum(x[u][v][k] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[v].remainingQubits)
-
+        #-----------
+        for u in range(numOfNodes):
+            m.addConstr(quicksum(x[u][v][k] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
 
         # for i in range(numOfSDpairs):
         #     for n in range(numOfFlow[i] - 1):
@@ -330,16 +323,16 @@ class SEE(AlgorithmBase):
                     v = edge[1]
                     varName = self.genNameByBbracket('f', [i, n, u.id, v.id])
                     self.fki_LP[SDpair][n][(u, v)] = m.getVarByName(varName).x
-                    # if self.fki_LP[SDpair][n][(u, v)] > 0:
-                    #     print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
+                    if not self.fki_LP[SDpair][n][(u, v)] == 0:
+                        print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
 
                 for edge in self.segments:
                     u = edge[1]
                     v = edge[0]
                     varName = self.genNameByBbracket('f', [i, n, u.id, v.id])
                     self.fki_LP[SDpair][n][(u, v)] = m.getVarByName(varName).x
-                    # if self.fki_LP[SDpair][n][(u, v)] > 0:
-                    #     print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
+                    if not self.fki_LP[SDpair][n][(u, v)] == 0:
+                        print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
                 
 
                 # for (u, v) in notEdge:
@@ -351,12 +344,20 @@ class SEE(AlgorithmBase):
                 varName = self.genNameByBbracket('t', [i, n])
                 self.tki_LP[SDpair][n] = m.getVarByName(varName).x
                 print('* ' , self.tki_LP[SDpair][n])
-        # for segment in self.segments:
-        #     u = segment[0]    
-        #     v = segment[1] 
-        #     for k in range(self.topo.k_shortest_paths(u, v)):
-        #             varName = self.genNameByBbracket('x' , [u,v,k])
-        #             self.x_LP[(u,v,k)] = m.getVarByName(varName).x
+        for segment in self.segments:
+            u = segment[0].id    
+            v = segment[1].id 
+            for k in range(len(self.topo.k_shortest_paths(u, v))):
+                    varName = self.genNameByBbracket('x' , [u,v,k])
+                    self.x_LP[(u,v,k)] = m.getVarByName(varName).x
+
+                    varName = self.genNameByBbracket('x' , [v,u,k])
+                    self.x_LP[(v,u,k)] = m.getVarByName(varName).x
+                    if self.x_LP[(v,u,k)] > 0 :
+                        print('self.x_LP[(v,u,k)]' , ((v,u,k)) , self.x_LP[(v,u,k)] )
+                    if self.x_LP[(u,v,k)] > 0:
+                        print('self.x_LP[(u,v,k)]' , ((u,v,k)) , self.x_LP[(u,v,k)] )
+
         print('[SEE] LP1 end')
 
     def EPI(self):
@@ -380,7 +381,7 @@ class SEE(AlgorithmBase):
 
                 if not self.tki[SDpair][n]:
                     continue
-                paths = self.findPathsForEPS(SDpair, n)
+                paths = self.findPathsForEPI(SDpair, n)
 
                 print('for SD ' , SDpair[0].id , SDpair[1].id  , len(paths))
 
@@ -414,7 +415,7 @@ class SEE(AlgorithmBase):
             paths = self.pathForELS[SDPair]
             T.extend(paths)
         T = sorted(T, key=lambda x: len(x))
-        print('T ' , T)
+        # print('T ' , T)
         self.x = {(u, v , k) : 0 for u in self.topo.nodes for v in self.topo.nodes for k in range(len(self.topo.k_shortest_paths(u.id , v.id , 5)))}
         self.D = []
         
@@ -426,31 +427,60 @@ class SEE(AlgorithmBase):
             for i in range(len(path) -1):
                 n1 = path[i]
                 n2 = path[i+1]
-                print('len(n1 seg)',len(n1.segments))
-                print('len(n2 seg)',len(n2.segments))
+                # print('len(n1 seg)',len(n1.segments))
+                # print('len(n2 seg)',len(n2.segments))
                 availableSegmentsn1n2 = []
+                assignedSeg = [0] * len(self.topo.k_shortest_paths(n1.id , n2.id))
+                for k in range(len(self.topo.k_shortest_paths(n1.id , n2.id))):
+                    assignedSeg[k] = 0
                 for seg in n1.segments:
+                    
                     if seg.contains(n2):
                         if seg.assignable():
-                            availableSegmentsn1n2.append(seg)
+                            print('assignedSeg[seg.k]', assignedSeg[seg.k], 'self.x_LP[(n1.id , n2.id , seg.k)]' , self.x_LP[(n1.id , n2.id , seg.k)])
+                            if assignedSeg[seg.k] < self.x_LP[(n1.id , n2.id , seg.k)]:
+                                availableSegmentsn1n2.append(seg)
+                                assignedSeg[seg.k] += 1
                 if not len(availableSegmentsn1n2):
+                    print('not available ' , n1.id , n2.id)
                     availableResource = False
                     break
                 else:
                     availableSegments.extend(availableSegmentsn1n2)
+                    print('available ' , n1.id , n2.id)
+
             print('availableResource ' , availableResource)
             if not availableResource:
                 self.D.remove(path)
             else:
                 for seg in availableSegments:
-                    seg.assignQubits()
-                    self.x[seg.n1 , seg.n2 , seg.k] +=1
+                    if self.getAssignedResources(seg.n1 , seg.n2) <= self.maxAssignment(seg.n1.id , seg.n2.id):
+                        seg.assignQubits()
+                        self.x[seg.n1 , seg.n2 , seg.k] +=1
             
 
 
         print('=========len of D ' , len(self.D))
 
 
+    def maxAssignment(self , uid , vid):
+        assignment = 0
+        for k in range(len(self.topo.k_shortest_paths(uid , vid ))):
+            assignment += self.entanglementProb(uid , vid , k) * self.x_LP[(uid , vid , k)]
+        return assignment
+    
+    def getAssignedResources(self , u , v):
+        assigned = 0
+        for path in self.D:
+            for i in range(len(path) - 1):
+                n1 = path[i]
+                n2 = path[i+1]
+                if (u , v) == (n1,n2):
+                    for segment in  u.segments:
+                        if segment.contains(v):
+                            if segment.assigned:
+                                assigned += 1
+        return assigned
 
 
                     
@@ -749,36 +779,47 @@ class SEE(AlgorithmBase):
 
    
     
-    def findPathsForEPS(self, SDpair, n):
+    def findPathsForEPI(self, SDpair, n):
         src = SDpair[0]
         dst = SDpair[1]
         pathList = []
 
-        while self.DijkstraForEPS(SDpair, n):
+        while self.DijkstraForEPI(SDpair, n):
             print('found dijkstra =====================')
             path = []
             currentNode = dst
+            print(len(self.parent))
+            # for key in self.parent.keys():
+            #     print(key.id , self.parent[key].id)
             while currentNode != self.topo.sentinel:
+                print('in while 2 currentNode ' , currentNode.id)
+
                 path.append(currentNode)
-                currentNode = self.parent[currentNode]
+                currentNode = self.parent[currentNode].pop()
+                time.sleep(.1)
+            print('after while loop 2')
 
             path = path[::-1]
-            width = self.widthForEPS(path, SDpair, n)
+            # width = self.widthForEPS(path, SDpair, n)
+            width = 0
             for i in range(len(path) - 1):
                 node = path[i]
                 next = path[i + 1]
-                self.fki_LP[SDpair][n][(node, next)] -= width
+                if width < self.fki_LP[SDpair][n][(node, next)]:
+                    width = self.fki_LP[SDpair][n][(node, next)]
+                self.fki_LP[SDpair][n][(node, next)] =0
 
             path.append(width)
             pathList.append(path.copy())
 
         return pathList
     
-    def DijkstraForEPS(self, SDpair, n):
+    def DijkstraForEPI(self, SDpair, n):
         print('-----------')
         src = SDpair[0]
         dst = SDpair[1]
-        self.parent = {node : self.topo.sentinel for node in self.topo.nodes}
+        print(src.id , dst.id , n)
+        self.parent = {node : [self.topo.sentinel] for node in self.topo.nodes}
         adjcentList = {node : set() for node in self.topo.nodes}
         # for node1 in self.topo.nodes:
         #     for node2 in self.topo.nodes:
@@ -796,26 +837,38 @@ class SEE(AlgorithmBase):
         pq.put((-math.inf, src.id))
         while not pq.empty():
             (dist, uid) = pq.get()
+            print('in dj uid ' , uid)
             u = self.topo.nodes[uid]
+            print('visited[u]' , u.id , visited[u])
             if visited[u]:
+                self.parent[u].pop()
                 continue
 
             if u == dst:
                 return True
-            distance[u] = -dist
+            # distance[u] = -dist
             visited[u] = True
             # print('in while loop adjacent list for ' , u.id , [x.id for x in adjcentList[u]])
             
             for next in adjcentList[u]:
                 # print('inside loop1 ' , distance[u] , self.fki_LP[SDpair][n][(u, next)] )
-                newDistance = min(distance[u], self.fki_LP[SDpair][n][(u, next)])
-                # print('inside loop1 ' , distance[next] , newDistance )
+                # newDistance = min(distance[u], self.fki_LP[SDpair][n][(u, next)])
+                # # print('inside loop1 ' , distance[next] , newDistance )
 
-                if distance[next] < newDistance:
-                    distance[next] = newDistance
-                    self.parent[next] = u
-                    # print('parent of ' , next.id , u.id)
-                    pq.put((-distance[next], next.id))
+                # if distance[next] < newDistance:
+                #     distance[next] = newDistance
+                #     self.parent[next] = u
+                #     # print('parent of ' , next.id , u.id)
+                #     pq.put((-distance[next], next.id))
+                
+                if self.fki_LP[SDpair][n][(u, next)] > 0:
+                    self.parent[next].append(u)
+                    pq.put((self.fki_LP[SDpair][n][(u, next)], next.id))
+                    print('in dj next ' , next.id)
+            print('---+---')
+
+
+
 
         return False
 
@@ -882,7 +935,7 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = SEE(topo)
     result = AlgorithmResult()
-    samplesPerTime = 2
+    samplesPerTime = 10
     ttime = 1
     rtime = 1
     requests = {i : [] for i in range(ttime)}
