@@ -80,6 +80,7 @@ class Topo:
         self.t_val = 2
         self.usedLinks = set()
         self.G = G
+        self.optimal_distance = 200
 
 
         # for pos in _positions:
@@ -167,8 +168,8 @@ class Topo:
         #         linkId += 1
         for node1 in self.nodes:
             for node2 in self.nodes:
-                if  self.distance_by_node(node1.id , node2.id) <=500 or (((node1 , node2) in self.edges) or ((node2 , node1)  in self.edges)):
-                # if  (((node1 , node2) in self.edges) or ((node2 , node1)  in self.edges)):
+                # if  self.distance_by_node(node1.id , node2.id) <=200 or (((node1 , node2) in self.edges) or ((node2 , node1)  in self.edges)):
+                if  (((node1 , node2) in self.edges)):
                     k = 0
                     for path,l in self.k_shortest_paths(node1.id , node2.id):
                         for i in range(self.segmentCapacity(path)):
@@ -203,6 +204,7 @@ class Topo:
         d = 0
         for a, b in zip(pos1, pos2):
             d += (a-b) ** 2
+        # print('link len ' , d** 0.5)
         return d ** 0.5
     def distance_by_node(self , node1 , node2):
         # print(node1 , node2)
@@ -228,7 +230,7 @@ class Topo:
                 n1 = path[i]
                 n2 = path[i+1]
                 edge_dist = self.distance(self.nodes[n1].loc , self.nodes[n2].loc)
-                if edge_dist > 500:
+                if edge_dist > self.optimal_distance:
                     select = False
                     break
                 dist += edge_dist
@@ -658,9 +660,12 @@ class Topo:
         stack = []
         stack.append((None, n1)) #Pair[Link, Node]
         result = []
+        # print('n1 n2 ' , n1.id , n2.id)
 
         while stack:
             (incoming, current) = stack.pop()
+            # print('current ' , current.id)
+
             # if incoming != None:
             #     print(incoming.n1.id, incoming.n2.id, current.id)
 
@@ -704,10 +709,14 @@ class Topo:
 
             outgoingLinks = []
             if incoming is None:
+                # print('len current.segments when incoming is none ' , len(current.segments))
                 for links in current.segments:
+                    # print('links.entangled ' , links.entangled , 'links.swappedAt(current) ' , links.swappedAt(current))
                     if links.entangled and not links.swappedAt(current):
                         outgoingLinks.append(links)
+                # print('len outgoing link for first node ' , len(outgoingLinks))
             else:
+                # print('len internalSegments  for  ', current.id , len(current.internalSegments))
                 for internalLinks in current.internalSegments:
                     # for links in internalLinks:
                     #     if incoming != links:
