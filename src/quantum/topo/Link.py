@@ -91,6 +91,15 @@ class Link:
         for internalLink in self.n2.internalLinks:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
+        
+
+        for internalSegment in self.n1.internalSegments:
+            if self in internalSegment:
+                self.n1.internalSegments.remove(internalSegment)
+
+        for internalSegment in self.n2.internalSegments:
+                    if self in internalSegment:
+                        self.n2.internalSegments.remove(internalSegment)
                         
     def keepPhase4Swap(self):
         self.s1 = False

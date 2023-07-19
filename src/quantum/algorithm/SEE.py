@@ -168,26 +168,26 @@ class SEE(AlgorithmBase):
                 
 
 
-        for edge in self.topo.edges:
-            edgeIndices.append((edge[0].id, edge[1].id))
-            self.segments.append(edge)
+        for edge in self.topo.segments:
+            edgeIndices.append((edge.n1.id, edge.n2.id))
+            self.segments.append((edge.n1 , edge.n2))
             # print('self.topo.distance_by_node(node1.id , node2.id) ' , self.topo.distance_by_node(edge[0].id , edge[1].id))
 
         
-        # for u in range(numOfNodes):
-        #     for v in range(numOfNodes):
-        #         if (u, v) not in edgeIndices and (v, u) not in edgeIndices:
-        #             notEdge.append((u, v))
+        for u in range(numOfNodes):
+            for v in range(numOfNodes):
+                if (u, v) not in edgeIndices and (v, u) not in edgeIndices:
+                    notEdge.append((u, v))
 
-        for node1 in self.topo.nodes:
-            for node2 in self.topo.nodes:
-                if node1 == node2:
-                    notEdge.append((node1.id , node2.id))
-                elif  self.topo.distance_by_node(node1.id , node2.id) <=self.topo.optimal_distance and ((node1.id , node2.id) not in edgeIndices) and ((node2.id , node1.id) not in edgeIndices):
-                    edgeIndices.append((node1.id , node2.id))
-                    self.segments.append((node1 , node2))
-                else:
-                    notEdge.append((node1.id , node2.id))
+        # for node1 in self.topo.nodes:
+        #     for node2 in self.topo.nodes:
+        #         if node1 == node2:
+        #             notEdge.append((node1.id , node2.id))
+        #         elif  self.topo.distance_by_node(node1.id , node2.id) <=self.topo.optimal_distance and ((node1.id , node2.id) not in edgeIndices) and ((node2.id , node1.id) not in edgeIndices):
+        #             edgeIndices.append((node1.id , node2.id))
+        #             self.segments.append((node1 , node2))
+        #         else:
+        #             notEdge.append((node1.id , node2.id))
         self.x_LP = {(u.id,v.id,k):0 for (u,v) in self.segments for k in range(len(self.topo.k_shortest_paths(u.id,v.id)))}
 
         print('len(edgeIndices)' , len(edgeIndices))
@@ -501,6 +501,8 @@ class SEE(AlgorithmBase):
             for i in range(len(path) - 1):
                 n1 = path[i]
                 n2 = path[i+1]
+                print('e[(n1,n2)] hop', n1.id , n2.id , self.topo.hopsAway(n1, n2, 'Hop')    )
+
                 print('e[(n1,n2)]', n1.id , n2.id , e[(n1,n2)])
                 print('distance between nodes ' , self.topo.distance_by_node(n1.id , n2.id))
                 if e[(n1,n2)] < 1:
