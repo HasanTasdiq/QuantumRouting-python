@@ -79,14 +79,16 @@ class AlgorithmBase:
     def p4(self):
         pass
 
-    # def tryEntanglement(self):
-    #     for link in self.topo.links:
-    #         link.tryEntanglement(self.timeSlot, self.param)
     def tryEntanglement(self):
+        for link in self.topo.links:
+            link.tryEntanglement(self.timeSlot, self.param)
         for segment in self.topo.segments:
             entangled = segment.tryEntanglement(self.timeSlot, self.param)
-            print('entangled ' , entangled , segment.l)
-            time.sleep(.001)
+    # def tryEntanglement(self):
+    #     for segment in self.topo.segments:
+    #         entangled = segment.tryEntanglement(self.timeSlot, self.param)
+    #         # print('entangled ' , entangled , segment.l)
+    #         # time.sleep(.001)
     def preEntanglement(self):
         self.topo.preEntanglement()
 

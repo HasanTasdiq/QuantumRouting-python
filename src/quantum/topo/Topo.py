@@ -9,6 +9,9 @@ from .Link import Link
 from .Segment import Segment
 from dataclasses import dataclass
 from itertools import islice
+from random import sample
+import itertools
+import time
 
 
 @dataclass
@@ -98,7 +101,7 @@ class Topo:
         for _node in _nodes:
             (p1, p2) = _positions[_node]
             # _positions[_node] = (p1 * 2000, p2 * 2000)
-            _positions[_node] = (p1 * 2000, p2 * 2000)
+            _positions[_node] = (p1 * 1000, p2 * 1000)
             _neighbors[_node] = list(nx.neighbors(G,_node))
           
         # Construct Node 
@@ -166,12 +169,17 @@ class Topo:
         #         self.nodes[edge[0]].segments.append(segment)
         #         self.nodes[edge[1]].segments.append(segment)
         #         linkId += 1
-        for node1 in self.nodes:
-            for node2 in self.nodes:
-                # if  self.distance_by_node(node1.id , node2.id) <=200 or (((node1 , node2) in self.edges) or ((node2 , node1)  in self.edges)):
-                if  (((node1 , node2) in self.edges)):
+        edgenum = 0
+        pairs = list(itertools.combinations(self.nodes, r=2))
+        # for node1 in self.nodes:
+        #     for node2 in self.nodes:
+        for node1 ,node2 in  pairs:
+                if  self.distance_by_node(node1.id , node2.id) <=self.optimal_distance or (((node1 , node2) in self.edges) or ((node2 , node1)  in self.edges)):
+                # if  (((node1 , node2) in self.edges)) or (((node2 , node1) in self.edges)):
                     k = 0
                     for path,l in self.k_shortest_paths(node1.id , node2.id):
+                        edgenum += 1
+
                         for i in range(self.segmentCapacity(path)):
                             segment = Segment(self, node1, node2, False, False, segmentId, l , path , k)
                             self.segments.append(segment)
@@ -179,8 +187,14 @@ class Topo:
                             node2.segments.append(segment)
                             segmentId += 1
                         k+=1
+                # else:
+                #     print('distance of non edge node pair ' , self.distance_by_node(node1.id , node2.id))
+                #     time.sleep(.01)
         print('****** len seg' , len(self.segments))
         print('****** len links' , len(self.links))
+        print('****** len edge' , len(self.edges))
+        print('****** edgenum' , edgenum)
+
 
 
         # print p and width for test
@@ -199,6 +213,7 @@ class Topo:
                     capacity += 1
             if capacity < min_capacity:
                 min_capacity = capacity
+        # print('min_capacity',min_capacity , len(path))
         return min_capacity
     def distance(self, pos1: tuple, pos2: tuple): # para1 type: tuple, para2 type: tuple
         d = 0
@@ -230,9 +245,6 @@ class Topo:
                 n1 = path[i]
                 n2 = path[i+1]
                 edge_dist = self.distance(self.nodes[n1].loc , self.nodes[n2].loc)
-                if edge_dist > self.optimal_distance:
-                    select = False
-                    break
                 dist += edge_dist
 
             if select:
@@ -577,7 +589,9 @@ class Topo:
                 if l.n1 == current:
                     stack.append((l, l.n2))
                 elif l.n2 == current:
-                    stack.append((l, l.n1))
+                    stack.append((l, l.n1))      # else:
+                #     print('distance of non edge node pair ' , self.distance_by_node(node1.id , node2.id))
+                #     time.sleep(.01)
 
         return result
 
@@ -665,6 +679,7 @@ class Topo:
         while stack:
             (incoming, current) = stack.pop()
             # print('current ' , current.id)
+            # print('len stack ' , len(stack))
 
             # if incoming != None:
             #     print(incoming.n1.id, incoming.n2.id, current.id)
@@ -679,19 +694,11 @@ class Topo:
                         prev = inc.n2
                     elif inc.n2 == path[-1][0]:
                         prev = inc.n1
-                        
+                    # print('prev ' , prev.id)
+                    time.sleep(.1)
                     #inc = prev.internalLinks.first { it.contains(inc) }.otherThan(inc)
                     for internalLinks in prev.internalSegments:
-                        # if inc in internalLinks:
-                        #     for links in internalLinks:
-                        #         if inc != links:
-                        #             inc = links
-                        #             break
-                        #         else:
-                        #             continue
-                        #     break
-                        # else:
-                        #     continue
+
                         (l1, l2) = internalLinks
                         if l1 == inc:
                             inc = l2
