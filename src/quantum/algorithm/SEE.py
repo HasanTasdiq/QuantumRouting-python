@@ -737,7 +737,7 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = SEE(topo)
     result = AlgorithmResult()
-    samplesPerTime = 6
+    samplesPerTime = 20
     ttime = 10
     rtime = 10
     requests = {i : [] for i in range(ttime)}
