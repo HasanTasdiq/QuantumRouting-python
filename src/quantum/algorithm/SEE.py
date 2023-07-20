@@ -25,6 +25,7 @@ class SEE(AlgorithmBase):
         self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
+        self.numOfFlowPerRequest = 5
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
@@ -148,7 +149,7 @@ class SEE(AlgorithmBase):
         numOfNodes = len(self.topo.nodes)
         numOfSDpairs = len(self.srcDstPairs)
         # numOfFlow = [self.ti[self.srcDstPairs[i]] for i in range(numOfSDpairs)]
-        numOfFlow = [2 for i in range(numOfSDpairs)]
+        numOfFlow = [self.numOfFlowPerRequest for i in range(numOfSDpairs)]
         if len(numOfFlow):
             maxN = max(numOfFlow)
         else:
@@ -364,7 +365,7 @@ class SEE(AlgorithmBase):
     def EPI(self):
         self.LP1()
         # initialize fki(u, v), tki
-        numOfFlow = {SDpair : 2 for SDpair in self.srcDstPairs}
+        numOfFlow = {SDpair : self.numOfFlowPerRequest for SDpair in self.srcDstPairs}
         self.fki = {SDpair : [{} for n in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.tki = {SDpair : [0 for n in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.pathForELS = {SDpair : [] for SDpair in self.srcDstPairs}
@@ -457,6 +458,7 @@ class SEE(AlgorithmBase):
                 for seg in availableSegments:
                     if self.getAssignedResources(seg.n1 , seg.n2) <= self.maxAssignment(seg.n1.id , seg.n2.id):
                         seg.assignQubits()
+                        print('assigning to ' , seg.n1.id , seg.n2.id , seg.k)
                         self.x[seg.n1 , seg.n2 , seg.k] +=1
             
 
@@ -488,13 +490,18 @@ class SEE(AlgorithmBase):
     def ECE(self):
         if len(self.D) <=0:
             return
-        e = {(segment.n1,segment.n2):0 for segment in self.topo.segments}
+        e = {}
+        for segment in self.topo.segments:
+            e[(segment.n1,segment.n2)] = 0
+            e[(segment.n2,segment.n1)] = 0
+
         Pi = {SDpair : [] for SDpair in self.srcDstPairs}
         needLink = {}
 
         for segment in  self.topo.segments:
             if segment.entangled:
                 e[(segment.n1,segment.n2)] += 1
+                e[(segment.n2,segment.n1)] += 1
         output = []
         for path in self.D:
             successfulEntangledPath = True
@@ -514,8 +521,10 @@ class SEE(AlgorithmBase):
                     n2 = path[i+1]
                     
                     e[(n1,n2)] -= 1
+                    e[(n2,n1)] -= 1
                 output.append(path)
 
+                print('(path[0] , path[-1]) ' , (path[0].id , path[-1].id))
                 pathIndex = len(Pi[(path[0] , path[-1])])
                 Pi[(path[0] , path[-1])].append(path)
                 needLink[((path[0] , path[-1]), pathIndex)] = []
@@ -562,6 +571,7 @@ class SEE(AlgorithmBase):
                             n1 = p[i]
                             n2 = p[i+1]
                             e[(self.topo.nodes[u] , self.topo.nodes[v])] -= 1
+                            e[(self.topo.nodes[v] , self.topo.nodes[u])] -= 1
                         path = [self.topo.nodes[i] for i in p ]
                         output.append(path)
                         
@@ -727,9 +737,9 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = SEE(topo)
     result = AlgorithmResult()
-    samplesPerTime = 2
-    ttime = 1
-    rtime = 1
+    samplesPerTime = 6
+    ttime = 10
+    rtime = 10
     requests = {i : [] for i in range(ttime)}
     Ni = 5
 
