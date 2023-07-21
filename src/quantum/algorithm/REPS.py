@@ -415,6 +415,8 @@ class REPS(AlgorithmBase):
                 for path in paths:
                     width = path[-1]
                     select = (width / self.tki_LP[SDpair][k]) >= random.random()
+                    print('*** path ', select , [p.id for p in path[0:-1]] , width)
+
                     if not select:
                         continue
                     path = path[:-1]
@@ -425,7 +427,7 @@ class REPS(AlgorithmBase):
                         next = path[nodeIndex + 1]
                         self.fki[SDpair][k][(node, next)] = 1
                 
-        # print('[REPS] EPS end')
+        print('[REPS] EPS end')
 
     def ELS(self):
         Ci = self.pathForELS
@@ -435,7 +437,7 @@ class REPS(AlgorithmBase):
         nextLink = {node : [] for node in self.topo.nodes}
         Pi = {SDpair : [] for SDpair in self.srcDstPairs}
         T = [SDpair for SDpair in self.srcDstPairs]
-
+        output = []
         while len(T) > 0:
             for SDpair in self.srcDstPairs:
                 removePaths = []
@@ -481,6 +483,7 @@ class REPS(AlgorithmBase):
             needLink[(i, pathIndex)] = []
 
             Pi[i].append(targetPath)
+            output.append(targetPath)
             for nodeIndex in range(1, len(targetPath) - 2):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -501,7 +504,7 @@ class REPS(AlgorithmBase):
                 needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
 
             T.remove(i)
-
+        print('** before graph ' , len(output))
         T = [SDpair for SDpair in self.srcDstPairs]
         while len(T) > 0:
             for SDpair in self.srcDstPairs:

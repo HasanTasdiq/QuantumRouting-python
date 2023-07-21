@@ -64,6 +64,7 @@ class Node:
                 break
         if b:
             self.internalSegments.append((l1, l2))
+            # print('internalSegments at node:' , self.id , [((seg[0].n1.id , seg[0].n2.id) , (seg[1].n1.id , seg[1].n2.id)) for seg in self.internalSegments])
         return b
 
 
