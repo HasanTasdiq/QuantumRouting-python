@@ -84,6 +84,7 @@ class Topo:
         self.usedLinks = set()
         self.G = G
         self.optimal_distance = 130
+        self.k_shortest_paths_dict = {}
 
 
         # for pos in _positions:
@@ -231,7 +232,9 @@ class Topo:
         except:
             return math.inf
     def k_shortest_paths(self, source, target, k = 2):
-        k=1
+        if (source,target) in self.k_shortest_paths_dict:
+            return self.k_shortest_paths_dict[(source,target)]
+        k=4
         paths_with_len=[]
 
         paths =  list(
@@ -247,11 +250,11 @@ class Topo:
                 edge_dist = self.distance(self.nodes[n1].loc , self.nodes[n2].loc)
                 dist += edge_dist
 
-            if select:
+            if len(path) <= 2 or dist < self.optimal_distance:
                 paths_with_len.append((path , dist))
             
 
-
+        self.k_shortest_paths_dict[(source,target)] = paths_with_len
         return paths_with_len
 
     def generate(n, q, k, a, degree):
@@ -670,15 +673,15 @@ class Topo:
         return result
 
 
-    def getEstablishedEntanglementsWithSegments(self, n1: Node, n2: Node , timeSlot = 0):
+    def getEstablishedEntanglementsWithSegments(self, n1: Node, n2: Node , timeSlot = 0 , needLink = None):
         stack = []
         stack.append((None, n1)) #Pair[Link, Node]
         result = []
-        # print('n1 n2 ' , n1.id , n2.id)
+        print('n1 n2 ' , n1.id , n2.id)
 
         while stack:
             (incoming, current) = stack.pop()
-            # print('current ' , current.id)
+            print('current ' , current.id)
             # print('len stack ' , len(stack))
 
             # if incoming != None:
@@ -716,12 +719,17 @@ class Topo:
 
             outgoingLinks = []
             if incoming is None:
-                # print('len current.segments when incoming is none ' , len(current.segments))
+                print('len current.segments when incoming is none ' , len(current.segments))
                 for links in current.segments:
                     # print('links.entangled ' , links.entangled , 'links.swappedAt(current) ' , links.swappedAt(current))
                     if links.entangled and not links.swappedAt(current):
                         outgoingLinks.append(links)
-                # print('len outgoing link for first node ' , len(outgoingLinks))
+                    if links.entangled and links.swappedAt(current):
+                        print('!!!!!!!!!!!!!!!!!   links.entangled and links.swappedAt(current)')
+                if len(outgoingLinks) <= 0:
+                    node , link1 , link2 = needLink[0]
+                    print('*** *** *** ' , node.id , link1.n1.id , link1.n2.id , link2.n1.id , link2.n2.id)
+                print('len outgoing link for first node ' , len(outgoingLinks))
             else:
                 # print('len internalSegments  for  ', current.id , len(current.internalSegments))
                 for internalLinks in current.internalSegments:
@@ -733,7 +741,11 @@ class Topo:
                         outgoingLinks.append(l2)
                     elif l2 == incoming:
                         outgoingLinks.append(l1)
-                    
+                
+                print('++++++++++++++++===+++++++++++for outgoing ' , current.id , [[((seg[0].n1.id , seg[0].n2.id) , (seg[1].n1.id , seg[1].n2.id)) for seg in current.internalSegments]])
+                
+                print('len outgoing link  ' , len(outgoingLinks))
+                
             
             for l in outgoingLinks:
                 if l.n1 == current:

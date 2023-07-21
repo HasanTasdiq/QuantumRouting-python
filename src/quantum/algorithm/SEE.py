@@ -3,7 +3,7 @@ import math
 import random
 import gurobipy as gp
 from gurobipy import quicksum
-from queue import PriorityQueue
+from queue import PriorityQueue , Queue
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from AlgorithmBase import AlgorithmResult
@@ -532,6 +532,8 @@ class SEE(AlgorithmBase):
                     prev = path[nodeIndex - 1]
                     node = path[nodeIndex]
                     next = path[nodeIndex + 1]
+                    targetLink1 = None
+                    targetLink2 = None
                     for segment in node.segments:
                         if segment.contains(next) and segment.entangled and segment.notSwapped():
                             targetLink1 = segment
@@ -543,9 +545,11 @@ class SEE(AlgorithmBase):
                     # self.y[((next, node))] += 1
                     # self.y[((node, prev))] += 1
                     # self.y[((prev, node))] += 1
-
-                    needLink[((path[0] , path[-1]), pathIndex)].append((node, targetLink1, targetLink2))
-        print('len(output) befoe graph' , len(output))
+                    if targetLink1 is not None and targetLink2 is not None:
+                        needLink[((path[0] , path[-1]), pathIndex)].append((node, targetLink1, targetLink2))
+                    else:
+                        print('???????????????++++++++?????????????? ')
+        print('len(output) before graph' , len(output))
 
         G2 = nx.Graph()
         for node in self.topo.nodes:
@@ -572,7 +576,7 @@ class SEE(AlgorithmBase):
                             n2 = p[i+1]
                             e[(self.topo.nodes[u] , self.topo.nodes[v])] -= 1
                             e[(self.topo.nodes[v] , self.topo.nodes[u])] -= 1
-                        path = [self.topo.nodes[i] for i in p ]
+                        path = [self.topo.nodes[nid] for nid in p ]
                         output.append(path)
                         
                         pathIndex = len(Pi[(path[0] , path[-1])])
@@ -582,16 +586,23 @@ class SEE(AlgorithmBase):
                             prev = path[nodeIndex - 1]
                             node = path[nodeIndex]
                             next = path[nodeIndex + 1]
+                            targetLink1 = None
+                            targetLink2 = None
                             for segment in node.segments:
                                 if segment.contains(next) and segment.entangled and segment.notSwapped():
                                     targetLink1 = segment
                                 
                                 if segment.contains(prev) and segment.entangled and segment.notSwapped():
                                     targetLink2 = segment
-                            
-                            needLink[((path[0] , path[-1]), pathIndex)].append((node, targetLink1, targetLink2))
+                            if targetLink1 is not None and targetLink2 is not None:
+                                needLink[((path[0] , path[-1]), pathIndex)].append((node, targetLink1, targetLink2))
+                            else:
+                                print('???????????????++++++++?????????????? ')
+
 
                         moreEntangledConnection = True
+        print('len(output) after graph' , len(output))
+        
         for path in output:
             print('()()()() ' , [p.id for p in path])
             # print(needLink)
@@ -612,12 +623,12 @@ class SEE(AlgorithmBase):
                 for (node, segment1, segment2) in needLink[(SDpair, pathIndex)]:
                     swapped = node.attemptSegmentSwapping(segment1, segment2)
                     print('swapped ' , node.id , (segment1.n1.id , segment1.n2.id) , (segment2.n1.id , segment2.n2.id) , swapped)
-                successPath = self.topo.getEstablishedEntanglementsWithSegments(src, dst)
-                print('len(successPath)' , len(successPath))
+                successPath = self.topo.getEstablishedEntanglementsWithSegments(src, dst , needLink = needLink[(SDpair, pathIndex)])
+                print('=============len(successPath)' , len(successPath))
                 # for x in successPath:
                 #     print('[REPS] success:', [z.id for z in x])
 
-                if len(successPath):
+                if len(successPath) > 0 or len(path) == 2:
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
                             # print('[REPS] finish time:', self.timeSlot - request[2])
@@ -689,11 +700,11 @@ class SEE(AlgorithmBase):
         
         distance = {node : 0 for node in self.topo.nodes}
         visited = {node : False for node in self.topo.nodes}
-        pq = PriorityQueue()
+        pq = Queue()
 
-        pq.put((-math.inf, src.id))
+        pq.put( src.id)
         while not pq.empty():
-            (dist, uid) = pq.get()
+            uid = pq.get()
             # print('in dj uid ' , uid)
             u = self.topo.nodes[uid]
             # print('visited[u]' , u.id , visited[u])
@@ -720,7 +731,8 @@ class SEE(AlgorithmBase):
                 
                 if self.fki_LP[SDpair][n][(u, next)] > 0:
                     self.parent[next].append(u)
-                    pq.put((self.fki_LP[SDpair][n][(u, next)], next.id))
+                    # pq.put((self.fki_LP[SDpair][n][(u, next)], next.id))
+                    pq.put(next.id)
                     # print('in dj next ' , next.id)
             # print('---+---')
 
@@ -737,7 +749,7 @@ if __name__ == '__main__':
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = SEE(topo)
     result = AlgorithmResult()
-    samplesPerTime = 20
+    samplesPerTime = 10
     ttime = 10
     rtime = 10
     requests = {i : [] for i in range(ttime)}

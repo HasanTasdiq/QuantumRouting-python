@@ -23,9 +23,9 @@ class Link:
     def contains(self, n: Node):  
         return self.n1 == n or self.n2 == n
     def swappedAt(self, n: Node): 
-        return (self.n1 == n and self.s1 or self.n2 == n and self.s2)
+        return ((self.n1 == n and self.s1) or (self.n2 == n and self.s2))
     def swappedAtTheOtherEndOf(self, n: Node):  
-        return (self.n1 == n and self.s2 or self.n2 == n and self.s1)
+        return ((self.n1 == n and self.s2) or (self.n2 == n and self.s1))
     def swapped(self):  
         return self.s1 or self.s2
     def notSwapped(self):  
