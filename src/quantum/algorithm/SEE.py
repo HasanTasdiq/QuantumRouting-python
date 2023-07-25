@@ -228,7 +228,7 @@ class SEE(AlgorithmBase):
                     x[u][v] = [0] * len(self.topo.k_shortest_paths(u , v , 5))
                     for k in range(len(self.topo.k_shortest_paths(u , v , 5))): #later we'll find this
                         if ((u, v) in edgeIndices or (v, u) in edgeIndices):
-                            x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.CONTINUOUS , name = "x[%d][%d][%d]"%(u,v,k))
+                            x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.INTEGER , name = "x[%d][%d][%d]"%(u,v,k))
 
         m.update()
         
@@ -355,11 +355,11 @@ class SEE(AlgorithmBase):
 
                     varName = self.genNameByBbracket('x' , [v,u,k])
                     self.x_LP[(v,u,k)] = m.getVarByName(varName).x
-                    # if self.x_LP[(v,u,k)] > 0 :
-                    #     print('self.x_LP[(v,u,k)]' , ((v,u,k)) , self.x_LP[(v,u,k)] )
-                    # if self.x_LP[(u,v,k)] > 0:
-                    #     print('self.x_LP[(u,v,k)]' , ((u,v,k)) , self.x_LP[(u,v,k)] )
-
+                    if self.x_LP[(v,u,k)] > 0 :
+                        print('self.x_LP[(v,u,k)]' , ((v,u,k)) , self.x_LP[(v,u,k)] )
+                    if self.x_LP[(u,v,k)] > 0:
+                        print('self.x_LP[(u,v,k)]' , ((u,v,k)) , self.x_LP[(u,v,k)] )
+        time.sleep(5)
         print('[SEE] LP1 end')
 
     def EPI(self):
@@ -416,6 +416,8 @@ class SEE(AlgorithmBase):
         for SDPair in self.srcDstPairs:
             paths = self.pathForELS[SDPair]
             T.extend(paths)
+            # for path in paths:
+            #     print('+++++++++ ===== path for ' , SDPair[0].id , SDPair[1].id , [p.id for p in path])
         T = sorted(T, key=lambda x: len(x))
         # print('T ' , T)
         self.x = {(u, v , k) : 0 for u in self.topo.nodes for v in self.topo.nodes for k in range(len(self.topo.k_shortest_paths(u.id , v.id , 5)))}
@@ -497,21 +499,36 @@ class SEE(AlgorithmBase):
 
         Pi = {SDpair : [] for SDpair in self.srcDstPairs}
         needLink = {}
+        selected = {node: [] for node in self.topo.nodes}
 
         for segment in  self.topo.segments:
             if segment.entangled:
                 e[(segment.n1,segment.n2)] += 1
                 e[(segment.n2,segment.n1)] += 1
+
+
+        print('+++++++++++++')
+        print('+++++++++++++')
+        print('+++++++++++++')
+        print('+++++++++++++')
+        print('+++++++++++++')
+        print('+++++++++++++')
+        print('+++++++++++++')
+        print('+++++++++++++')
+        print('+++++++++++++')
+        for segment in  self.topo.segments:
+            print('e: ' , (segment.n1.id,segment.n2.id), e[(segment.n1,segment.n2)] , 'hop:' , self.topo.hopsAway(segment.n1, segment.n2, 'Hop') ,'dist:' , segment.l , 'prob:',segment.p)
+            print('remaining qubit ' , segment.n1.remainingQubits , segment.n2.remainingQubits)
         output = []
         for path in self.D:
             successfulEntangledPath = True
             for i in range(len(path) - 1):
                 n1 = path[i]
                 n2 = path[i+1]
-                print('e[(n1,n2)] hop', n1.id , n2.id , self.topo.hopsAway(n1, n2, 'Hop')    )
+                # print('e[(n1,n2)] hop', n1.id , n2.id , self.topo.hopsAway(n1, n2, 'Hop')    )
 
-                print('e[(n1,n2)]', n1.id , n2.id , e[(n1,n2)])
-                print('distance between nodes ' , self.topo.distance_by_node(n1.id , n2.id))
+                # print('e[(n1,n2)]', n1.id , n2.id , e[(n1,n2)])
+                # print('distance between nodes ' , self.topo.distance_by_node(n1.id , n2.id))
                 if e[(n1,n2)] < 1:
                     successfulEntangledPath = False
                     break
@@ -524,7 +541,7 @@ class SEE(AlgorithmBase):
                     e[(n2,n1)] -= 1
                 output.append(path)
 
-                print('(path[0] , path[-1]) ' , (path[0].id , path[-1].id))
+                # print('(path[0] , path[-1]) ' , (path[0].id , path[-1].id))
                 pathIndex = len(Pi[(path[0] , path[-1])])
                 Pi[(path[0] , path[-1])].append(path)
                 needLink[((path[0] , path[-1]), pathIndex)] = []
@@ -535,20 +552,27 @@ class SEE(AlgorithmBase):
                     targetLink1 = None
                     targetLink2 = None
                     for segment in node.segments:
-                        if segment.contains(next) and segment.entangled and segment.notSwapped():
+                      
+                        if segment.contains(next) and segment.entangled and segment.notSwapped() and (segment not in selected[next]) :
                             targetLink1 = segment
+                            selected[next].append(segment)
+
                         
-                        if segment.contains(prev) and segment.entangled and segment.notSwapped():
+                        if segment.contains(prev) and segment.entangled and segment.notSwapped() and (segment not in selected[prev]):
                             targetLink2 = segment
+                            selected[prev].append(segment)
+
+
                     
-                    # self.y[((node, next))] += 1
-                    # self.y[((next, node))] += 1
-                    # self.y[((node, prev))] += 1
-                    # self.y[((prev, node))] += 1
                     if targetLink1 is not None and targetLink2 is not None:
                         needLink[((path[0] , path[-1]), pathIndex)].append((node, targetLink1, targetLink2))
                     else:
-                        print('???????????????++++++++?????????????? ')
+                        print('???????????????++++++++?????????????? 1111111111 :' , node.id , [p.id for p in path])
+                        for segment in node.segments:
+                            if segment.contains(next) and segment.entangled and segment.notSwapped():
+                                print('segment.contains(next) ' , 'segment.entangled' , segment.entangled  , 'segment.notSwapped()' , segment.notSwapped())
+
+
         print('len(output) before graph' , len(output))
 
         G2 = nx.Graph()
@@ -562,7 +586,7 @@ class SEE(AlgorithmBase):
             for SDPair in self.srcDstPairs:
                 s = SDPair[0]
                 d =SDPair[1]
-                if len(Pi[SDPair]) < 2:  #Ni
+                if len(Pi[SDPair]) < self.numOfFlowPerRequest:  #Ni
                     for u,v,da in G2.edges(data=True):
                         if e[(self.topo.nodes[u] , self.topo.nodes[v])] >=1:
                            da['weight']=math.exp(-5)
@@ -570,7 +594,8 @@ class SEE(AlgorithmBase):
                            da['weight']=math.exp(9)
                     print('--- ' , s.id ,d.id)
                     length , p = nx.single_source_dijkstra(G2 , s.id , d.id , weight='weight')
-                    if len(p) > 0:
+                    if len(p) > 0 and length < math.exp(9):
+                        print('len of p ' , length)
                         for i in range(len(p) - 1):
                             n1 = p[i]
                             n2 = p[i+1]
@@ -589,15 +614,18 @@ class SEE(AlgorithmBase):
                             targetLink1 = None
                             targetLink2 = None
                             for segment in node.segments:
-                                if segment.contains(next) and segment.entangled and segment.notSwapped():
+                                if segment.contains(next) and segment.entangled and segment.notSwapped() and (segment not in selected[next]) :
                                     targetLink1 = segment
+                                    selected[next].append(segment)
+
                                 
-                                if segment.contains(prev) and segment.entangled and segment.notSwapped():
+                                if segment.contains(prev) and segment.entangled and segment.notSwapped() and (segment not in selected[prev]):
                                     targetLink2 = segment
+                                    selected[prev].append(segment)
                             if targetLink1 is not None and targetLink2 is not None:
                                 needLink[((path[0] , path[-1]), pathIndex)].append((node, targetLink1, targetLink2))
                             else:
-                                print('???????????????++++++++?????????????? ')
+                                print('???????????????++++++++?????????????? 22222')
 
 
                         moreEntangledConnection = True
@@ -624,7 +652,7 @@ class SEE(AlgorithmBase):
                     swapped = node.attemptSegmentSwapping(segment1, segment2)
                     print('swapped ' , node.id , (segment1.n1.id , segment1.n2.id) , (segment2.n1.id , segment2.n2.id) , swapped)
                 successPath = self.topo.getEstablishedEntanglementsWithSegments(src, dst , needLink = needLink[(SDpair, pathIndex)])
-                print('=============len(successPath)' , len(successPath))
+                print('++++**************=============len(successPath)' , len(successPath))
                 # for x in successPath:
                 #     print('[REPS] success:', [z.id for z in x])
 
