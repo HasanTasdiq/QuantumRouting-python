@@ -43,7 +43,8 @@ class Node:
         return b
     def attemptSegmentSwapping(self, l1, l2 , times = 1):  # l1 -> Link, l2 -> Link
 
-    
+        if not l1.entangled or not l2.entangled:
+            return False
 
         if l1.n1 == self:    
             l1.s1 = True

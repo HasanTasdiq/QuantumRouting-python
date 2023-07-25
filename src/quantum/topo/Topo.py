@@ -719,13 +719,13 @@ class Topo:
 
             outgoingLinks = []
             if incoming is None:
-                print('len current.segments when incoming is none ' , len(current.segments))
+                # print('len current.segments when incoming is none ' , len(current.segments))
                 for links in current.segments:
                     # print('links.entangled ' , links.entangled , 'links.swappedAt(current) ' , links.swappedAt(current))
                     if links.entangled and not links.swappedAt(current):
                         outgoingLinks.append(links)
-                    if links.entangled and links.swappedAt(current):
-                        print('!!!!!!!!!!!!!!!!!   links.entangled and links.swappedAt(current)')
+                    # if links.entangled and links.swappedAt(current):
+                    #     print('!!!!!!!!!!!!!!!!!   links.entangled and links.swappedAt(current)')
                 if len(outgoingLinks) <= 0:
                     node , link1 , link2 = needLink[0]
                     print('*** *** *** ' , node.id , link1.n1.id , link1.n2.id , link2.n1.id , link2.n2.id)
@@ -741,7 +741,7 @@ class Topo:
                         outgoingLinks.append(l2)
                     elif l2 == incoming:
                         outgoingLinks.append(l1)
-                
+                    print('+++++++++=== l1' , l1.n1.id , l1.n2.id ,'l2' ,  l2.n1.id , l2.n2.id )
                 print('++++++++++++++++===+++++++++++for outgoing ' , current.id , [[((seg[0].n1.id , seg[0].n2.id) , (seg[1].n1.id , seg[1].n2.id)) for seg in current.internalSegments]])
                 
                 print('len outgoing link  ' , len(outgoingLinks))
