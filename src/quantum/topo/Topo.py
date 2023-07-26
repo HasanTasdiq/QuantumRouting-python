@@ -234,7 +234,7 @@ class Topo:
     def k_shortest_paths(self, source, target, k = 2):
         if (source,target) in self.k_shortest_paths_dict:
             return self.k_shortest_paths_dict[(source,target)]
-        k=4
+        k=1
         paths_with_len=[]
 
         paths =  list(
@@ -677,11 +677,11 @@ class Topo:
         stack = []
         stack.append((None, n1)) #Pair[Link, Node]
         result = []
-        print('n1 n2 ' , n1.id , n2.id)
+        # print('n1 n2 ' , n1.id , n2.id)
 
         while stack:
             (incoming, current) = stack.pop()
-            print('current ' , current.id)
+            # print('current ' , current.id)
             # print('len stack ' , len(stack))
 
             # if incoming != None:
@@ -726,10 +726,10 @@ class Topo:
                         outgoingLinks.append(links)
                     # if links.entangled and links.swappedAt(current):
                     #     print('!!!!!!!!!!!!!!!!!   links.entangled and links.swappedAt(current)')
-                if len(outgoingLinks) <= 0:
-                    node , link1 , link2 = needLink[0]
-                    print('*** *** *** ' , node.id , link1.n1.id , link1.n2.id , link2.n1.id , link2.n2.id)
-                print('len outgoing link for first node ' , len(outgoingLinks))
+                # if len(outgoingLinks) <= 0:
+                #     node , link1 , link2 = needLink[0]
+                #     print('*** *** *** ' , node.id , link1.n1.id , link1.n2.id , link2.n1.id , link2.n2.id)
+                # print('len outgoing link for first node ' , len(outgoingLinks))
             else:
                 # print('len internalSegments  for  ', current.id , len(current.internalSegments))
                 for internalLinks in current.internalSegments:
@@ -741,10 +741,10 @@ class Topo:
                         outgoingLinks.append(l2)
                     elif l2 == incoming:
                         outgoingLinks.append(l1)
-                    print('+++++++++=== l1' , l1.n1.id , l1.n2.id ,'l2' ,  l2.n1.id , l2.n2.id )
-                print('++++++++++++++++===+++++++++++for outgoing ' , current.id , [[((seg[0].n1.id , seg[0].n2.id) , (seg[1].n1.id , seg[1].n2.id)) for seg in current.internalSegments]])
+                #     print('+++++++++=== l1' , l1.n1.id , l1.n2.id ,'l2' ,  l2.n1.id , l2.n2.id )
+                # print('++++++++++++++++===+++++++++++for outgoing ' , current.id , [[((seg[0].n1.id , seg[0].n2.id) , (seg[1].n1.id , seg[1].n2.id)) for seg in current.internalSegments]])
                 
-                print('len outgoing link  ' , len(outgoingLinks))
+                # print('len outgoing link  ' , len(outgoingLinks))
                 
             
             for l in outgoingLinks:

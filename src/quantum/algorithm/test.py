@@ -6,5 +6,5 @@ from gurobipy import quicksum
 import networkx as nx
 
 G = nx.cycle_graph(7)
-paths = list(nx.shortest_simple_paths(G, 0, 1))
+paths = [v for v in [u for u in range(10)]]
 print(paths)
