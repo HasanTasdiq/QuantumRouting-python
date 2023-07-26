@@ -228,7 +228,8 @@ class SEE(AlgorithmBase):
                     x[u][v] = [0] * len(self.topo.k_shortest_paths(u , v , 5))
                     for k in range(len(self.topo.k_shortest_paths(u , v , 5))): #later we'll find this
                         if ((u, v) in edgeIndices or (v, u) in edgeIndices):
-                            x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.INTEGER , name = "x[%d][%d][%d]"%(u,v,k))
+                            x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.CONTINUOUS , name = "x[%d][%d][%d]"%(u,v,k))
+                            # x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.INTEGER , name = "x[%d][%d][%d]"%(u,v,k))
 
         m.update()
         
