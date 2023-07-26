@@ -25,7 +25,7 @@ class SEE(AlgorithmBase):
         self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
-        self.numOfFlowPerRequest = 5
+        self.numOfFlowPerRequest = 10
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
@@ -267,13 +267,16 @@ class SEE(AlgorithmBase):
                 #     if u not in [s,d] and v not in [s,d]:
                 for u in range(numOfNodes):
                     if u not in [s,d]:    
-                        m.addConstr(quicksum(f[i][n][u][v] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) - quicksum(f[i][n][v][u] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) == 0)
+                        neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
+
+                        m.addConstr(quicksum(f[i][n][u][v] for v in neighbourOfU) - quicksum(f[i][n][v][u] for v in neighbourOfU) == 0)
 
 
         
-        for u in range(numOfNodes):
-            for v in range(numOfNodes):
-                m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+        # for u in range(numOfNodes):
+        #     for v in range(numOfNodes):
+        for (u,v) in edgeIndices: 
+            m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
 
 
         test_dict = {(u ,v , 0):0 for (u,v) in edgeIndices}
@@ -297,6 +300,7 @@ class SEE(AlgorithmBase):
                         
                     j+=1
             capacity = self.edgeFullCapacity(edge[0] , edge[1])
+            # print('capacity ' , capacity , 'len(segContainingEdge)' , len(segContainingEdge))
             m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
 
 
@@ -306,7 +310,8 @@ class SEE(AlgorithmBase):
 
         #-----------
         for u in range(numOfNodes):
-            m.addConstr(quicksum(x[u][v][k] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
+            neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
+            m.addConstr(quicksum(x[u][v][k] for v in neighbourOfU for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
 
         # for i in range(numOfSDpairs):
         #     for n in range(numOfFlow[i] - 1):
@@ -315,23 +320,21 @@ class SEE(AlgorithmBase):
 
         print('optimize start....')
         m.optimize()
+        print('model.status' , m.status)
 
         for i in range(numOfSDpairs):
             SDpair = self.srcDstPairs[i]
 
             for n in range(numOfFlow[i]):
-                for edge in self.segments:
-                    u = edge[0]
-                    v = edge[1]
-                    varName = self.genNameByBbracket('f', [i, n, u.id, v.id])
+                for (u,v) in edgeIndices:
+                    varName = self.genNameByBbracket('f', [i, n, u, v])
                     self.fki_LP[SDpair][n][(u, v)] = m.getVarByName(varName).x
                     # if not self.fki_LP[SDpair][n][(u, v)] == 0:
                     #     print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
 
-                for edge in self.segments:
-                    u = edge[1]
-                    v = edge[0]
-                    varName = self.genNameByBbracket('f', [i, n, u.id, v.id])
+                for (v,u) in edgeIndices:
+
+                    varName = self.genNameByBbracket('f', [i, n, u, v])
                     self.fki_LP[SDpair][n][(u, v)] = m.getVarByName(varName).x
                     # if not self.fki_LP[SDpair][n][(u, v)] == 0:
                     #     print('# ',SDpair[0].id ,SDpair[1].id, '  ' , u.id , v.id , '  '  , self.fki_LP[SDpair][n][(u, v)])
@@ -346,19 +349,33 @@ class SEE(AlgorithmBase):
                 varName = self.genNameByBbracket('t', [i, n])
                 self.tki_LP[SDpair][n] = m.getVarByName(varName).x
                 print('* ' , self.tki_LP[SDpair][n])
-        for segment in self.segments:
-            u = segment[0].id    
-            v = segment[1].id 
+        
+
+        for i in range(numOfSDpairs):
+            SDpair = self.srcDstPairs[i]
+            for (u,v) in edgeIndices:
+                sum = 0
+
+                for n in range(numOfFlow[i]):
+                    sum += self.fki_LP[SDpair][n][(u, v)]
+                # print('########################################self.fki_LP[%d][n][(%d, %d)]'%(i , u.id , v.id) , sum)
+
+        time.sleep(5)
+        
+        for (u,v) in edgeIndices:
+            # u = segment[0].id    
+            # v = segment[1].id 
             for k in range(len(self.topo.k_shortest_paths(u, v))):
                     varName = self.genNameByBbracket('x' , [u,v,k])
                     self.x_LP[(u,v,k)] = m.getVarByName(varName).x
 
                     varName = self.genNameByBbracket('x' , [v,u,k])
                     self.x_LP[(v,u,k)] = m.getVarByName(varName).x
-                    if self.x_LP[(v,u,k)] > 0 :
-                        print('self.x_LP[(v,u,k)]' , ((v,u,k)) , self.x_LP[(v,u,k)] )
-                    if self.x_LP[(u,v,k)] > 0:
-                        print('self.x_LP[(u,v,k)]' , ((u,v,k)) , self.x_LP[(u,v,k)] )
+                    # if self.x_LP[(v,u,k)] > 0 :
+                    #     print('self.x_LP[(v,u,k)]' , ((v,u,k)) , self.x_LP[(v,u,k)] )
+                    # if self.x_LP[(u,v,k)] > 0:
+                    #     print('self.x_LP[(u,v,k)]' , ((u,v,k)) , self.x_LP[(u,v,k)] )
+        
         time.sleep(5)
         print('[SEE] LP1 end')
 
@@ -441,8 +458,8 @@ class SEE(AlgorithmBase):
                     
                     if seg.contains(n2):
                         if seg.assignable():
-                            # print('assignedSeg[seg.k]', assignedSeg[seg.k], 'self.x_LP[(n1.id , n2.id , seg.k)]' , self.x_LP[(n1.id , n2.id , seg.k)])
-                            if assignedSeg[seg.k] < self.x_LP[(n1.id , n2.id , seg.k)]:
+                            print('assignedSeg[seg.k]', assignedSeg[seg.k], 'self.x_LP[(%d , %d , %d)]'%(n1.id , n2.id , seg.k) , self.x_LP[(n1.id , n2.id , seg.k)] , self.x_LP[(n2.id , n1.id , seg.k)])
+                            if assignedSeg[seg.k] < self.x_LP[(n1.id , n2.id , seg.k)] or assignedSeg[seg.k] < self.x_LP[(n2.id , n1.id , seg.k)]:
                                 availableSegmentsn1n2.append(seg)
                                 assignedSeg[seg.k] += 1
                 if not len(availableSegmentsn1n2):
@@ -692,7 +709,7 @@ class SEE(AlgorithmBase):
 
                 path.append(currentNode)
                 currentNode = self.parent[currentNode].pop()
-                time.sleep(.1)
+                # time.sleep(.1)
             # print('after while loop 2')
 
             path = path[::-1]
@@ -701,9 +718,13 @@ class SEE(AlgorithmBase):
             for i in range(len(path) - 1):
                 node = path[i]
                 next = path[i + 1]
-                if width < self.fki_LP[SDpair][n][(node, next)]:
-                    width = self.fki_LP[SDpair][n][(node, next)]
-                self.fki_LP[SDpair][n][(node, next)] =0
+                if width < self.fki_LP[SDpair][n][(node.id, next.id)]:
+                    width = self.fki_LP[SDpair][n][(node.id, next.id)]
+
+            for i in range(len(path) - 1):
+                node = path[i]
+                next = path[i + 1]
+                self.fki_LP[SDpair][n][(node.id, next.id)] -= width
 
             path.append(width)
             pathList.append(path.copy())
@@ -757,7 +778,7 @@ class SEE(AlgorithmBase):
                 #     # print('parent of ' , next.id , u.id)
                 #     pq.put((-distance[next], next.id))
                 
-                if self.fki_LP[SDpair][n][(u, next)] > 0:
+                if self.fki_LP[SDpair][n][(u.id, next.id)] > 0:
                     self.parent[next].append(u)
                     # pq.put((self.fki_LP[SDpair][n][(u, next)], next.id))
                     pq.put(next.id)
@@ -786,7 +807,7 @@ if __name__ == '__main__':
     for i in range(ttime):
         if i < rtime:
 
-            # ids = [(96, 71), (99, 40)]
+            # ids = [(1, 2)]
             # for (p,q) in ids:
             #     source = None
             #     dest = None
