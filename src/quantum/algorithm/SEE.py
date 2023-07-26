@@ -251,35 +251,35 @@ class SEE(AlgorithmBase):
                         neighborOfD.append(edge[1])
                     elif edge[1] == d:
                         neighborOfD.append(edge[0])
-                # neighborOfS = [segment.theOtherEndOf(self.topo.nodes[s]).id for segment in self.topo.nodes[s].segments]
-                # neighborOfD = [segment.theOtherEndOf(self.topo.nodes[d]).id for segment in self.topo.nodes[d].segments]
+
+
+                # --------1a----------------
                 m.addConstr(quicksum(f[i][n][s][v] for v in neighborOfS) - quicksum(f[i][n][v][s] for v in neighborOfS) == t[i][n])
+                # --------1b---------------------
                 m.addConstr(quicksum(f[i][n][d][v] for v in neighborOfD) - quicksum(f[i][n][v][d] for v in neighborOfD) == -t[i][n])
 
-                # for u in range(numOfNodes):
-                #     if u not in [s, d]:
-                #         edgeUV = []
-                #         for v in range(numOfNodes):
-                #             if v not in [s, d]:
-                #                 edgeUV.append(v)
-                        # m.addConstr(quicksum(f[i][n][u][v] for v in edgeUV) - quicksum(f[i][n][v][u] for v in edgeUV) == 0)
-                # for (u,v) in edgeIndices:
-                #     if u not in [s,d] and v not in [s,d]:
+
+                # --------1c------------------
                 for u in range(numOfNodes):
                     if u not in [s,d]:    
-                        neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
+                        # neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
+                        # m.addConstr(quicksum(f[i][n][u][v] for v in neighbourOfU) - quicksum(f[i][n][v][u] for v in neighbourOfU) == 0)
 
-                        m.addConstr(quicksum(f[i][n][u][v] for v in neighbourOfU) - quicksum(f[i][n][v][u] for v in neighbourOfU) == 0)
+
+                        m.addConstr(quicksum(f[i][n][u][v] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) - quicksum(f[i][n][v][u] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) == 0)
 
 
         
-        # for u in range(numOfNodes):
-        #     for v in range(numOfNodes):
-        for (u,v) in edgeIndices: 
-            m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
-
-
-        test_dict = {(u ,v , 0):0 for (u,v) in edgeIndices}
+        # ---------------------1d-----------------
+        # for (u,v) in edgeIndices: 
+        #     m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+        
+        for u in range(numOfNodes):
+            for v in range(numOfNodes):
+                m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+        
+        
+        # ----------------1e-----------------
         for edge in self.topo.edges:
             e1 = edge[0].id
             e2 = edge[1].id
@@ -308,18 +308,26 @@ class SEE(AlgorithmBase):
 
 
 
-        #-----------
+        #----------- 1f------------
         for u in range(numOfNodes):
-            neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
-            m.addConstr(quicksum(x[u][v][k] for v in neighbourOfU for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
+            # neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
+            # print('len(neighbourOfU)' , len(neighbourOfU) , 'self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
+            # m.addConstr(quicksum(x[u][v][k] for v in neighbourOfU for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
+            
+            m.addConstr(quicksum(x[u][v][k] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
 
+
+
+        # --------------------------------------
         # for i in range(numOfSDpairs):
         #     for n in range(numOfFlow[i] - 1):
         #         m.addConstr(t[i][n] >= t[i][n+1])
-
+        # -------------------------------------
 
         print('optimize start....')
         m.optimize()
+        if m.status != 2:
+            return
         print('model.status' , m.status)
 
         for i in range(numOfSDpairs):
