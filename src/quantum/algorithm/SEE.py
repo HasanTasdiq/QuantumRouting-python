@@ -253,6 +253,19 @@ class SEE(AlgorithmBase):
                     elif edge[1] == d:
                         neighborOfD.append(edge[0])
 
+                # neighborOfS = set()
+                # neighborOfD = set()
+
+                # for edge in edgeIndices:
+                #     if edge[0] == s:
+                #         neighborOfS.add(edge[1])
+                #     elif edge[1] == s:
+                #         neighborOfS.add(edge[0])
+                #     if edge[0] == d:
+                #         neighborOfD.add(edge[1])
+                #     elif edge[1] == d:
+                #         neighborOfD.add(edge[0])
+
 
                 # --------1a----------------
                 m.addConstr(quicksum(f[i][n][s][v] for v in neighborOfS) - quicksum(f[i][n][v][s] for v in neighborOfS) == t[i][n])
@@ -273,11 +286,11 @@ class SEE(AlgorithmBase):
         
         # ---------------------1d-----------------
         # for (u,v) in edgeIndices: 
-        #     m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+        #     m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * (x[u][v][k] + x[v][u][k])* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
         
         for u in range(numOfNodes):
             for v in range(numOfNodes):
-                m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k]* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+                m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k] * math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
         
         
         # ----------------1e-----------------
@@ -311,13 +324,23 @@ class SEE(AlgorithmBase):
 
         #----------- 1f------------
         for u in range(numOfNodes):
-            # neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
-            # print('len(neighbourOfU)' , len(neighbourOfU) , 'self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
-            # m.addConstr(quicksum(x[u][v][k] for v in neighbourOfU for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
-            
+            neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
+            # print('len(neighbourOfU)111::::' , len(neighbourOfU) , 'self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
+            # neighbourOfU = set()
+            # for (n1,n2) in edgeIndices:
+            #     if n1 == u:
+            #         neighbourOfU.add(n2)
+            #     if n2 == u:
+            #         neighbourOfU.add(n1)
+            # print('len(neighbourOfU)222::::' , len(neighbourOfU) , 'self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
+
+            # m.addConstr(quicksum(x[u][v][k] + x[v][u][k] for v in neighbourOfU for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
+            # print('list:: ' , [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
+            # print('set:: ' , set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]))
+            # print('-------------------------------')
             m.addConstr(quicksum(x[u][v][k] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
 
-
+        # time.sleep(20)
 
         # --------------------------------------
         # for i in range(numOfSDpairs):
@@ -328,7 +351,8 @@ class SEE(AlgorithmBase):
         print('optimize start....')
         m.optimize()
         if m.status != 2:
-            return
+            print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++FAILED++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+            # return
         print('model.status' , m.status)
 
         for i in range(numOfSDpairs):
