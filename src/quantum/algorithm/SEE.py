@@ -228,8 +228,8 @@ class SEE(AlgorithmBase):
                     x[u][v] = [0] * len(self.topo.k_shortest_paths(u , v , 5))
                     for k in range(len(self.topo.k_shortest_paths(u , v , 5))): #later we'll find this
                         if ((u, v) in edgeIndices or (v, u) in edgeIndices):
-                            x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.CONTINUOUS , name = "x[%d][%d][%d]"%(u,v,k))
-                            # x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.INTEGER , name = "x[%d][%d][%d]"%(u,v,k))
+                            # x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.CONTINUOUS , name = "x[%d][%d][%d]"%(u,v,k))
+                            x[u][v][k] = m.addVar(lb = 0 , vtype = gp.GRB.INTEGER , name = "x[%d][%d][%d]"%(u,v,k))
 
         m.update()
         
@@ -352,7 +352,7 @@ class SEE(AlgorithmBase):
         m.optimize()
         if m.status != 2:
             print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++FAILED++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-            # return
+            exit()
         print('model.status' , m.status)
 
         for i in range(numOfSDpairs):
@@ -828,7 +828,7 @@ class SEE(AlgorithmBase):
     
 if __name__ == '__main__':
     
-    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
+    topo = Topo.generate(20, 0.9, 5, 0.0002, 6)
     s = SEE(topo)
     result = AlgorithmResult()
     samplesPerTime = 10

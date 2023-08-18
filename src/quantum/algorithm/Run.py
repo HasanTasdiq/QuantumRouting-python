@@ -11,6 +11,7 @@ from GreedyHopRouting import GreedyHopRouting
 from REPS import REPS
 from REPS_cache import REPSCACHE
 from REPS_cache2 import REPSCACHE2
+from REPS_cache_preswap import REPSCACHE4
 from SEER_cache import SEERCACHE
 from SEER_cache2 import SEERCACHE2
 from SEE import SEE
@@ -62,9 +63,9 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
     algorithms.append(REPS(copy.deepcopy(topo)))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
-    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-    algorithms.append(SEE(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
+    algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
+    # algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
@@ -260,7 +261,7 @@ if __name__ == '__main__':
     # sampleRounds = [0, 2, 4, 6, 8, 10]
     sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
     print(sampleRounds)
-    results = Run(numOfRequestPerRound = 10, rtime = rtime) # algo1Result algo2Result ...
+    results = Run(numOfRequestPerRound = 10, numOfNode=50, rtime = rtime) # algo1Result algo2Result ...
     for result in results:
         result.remainRequestPerRound.insert(0, 1)
     
