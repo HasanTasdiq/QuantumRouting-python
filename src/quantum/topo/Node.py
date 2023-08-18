@@ -41,6 +41,24 @@ class Node:
         if b:
             self.internalLinks.append((l1, l2))
         return b
+    def attemptPreSwapping(self, l1, l2 , times = 1):  # l1 -> Link, l2 -> Link
+        if l1.n1 == self:    
+            l1.s1 = True
+        else:       
+            l1.s2 = True
+        
+        if l2.n1 == self:    
+            l2.s1 = True
+        else: 
+            l2.s2 = True
+            
+        b = False
+        for _ in range(times):
+            b = random.random() <= self.q
+            if b:
+                break
+
+        return b
     def attemptSegmentSwapping(self, l1, l2 , times = 1):  # l1 -> Link, l2 -> Link
 
         if not l1.entangled or not l2.entangled:

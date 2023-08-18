@@ -5,13 +5,14 @@ import math
 
 class Link:
     
-    def __init__(self, topo, n1: Node, n2: Node, s1: bool, s2: bool, id: int, l: float):
+    def __init__(self, topo, n1: Node, n2: Node, s1: bool, s2: bool, id: int, l: float , isVirtualLink = False):
         self.id, self.n1, self.n2, self.s1, self.s2, self.alpha = id, n1, n2, s1, s2, topo.alpha
         self.assigned = False
         self.entangled = False
         self.entangledTimeSlot = 0
         self.p = math.exp(-self.alpha * l)
         self.l = l
+        self.isVirtualLink = isVirtualLink
         # print(self.n1.id, self.n2.id, self.p)
 
     def theOtherEndOf(self, n: Node): 
@@ -87,11 +88,14 @@ class Link:
         for internalLink in self.n1.internalLinks:
             if self in internalLink:
                 self.n1.internalLinks.remove(internalLink)
+                if self.isVirtualLink and self in self.n2.links:
+                    self.n2.links.remove(self)
 
         for internalLink in self.n2.internalLinks:
-                    if self in internalLink:
-                        self.n2.internalLinks.remove(internalLink)
-        
+            if self in internalLink:
+                self.n2.internalLinks.remove(internalLink)
+                if self.isVirtualLink and self in self.n1.links:
+                    self.n1.links.remove(self)
 
         for internalSegment in self.n1.internalSegments:
             if self in internalSegment:
@@ -100,6 +104,8 @@ class Link:
         for internalSegment in self.n2.internalSegments:
                     if self in internalSegment:
                         self.n2.internalSegments.remove(internalSegment)
+        # if self.isVirtualLink:
+
                         
     def keepPhase4Swap(self):
         self.s1 = False
