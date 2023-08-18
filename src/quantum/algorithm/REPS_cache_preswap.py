@@ -48,15 +48,15 @@ class REPSCACHE4(AlgorithmBase):
         # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
         self.result.remainRequestPerRound.append(len(self.requests))
         
-        print("[REPS-CACHE] total time:", self.result.waitingTime)
-        print("[REPS-CACHE] remain request:", len(self.requests))
-        print("[REPS-CACHE] current Timeslot:", self.timeSlot)
+        print("[REPS-CACHE4] total time:", self.result.waitingTime)
+        print("[REPS-CACHE4] remain request:", len(self.requests))
+        print("[REPS-CACHE4] current Timeslot:", self.timeSlot)
 
 
 
-        print('[REPS-CACHE] idle time:', self.result.idleTime)
-        print('[REPS-CACHE] remainRequestPerRound:', self.result.remainRequestPerRound)
-        print('[REPS-CACHE] avg usedQubits:', self.result.usedQubits)
+        print('[REPS-CACHE4] idle time:', self.result.idleTime)
+        print('[REPS-CACHE4] remainRequestPerRound:', self.result.remainRequestPerRound)
+        print('[REPS-CACHE4] avg usedQubits:', self.result.usedQubits)
 
 
 
@@ -98,7 +98,7 @@ class REPSCACHE4(AlgorithmBase):
         for (node , link1 , link2) in self.topo.needLinks:
             if link1.isEntangled(self.timeSlot) and link1.notSwapped() and not link1.isVirtualLink and link2.isEntangled(self.timeSlot) and link2.notSwapped() and not link2.isVirtualLink:
                 swapped = node.attemptPreSwapping(link1, link2)
-                print('====== swapped in tryPreSwapp() =++++++====' , swapped , node.id , link1.n1.id , link1.n2.id, link2.n1.id ,link2.n2.id)
+                # print('====== swapped in tryPreSwapp() =++++++====' , swapped , node.id , link1.n1.id , link1.n2.id, link2.n1.id ,link2.n2.id)
                 if swapped:
                     node1 = link1.theOtherEndOf(node)
                     node2 = link2.theOtherEndOf(node)
@@ -132,7 +132,7 @@ class REPSCACHE4(AlgorithmBase):
         for link in self.topo.links:
             if (link.n1.id, link.n2.id) not in edgeIndices and (link.n2.id, link.n1.id) not in edgeIndices:
                 edgeIndices.add((link.n1.id, link.n2.id))
-        print('========+============================== edgeindices len ' , len(edgeIndices))
+        # print('========+============================== edgeindices len ' , len(edgeIndices))
         self.topo.edgeIndices = edgeIndices
         
         for u in range(numOfNodes):
@@ -183,8 +183,8 @@ class REPSCACHE4(AlgorithmBase):
             m.addConstr(quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
 
             capacity = self.edgeCapacity(self.topo.nodes[u], self.topo.nodes[v])
-            if isVirtual:
-                print('for the v link capacity: ', (u,v) , capacity , len(links), probability)
+            # if isVirtual:
+            #     print('for the v link capacity: ', (u,v) , capacity , len(links), probability)
             m.addConstr(x[u, v] <= capacity)
 
 
@@ -924,7 +924,7 @@ if __name__ == '__main__':
             a = sample(topo.nodes, samplesPerTime)
             for n in range(0,samplesPerTime,2):
                 requests[i].append((a[n], a[n+1]))
-        print('[REPS-CACHE] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
+        print('[REPS-CACHE4] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
 
     for i in range(ttime):
         result = s.work(requests[i], i)
