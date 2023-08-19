@@ -763,12 +763,28 @@ class Topo:
         for link in self.links:
             link.clearEntanglement()
 
-    def resetEntanglement(self):
+    def resetEntanglement(self , timeslot = 0):
         for link in self.usedLinks:
             link.clearEntanglement()
+            if link.isVirtualLink:
+                if link in link.n1.links:
+                    link.n1.links.remove(link)
+                if link in link.n2.links:
+                    link.n2.links.remove(link)
+                self.links.remove(link)
         for link in set(self.links).difference(self.usedLinks):
             link.keepEntanglementOnly()
         self.usedLinks.clear()
+
+        for link in self.links:
+            if link.isVirtualLink:
+                if not link.isEntangled(timeslot):
+                    if link in link.n1.links:
+                        link.n1.links.remove(link)
+                    if link in link.n2.links:
+                        link.n2.links.remove(link)
+                    self.links.remove(link)
+
         
 
     def preEntanglement(self):

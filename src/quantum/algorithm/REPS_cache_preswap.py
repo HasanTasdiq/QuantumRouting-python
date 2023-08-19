@@ -41,7 +41,7 @@ class REPSCACHE4(AlgorithmBase):
         print('diff ' , len(set(self.topo.links).difference(self.topo.usedLinks)))
 
         # self.topo.clearAllEntanglements()
-        self.topo.resetEntanglement()
+        self.topo.resetEntanglement(self.timeSlot)
         self.result.waitingTime = self.totalWaitingTime / self.totalRequest
         self.result.usedQubits = self.totalUsedQubits / self.totalRequest
         
@@ -107,6 +107,8 @@ class REPSCACHE4(AlgorithmBase):
                     node2.links.append(link)
                     self.topo.links.append(link)
                     self.topo.lastLinkId += 1
+                    # node1.remainingQubits -= 1
+                    # node2.remainingQubits -= 1
                      
 
 
@@ -671,6 +673,8 @@ class REPSCACHE4(AlgorithmBase):
                         self.topo.usedLinks.add(link2)
                         self.topo.needLinks.add((node, link1, link2))
 
+                        
+
                 # successPath = self.topo.getEstablishedEntanglements(src, dst , self.timeSlot)
 
 
@@ -681,6 +685,8 @@ class REPSCACHE4(AlgorithmBase):
                         if link is not None:
                             self.topo.usedLinks.add(link)
                             usedLinksCount += 1
+                            if link.isVirtualLink:
+                                print('++++========++++++ virtual link found +++++==========+++++')
                 # for x in successPath:
                     # print('[REPS-CACHE] success:', [z.id for z in x])
                 # print('[REPS-CACHE] success path :', len(successPath))
@@ -700,13 +706,13 @@ class REPSCACHE4(AlgorithmBase):
                         link2.clearPhase4Swap()
                         # if link2.isVirtualLink and link2 in self.topo.links:
                         #     self.topo.links.remove(link2)
-        for link in self.topo.links:
-            if link.isVirtualLink:
-                self.topo.links.remove(link)
-        for node in self.topo.nodes:
-            for link in node.links:
-                if link.isVirtualLink:
-                    node.links.remove(link)
+        # for link in self.topo.links:
+        #     if link.isVirtualLink:
+        #         self.topo.links.remove(link)
+        # for node in self.topo.nodes:
+        #     for link in node.links:
+        #         if link.isVirtualLink:
+        #             node.links.remove(link)
 
 
     def findPathsForPFT(self, SDpair):
@@ -901,7 +907,7 @@ if __name__ == '__main__':
     topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
     s = REPSCACHE4(topo)
     result = AlgorithmResult()
-    samplesPerTime = 10
+    samplesPerTime = 20
     ttime = 50
     rtime = 50
     requests = {i : [] for i in range(ttime)}
