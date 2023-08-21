@@ -107,6 +107,8 @@ class REPSCACHE4(AlgorithmBase):
                     node2.links.append(link)
                     self.topo.links.append(link)
                     self.topo.lastLinkId += 1
+                    if link.assignable():
+                        link.assignQubits()
                     # node1.remainingQubits -= 1
                     # node2.remainingQubits -= 1
                      
