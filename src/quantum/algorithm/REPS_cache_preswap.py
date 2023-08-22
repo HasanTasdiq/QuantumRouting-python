@@ -97,20 +97,19 @@ class REPSCACHE4(AlgorithmBase):
 
         for (node , link1 , link2) in self.topo.needLinks:
             if link1.isEntangled(self.timeSlot) and link1.notSwapped() and not link1.isVirtualLink and link2.isEntangled(self.timeSlot) and link2.notSwapped() and not link2.isVirtualLink:
-                swapped = node.attemptPreSwapping(link1, link2)
+                node1 = link1.theOtherEndOf(node)
+                node2 = link2.theOtherEndOf(node)
+                link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+                if link.assignable():
+                    swapped = node.attemptPreSwapping(link1, link2)
                 # print('====== swapped in tryPreSwapp() =++++++====' , swapped , node.id , link1.n1.id , link1.n2.id, link2.n1.id ,link2.n2.id)
-                if swapped:
-                    node1 = link1.theOtherEndOf(node)
-                    node2 = link2.theOtherEndOf(node)
-                    link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-                    node1.links.append(link)
-                    node2.links.append(link)
-                    self.topo.links.append(link)
-                    self.topo.lastLinkId += 1
-                    if link.assignable():
+                    if swapped:
+                        node1.links.append(link)
+                        node2.links.append(link)
+                        self.topo.links.append(link)
+                        self.topo.lastLinkId += 1
                         link.assignQubits()
-                    # node1.remainingQubits -= 1
-                    # node2.remainingQubits -= 1
+
                      
 
 
@@ -909,7 +908,7 @@ if __name__ == '__main__':
     topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
     s = REPSCACHE4(topo)
     result = AlgorithmResult()
-    samplesPerTime = 20
+    samplesPerTime = 30
     ttime = 50
     rtime = 50
     requests = {i : [] for i in range(ttime)}
