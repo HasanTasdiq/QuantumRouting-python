@@ -34,8 +34,9 @@ class AlgorithmResult:
     def Avg(results: list):
         AvgResult = AlgorithmResult()
 
-        ttime = 101
+        ttime = 11
         AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
+        AvgResult.entanglementPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
             AvgResult.waitingTime += result.waitingTime
@@ -49,6 +50,7 @@ class AlgorithmResult:
             
             for i in range(ttime):
                 AvgResult.remainRequestPerRound[i] += result.remainRequestPerRound[i]
+                AvgResult.entanglementPerRound[i] += result.entanglementPerRound[i]
 
 
         AvgResult.algorithmRuntime /= len(results)
@@ -59,6 +61,7 @@ class AlgorithmResult:
 
         for i in range(ttime):
             AvgResult.remainRequestPerRound[i] /= len(results)
+            AvgResult.entanglementPerRound[i] /= len(results)
             
         return AvgResult
 
