@@ -71,7 +71,7 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 2
+    times = 5
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -257,12 +257,12 @@ if __name__ == '__main__':
     # print('--DONE--')
     # exit(0)
     # write remainRequestPerRound
-    rtime = 11
+    rtime = 101
     print('starting.. ')
     # sampleRounds = [0, 2, 4, 6, 8, 10]
     sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
     print(sampleRounds)
-    results = Run(numOfRequestPerRound = 1, numOfNode=50, rtime = rtime) # algo1Result algo2Result ...
+    results = Run(numOfRequestPerRound = 15, numOfNode=50, rtime = rtime) # algo1Result algo2Result ...
     for result in results:
         result.remainRequestPerRound.insert(0, 1)
         result.entanglementPerRound.insert(0, 1)
