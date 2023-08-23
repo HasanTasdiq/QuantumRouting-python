@@ -63,7 +63,8 @@ def Run(numOfRequestPerRound = 5, numOfNode = 100, r = 7, q = 0.9, alpha = 0.000
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
     algorithms.append(REPS(copy.deepcopy(topo)))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE'))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
