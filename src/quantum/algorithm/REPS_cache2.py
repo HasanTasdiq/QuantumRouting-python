@@ -13,6 +13,9 @@ from topo.Link import Link
 from numpy import log as ln
 from random import sample
 
+########################
+####re use previously swapped links#######
+#######################
 
 EPS = 1e-6
 class REPSCACHE2(AlgorithmBase):
