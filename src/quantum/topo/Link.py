@@ -167,7 +167,7 @@ class Link:
  
         if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
             return True
-        b = self.p >= random.random()
+        b = self.assigned and self.p >= random.random()
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
