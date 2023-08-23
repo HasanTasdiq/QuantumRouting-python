@@ -14,9 +14,10 @@ class AlgorithmResult:
         self.temporaryRatio = 0
         self.numOfTimeslot = 0
         self.totalRuntime = 0
-        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'remainRequestPerRound']
+        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'remainRequestPerRound', 'entanglementPerRound']
         self.remainRequestPerRound = []
         self.usedPaths=[]
+        self.entanglementPerRound = []
 
     def toDict(self):
         dic = {}
@@ -26,6 +27,8 @@ class AlgorithmResult:
         dic[self.Ylabels[3]] = self.usedQubits
         dic[self.Ylabels[4]] = self.temporaryRatio
         dic[self.Ylabels[5]] = self.remainRequestPerRound
+        dic[self.Ylabels[6]] = self.entanglementPerRound
+
         return dic
     
     def Avg(results: list):

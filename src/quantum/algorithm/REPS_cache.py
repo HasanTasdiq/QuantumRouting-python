@@ -583,6 +583,8 @@ class REPSCACHE(AlgorithmBase):
         
         # print('[REPS-CACHE] ELS end')
         # print('[REPS-CACHE]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
+        totalEntanglement = 0
+
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -627,6 +629,11 @@ class REPSCACHE(AlgorithmBase):
                         link1.clearPhase4Swap()
                     if link2 in self.topo.usedLinks:
                         link2.clearPhase4Swap()
+                totalEntanglement += len(successPath)
+        self.result.entanglementPerRound.append(totalEntanglement)
+        
+        print(self.name , '######+++++++========= total ent: ' , totalEntanglement , 'at time:' , self.timeSlot)
+            
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]

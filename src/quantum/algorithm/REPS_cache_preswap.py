@@ -654,6 +654,7 @@ class REPSCACHE4(AlgorithmBase):
         
         # print('[REPS-CACHE] ELS end')
         # print('[REPS-CACHE]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
+        totalEntanglement = 0
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -707,6 +708,11 @@ class REPSCACHE4(AlgorithmBase):
                         link2.clearPhase4Swap()
                         # if link2.isVirtualLink and link2 in self.topo.links:
                         #     self.topo.links.remove(link2)
+                totalEntanglement += len(successPath)
+        self.result.entanglementPerRound.append(totalEntanglement)
+        
+        print(self.name , '######+++++++========= total ent: ' , totalEntanglement , 'at time:' , self.timeSlot)
+
         # for link in self.topo.links:
         #     if link.isVirtualLink:
         #         self.topo.links.remove(link)
