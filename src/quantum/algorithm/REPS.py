@@ -560,6 +560,7 @@ class REPS(AlgorithmBase):
         
         # print('[REPS] ELS end')
         # print('[REPS]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
+        totalEntanglement = 0
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -585,6 +586,11 @@ class REPS(AlgorithmBase):
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     link1.clearPhase4Swap()
                     link2.clearPhase4Swap()
+                
+                totalEntanglement += len(successPath)
+        self.result.entanglementPerRound.append(totalEntanglement)
+        
+        print(self.name , '######+++++++========= total ent: ' , totalEntanglement , 'at time:' , self.timeSlot)
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]

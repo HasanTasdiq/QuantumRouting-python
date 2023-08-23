@@ -177,9 +177,24 @@ class Link:
         if param == 'every':
             return self.tryEntanglement2(timeSlot)
         elif param == 'ten' or param == 'everya':
-            return self.tryEntanglement1(timeSlot)
+            if self.assigned:
+                return self.tryEntanglement1(timeSlot)  
+            # else:
+            #     return self.tryEntanglementForUnassigned(timeSlot)
         else:
             return self.tryEntanglement3(timeSlot)
+    
+
+    def tryEntanglementForUnassigned(self , timeSlot = 0):
+        if not self.assigned:
+            if self.assignable:
+
+                b = self.p >= random.random()
+                if b:
+                    self.entangledTimeSlot = timeSlot
+                    self.entangled = b
+                    self.assignQubits()
+                return b
 
     
   

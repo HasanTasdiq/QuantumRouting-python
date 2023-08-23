@@ -587,6 +587,7 @@ class REPSCACHE2(AlgorithmBase):
         
         # print('[' , self.name, ']', ' ELS end')
         # print('[' , self.name, ']', '' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
+        totalEntanglement = 0
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -640,8 +641,12 @@ class REPSCACHE2(AlgorithmBase):
                         link2.clearPhase4Swap()
                     else:
                         link2.keepPhase4Swap()
-
+                totalEntanglement += len(successPath)
             # print('==[',self.name,'] path count ',pathCount , '=====')
+        self.result.entanglementPerRound.append(totalEntanglement)
+        
+        print(self.name , '######+++++++========= total ent: ' , totalEntanglement , 'at time:' , self.timeSlot)
+
             
 
     def findPathsForPFT(self, SDpair):
