@@ -39,7 +39,6 @@ class REPSCACHE2(AlgorithmBase):
     
     def printResult(self):
         print('number of used links ' , len(self.topo.usedLinks))
-        print('first link ' , list(self.topo.usedLinks)[0].n1.id , list(self.topo.usedLinks)[0].n2.id)
         print('total number of links ' , len(self.topo.links))
         print('diff ' , len(set(self.topo.links).difference(self.topo.usedLinks)))
 

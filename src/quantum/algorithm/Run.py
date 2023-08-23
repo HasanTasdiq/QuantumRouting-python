@@ -257,14 +257,15 @@ if __name__ == '__main__':
     # print('--DONE--')
     # exit(0)
     # write remainRequestPerRound
-    rtime = 101
+    rtime = 11
     print('starting.. ')
     # sampleRounds = [0, 2, 4, 6, 8, 10]
     sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
     print(sampleRounds)
-    results = Run(numOfRequestPerRound = 15, numOfNode=50, rtime = rtime) # algo1Result algo2Result ...
+    results = Run(numOfRequestPerRound = 1, numOfNode=50, rtime = rtime) # algo1Result algo2Result ...
     for result in results:
         result.remainRequestPerRound.insert(0, 1)
+        result.entanglementPerRound.insert(0, 1)
     
     # sampleRounds = [0, 5, 10, 15, 20, 25]
 
@@ -273,6 +274,17 @@ if __name__ == '__main__':
     for roundIndex in sampleRounds:
         Xaxis = str(roundIndex)
         Yaxis = [result.remainRequestPerRound[roundIndex] for result in results]
+        Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+        F.write(Xaxis + Yaxis)
+    F.close()
+
+
+
+    filename = "Timeslot" + "_" + "#entanglement" + ".txt"
+    F = open(targetFilePath + filename, "w")
+    for roundIndex in sampleRounds:
+        Xaxis = str(roundIndex)
+        Yaxis = [result.entanglementPerRound[roundIndex] for result in results]
         Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
         F.write(Xaxis + Yaxis)
     F.close()

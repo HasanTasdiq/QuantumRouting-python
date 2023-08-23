@@ -214,3 +214,9 @@ if __name__ == "__main__":
     Ylabel = "#remainRequest"
     dataFileName = Xlabel + "_" + Ylabel + ".txt"
     ChartGenerator(dataFileName, Ylabel, Xlabel)
+
+
+    Xlabel = "Timeslot"
+    Ylabel = "#entanglement"
+    dataFileName = Xlabel + "_" + Ylabel + ".txt"
+    ChartGenerator(dataFileName, Ylabel, Xlabel)
