@@ -772,6 +772,7 @@ class Topo:
                 if link in link.n2.links:
                     link.n2.links.remove(link)
                 self.links.remove(link)
+                
         for link in set(self.links).difference(self.usedLinks):
             link.keepEntanglementOnly()
         self.usedLinks.clear()

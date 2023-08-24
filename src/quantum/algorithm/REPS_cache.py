@@ -825,9 +825,9 @@ class REPSCACHE(AlgorithmBase):
 if __name__ == '__main__':
     
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
-    s = REPSCACHE(topo)
+    s = REPSCACHE(topo , param='ten')
     result = AlgorithmResult()
-    samplesPerTime = 2
+    samplesPerTime = 10
     ttime = 50
     rtime = 50
     requests = {i : [] for i in range(ttime)}
