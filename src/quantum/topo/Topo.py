@@ -86,6 +86,7 @@ class Topo:
         self.optimal_distance = 130
         self.k_shortest_paths_dict = {}
         self.needLinks = set()
+        self.needLinksDict = {}
 
 
         # for pos in _positions:
@@ -772,7 +773,7 @@ class Topo:
                 if link in link.n2.links:
                     link.n2.links.remove(link)
                 self.links.remove(link)
-                
+
         for link in set(self.links).difference(self.usedLinks):
             link.keepEntanglementOnly()
         self.usedLinks.clear()

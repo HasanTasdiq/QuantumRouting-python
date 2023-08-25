@@ -122,6 +122,16 @@ class AlgorithmBase:
                 l2 = preInternelLinks[1]
                 if not (l1.isEntangled(self.timeSlot) and l2.isEntangled(self.timeSlot)):
                     node.prevInternalLinks.remove(preInternelLinks)
+    
+    def resetNeedLinksDict(self):
+        temp = []
+        for key in self.topo.needLinksDict:
+            if self.topo.needLinksDict[key][1] > 10:
+                temp.append(key)
+        for key in temp:
+            del self.topo.needLinksDict[key]
+        
+        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[0])))
         
 
     def work(self, pairs: list, time): 
@@ -152,6 +162,7 @@ class AlgorithmBase:
 
         self.srcDstPairs.clear()
         self.resetNodeSwaps()
+        self.resetNeedLinksDict()
 
         res.totalRuntime += (end - start)
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
