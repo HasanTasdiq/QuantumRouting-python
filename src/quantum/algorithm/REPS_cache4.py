@@ -19,7 +19,7 @@ from random import sample
 ######################
 
 EPS = 1e-6
-class REPSCACHE4(AlgorithmBase):
+class REPSCACHE5(AlgorithmBase):
     def __init__(self, topo, param=None, name=''):
         super().__init__(topo , param=param)
         self.name = "REPSCACHE5"
@@ -939,7 +939,7 @@ class REPSCACHE4(AlgorithmBase):
 if __name__ == '__main__':
     
     topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
-    s = REPSCACHE4(topo)
+    s = REPSCACHE5(topo)
     result = AlgorithmResult()
     samplesPerTime = 10
     ttime = 50
