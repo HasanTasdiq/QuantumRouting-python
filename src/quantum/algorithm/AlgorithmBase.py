@@ -14,10 +14,11 @@ class AlgorithmResult:
         self.temporaryRatio = 0
         self.numOfTimeslot = 0
         self.totalRuntime = 0
-        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'remainRequestPerRound', 'entanglementPerRound']
+        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'entanglementPerRound']
         self.remainRequestPerRound = []
         self.usedPaths=[]
         self.entanglementPerRound = []
+        self.eps = 0
 
     def toDict(self):
         dic = {}
@@ -51,6 +52,7 @@ class AlgorithmResult:
             for i in range(ttime):
                 AvgResult.remainRequestPerRound[i] += result.remainRequestPerRound[i]
                 AvgResult.entanglementPerRound[i] += result.entanglementPerRound[i]
+                AvgResult.eps += result.entanglementPerRound[i]
 
 
         AvgResult.algorithmRuntime /= len(results)
@@ -58,6 +60,7 @@ class AlgorithmResult:
         AvgResult.idleTime /= len(results)
         AvgResult.usedQubits /= len(results)
         AvgResult.temporaryRatio /= len(results)
+        AvgResult.eps /= len(results)
 
         for i in range(ttime):
             AvgResult.remainRequestPerRound[i] /= len(results)
