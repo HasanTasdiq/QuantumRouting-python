@@ -693,8 +693,6 @@ class REPSCACHE5(AlgorithmBase):
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     swapped = node.attemptSwapping2(link1, link2, timeSlot = self.timeSlot)
                     if swapped:
-                        self.topo.usedLinks.add(link1)
-                        self.topo.usedLinks.add(link2)
                         self.topo.needLinks.add((node, link1, link2))
                         key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
                         if not key in self.topo.needLinksDict:
@@ -729,12 +727,12 @@ class REPSCACHE5(AlgorithmBase):
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     if link1 in self.topo.usedLinks:
                         link1.clearPhase4Swap()
-                        # if link1.isVirtualLink and link1 in self.topo.links:
-                        #     self.topo.links.remove(link1)
+                    else:
+                        link1.keepPhase4Swap()
                     if link2 in self.topo.usedLinks:
                         link2.clearPhase4Swap()
-                        # if link2.isVirtualLink and link2 in self.topo.links:
-                        #     self.topo.links.remove(link2)
+                    else:
+                        link2.keepPhase4Swap()
                 totalEntanglement += len(successPath)
         self.result.entanglementPerRound.append(totalEntanglement)
         
