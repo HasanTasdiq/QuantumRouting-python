@@ -27,7 +27,7 @@ class AlgorithmResult:
         dic[self.Ylabels[2]] = self.idleTime
         dic[self.Ylabels[3]] = self.usedQubits
         dic[self.Ylabels[4]] = self.temporaryRatio
-        dic[self.Ylabels[5]] = self.entanglementPerRound
+        dic[self.Ylabels[5]] = self.eps
 
         return dic
     

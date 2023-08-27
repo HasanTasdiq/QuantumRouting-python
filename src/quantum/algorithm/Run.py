@@ -135,7 +135,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3, 4, 5]
-    numOfRequestPerRound = [1,2,3]
+    numOfRequestPerRound = [10,15,20,25]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
     skipXlabel = [ 1, 2,3, 4,5, 6]
     for XlabelIndex in range(len(Xlabels)):
-        continue
+        # continue
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
         if XlabelIndex in skipXlabel:
@@ -210,7 +210,7 @@ if __name__ == '__main__':
             F.close()
 
 
-    # exit(0)
+    exit(0)
     # write remainRequestPerRound
     rtime = 101
     print('starting.. ')
