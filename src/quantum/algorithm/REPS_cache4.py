@@ -48,15 +48,15 @@ class REPSCACHE5(AlgorithmBase):
         # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
         self.result.remainRequestPerRound.append(len(self.requests))
         
-        print("[REPS-CACHE4] total time:", self.result.waitingTime)
-        print("[REPS-CACHE4] remain request:", len(self.requests))
-        print("[REPS-CACHE4] current Timeslot:", self.timeSlot)
+        print(self.name , " total time:", self.result.waitingTime)
+        print(self.name ," remain request:", len(self.requests))
+        print(self.name ," current Timeslot:", self.timeSlot)
 
 
 
-        print('[REPS-CACHE4] idle time:', self.result.idleTime)
-        print('[REPS-CACHE4] remainRequestPerRound:', self.result.remainRequestPerRound)
-        print('[REPS-CACHE4] avg usedQubits:', self.result.usedQubits)
+        print(self.name ,' idle time:', self.result.idleTime)
+        print(self.name ,' remainRequestPerRound:', self.result.remainRequestPerRound)
+        print(self.name ,' avg usedQubits:', self.result.usedQubits)
 
 
 
