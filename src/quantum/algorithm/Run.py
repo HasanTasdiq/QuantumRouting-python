@@ -127,14 +127,24 @@ def Run(numOfRequestPerRound = 5, numOfNode = 50, r = 7, q = 0.9, alpha = 0.0002
     return results
     
 def mainThreadReqPerTime(Xparam , topo, result):
-    Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo) , results=result)
+    result.extend(Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo)))
+def mainThreadNumOfNode(Xparam , result):
+    result.extend(Run(numOfNode = Xparam))
+def mainThreadSwapProb(Xparam , topo , result):
+    result.extend(Run(q = Xparam , topo=copy.deepcopy(topo)))
+def mainThreadAlpha(Xparam , topo , result):
+    result.extend(Run(alpha = Xparam, topo = copy.deepcopy(topo)))
+
+
+
+
 if __name__ == '__main__':
     print("start Run and Generate data.txt")
     targetFilePath = "../../plot/data/"
     temp = AlgorithmResult()
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
-    # numOfRequestPerRound = [1, 2, 3, 4, 5]
+    # numOfRequestPerRound = [1, 2, 3]
     numOfRequestPerRound = [10,15,20,25]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
@@ -150,7 +160,7 @@ if __name__ == '__main__':
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity]
 
-    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
+    topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
     jobs = []
 
     tmp_ids = {i : [] for i in range(200)}
@@ -166,35 +176,58 @@ if __name__ == '__main__':
         # continue
         Xlabel = Xlabels[XlabelIndex]
         Ydata = []
+        jobs = []
+        results = {Xparam : multiprocessing.Manager().list() for Xparam in Xparameters[XlabelIndex]}
+        pid = 0
         if XlabelIndex in skipXlabel:
             continue
         for Xparam in Xparameters[XlabelIndex]:
+            # results[Xparam] = None
             
             # check schedule
-            statusFile = open("status.txt", "w")
-            print(Xlabel + str(Xparam), file = statusFile)
-            statusFile.flush()
-            statusFile.close()
+            # statusFile = open("status.txt", "w")
+            # print(Xlabel + str(Xparam), file = statusFile)
+            # statusFile.flush()
+            # statusFile.close()
             # ------
             if XlabelIndex == 0: # #RequestPerRound
                 # result =[]
-                # job = multiprocessing.Process(target = mainThreadReqPerTime, args = (Xparam , topo , result))
-                # jobs.append(job)
-                result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
-            if XlabelIndex == 1: # totalRequest
-                result = Run(numOfRequestPerRound = Xparam, rtime = 1, topo = copy.deepcopy(topo))
+                job = multiprocessing.Process(target = mainThreadReqPerTime, args = (Xparam , topo , results[Xparam] ))
+                jobs.append(job)
+                # result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
+            # if XlabelIndex == 1: # totalRequest
+            #     result = Run(numOfRequestPerRound = Xparam, rtime = 1, topo = copy.deepcopy(topo))
             if XlabelIndex == 2: # #nodes
-                result = Run(numOfNode = Xparam)
-            if XlabelIndex == 3: # r
-                result = Run(r = Xparam, topo = copy.deepcopy(topo), FixedRequests = tmp_ids)
+                # result = Run(numOfNode = Xparam)
+                job = multiprocessing.Process(target = mainThreadNumOfNode, args = (Xparam  , results[Xparam] ))
+                jobs.append(job)
+            # if XlabelIndex == 3: # r
+            #     result = Run(r = Xparam, topo = copy.deepcopy(topo), FixedRequests = tmp_ids)
             if XlabelIndex == 4: # swapProbability
-                result = Run(q = Xparam, topo = copy.deepcopy(topo))
+                # result = Run(q = Xparam, topo = copy.deepcopy(topo))
+                job = multiprocessing.Process(target = mainThreadSwapProb, args = (Xparam , topo , results[Xparam] ))
+                jobs.append(job)
             if XlabelIndex == 5: # alpha
-                result = Run(alpha = Xparam, topo = copy.deepcopy(topo))
-            if XlabelIndex == 6: # SocialNetworkDensity
-                result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
+                # result = Run(alpha = Xparam, topo = copy.deepcopy(topo))
+                job = multiprocessing.Process(target = mainThreadAlpha, args = (Xparam , topo , results[Xparam] ))
+                jobs.append(job)
+
+            # if XlabelIndex == 6: # SocialNetworkDensity
+            #     result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
             # if XlabelIndex == 7:
             #     result = Run(mapSize = Xparam)
+            # Ydata.append(result)
+
+        for job in jobs:
+            job.start()
+
+        for job in jobs:
+            job.join()
+        
+        for Xparam in Xparameters[XlabelIndex]:
+            result = results[Xparam]
+            # print('--------------printing results ---------------')
+            # print(result)
             Ydata.append(result)
 
 
@@ -209,7 +242,7 @@ if __name__ == '__main__':
                 F.write(Xaxis + Yaxis)
             F.close()
 
-
+    print('-----EXIT-----')
     exit(0)
     # write remainRequestPerRound
     rtime = 101
