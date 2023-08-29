@@ -15,6 +15,7 @@ from REPS_cache_preswap import REPSCACHE4
 from REPS_cache4 import REPSCACHE5
 from SEER_cache import SEERCACHE
 from SEER_cache2 import SEERCACHE2
+from SEER_cache3 import SEERCACHE3
 from SEE import SEE
 from SEE2 import SEE2
 from CachedEntanglement import CachedEntanglement
@@ -29,7 +30,7 @@ import random
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
         result = algo.work(requests[i], i)
-    if algo.name == "My" or algo.name == "SEERCACHE":
+    if algo.name == "My" or algo.name.contains("SEER"):
         for req in algo.requestState:
             if algo.requestState[req].state == 2:
                 algo.requestState[req].intermediate.clearIntermediate()
@@ -37,7 +38,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 5, numOfNode = 50, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 101, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 5, numOfNode = 50, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 51, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -47,9 +48,10 @@ def Run(numOfRequestPerRound = 5, numOfNode = 50, r = 7, q = 0.9, alpha = 0.0002
 
     # make copy
     algorithms = []
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten'))
-    # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten'))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten'))
+    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten'))
+    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -63,11 +65,11 @@ def Run(numOfRequestPerRound = 5, numOfNode = 50, r = 7, q = 0.9, alpha = 0.0002
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    algorithms.append(REPS(copy.deepcopy(topo)))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
-    algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+    # algorithms.append(REPS(copy.deepcopy(topo)))
+    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
+    # algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
+    # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms[0].r = r
@@ -243,7 +245,7 @@ if __name__ == '__main__':
             F.close()
 
     print('-----EXIT-----')
-    # exit(0)
+    exit(0)
     # write remainRequestPerRound
     rtime = 101
     print('starting.. ')
