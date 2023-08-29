@@ -49,9 +49,9 @@ def Run(numOfRequestPerRound = 5, numOfNode = 50, r = 7, q = 0.9, alpha = 0.0002
     # make copy
     algorithms = []
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten'))
-    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten'))
-    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten'))
+    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
+    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
+    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [10,15,20,25]
+    numOfRequestPerRound = [10,15,20,25,30,35]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
