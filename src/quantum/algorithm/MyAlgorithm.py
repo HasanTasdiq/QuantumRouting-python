@@ -574,6 +574,7 @@ class MyAlgorithm(AlgorithmBase):
          
             # p5
             success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+            self.result.entanglementPerRound.append(success)
 
             # print('----------------------')
             # print('[MyAlgo] success:', success)
