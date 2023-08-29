@@ -243,7 +243,7 @@ if __name__ == '__main__':
             F.close()
 
     print('-----EXIT-----')
-    exit(0)
+    # exit(0)
     # write remainRequestPerRound
     rtime = 101
     print('starting.. ')
@@ -268,14 +268,14 @@ if __name__ == '__main__':
 
 
 
-    filename = "Timeslot" + "_" + "#entanglement" + ".txt"
-    F = open(targetFilePath + filename, "w")
-    for roundIndex in sampleRounds:
-        Xaxis = str(roundIndex)
-        Yaxis = [result.entanglementPerRound[roundIndex] for result in results]
-        Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-        F.write(Xaxis + Yaxis)
-    F.close()
+    # filename = "Timeslot" + "_" + "#entanglement" + ".txt"
+    # F = open(targetFilePath + filename, "w")
+    # for roundIndex in sampleRounds:
+    #     Xaxis = str(roundIndex)
+    #     Yaxis = [result.entanglementPerRound[roundIndex] for result in results]
+    #     Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+    #     F.write(Xaxis + Yaxis)
+    # F.close()
 
     print('--DONE--')
 
