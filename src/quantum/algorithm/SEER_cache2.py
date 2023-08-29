@@ -596,6 +596,7 @@ class SEERCACHE2(AlgorithmBase):
                         usedLinks.add(link)
                         usedLinksCount += 1
             success = len(successPath)
+            self.result.entanglementPerRound.append(success)
             # print('#####success width:' , success)
 
             # print('----------------------')
