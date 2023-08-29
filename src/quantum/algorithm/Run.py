@@ -30,7 +30,7 @@ import random
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
         result = algo.work(requests[i], i)
-    if algo.name == "My" or algo.name.contains("SEER"):
+    if algo.name == "My" or 'SEER' in algo.name:
         for req in algo.requestState:
             if algo.requestState[req].state == 2:
                 algo.requestState[req].intermediate.clearIntermediate()
