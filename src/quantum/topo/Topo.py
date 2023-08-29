@@ -301,6 +301,76 @@ class Topo:
         return curMinWidth
         
 
+    def shortestPathForPreswap(self, src, dst, greedyType, edges = None):
+        temp_edges = {}
+        for link in self.links:
+            n1 = link.n1
+            n2 = link.n2
+            if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
+                temp_edges.add((n1,n2))
+        # Construct state metric (weight) table for edges
+        fStateMetric = {}   # {edge: fstate}
+        fStateMetric.clear()
+        if edges != None:
+            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in edges} 
+        elif greedyType == 'Hop' and edges == None:
+            fStateMetric = {edge : 1 for edge in self.edges}
+        else: 
+            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges}
+
+        # Construct neightor & weight table for nodes
+        neighborsOf = {node: {} for node in self.nodes}    # {Node: {Node: weight, ...}, ...}
+        if edges == None:
+            for edge in temp_edges:
+                n1, n2 = edge
+                neighborsOf[n1][n2] = fStateMetric[edge]
+                neighborsOf[n2][n1] = fStateMetric[edge]
+        else:
+            for edge in edges:
+                n1, n2 = edge
+                neighborsOf[n1][n2] = fStateMetric[edge]
+                neighborsOf[n2][n1] = fStateMetric[edge]
+
+        D = {node.id : sys.float_info.max for node in self.nodes} # {int: [int, int, ...], ...}
+        q = [] # [(weight, curr, prev)]
+
+        D[src.id] = 0.0
+        prevFromSrc = {}   # {cur: prev}
+
+        q.append((D[src.id], src, self.sentinel))
+        sorted(q, key=lambda q: q[0])
+
+        # Dijkstra 
+        while len(q) != 0:
+            contain = q.pop(0)
+            w, prev = contain[1], contain[2]
+            if w in prevFromSrc.keys():
+                continue
+            prevFromSrc[w] = prev
+
+            # If find the dst return D & path 
+            if w == dst:
+                path = []
+                cur = dst
+                while cur != self.sentinel:
+                    path.insert(0, cur)
+                    cur = prevFromSrc[cur]          
+                return (D[dst.id], path)
+            
+            # Update neighbors of w  
+            for neighbor in neighborsOf[w]:
+                weight = neighborsOf[w][neighbor]
+                newDist = D[w.id] + weight
+                oldDist = D[neighbor.id]
+
+                if oldDist > newDist:
+                    D[neighbor.id] = newDist
+                    q.append((D[neighbor.id], neighbor, w))
+                    sorted(q, key=lambda q: q[0])
+
+        return (sys.float_info.max, [])
+
+
     def shortestPath(self, src, dst, greedyType, edges = None):
         # Construct state metric (weight) table for edges
         fStateMetric = {}   # {edge: fstate}
