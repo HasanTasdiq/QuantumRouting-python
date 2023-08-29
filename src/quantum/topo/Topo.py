@@ -302,7 +302,7 @@ class Topo:
         
 
     def shortestPathForPreswap(self, src, dst, greedyType, edges = None):
-        temp_edges = {}
+        temp_edges = set()
         for link in self.links:
             n1 = link.n1
             n2 = link.n2

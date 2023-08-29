@@ -537,7 +537,7 @@ class SEERCACHE2(AlgorithmBase):
                 p = requestInfo.pathseg1
 
             width = requestInfo.width
-            print('#####width: ' , width)
+            # print('#####width: ' , width)
             usedLinks = set()
             attemptedLinks = set()
             # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
@@ -596,7 +596,7 @@ class SEERCACHE2(AlgorithmBase):
                         usedLinks.add(link)
                         usedLinksCount += 1
             success = len(successPath)
-            print('#####success width:' , success)
+            # print('#####success width:' , success)
 
             # print('----------------------')
             # print('[' , self.name, ']', ' success:', success)
