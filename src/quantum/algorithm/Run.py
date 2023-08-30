@@ -245,7 +245,7 @@ if __name__ == '__main__':
             F.close()
 
     print('-----EXIT-----')
-    exit(0)
+    # exit(0)
     # write remainRequestPerRound
     rtime = 101
     print('starting.. ')
