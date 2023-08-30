@@ -425,6 +425,9 @@ class SEERCACHE3(AlgorithmBase):
 
     # p1 & p2    
     def p2(self):
+        self.tryPreSwapp()
+        self.establishShortestPath()
+
 
         # p1
         self.descideSegmentation()
@@ -437,7 +440,6 @@ class SEERCACHE3(AlgorithmBase):
         if len(self.requestState) > 0:
             self.result.numOfTimeslot += 1
         
-        self.tryPreSwapp()
         
         # p2 (1)
         for req in self.requestState:

@@ -308,15 +308,16 @@ class Topo:
             n2 = link.n2
             if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
                 temp_edges.add((n1,n2))
+        # print('==========in shortestPathForPreswap ' , len(temp_edges))
         # Construct state metric (weight) table for edges
         fStateMetric = {}   # {edge: fstate}
         fStateMetric.clear()
         if edges != None:
-            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in edges} 
+            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in temp_edges} 
         elif greedyType == 'Hop' and edges == None:
-            fStateMetric = {edge : 1 for edge in self.edges}
+            fStateMetric = {edge : 1 for edge in temp_edges}
         else: 
-            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in self.edges}
+            fStateMetric = {edge : self.distance(edge[0].loc, edge[1].loc) for edge in temp_edges}
 
         # Construct neightor & weight table for nodes
         neighborsOf = {node: {} for node in self.nodes}    # {Node: {Node: weight, ...}, ...}
