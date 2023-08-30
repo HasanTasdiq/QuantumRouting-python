@@ -598,19 +598,21 @@ class MyAlgorithm(AlgorithmBase):
             if success > 0 or len(p) == 2:
                 # self.result.usedPaths.append(p) #added for pre-entanglement 
                 if requestInfo.state == 0:      # 0
-                    self.totalTime += self.timeSlot - req[2]
+                    timeToFinish = self.timeSlot - req[2]
+                    self.totalTime += timeToFinish
                     finishedRequest.append(req)
                     for link in usedLinks:
                         link.clearEntanglement()
-                    self.result.entanglementPerRound.append(success)
+                    self.result.entanglementPerRound.append(success / (timeToFinish + 1))
                     
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo, usedLinks)
-                    self.totalTime += self.timeSlot - req[2]
+                    timeToFinish = self.timeSlot - req[2]
+                    self.totalTime += timeToFinish
                     finishedRequest.append(req)
-                    self.result.entanglementPerRound.append(success)
+                    self.result.entanglementPerRound.append(success / (timeToFinish + 1))
 
                 continue
             # p5 end

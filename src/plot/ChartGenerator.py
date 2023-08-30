@@ -205,10 +205,10 @@ if __name__ == "__main__":
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
     Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio" , "entanglementPerRound"]
     
-    for Xlabel in Xlabels:
-        for Ylabel in Ylabels:
-            dataFileName = Xlabel + '_' + Ylabel + '.txt'
-            ChartGenerator(dataFileName, Ylabel, Xlabel)
+    # for Xlabel in Xlabels:
+    #     for Ylabel in Ylabels:
+    #         dataFileName = Xlabel + '_' + Ylabel + '.txt'
+    #         ChartGenerator(dataFileName, Ylabel, Xlabel)
 
 
     Xlabel = "Timeslot"
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     ChartGenerator(dataFileName, Ylabel, Xlabel)
 
 
-    Xlabel = "Timeslot"
-    Ylabel = "#entanglement"
-    dataFileName = Xlabel + "_" + Ylabel + ".txt"
-    ChartGenerator(dataFileName, Ylabel, Xlabel)
+    # Xlabel = "Timeslot"
+    # Ylabel = "#entanglement"
+    # dataFileName = Xlabel + "_" + Ylabel + ".txt"
+    # ChartGenerator(dataFileName, Ylabel, Xlabel)
