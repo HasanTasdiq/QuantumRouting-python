@@ -596,7 +596,6 @@ class SEERCACHE2(AlgorithmBase):
                         usedLinks.add(link)
                         usedLinksCount += 1
             success = len(successPath)
-            self.result.entanglementPerRound.append(success)
             # print('#####success width:' , success)
 
             # print('----------------------')
@@ -624,15 +623,16 @@ class SEERCACHE2(AlgorithmBase):
                 if requestInfo.state == 0:      # 0
                     self.totalTime += self.timeSlot - req[2]
                     finishedRequest.append(req)
-                    for link in usedLinks:
-                        if link in self.topo.usedLinks:
-                            link.clearEntanglement()
+                    self.result.entanglementPerRound.append(success)
+                    
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo, usedLinks)
                     self.totalTime += self.timeSlot - req[2]
                     finishedRequest.append(req)
+
+                    self.result.entanglementPerRound.append(success)
                 continue
             # p5 end
         # p4 end

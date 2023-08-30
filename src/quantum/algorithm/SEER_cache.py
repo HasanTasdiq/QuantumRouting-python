@@ -575,11 +575,11 @@ class SEERCACHE(AlgorithmBase):
                 for link in prev.links:
                     if link.isEntangled(self.timeSlot) and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
                         usedLinks.add(link)
+                        self.topo.usedLinks.add(link)
                         break
          
             # p5
             success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
-            self.result.entanglementPerRound.append(success)
 
             # print('----------------------')
             # print('[' , self.name, ']', ' success:', success)
@@ -606,14 +606,17 @@ class SEERCACHE(AlgorithmBase):
                 if requestInfo.state == 0:      # 0
                     self.totalTime += self.timeSlot - req[2]
                     finishedRequest.append(req)
-                    for link in usedLinks:
-                        link.clearEntanglement()
+                    self.result.entanglementPerRound.append(success)
+
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo, usedLinks)
                     self.totalTime += self.timeSlot - req[2]
                     finishedRequest.append(req)
+
+                    self.result.entanglementPerRound.append(success)
+
                 continue
             # p5 end
         # p4 end
