@@ -1,2 +1,2 @@
-entanglement_lifetimeslot = 10
+entanglement_lifetimeslot = 1
 needlink_timeslot = 10
