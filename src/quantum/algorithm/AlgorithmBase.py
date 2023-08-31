@@ -4,6 +4,7 @@ import sys
 sys.path.append("..")
 from topo.Topo import Topo  
 import time
+from topo.helper import needlink_timeslot
 
 class AlgorithmResult:
     def __init__(self):
@@ -128,7 +129,7 @@ class AlgorithmBase:
     def resetNeedLinksDict(self):
         temp = []
         for key in self.topo.needLinksDict:
-            if self.topo.needLinksDict[key][1] > 10:
+            if self.topo.needLinksDict[key][1] > needlink_timeslot:
                 temp.append(key)
         for key in temp:
             del self.topo.needLinksDict[key]
