@@ -2,6 +2,7 @@
 from .Node import Node
 import random
 import math
+from .helper import entanglement_lifetimeslot
 
 class Link:
     
@@ -32,7 +33,7 @@ class Link:
     def notSwapped(self):  
         return not self.swapped()
     def isEntangled(self , timeSlot):
-        return self.entangled and (timeSlot - self.entangledTimeSlot) < 10
+        return self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot
 
 
 
@@ -131,7 +132,7 @@ class Link:
     #         self.entangledTimeSlot = timeSlot
     #         self.entangled = b
             
-    #     if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+    #     if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
     #         return True
     #     return b
 
@@ -143,7 +144,7 @@ class Link:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
             
-        if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+        if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
             return True
         return b
 
@@ -156,7 +157,7 @@ class Link:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
             
-        if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+        if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
             # print('tryEntanglement2 ' , self.n1.id , self.n2.id , timeSlot , True)
             return True
 
@@ -165,7 +166,7 @@ class Link:
 
     def tryEntanglement1(self , timeSlot = 0):
  
-        if self.entangled and (timeSlot - self.entangledTimeSlot) < 10:
+        if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
             return True
         b = self.assigned and self.p >= random.random()
         if b:
