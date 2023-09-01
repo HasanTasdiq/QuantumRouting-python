@@ -20,7 +20,7 @@ class RequestInfo:
     taken : bool        # 是否可處理這個req (已預定資源)
     savetime : int      # req存在中繼點k 還沒送出去經過的時間
     width : int         # seg1 用過的 links
-
+    seg1_success_entanglement: int = 0
 class SEERCACHE3(AlgorithmBase):
 
     def __init__(self, topo , preEnt = False, param = None ,  name ='SEERCACHE'):
@@ -197,7 +197,7 @@ class SEERCACHE3(AlgorithmBase):
         for req in self.srcDstPairs:
             src, dst = req[0], req[1]
             path_sd = self.givenShortestPath[(src, dst)]
-            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(path_sd), path_sd, None, False, 0, 0)
+            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(path_sd), path_sd, None, False, 0, 0 )
             P_sd = self.Pr(self.givenShortestPath[(src, dst)])
             minNum = 1 / P_sd
             # print('minNum:', minNum)
@@ -221,7 +221,7 @@ class SEERCACHE3(AlgorithmBase):
                 # print('curMin:', curMin)
                 if minNum > curMin:    # 分2段 取k中間  
                     minNum = curMin
-                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), path_sk, path_kd, False, 0, 0)
+                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), path_sk, path_kd, False, 0, 0 )
 
             # 模擬用掉這個k的一個Qubits 紀錄剩下的數量
             k = self.requestState[(src, dst, self.timeSlot)].intermediate
@@ -547,6 +547,7 @@ class SEERCACHE3(AlgorithmBase):
         sorted(self.requestState, key=lambda q: q[2])
         finishedRequest = []
         # p4
+        totalEntanglement = 0
         for req in self.requestState:
             requestInfo = self.requestState[req]
             if not requestInfo.taken:
@@ -652,25 +653,29 @@ class SEERCACHE3(AlgorithmBase):
                 continue
             
             # succeed
+            # print('+++++++++++++++++++++++success+++++++++++++++++++', success)
             if success > 0 or len(p) == 2:
                 if requestInfo.state == 0:      # 0
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
-                    self.result.entanglementPerRound.append(success / (timeToFinish + 1))
+                    # self.result.entanglementPerRound.append(success / (timeToFinish + 1))
+                    totalEntanglement += success
                     
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
+                    requestInfo.seg1_success_entanglement = success
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo, usedLinks)
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
-                    self.result.entanglementPerRound.append(success / (timeToFinish + 1))
+                    # self.result.entanglementPerRound.append(success / (timeToFinish + 1))
+                    totalEntanglement += min(success , requestInfo.seg1_success_entanglement)
                 continue
             # p5 end
         # p4 end
-
+        self.result.entanglementPerRound.append(totalEntanglement)
         for req in finishedRequest:
             self.requestState.pop(req)
         self.srcDstPairs.clear()

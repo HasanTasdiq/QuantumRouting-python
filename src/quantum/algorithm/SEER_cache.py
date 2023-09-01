@@ -20,6 +20,8 @@ class RequestInfo:
     taken : bool        # 是否可處理這個req (已預定資源)
     savetime : int      # req存在中繼點k 還沒送出去經過的時間
     width : int         # seg1 用過的 links
+    seg1_success_entanglement: int = 0
+
 
 class SEERCACHE(AlgorithmBase):
 
@@ -518,6 +520,7 @@ class SEERCACHE(AlgorithmBase):
         
         sorted(self.requestState, key=lambda q: q[2])
         finishedRequest = []
+        totalEntanglement = 0
         # p4
         for req in self.requestState:
             requestInfo = self.requestState[req]
@@ -607,21 +610,25 @@ class SEERCACHE(AlgorithmBase):
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
-                    self.result.entanglementPerRound.append(success / (timeToFinish + 1))
+                    totalEntanglement += success
+
 
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
+                    requestInfo.seg1_success_entanglement = success
+
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo, usedLinks)
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
 
-                    self.result.entanglementPerRound.append(success / (timeToFinish + 1))
+                    totalEntanglement += min(success , requestInfo.seg1_success_entanglement)
 
                 continue
             # p5 end
         # p4 end
+        self.result.entanglementPerRound.append(totalEntanglement)
 
         for req in finishedRequest:
             self.requestState.pop(req)
