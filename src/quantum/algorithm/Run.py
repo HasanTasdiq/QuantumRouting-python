@@ -26,7 +26,6 @@ from random import sample
 from numpy import log as ln
 import random
 
-
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
         result = algo.work(requests[i], i)
