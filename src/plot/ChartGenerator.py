@@ -181,6 +181,8 @@ class ChartGenerator:
         plt.xticks(x)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 35)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
+        plt.locator_params(axis='x', nbins=5)  
+
         ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.27)
         # plt.show()
