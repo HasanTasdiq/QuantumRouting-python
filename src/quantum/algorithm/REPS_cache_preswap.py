@@ -714,8 +714,8 @@ class REPSCACHE4(AlgorithmBase):
                         if link is not None:
                             self.topo.usedLinks.add(link)
                             usedLinksCount += 1
-                            if link.isVirtualLink:
-                                print('++++========++++++ virtual link found +++++==========+++++')
+                            # if link.isVirtualLink:
+                                # print('++++========++++++ virtual link found +++++==========+++++')
                 # for x in successPath:
                     # print('[REPS-CACHE] success:', [z.id for z in x])
                 # print('[REPS-CACHE] success path :', len(successPath))

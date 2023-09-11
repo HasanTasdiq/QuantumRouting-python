@@ -33,12 +33,17 @@ class REPSCACHE5(AlgorithmBase):
         return (varName + str(parName)).replace(' ', '')
     def genNameByBbracket(self, varName: str, parName: list):
         return (varName + str(parName)).replace(' ', '').replace(',', '][')
+
+
+
+        
     
     def printResult(self):
         print('number of used links ' , len(self.topo.usedLinks))
         # print('first link ' , list(self.topo.usedLinks)[0].n1.id , list(self.topo.usedLinks)[0].n2.id)
         print('total number of links ' , len(self.topo.links))
         print('diff ' , len(set(self.topo.links).difference(self.topo.usedLinks)))
+        print(self.name , 'alpha: ' , self.topo.alpha)
 
         # self.topo.clearAllEntanglements()
         self.topo.resetEntanglement(self.timeSlot)
@@ -712,8 +717,8 @@ class REPSCACHE5(AlgorithmBase):
                         if link is not None:
                             self.topo.usedLinks.add(link)
                             usedLinksCount += 1
-                            if link.isVirtualLink:
-                                print('++++========++++++ virtual link found +++++==========+++++')
+                            # if link.isVirtualLink:
+                            #     print('++++========++++++ virtual link found +++++==========+++++')
                 # for x in successPath:
                     # print('[REPS-CACHE] success:', [z.id for z in x])
                 # print('[REPS-CACHE] success path :', len(successPath))
