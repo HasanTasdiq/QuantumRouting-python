@@ -165,10 +165,12 @@ class Link:
         return b
 
     def tryEntanglement1(self , timeSlot = 0):
+        b = self.assigned and self.p >= random.random()
  
         if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
+            # if not b:
+            #     print('######cached entanglement found########================')
             return True
-        b = self.assigned and self.p >= random.random()
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
