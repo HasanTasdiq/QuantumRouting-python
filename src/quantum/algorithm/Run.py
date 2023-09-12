@@ -49,8 +49,8 @@ def Run(numOfRequestPerRound = 15, numOfNode = 100, r = 7, q = 0.9, alpha = 0.00
     algorithms = []
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
-    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
-    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
+    # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -74,7 +74,7 @@ def Run(numOfRequestPerRound = 15, numOfNode = 100, r = 7, q = 0.9, alpha = 0.00
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 3
+    times = 2
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -244,7 +244,7 @@ if __name__ == '__main__':
             F.close()
 
     print('-----EXIT-----')
-    # exit(0)
+    exit(0)
     # write remainRequestPerRound
     rtime = 101
     print('starting.. ')
