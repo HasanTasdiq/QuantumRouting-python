@@ -74,7 +74,7 @@ def Run(numOfRequestPerRound = 15, numOfNode = 100, r = 7, q = 0.9, alpha = 0.00
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 2
+    times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -153,8 +153,8 @@ if __name__ == '__main__':
     # numOfNodes = [20]
     r = [0, 2, 4, 6, 8, 10]
     q = [0.000001, 0.2, 0.4, 0.6, 0.8, 1]
-    alpha = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]
-    # alpha = [0.001 , 0.003 , 0.005 , 0.007 , 0.009 ]
+    # alpha = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]
+    alpha = [0.001 , 0.0015 , 0.002 , 0.0025 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
