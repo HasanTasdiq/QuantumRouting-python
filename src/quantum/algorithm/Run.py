@@ -49,8 +49,8 @@ def Run(numOfRequestPerRound = 15, numOfNode = 100, r = 7, q = 0.9, alpha = 0.00
     algorithms = []
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
-    # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
-    # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
+    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     r = [0, 2, 4, 6, 8, 10]
     q = [0.000001, 0.2, 0.4, 0.6, 0.8, 1]
     # alpha = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]
-    alpha = [0.001 , 0.0015 , 0.002 , 0.0025 ]
+    alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
