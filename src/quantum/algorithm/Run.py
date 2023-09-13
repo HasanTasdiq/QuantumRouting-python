@@ -152,7 +152,7 @@ if __name__ == '__main__':
     numOfNodes = [50, 100, 150, 200]
     # numOfNodes = [20]
     r = [0, 2, 4, 6, 8, 10]
-    q = [0.000001, 0.2, 0.4, 0.6, 0.8, 1]
+    q = [0.7, 0.75, 0.8, 0.85, 0.9]
     # alpha = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]
     alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
@@ -172,7 +172,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [ 0, 1, 2, 3, 4, 6]
+    skipXlabel = [ 0, 1, 2, 3, 5, 6]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
