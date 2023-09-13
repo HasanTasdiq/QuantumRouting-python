@@ -540,6 +540,8 @@ class SEERCACHE3(AlgorithmBase):
                         self.topo.links.append(link)
                         self.topo.lastLinkId += 1
                         link.assignQubits()
+                        link.entangled = True
+                        link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
 
     # p4 & p5
     def p4(self):
