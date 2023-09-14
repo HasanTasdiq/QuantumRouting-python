@@ -61,6 +61,7 @@ class AlgorithmResult:
         AvgResult.usedQubits /= len(results)
         AvgResult.temporaryRatio /= len(results)
         AvgResult.eps /= len(results)
+        AvgResult.eps /= ttime
 
         for i in range(ttime):
             AvgResult.remainRequestPerRound[i] /= len(results)
