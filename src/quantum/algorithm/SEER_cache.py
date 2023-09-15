@@ -390,7 +390,7 @@ class SEERCACHE(AlgorithmBase):
             requestInfo.intermediate.clearIntermediate()
 
         for link in usedLinks:
-            link.clearEntanglement()
+            link.keepEntanglementOnly()
         
     def resetFailedRequestFor2(self, requestInfo, usedLinks):       # 第二段傳失敗 且超時
         requestInfo.savetime = 0
@@ -402,7 +402,7 @@ class SEERCACHE(AlgorithmBase):
 
         # 第二段的資源全部釋放
         for link in usedLinks:
-            link.clearEntanglement()    
+            link.keepEntanglementOnly()    
     
     def resetSucceedRequestFor1(self, requestInfo, usedLinks):      # 第一段傳成功
         requestInfo.state = 2
