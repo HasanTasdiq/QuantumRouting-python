@@ -73,7 +73,7 @@ class SEERCACHE3(AlgorithmBase):
                     if len(self.givenShortestPath[(n1, n2)]) == 0:
                         quit()
                     # print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id, ', path length ->', len(self.givenShortestPath[(n1, n2)]))
-        print('+++ in establishShortestPath total:' , total , '-' , self.timeSlot)
+        # print('+++ in establishShortestPath total:' , total , '-' , self.timeSlot)
 
     def Pr(self, path):
         P = 1
@@ -429,7 +429,7 @@ class SEERCACHE3(AlgorithmBase):
     # p1 & p2    
     def p2(self):
         self.tryPreSwapp()
-        # self.establishShortestPath()
+        self.establishShortestPath()
 
 
         # p1
@@ -536,14 +536,14 @@ class SEERCACHE3(AlgorithmBase):
                 link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
                 if link.assignable():
                     swapped = node.attemptPreSwapping(link1, link2)
-                    # if swapped:
-                    #     node1.links.append(link)
-                    #     node2.links.append(link)
-                    #     self.topo.links.append(link)
-                    #     self.topo.lastLinkId += 1
-                    #     link.assignQubits()
-                    #     link.entangled = True
-                    #     link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
+                    if swapped:
+                        node1.links.append(link)
+                        node2.links.append(link)
+                        self.topo.links.append(link)
+                        self.topo.lastLinkId += 1
+                        link.assignQubits()
+                        link.entangled = True
+                        link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
 
     # p4 & p5
     def p4(self):
