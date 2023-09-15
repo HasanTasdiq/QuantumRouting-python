@@ -63,14 +63,17 @@ class SEERCACHE3(AlgorithmBase):
 
         return self.factorialTable[n]
 
-    def establishShortestPath(self):        
+    def establishShortestPath(self): 
+        total = 0       
         for n1 in self.topo.nodes:
             for n2 in self.topo.nodes:
                 if n1 != n2:
                     self.givenShortestPath[(n1, n2)] = self.topo.shortestPathForPreswap(n1, n2, 'Hop')[1] 
+                    total += len(self.givenShortestPath[(n1, n2)])
                     if len(self.givenShortestPath[(n1, n2)]) == 0:
                         quit()
                     # print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id, ', path length ->', len(self.givenShortestPath[(n1, n2)]))
+        print('+++ in establishShortestPath total:' , total , '-' , self.timeSlot)
 
     def Pr(self, path):
         P = 1
@@ -426,7 +429,7 @@ class SEERCACHE3(AlgorithmBase):
     # p1 & p2    
     def p2(self):
         self.tryPreSwapp()
-        self.establishShortestPath()
+        # self.establishShortestPath()
 
 
         # p1
@@ -703,7 +706,7 @@ class SEERCACHE3(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = SEERCACHE3(topo , preEnt=False, param='ten')
     
     # for i in range(0, 200):
@@ -717,10 +720,10 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 20):
+    for i in range(0, 100):
         requests = []
-        if i < 20:
-            for j in range(5):
+        if i < 100:
+            for j in range(15):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)
