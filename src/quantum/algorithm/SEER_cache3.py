@@ -598,8 +598,8 @@ class SEERCACHE3(AlgorithmBase):
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     # usedLinks.add(l1)
                     # usedLinks.add(l2)
-                    # swapped = curr.attemptSwapping2(l1, l2 , timeSlot = self.timeSlot)
-                    swapped = curr.attemptSwapping(l1, l2 )
+                    swapped = curr.attemptSwapping2(l1, l2 , timeSlot = self.timeSlot)
+                    # swapped = curr.attemptSwapping(l1, l2 )
                     if swapped:
                         attemptedLinks.add(l1)
                         attemptedLinks.add(l2)
