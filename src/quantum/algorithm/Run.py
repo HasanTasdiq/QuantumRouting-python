@@ -47,10 +47,10 @@ def Run(numOfRequestPerRound = 15, numOfNode = 100, r = 7, q = 0.9, alpha = 0.00
 
     # make copy
     algorithms = []
-    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
-    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
-    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
+    # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
+    # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -64,11 +64,11 @@ def Run(numOfRequestPerRound = 15, numOfNode = 100, r = 7, q = 0.9, alpha = 0.00
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    # # algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
-    # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+    algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
+    # algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
+    algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms[0].r = r
@@ -146,7 +146,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [10,15,20,25,30]
+    numOfRequestPerRound = [10,15,20,25]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
