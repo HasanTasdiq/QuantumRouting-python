@@ -130,12 +130,12 @@ class AlgorithmBase:
     def resetNeedLinksDict(self):
         temp = []
         for key in self.topo.needLinksDict:
-            if self.topo.needLinksDict[key][1] > needlink_timeslot:
+            if self.timeSlot - self.topo.needLinksDict[key][-1] > needlink_timeslot:
                 temp.append(key)
         for key in temp:
             del self.topo.needLinksDict[key]
         
-        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[0])))
+        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item)))
         
 
     def work(self, pairs: list, time): 
