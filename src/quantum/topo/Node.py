@@ -95,7 +95,7 @@ class Node:
             if b:
                 break
         if (l1,l2) in self.prevInternalLinks or (l2,l1) in self.prevInternalLinks:
-            print('************************###time:' , timeSlot , 'link inside')
+            # print('************************###time:' , timeSlot , 'link inside')
 
             if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
                 # print('************************###time:' , timeSlot , 'TRUE!!!!!!')
