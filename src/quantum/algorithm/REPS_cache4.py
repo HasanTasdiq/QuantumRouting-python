@@ -116,27 +116,27 @@ class REPSCACHE5(AlgorithmBase):
     #                     link.assignQubits()
 
 
-    def tryPreSwapp(self):
+    # def tryPreSwapp(self):
 
-        for (node , node1 , node2) in self.topo.needLinksDict:
-            link1 = None
-            link2 = None
-            for link in node.links:
-                if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped():
-                    link1 = link
-                if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped():
-                    link2 = link
-            if link1 is not None and link2 is not None:
-                link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-                if link.assignable():
-                    swapped = node.attemptPreSwapping(link1, link2)
-                # print('====== swapped in tryPreSwapp() =++++++====' , swapped , node.id , link1.n1.id , link1.n2.id, link2.n1.id ,link2.n2.id)
-                    if swapped:
-                        node1.links.append(link)
-                        node2.links.append(link)
-                        self.topo.links.append(link)
-                        self.topo.lastLinkId += 1
-                        link.assignQubits()
+    #     for (node , node1 , node2) in self.topo.needLinksDict:
+    #         link1 = None
+    #         link2 = None
+    #         for link in node.links:
+    #             if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped():
+    #                 link1 = link
+    #             if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped():
+    #                 link2 = link
+    #         if link1 is not None and link2 is not None:
+    #             link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+    #             if link.assignable():
+    #                 swapped = node.attemptPreSwapping(link1, link2)
+    #             # print('====== swapped in tryPreSwapp() =++++++====' , swapped , node.id , link1.n1.id , link1.n2.id, link2.n1.id ,link2.n2.id)
+    #                 if swapped:
+    #                     node1.links.append(link)
+    #                     node2.links.append(link)
+    #                     self.topo.links.append(link)
+    #                     self.topo.lastLinkId += 1
+    #                     link.assignQubits()
                      
 
 
@@ -701,9 +701,9 @@ class REPSCACHE5(AlgorithmBase):
                         self.topo.needLinks.add((node, link1, link2))
                         key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
                         if not key in self.topo.needLinksDict:
-                            self.topo.needLinksDict[key] = (1 , self.timeSlot)
+                            self.topo.needLinksDict[key] = [self.timeSlot]
                         else:
-                            self.topo.needLinksDict[key] = (self.topo.needLinksDict[key][0] + 1 , self.timeSlot)
+                            self.topo.needLinksDict[key].append( self.timeSlot)
 
                         
 
@@ -944,7 +944,7 @@ if __name__ == '__main__':
     topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
     s = REPSCACHE5(topo)
     result = AlgorithmResult()
-    samplesPerTime = 10
+    samplesPerTime = 40
     ttime = 50
     rtime = 50
     requests = {i : [] for i in range(ttime)}

@@ -14,6 +14,7 @@ class Link:
         self.p = math.exp(-self.alpha * l)
         self.l = l
         self.isVirtualLink = isVirtualLink
+        self.subLinks = []
         # print(self.n1.id, self.n2.id, self.p)
 
     def theOtherEndOf(self, n: Node): 
@@ -89,14 +90,14 @@ class Link:
         for internalLink in self.n1.internalLinks:
             if self in internalLink:
                 self.n1.internalLinks.remove(internalLink)
-                if self.isVirtualLink and self in self.n2.links:
-                    self.n2.links.remove(self)
+                # if self.isVirtualLink and self in self.n2.links:
+                #     self.n2.links.remove(self)
 
         for internalLink in self.n2.internalLinks:
             if self in internalLink:
                 self.n2.internalLinks.remove(internalLink)
-                if self.isVirtualLink and self in self.n1.links:
-                    self.n1.links.remove(self)
+                # if self.isVirtualLink and self in self.n1.links:
+                #     self.n1.links.remove(self)
 
         for internalSegment in self.n1.internalSegments:
             if self in internalSegment:
