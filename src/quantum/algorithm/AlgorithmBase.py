@@ -126,8 +126,7 @@ class AlgorithmBase:
             n2 = link.n2
             if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
                 temp_edges.add((n1,n2))
-        print("###### len of links" , len(self.topo.links))
-        print("###### len of need links dict " , len(self.topo.needLinksDict))
+
 
         for (node , node1 , node2) in self.topo.needLinksDict:
             if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
@@ -155,12 +154,6 @@ class AlgorithmBase:
 
                         self.topo.addLink(link)
 
-                        print('++++++ in pre swap ++++++ ' , link1.n1.id , link1.n2.id)
-                        print('++++++ in pre swap ++++++ ' , link2.n1.id , link2.n2.id)
-                        print('++++++ in pre swap ++++++ ' ,link.id ,  link.n1.id , link.n2.id)
-                        print([x.id for x in link.n1.links])
-                        print([x.id for x in link.n2.links])
-                        print('----------')
                         self.topo.removeLink(link1)
                         self.topo.removeLink(link2)
                         

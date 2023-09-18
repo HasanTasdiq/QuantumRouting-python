@@ -208,16 +208,9 @@ class Topo:
         # print('width:', self.widthPhase2(p))
     
     def removeLink(self, link):
-        print('++++++++++= removeLink++++++++= ' , link.n1.id , link.n2.id , link.id)
-        print([x.id for x in link.n1.links])
-        print([x.id for x in link.n2.links])
-
         link.n1.links.remove(link)
-        print('--')
         link.n2.links.remove(link)
 
-        print([x.id for x in link.n1.links])
-        print([x.id for x in link.n2.links])
         self.links.remove(link)
     
     def addLink(self,link):
