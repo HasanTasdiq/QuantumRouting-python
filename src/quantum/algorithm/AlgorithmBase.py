@@ -5,6 +5,7 @@ sys.path.append("..")
 from topo.Topo import Topo  
 import time
 from topo.helper import needlink_timeslot
+from topo.Link import Link
 
 class AlgorithmResult:
     def __init__(self):
@@ -118,6 +119,51 @@ class AlgorithmBase:
             if self.topo.cacheTable[sd] > 1:
                 count +=1
         # print('link to generate ent ' , self.topo.cacheTable)
+    def tryPreSwapp(self):
+        temp_edges = set()
+        for link in self.topo.links:
+            n1 = link.n1
+            n2 = link.n2
+            if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
+                temp_edges.add((n1,n2))
+        print("###### len of links" , len(self.topo.links))
+        print("###### len of need links dict " , len(self.topo.needLinksDict))
+
+        for (node , node1 , node2) in self.topo.needLinksDict:
+            if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
+                continue
+            
+            link1 = None
+            link2 = None
+            for link in node.links:
+                if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and link1 is None:
+                    link1 = link
+                if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and link2 is None:
+                    link2 = link
+            if link1 is not None and link2 is not None:
+                link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+                if link.assignable():
+                    swapped = node.attemptPreSwapping(link1, link2)
+                    if swapped:
+
+                        self.topo.lastLinkId += 1
+                        link.assignQubits()
+                        link.entangled = True
+                        link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
+                        link.subLinks.append(link1)
+                        link.subLinks.append(link2)
+
+                        self.topo.addLink(link)
+
+                        print('++++++ in pre swap ++++++ ' , link1.n1.id , link1.n2.id)
+                        print('++++++ in pre swap ++++++ ' , link2.n1.id , link2.n2.id)
+                        print('++++++ in pre swap ++++++ ' ,link.id ,  link.n1.id , link.n2.id)
+                        print([x.id for x in link.n1.links])
+                        print([x.id for x in link.n2.links])
+                        print('----------')
+                        self.topo.removeLink(link1)
+                        self.topo.removeLink(link2)
+                        
     
     def resetNodeSwaps(self):
         for node in self.topo.nodes:
@@ -130,8 +176,14 @@ class AlgorithmBase:
     def resetNeedLinksDict(self):
         temp = []
         for key in self.topo.needLinksDict:
-            if self.timeSlot - self.topo.needLinksDict[key][-1] > needlink_timeslot:
-                temp.append(key)
+            slots = self.topo.needLinksDict[key]
+
+            while self.timeSlot - slots[0] > needlink_timeslot:
+                slots.pop(0)
+
+                if len(slots) == 0:
+                    temp.append(key)
+                    break
         for key in temp:
             del self.topo.needLinksDict[key]
         

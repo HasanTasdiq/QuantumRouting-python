@@ -206,6 +206,24 @@ class Topo:
         # p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
         # print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
+    
+    def removeLink(self, link):
+        print('++++++++++= removeLink++++++++= ' , link.n1.id , link.n2.id , link.id)
+        print([x.id for x in link.n1.links])
+        print([x.id for x in link.n2.links])
+
+        link.n1.links.remove(link)
+        print('--')
+        link.n2.links.remove(link)
+
+        print([x.id for x in link.n1.links])
+        print([x.id for x in link.n2.links])
+        self.links.remove(link)
+    
+    def addLink(self,link):
+        link.n1.links.append(link)
+        link.n2.links.append(link)
+        self.links.append(link)
 
     def segmentCapacity(self, path):
         min_capacity = 1000
@@ -836,12 +854,10 @@ class Topo:
     def resetEntanglement(self , timeslot = 0):
         for link in self.usedLinks:
             link.clearEntanglement()
-            if link.isVirtualLink:
-                if link in link.n1.links:
-                    link.n1.links.remove(link)
-                if link in link.n2.links:
-                    link.n2.links.remove(link)
-                self.links.remove(link)
+            # if link.isVirtualLink:
+            #     for link_ in link.subLinks:
+            #         self.addLink(link_) 
+            #     self.removeLink(link)
 
         for link in set(self.links).difference(self.usedLinks):
             link.keepEntanglementOnly()
@@ -851,11 +867,11 @@ class Topo:
         for link in self.links:
             if link.isVirtualLink:
                 if not link.isEntangled(timeslot):
-                    if link in link.n1.links:
-                        link.n1.links.remove(link)
-                    if link in link.n2.links:
-                        link.n2.links.remove(link)
-                    self.links.remove(link)
+
+                    for link_ in link.subLinks:
+                        self.addLink(link_)                    
+                    self.removeLink(link)
+
 
         
 
