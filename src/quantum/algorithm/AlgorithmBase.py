@@ -180,7 +180,7 @@ class AlgorithmBase:
         for key in temp:
             del self.topo.needLinksDict[key]
         
-        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item)))
+        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1])))
         
 
     def work(self, pairs: list, time): 

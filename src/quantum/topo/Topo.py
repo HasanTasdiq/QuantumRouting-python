@@ -860,8 +860,8 @@ class Topo:
         for link in self.links:
             if link.isVirtualLink:
                 if not link.isEntangled(timeslot):
-
                     for link_ in link.subLinks:
+                        link_.clearEntanglement()
                         self.addLink(link_)                    
                     self.removeLink(link)
 
