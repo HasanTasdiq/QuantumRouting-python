@@ -214,6 +214,8 @@ class Topo:
         self.links.remove(link)
     
     def addLink(self,link):
+        self.lastLinkId += 1
+        
         link.n1.links.append(link)
         link.n2.links.append(link)
         self.links.append(link)

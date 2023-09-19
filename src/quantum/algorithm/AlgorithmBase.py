@@ -127,7 +127,7 @@ class AlgorithmBase:
             if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
                 temp_edges.add((n1,n2))
 
-
+        print('--------------')
         for (node , node1 , node2) in self.topo.needLinksDict:
             if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
                 continue
@@ -135,17 +135,22 @@ class AlgorithmBase:
             link1 = None
             link2 = None
             for link in node.links:
-                if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and link1 is None:
+                if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink and link1 is None:
                     link1 = link
-                if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and link2 is None:
+                if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink and link2 is None:
                     link2 = link
+
             if link1 is not None and link2 is not None:
+                # if link1.isVirtualLink or link2.isVirtualLink:
+                #     print('!!!!!!!!!!!!!!!!!!!!!!! virtual !!!!!!!!!!!!!!!!')
+
                 link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+                # print('if link.assignable() ' , link.assignable())
                 if link.assignable():
                     swapped = node.attemptPreSwapping(link1, link2)
                     if swapped:
-
-                        self.topo.lastLinkId += 1
+                        # print('if swapped ' , swapped)
+                        
                         link.assignQubits()
                         link.entangled = True
                         link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
@@ -156,6 +161,9 @@ class AlgorithmBase:
 
                         self.topo.removeLink(link1)
                         self.topo.removeLink(link2)
+
+                        # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', len(self.topo.links), sum(link.isVirtualLink for link in self.topo.links) , len(self.topo.links) +  sum(link.isVirtualLink for link in self.topo.links))
+
                         
     
     def resetNodeSwaps(self):
