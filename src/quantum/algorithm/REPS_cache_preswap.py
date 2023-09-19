@@ -91,24 +91,8 @@ class REPSCACHE4(AlgorithmBase):
         return self.result
 
     
-    # return fi(u, v)
 
-    # def tryPreSwapp(self):
 
-    #     for (node , link1 , link2) in self.topo.needLinks:
-    #         if link1.isEntangled(self.timeSlot) and link1.notSwapped() and not link1.isVirtualLink and link2.isEntangled(self.timeSlot) and link2.notSwapped() and not link2.isVirtualLink:
-    #             node1 = link1.theOtherEndOf(node)
-    #             node2 = link2.theOtherEndOf(node)
-    #             link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-    #             if link.assignable():
-    #                 swapped = node.attemptPreSwapping(link1, link2)
-    #             # print('====== swapped in tryPreSwapp() =++++++====' , swapped , node.id , link1.n1.id , link1.n2.id, link2.n1.id ,link2.n2.id)
-    #                 if swapped:
-    #                     node1.links.append(link)
-    #                     node2.links.append(link)
-    #                     self.topo.links.append(link)
-    #                     self.topo.lastLinkId += 1
-    #                     link.assignQubits()
 
 
     def tryPreSwapp(self):
@@ -695,7 +679,6 @@ class REPSCACHE4(AlgorithmBase):
                     if swapped:
                         self.topo.usedLinks.add(link1)
                         self.topo.usedLinks.add(link2)
-                        self.topo.needLinks.add((node, link1, link2))
                         key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
                         if not key in self.topo.needLinksDict:
                             self.topo.needLinksDict[key] = (1 , self.timeSlot)
