@@ -164,8 +164,8 @@ if __name__ == '__main__':
     alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 
-    # preSwapFraction = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-    preSwapFraction = [0.2, 0.3]
+    preSwapFraction = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+    # preSwapFraction = [0.2, 0.3]
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
