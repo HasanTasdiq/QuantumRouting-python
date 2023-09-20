@@ -140,7 +140,7 @@ def mainThreadAlpha(Xparam , topo , result):
     result.extend(Run(alpha = Xparam, topo = copy.deepcopy(topo)))
 def mainThreadSwapFrac(Xparam , topo , result):
     topo.preSwapFraction = Xparam
-    result.extend(Run(alpha = Xparam, topo = copy.deepcopy(topo)))
+    result.extend(Run(topo = copy.deepcopy(topo)))
 
 
 
@@ -183,7 +183,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [  0,1, 2, 3,  6]
+    skipXlabel = [  0,1, 2, 3, 4,5, 6]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
@@ -228,7 +228,7 @@ if __name__ == '__main__':
             #     result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
 
             if XlabelIndex == 7: # pre swap fraction
-                job = multiprocessing.Process(target = mainThreadAlpha, args = (Xparam , topo , results[Xparam] ))
+                job = multiprocessing.Process(target = mainThreadSwapFrac, args = (Xparam , topo , results[Xparam] ))
                 jobs.append(job)
 
             # if XlabelIndex == 7:
