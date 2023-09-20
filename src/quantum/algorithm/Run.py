@@ -138,6 +138,10 @@ def mainThreadSwapProb(Xparam , topo , result):
     result.extend(Run(q = Xparam , topo=copy.deepcopy(topo)))
 def mainThreadAlpha(Xparam , topo , result):
     result.extend(Run(alpha = Xparam, topo = copy.deepcopy(topo)))
+def mainThreadSwapFrac(Xparam , topo , result):
+    topo.preSwapFraction = Xparam
+    result.extend(Run(alpha = Xparam, topo = copy.deepcopy(topo)))
+
 
 
 
@@ -159,10 +163,14 @@ if __name__ == '__main__':
     # alpha = [0.0001, 0.0002, 0.0003, 0.0004, 0.0005]
     alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
+
+    # preSwapFraction = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+    preSwapFraction = [0.2, 0.3]
+
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
-    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity"]
-    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity]
+    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction"]
+    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction]
 
     topo = Topo.generate(100, 0.8, 5, 0.002, 6)
     jobs = []
@@ -218,6 +226,11 @@ if __name__ == '__main__':
 
             # if XlabelIndex == 6: # SocialNetworkDensity
             #     result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
+
+            if XlabelIndex == 7: # pre swap fraction
+                job = multiprocessing.Process(target = mainThreadAlpha, args = (Xparam , topo , results[Xparam] ))
+                jobs.append(job)
+
             # if XlabelIndex == 7:
             #     result = Run(mapSize = Xparam)
             # Ydata.append(result)

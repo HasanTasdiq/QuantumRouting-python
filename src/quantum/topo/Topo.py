@@ -87,6 +87,7 @@ class Topo:
         self.k_shortest_paths_dict = {}
         self.needLinks = set()
         self.needLinksDict = {}
+        self.preSwapFraction = 1
 
 
         # for pos in _positions:
@@ -215,7 +216,7 @@ class Topo:
     
     def addLink(self,link):
         self.lastLinkId += 1
-        
+
         link.n1.links.append(link)
         link.n2.links.append(link)
         self.links.append(link)
