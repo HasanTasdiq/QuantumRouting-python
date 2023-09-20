@@ -129,7 +129,7 @@ class AlgorithmBase:
 
         print('--------------')
         for (node , node1 , node2) in self.topo.needLinksDict:
-            if len(self.topo.needLinksDict[(node , node1 , node2)]) < needlink_timeslot / 2 :
+            if len(self.topo.needLinksDict[(node , node1 , node2)]) <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
             if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
                 continue

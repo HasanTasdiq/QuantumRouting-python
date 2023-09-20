@@ -608,16 +608,17 @@ class SEERCACHE3(AlgorithmBase):
                     # usedLinks.add(l1)
                     # usedLinks.add(l2)
                     swapped = curr.attemptSwapping2(l1, l2 , timeSlot = self.timeSlot)
+                    key = (curr , l1.theOtherEndOf(curr) , l2.theOtherEndOf(curr))
+                    if not key in self.topo.needLinksDict:
+                        self.topo.needLinksDict[key] = ([self.timeSlot])
+                    else:
+                        self.topo.needLinksDict[key].append(self.timeSlot)
                     # swapped = curr.attemptSwapping(l1, l2 )
                     if swapped:
                         attemptedLinks.add(l1)
                         attemptedLinks.add(l2)
 
-                        key = (curr , l1.theOtherEndOf(curr) , l2.theOtherEndOf(curr))
-                        if not key in self.topo.needLinksDict:
-                            self.topo.needLinksDict[key] = ([self.timeSlot])
-                        else:
-                            self.topo.needLinksDict[key].append(self.timeSlot)
+
 
 
 
@@ -718,7 +719,7 @@ class SEERCACHE3(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.8, 5, 0.002, 6)
-    s = SEERCACHE3(topo , preEnt=False, param='ten')
+    s = SEERCACHE3(topo , preEnt=False, param='ten',name='SEER4')
     
     # for i in range(0, 200):
     #     requests = []
