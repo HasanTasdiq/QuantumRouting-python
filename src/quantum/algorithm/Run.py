@@ -77,7 +77,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 4
+    times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 
-    preSwapFraction = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7 , 0.8 , 0.9 , 1]
+    preSwapFraction = [0.2,  0.4,  0.6,  0.8 ,  1]
     # preSwapFraction = [0.2, 0.3]
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
