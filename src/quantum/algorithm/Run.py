@@ -183,7 +183,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [  0,1, 2, 3, 4,5, 6]
+    skipXlabel = [  0,1, 2, 3,5, 6, 7]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
