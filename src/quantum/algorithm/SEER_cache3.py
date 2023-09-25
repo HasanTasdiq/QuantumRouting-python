@@ -428,7 +428,7 @@ class SEERCACHE3(AlgorithmBase):
 
     # p1 & p2    
     def p2(self):
-        self.tryPreSwapp()
+        # self.tryPreSwapp()
         self.establishShortestPath()
 
 
