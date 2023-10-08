@@ -26,6 +26,7 @@ from random import sample
 from numpy import log as ln
 import numpy as np
 import random
+import time
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
@@ -123,6 +124,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002
 
     for job in jobs:
         job.start()
+        time.sleep(1)
 
     for job in jobs:
         job.join()
@@ -247,6 +249,7 @@ if __name__ == '__main__':
 
         for job in jobs:
             job.start()
+            time.sleep(1)
 
         for job in jobs:
             job.join()
