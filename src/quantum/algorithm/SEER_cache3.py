@@ -512,8 +512,8 @@ class SEERCACHE3(AlgorithmBase):
             requestInfo.width = 1
         
         # p2 繼續找路徑分配資源 
-        if not self.preEnt:
-            self.p2Extra()
+        # if not self.preEnt:
+        self.p2Extra()
 
 
         for req in self.requestState:
@@ -521,38 +521,6 @@ class SEERCACHE3(AlgorithmBase):
             if requestInfo.taken == False:
                 self.result.idleTime += 1
 
-
-    # def tryPreSwapp(self):
-    #     temp_edges = set()
-    #     for link in self.links:
-    #         n1 = link.n1
-    #         n2 = link.n2
-    #         if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
-    #             temp_edges.add((n1,n2))
-
-    #     for (node , node1 , node2) in self.topo.needLinksDict:
-    #         if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
-    #             continue
-
-    #         link1 = None
-    #         link2 = None
-    #         for link in node.links:
-    #             if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped():
-    #                 link1 = link
-    #             if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped():
-    #                 link2 = link
-    #         if link1 is not None and link2 is not None:
-    #             link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-    #             if link.assignable():
-    #                 swapped = node.attemptPreSwapping(link1, link2)
-    #                 if swapped:
-    #                     node1.links.append(link)
-    #                     node2.links.append(link)
-    #                     self.topo.links.append(link)
-    #                     self.topo.lastLinkId += 1
-    #                     link.assignQubits()
-    #                     link.entangled = True
-    #                     link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
 
     # p4 & p5
     def p4(self):
