@@ -16,6 +16,7 @@ from REPS_cache4 import REPSCACHE5
 from SEER_cache import SEERCACHE
 from SEER_cache2 import SEERCACHE2
 from SEER_cache3 import SEERCACHE3
+from SEER_cache3_2 import SEERCACHE3_2
 from SEE import SEE
 from SEE2 import SEE2
 from CachedEntanglement import CachedEntanglement
@@ -40,7 +41,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002, SocialNetworkDensity = 0.5, rtime = 301, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002, SocialNetworkDensity = 0.5, rtime = 101, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -54,7 +55,8 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
     algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
-    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    algorithms.append(SEERCACHE3_2(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
