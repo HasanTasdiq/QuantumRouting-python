@@ -21,11 +21,9 @@ class RequestInfo:
     savetime : int      # req存在中繼點k 還沒送出去經過的時間
     width : int         # seg1 用過的 links
     seg1_success_entanglement: int = 0
+class SEERCACHE3_2(AlgorithmBase):
 
-
-class SEERCACHE(AlgorithmBase):
-
-    def __init__(self, topo , preEnt = False, param = None ,  name ='SEERCACHE'):
+    def __init__(self, topo , preEnt = False, param = None ,  name ='SEERCACHE3_2'):
         super().__init__(topo , preEnt , param=param)
 
         self.pathsSortedDynamically = []
@@ -65,14 +63,17 @@ class SEERCACHE(AlgorithmBase):
 
         return self.factorialTable[n]
 
-    def establishShortestPath(self):        
+    def establishShortestPath(self): 
+        total = 0       
         for n1 in self.topo.nodes:
             for n2 in self.topo.nodes:
                 if n1 != n2:
-                    self.givenShortestPath[(n1, n2)] = self.topo.shortestPath(n1, n2, 'Hop')[1] 
+                    self.givenShortestPath[(n1, n2)] = self.topo.shortestPathForPreswap(n1, n2, 'Hop')[1] 
+                    total += len(self.givenShortestPath[(n1, n2)])
                     if len(self.givenShortestPath[(n1, n2)]) == 0:
                         quit()
                     # print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id, ', path length ->', len(self.givenShortestPath[(n1, n2)]))
+        # print('+++ in establishShortestPath total:' , total , '-' , self.timeSlot)
 
     def Pr(self, path):
         P = 1
@@ -199,7 +200,7 @@ class SEERCACHE(AlgorithmBase):
         for req in self.srcDstPairs:
             src, dst = req[0], req[1]
             path_sd = self.givenShortestPath[(src, dst)]
-            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(path_sd), path_sd, None, False, 0, 0)
+            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(path_sd), path_sd, None, False, 0, 0 )
             P_sd = self.Pr(self.givenShortestPath[(src, dst)])
             minNum = 1 / P_sd
             # print('minNum:', minNum)
@@ -223,7 +224,7 @@ class SEERCACHE(AlgorithmBase):
                 # print('curMin:', curMin)
                 if minNum > curMin:    # 分2段 取k中間  
                     minNum = curMin
-                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), path_sk, path_kd, False, 0, 0)
+                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), path_sk, path_kd, False, 0, 0 )
 
             # 模擬用掉這個k的一個Qubits 紀錄剩下的數量
             k = self.requestState[(src, dst, self.timeSlot)].intermediate
@@ -391,6 +392,7 @@ class SEERCACHE(AlgorithmBase):
 
         for link in usedLinks:
             link.keepEntanglementOnly()
+            # link.keepEntanglementOnly()
         
     def resetFailedRequestFor2(self, requestInfo, usedLinks):       # 第二段傳失敗 且超時
         requestInfo.savetime = 0
@@ -402,7 +404,8 @@ class SEERCACHE(AlgorithmBase):
 
         # 第二段的資源全部釋放
         for link in usedLinks:
-            link.keepEntanglementOnly()    
+            link.keepEntanglementOnly()
+            # link.keepEntanglementOnly()    
     
     def resetSucceedRequestFor1(self, requestInfo, usedLinks):      # 第一段傳成功
         requestInfo.state = 2
@@ -425,6 +428,9 @@ class SEERCACHE(AlgorithmBase):
 
     # p1 & p2    
     def p2(self):
+        self.tryPreSwapp()
+        self.establishShortestPath()
+
 
         # p1
         self.descideSegmentation()
@@ -436,7 +442,8 @@ class SEERCACHE(AlgorithmBase):
 
         if len(self.requestState) > 0:
             self.result.numOfTimeslot += 1
-
+        
+        
         # p2 (1)
         for req in self.requestState:
             requestInfo = self.requestState[req]
@@ -505,8 +512,8 @@ class SEERCACHE(AlgorithmBase):
             requestInfo.width = 1
         
         # p2 繼續找路徑分配資源 
-        if not self.preEnt:
-            self.p2Extra()
+        # if not self.preEnt:
+        self.p2Extra()
 
 
         for req in self.requestState:
@@ -520,8 +527,8 @@ class SEERCACHE(AlgorithmBase):
         
         sorted(self.requestState, key=lambda q: q[2])
         finishedRequest = []
-        totalEntanglement = 0
         # p4
+        totalEntanglement = 0
         for req in self.requestState:
             requestInfo = self.requestState[req]
             if not requestInfo.taken:
@@ -538,7 +545,9 @@ class SEERCACHE(AlgorithmBase):
                 p = requestInfo.pathseg1
 
             width = requestInfo.width
+            # print('#####width: ' , width)
             usedLinks = set()
+            attemptedLinks = set()
             # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
             for i in range(1, len(p) - 1):
@@ -566,10 +575,24 @@ class SEERCACHE(AlgorithmBase):
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     usedLinks.add(l1)
                     usedLinks.add(l2)
+                    # swapped = curr.attemptSwapping2(l1, l2 , timeSlot = self.timeSlot)
+                    # print('l1: ' , l1.n1.id , l1.n2.id , 'l2:' , l2.n1.id , l2.n2.id)
                     swapped = curr.attemptSwapping(l1, l2)
+                    key = (curr , l1.theOtherEndOf(curr) , l2.theOtherEndOf(curr))
+                    if not key in self.topo.needLinksDict:
+                        self.topo.needLinksDict[key] = ([self.timeSlot])
+                    else:
+                        self.topo.needLinksDict[key].append(self.timeSlot)
+                    # swapped = curr.attemptSwapping(l1, l2 )
                     if swapped:
+                        # attemptedLinks.add(l1)
+                        # attemptedLinks.add(l2)
                         self.topo.usedLinks.add(l1)
                         self.topo.usedLinks.add(l2)
+
+
+
+
 
             
             if len(p) == 2:
@@ -582,7 +605,18 @@ class SEERCACHE(AlgorithmBase):
                         break
          
             # p5
-            success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+            # success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+            successPath = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1] , self.timeSlot)
+            # usedLinksCount = 0
+            # for path in successPath:
+            #     for node , link in path:
+            #         if link is not None:
+            #             self.topo.usedLinks.add(link)
+            #             usedLinks.add(link)
+            #             usedLinksCount += 1
+            success = len(successPath)
+
+            # print('#####success width:' , success)
 
             # print('----------------------')
             # print('[' , self.name, ']', ' success:', success)
@@ -592,6 +626,7 @@ class SEERCACHE(AlgorithmBase):
             # print('[' , self.name, ']', ' path:', [x.id for x in p])
 
             # failed
+
             if success == 0 and len(p) != 2:
                 if requestInfo.state == 0 or requestInfo.state == 1:    # 0, 1
                     self.resetFailedRequestFor01(requestInfo, usedLinks)
@@ -604,32 +639,29 @@ class SEERCACHE(AlgorithmBase):
                 continue
             
             # succeed
+            # print('+++++++++++++++++++++++success+++++++++++++++++++', success)
             if success > 0 or len(p) == 2:
-                # self.result.usedPaths.append(p) #added for pre-entanglement 
                 if requestInfo.state == 0:      # 0
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
+                    # self.result.entanglementPerRound.append(success / (timeToFinish + 1))
                     totalEntanglement += success
-
-
+                    
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
                     requestInfo.seg1_success_entanglement = success
-
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo, usedLinks)
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
-
+                    # self.result.entanglementPerRound.append(success / (timeToFinish + 1))
                     totalEntanglement += min(success , requestInfo.seg1_success_entanglement)
-
                 continue
             # p5 end
         # p4 end
         self.result.entanglementPerRound.append(totalEntanglement)
-
         for req in finishedRequest:
             self.requestState.pop(req)
         self.srcDstPairs.clear()
@@ -649,6 +681,8 @@ class SEERCACHE(AlgorithmBase):
         print('[' , self.name, ']', ' waiting time:',  self.result.waitingTime)
         print('[' , self.name, ']', ' idle time:', self.result.idleTime)
         print('[' , self.name, '] :', self.timeSlot ,  ', remaining request:', len(self.requestState))
+        # print('[' , self.name, '] :', self.timeSlot ,  ', == len links ==  :', len(self.topo.links))
+        # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , len(self.topo.links) +  sum(link.isVirtualLink for link in self.topo.links))
         print('[' , self.name, ']', ' p5 end')
         # print('----------------------')
 
@@ -656,8 +690,8 @@ class SEERCACHE(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
-    s = SEERCACHE(topo , preEnt=False, param='ten')
+    topo = Topo.generate(100, 0.8, 5, 0.002, 6)
+    s = SEERCACHE3(topo , preEnt=False, param='ten',name='SEER4')
     
     # for i in range(0, 200):
     #     requests = []
@@ -670,10 +704,10 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 200):
+    for i in range(0, 100):
         requests = []
-        if i < 200:
-            for j in range(10):
+        if i < 100:
+            for j in range(15):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)
