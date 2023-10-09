@@ -428,8 +428,8 @@ class SEERCACHE3(AlgorithmBase):
 
     # p1 & p2    
     def p2(self):
-        self.tryPreSwapp()
-        self.establishShortestPath()
+        # self.tryPreSwapp()
+        # self.establishShortestPath()
 
 
         # p1
@@ -575,8 +575,9 @@ class SEERCACHE3(AlgorithmBase):
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     # usedLinks.add(l1)
                     # usedLinks.add(l2)
-                    swapped = curr.attemptSwapping2(l1, l2 , timeSlot = self.timeSlot)
-                    # swapped = curr.attemptSwapping(l1, l2)
+                    # swapped = curr.attemptSwapping2(l1, l2 , timeSlot = self.timeSlot)
+                    # print('l1: ' , l1.n1.id , l1.n2.id , 'l2:' , l2.n1.id , l2.n2.id)
+                    swapped = curr.attemptSwapping(l1, l2)
                     key = (curr , l1.theOtherEndOf(curr) , l2.theOtherEndOf(curr))
                     if not key in self.topo.needLinksDict:
                         self.topo.needLinksDict[key] = ([self.timeSlot])
