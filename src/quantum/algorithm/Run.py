@@ -41,7 +41,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002, SocialNetworkDensity = 0.5, rtime = 101, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 3, numOfNode = 18, r = 7, q = 0.8, alpha = 0.002, SocialNetworkDensity = 0.5, rtime = 101, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -55,8 +55,8 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002
     algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
     algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
-    # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
-    algorithms.append(SEERCACHE3_2(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
+    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    # algorithms.append(SEERCACHE3_2(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -82,7 +82,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 5
+    times = 1
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -92,7 +92,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002
     jobs = []
 
 
-    bias_weights = [x%10==0 for x in range(numOfNode)]
+    bias_weights = [x%3==0 for x in range(numOfNode)]
     prob = np.array(bias_weights) / np.sum(bias_weights)
 
 
@@ -108,7 +108,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.002
                         # a = sample([i for i in range(numOfNode)], 2)
 
                         a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-
+                        print('req: ' , a)
                         # for _ in range(int(random.random()*3+1)):
                         ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))

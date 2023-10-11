@@ -415,22 +415,24 @@ class SEERCACHE3(AlgorithmBase):
         # requestInfo.linkseg1 = usedLinks                  # 紀錄seg1用了哪些link seg2成功要釋放資源
 
         # 第一段的資源還是預留的 只是清掉isEntangled(self.timeSlot)跟swap
-        for link in usedLinks:      
-            link.clearEntanglement()
+        # for link in usedLinks:      
+        #     link.clearEntanglement()
 
     def resetSucceedRequestFor2(self, requestInfo, usedLinks):      # 第二段傳成功 
         # 資源全部釋放
         requestInfo.intermediate.clearIntermediate()
-        for link in usedLinks:
-            link.clearEntanglement()
+        # for link in usedLinks:
+        #     link.clearEntanglement()
         # for link in requestInfo.linkseg1: 
         #     link.clearEntanglement()
 
     # p1 & p2    
     def p2(self):
-        # self.tryPreSwapp()
-        # self.establishShortestPath()
+        self.tryPreSwapp()
+        self.establishShortestPath()
 
+        print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
 
         # p1
         self.descideSegmentation()
@@ -550,6 +552,8 @@ class SEERCACHE3(AlgorithmBase):
             attemptedLinks = set()
             # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
+            print('selected ' , width , [n.id for n in p])
+
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
                 curr = p[i]
@@ -572,6 +576,7 @@ class SEERCACHE3(AlgorithmBase):
                 if prevLinks == None or nextLinks == None:
                     break
 
+
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     # usedLinks.add(l1)
                     # usedLinks.add(l2)
@@ -583,7 +588,8 @@ class SEERCACHE3(AlgorithmBase):
                         self.topo.needLinksDict[key] = ([self.timeSlot])
                     else:
                         self.topo.needLinksDict[key].append(self.timeSlot)
-                    # swapped = curr.attemptSwapping(l1, l2 )
+                    print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
+                    
                     if swapped:
                         attemptedLinks.add(l1)
                         attemptedLinks.add(l2)
@@ -607,6 +613,8 @@ class SEERCACHE3(AlgorithmBase):
             successPath = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1] , self.timeSlot)
             usedLinksCount = 0
             for path in successPath:
+                print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
+
                 for node , link in path:
                     if link is not None:
                         self.topo.usedLinks.add(link)
@@ -681,6 +689,9 @@ class SEERCACHE3(AlgorithmBase):
         print('[' , self.name, '] :', self.timeSlot ,  ', remaining request:', len(self.requestState))
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len links ==  :', len(self.topo.links))
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , len(self.topo.links) +  sum(link.isVirtualLink for link in self.topo.links))
+        
+        print('[' , self.name, ']', ' total entanglement: ' , totalEntanglement)
+        
         print('[' , self.name, ']', ' p5 end')
         # print('----------------------')
 
@@ -688,7 +699,7 @@ class SEERCACHE3(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.8, 5, 0.002, 6)
+    topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
     s = SEERCACHE3(topo , preEnt=False, param='ten',name='SEER4')
     
     # for i in range(0, 200):
@@ -705,9 +716,24 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(15):
-                a = sample(topo.nodes, 2)
-                requests.append((a[0], a[1]))
+
+
+            ids = [(1,14), (1,16), (4,17), (3,16)]
+            for (p,q) in ids:
+                source = None
+                dest = None
+                for node in topo.nodes:
+
+                    if node.id == p:
+                        source = node
+                    if node.id == q:
+                        dest = node
+                requests.append((source , dest))
+            # for j in range(2):
+            #     a = sample(topo.nodes, 2)
+            #     print(a)
+            #     # requests.append((a[0], a[1]))
+            #     requests.append((1,14))
             s.work(requests, i)
         else:
             s.work([], i)

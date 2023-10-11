@@ -166,7 +166,7 @@ class AlgorithmBase:
                         self.topo.removeLink(link1)
                         self.topo.removeLink(link2)
 
-                        # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', len(self.topo.links), sum(link.isVirtualLink for link in self.topo.links) , len(self.topo.links) +  sum(link.isVirtualLink for link in self.topo.links))
+                        print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
 
                         
     

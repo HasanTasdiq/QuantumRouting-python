@@ -12,6 +12,8 @@ from itertools import islice
 from random import sample
 import itertools
 import time
+import matplotlib.pyplot as plt
+
 
 
 @dataclass
@@ -108,10 +110,13 @@ class Topo:
             # _positions[_node] = (p1 * 500,  p2 * 500)
             _positions[_node] = (p1 * 1400,  p2 * 1400)
             _neighbors[_node] = list(nx.neighbors(G,_node))
+            print('neighbors of node ' , len(_neighbors[_node]))
           
         # Construct Node 
+        #---------
         for _node in _nodes:
-            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], 10 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -133,11 +138,16 @@ class Topo:
                         _neighbors[curNode].append(_node)
                         _edges.append((_node, curNode))
                         usedNode.append(curNode)
+        # ----------
                         #print(usedNode)
 
         # Construct node's neighbor list in Node struct
         for node in self.nodes:
+            # print('in node ' , node.id , len(self.nodes))
             for neighbor in _neighbors[node.id]:
+                print('in node ' , neighbor )
+                print('in node 2 ' ,  self.nodes[neighbor].id)
+
                 node.neighbors.append(self.nodes[neighbor])
         
         for edge in _edges:
@@ -159,6 +169,8 @@ class Topo:
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             rand = int(random.random()*5+3) # 3~7
+            rand = 3
+            
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
                 self.links.append(link)
@@ -209,9 +221,18 @@ class Topo:
         # print('width:', self.widthPhase2(p))
     
     def removeLink(self, link):
+        print('removeLink()' , link.id , len(self.links))
+        print('removeLink()' ,link.n1.id , [link_.id for link_ in link.n1.links])
+        print('removeLink()' ,link.n2.id , [link_.id for link_ in link.n2.links])
+        print('removeLink(sublinks)' , [link_.id for link_ in link.subLinks])
+
         link.n1.links.remove(link)
         link.n2.links.remove(link)
-
+        print('removeLink()' , link.id , len(self.links))
+        print('removeLink()' ,link.n1.id , [link_.id for link_ in link.n1.links])
+        print('removeLink()' ,link.n2.id , [link_.id for link_ in link.n2.links])
+        print('removeLink(sublinks)' , [link_.id for link_ in link.subLinks])
+        print('---')
         self.links.remove(link)
     
     def addLink(self,link):
@@ -275,14 +296,16 @@ class Topo:
         self.k_shortest_paths_dict[(source,target)] = paths_with_len
         return paths_with_len
 
-    def generate(n, q, k, a, degree):
+    def generate( n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
         # dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            # print('leeeen ' , len(G.edges))
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = Topo.create_custom_graph()
+            print('leeeen ' , len(G.edges))
+            # Topo.draw_graph(G)
 
             topo = Topo(G, q, k, a, degree)
             checker.setTopo(topo)
@@ -291,6 +314,91 @@ class Topo:
             else:
                 print("topo is not connected", file = sys.stderr)
         return topo
+    def create_custom_graph():
+
+       
+        G = nx.Graph()
+        G.add_node(0, pos=[0, 0])
+        G.add_node(1, pos=[0, 0])
+        G.add_node(2, pos=[.3, 0])
+        G.add_node(3, pos=[.7, 0])
+        G.add_node(4, pos=[.9, 0])
+        G.add_node(5, pos=[0, .3])
+        G.add_node(6, pos=[.3, .3])
+        G.add_node(7, pos=[.7, .3])
+        G.add_node(8, pos=[.9, .3])
+        G.add_node(9, pos=[0, .7])
+        G.add_node(10, pos=[.4, .7])
+        G.add_node(11, pos=[.9, .7])
+        G.add_node(12, pos=[.2, .8])
+        G.add_node(13, pos=[.7, .8])
+        G.add_node(14, pos=[.9, .9])
+        G.add_node(15, pos=[.6, .9])
+        G.add_node(16, pos=[.3, .9])
+        G.add_node(17, pos=[0, .9])
+
+        G.add_edge(0, 1)
+
+        G.add_edge(1, 2)
+        G.add_edge(1, 5)
+        G.add_edge(1, 6)
+        G.add_edge(2, 3)
+        G.add_edge(2, 7)
+        G.add_edge(3, 4)
+        G.add_edge(4, 8)
+        G.add_edge(5, 9)
+        G.add_edge(5, 12)
+        G.add_edge(6, 10)
+        G.add_edge(7, 11)
+        G.add_edge(7, 13)
+        G.add_edge(8, 11)
+        G.add_edge(9, 17)
+        G.add_edge(10, 12)
+        G.add_edge(10, 13)
+        G.add_edge(11, 14)
+        G.add_edge(12, 16)
+        G.add_edge(12, 15)
+        G.add_edge(13, 14)
+        G.add_edge(14, 15)
+        G.add_edge(15, 16)
+        G.add_edge(16, 17)
+
+
+
+        for node in G.nodes():
+            G.nodes[node]['xcoord'] = G.nodes[node]['pos'][0]
+            G.nodes[node]['ycoord'] = G.nodes[node]['pos'][1]
+        # Topo.draw_graph(G)
+        return G
+    
+    def draw_graph(G):
+        pos = nx.get_node_attributes(G, 'pos')
+        repeater_nodes = []
+        end_nodes = []
+        for node in G.nodes():
+            end_nodes.append(node)
+        fig, ax = plt.subplots(figsize=(7, 7))
+        end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=150,
+                                        node_color=[[1.0, 120 / 255, 0.]], label="End Node", linewidths=3)
+        end_nodes.set_edgecolor('k')
+        rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=150,
+                                        node_color=[[1, 1, 1]], label="Repeater Node")
+        rep_nodes.set_edgecolor('k')
+        end_node_labels = {}
+        repeater_node_labels = {}
+        for node, nodedata in G.nodes.items():
+            end_node_labels[node] = node
+
+        nx.draw_networkx_labels(G=G, pos=pos, labels=end_node_labels, font_size=7, font_weight="bold", font_color="w",
+                                font_family='serif')
+        nx.draw_networkx_labels(G=G, pos=pos, labels=repeater_node_labels, font_size=5, font_weight="bold")
+        nx.draw_networkx_edges(G=G, pos=pos, width=1)
+        plt.axis('off')
+        margin = 0.33
+        fig.subplots_adjust(margin, margin, 1. - margin, 1. - margin)
+        ax.axis('equal')
+        fig.tight_layout()
+        plt.show()
 
     def widthPhase2(self, path):
         curMinWidth = min(path[0].remainingQubits, path[-1].remainingQubits)
@@ -860,13 +968,13 @@ class Topo:
             
         self.usedLinks.clear()
 
-        for link in self.links:
-            if link.isVirtualLink:
-                if not link.isEntangled(timeslot):
-                    for link_ in link.subLinks:
-                        link_.clearEntanglement()
-                        self.addLink(link_)                    
-                    self.removeLink(link)
+        # for link in self.links:
+        #     if link.isVirtualLink:
+        #         if not link.isEntangled(timeslot):
+        #             for link_ in link.subLinks:
+        #                 link_.clearEntanglement()
+        #                 self.addLink(link_)                    
+        #             self.removeLink(link)
 
 
         

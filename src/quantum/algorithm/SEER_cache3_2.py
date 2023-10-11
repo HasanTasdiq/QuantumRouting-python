@@ -691,7 +691,7 @@ class SEERCACHE3_2(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.8, 5, 0.002, 6)
-    s = SEERCACHE3(topo , preEnt=False, param='ten',name='SEER4')
+    s = SEERCACHE3_2(topo , preEnt=False, param='ten',name='SEER4')
     
     # for i in range(0, 200):
     #     requests = []

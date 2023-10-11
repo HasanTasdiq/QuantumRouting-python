@@ -15,6 +15,7 @@ class Link:
         self.l = l
         self.isVirtualLink = isVirtualLink
         self.subLinks = []
+        self.topo = topo
         # print(self.n1.id, self.n2.id, self.p)
 
     def theOtherEndOf(self, n: Node): 
@@ -58,6 +59,11 @@ class Link:
         for internalLink in self.n2.internalLinks:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
+        if self.isVirtualLink:
+            for link_ in self.subLinks:
+                link_.clearEntanglement()
+                self.topo.addLink(link_)                    
+            self.topo.removeLink(self)
 
         if preState:
             self.n1.remainingQubits += 1
