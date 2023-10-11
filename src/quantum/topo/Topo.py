@@ -221,18 +221,10 @@ class Topo:
         # print('width:', self.widthPhase2(p))
     
     def removeLink(self, link):
-        print('removeLink()' , link.id , len(self.links))
-        print('removeLink()' ,link.n1.id , [link_.id for link_ in link.n1.links])
-        print('removeLink()' ,link.n2.id , [link_.id for link_ in link.n2.links])
-        print('removeLink(sublinks)' , [link_.id for link_ in link.subLinks])
 
         link.n1.links.remove(link)
         link.n2.links.remove(link)
-        print('removeLink()' , link.id , len(self.links))
-        print('removeLink()' ,link.n1.id , [link_.id for link_ in link.n1.links])
-        print('removeLink()' ,link.n2.id , [link_.id for link_ in link.n2.links])
-        print('removeLink(sublinks)' , [link_.id for link_ in link.subLinks])
-        print('---')
+
         self.links.remove(link)
     
     def addLink(self,link):
@@ -302,8 +294,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            # G = Topo.create_custom_graph()
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
