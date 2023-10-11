@@ -541,6 +541,8 @@ class SEERCACHE(AlgorithmBase):
             usedLinks = set()
             # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
+            print('selected ' , width , [n.id for n in p])
+
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
                 curr = p[i]
@@ -562,7 +564,8 @@ class SEERCACHE(AlgorithmBase):
 
                 if prevLinks == None or nextLinks == None:
                     break
-
+                
+                print('attempt swapping ' , prev.id , curr.id , next.id)
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     usedLinks.add(l1)
                     usedLinks.add(l2)
@@ -582,7 +585,12 @@ class SEERCACHE(AlgorithmBase):
                         break
          
             # p5
-            success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+            successPaths = self.topo.getEstablishedEntanglements(p[0], p[-1])
+            success = len(successPaths)
+
+            for path in successPaths:
+                print('path at time' , self.timeSlot , ':' , [n.id for n  in path ])
+
 
             # print('----------------------')
             # print('[' , self.name, ']', ' success:', success)
@@ -649,6 +657,7 @@ class SEERCACHE(AlgorithmBase):
         print('[' , self.name, ']', ' waiting time:',  self.result.waitingTime)
         print('[' , self.name, ']', ' idle time:', self.result.idleTime)
         print('[' , self.name, '] :', self.timeSlot ,  ', remaining request:', len(self.requestState))
+        print('[' , self.name, ']', ' total entanglement: ' , totalEntanglement)
         print('[' , self.name, ']', ' p5 end')
         # print('----------------------')
 
@@ -656,7 +665,7 @@ class SEERCACHE(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.0001, 6)
+    topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
     s = SEERCACHE(topo , preEnt=False, param='ten')
     
     # for i in range(0, 200):
@@ -670,12 +679,25 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 200):
+    for i in range(0, 100):
         requests = []
-        if i < 200:
-            for j in range(10):
-                a = sample(topo.nodes, 2)
-                requests.append((a[0], a[1]))
+        if i < 100:
+            # for j in range(10):
+            #     a = sample(topo.nodes, 2)
+            #     requests.append((a[0], a[1]))
+            
+            ids = [(1,14), (1,16), (4,17), (3,16)]
+            for (p,q) in ids:
+                source = None
+                dest = None
+                for node in topo.nodes:
+
+                    if node.id == p:
+                        source = node
+                    if node.id == q:
+                        dest = node
+                requests.append((source , dest))
+
             s.work(requests, i)
         else:
             s.work([], i)
