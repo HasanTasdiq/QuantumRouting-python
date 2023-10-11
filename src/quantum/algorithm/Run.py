@@ -41,7 +41,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 3, numOfNode = 100, r = 7, q = 0.8, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 101, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 101, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -92,7 +92,7 @@ def Run(numOfRequestPerRound = 3, numOfNode = 100, r = 7, q = 0.8, alpha = 0.000
     jobs = []
 
 
-    bias_weights = [x%3==0 for x in range(numOfNode)]
+    bias_weights = [x%10==0 for x in range(numOfNode)]
     prob = np.array(bias_weights) / np.sum(bias_weights)
 
 
@@ -118,6 +118,7 @@ def Run(numOfRequestPerRound = 3, numOfNode = 100, r = 7, q = 0.8, alpha = 0.000
             requests = {i : [] for i in range(ttime)}
             for i in range(rtime):
                 for (src, dst) in ids[i]:
+                    print(src, dst)
                     requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
             
             pid += 1
@@ -186,7 +187,7 @@ if __name__ == '__main__':
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction"]
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction]
 
-    topo = Topo.generate(50, 0.8, 5, 0.002, 6)
+    topo = Topo.generate(100, 0.8, 5, 0.002, 6)
     jobs = []
 
     tmp_ids = {i : [] for i in range(200)}
