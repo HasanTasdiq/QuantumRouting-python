@@ -470,6 +470,8 @@ class SEERCACHE3(AlgorithmBase):
                     (requestInfo.state == 2 and n == dst and n.remainingQubits < 1) or \
                     ((n != src and n != dst) and n.remainingQubits < 2):             
                     unavaliable = True
+            
+            print('unavailable: ' , unavaliable)
 
             # 檢查link資源
             for i in range(0, len(path) - 1):
@@ -483,6 +485,8 @@ class SEERCACHE3(AlgorithmBase):
 
                 if not pick:
                     unavaliable = True  
+            
+            print('in p2 ' , src.id , dst.id , requestInfo.state, 'unavailable:', unavaliable , [n.id for n in path])
             
             # 資源不夠 先跳過
             if unavaliable:
@@ -552,7 +556,7 @@ class SEERCACHE3(AlgorithmBase):
             attemptedLinks = set()
             # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
-            print('selected ' , width , [n.id for n in p])
+            print('*selected ' , width , [n.id for n in p])
 
             for i in range(1, len(p) - 1):
                 prev = p[i-1]

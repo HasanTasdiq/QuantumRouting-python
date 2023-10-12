@@ -108,7 +108,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
                         # a = sample([i for i in range(numOfNode)], 2)
 
                         a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                        print('req: ' , a)
+                        # print('req: ' , a)
                         # for _ in range(int(random.random()*3+1)):
                         ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))
@@ -118,7 +118,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
             requests = {i : [] for i in range(ttime)}
             for i in range(rtime):
                 for (src, dst) in ids[i]:
-                    print(src, dst)
+                    # print(src, dst)
                     requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
             
             pid += 1
