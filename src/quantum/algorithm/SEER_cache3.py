@@ -729,22 +729,22 @@ if __name__ == '__main__':
         if i < 100:
 
 
-            ids = [(1,14), (1,16), (4,17), (3,16)]
-            for (p,q) in ids:
-                source = None
-                dest = None
-                for node in topo.nodes:
+            # ids = [(1,14), (1,16), (4,17), (3,16)]
+            # for (p,q) in ids:
+            #     source = None
+            #     dest = None
+            #     for node in topo.nodes:
 
-                    if node.id == p:
-                        source = node
-                    if node.id == q:
-                        dest = node
-                requests.append((source , dest))
-            # for j in range(2):
-            #     a = sample(topo.nodes, 2)
-            #     print(a)
-            #     # requests.append((a[0], a[1]))
-            #     requests.append((1,14))
+            #         if node.id == p:
+            #             source = node
+            #         if node.id == q:
+            #             dest = node
+            #     requests.append((source , dest))
+            for j in range(10):
+                a = sample(topo.nodes, 2)
+                print(a)
+                requests.append((a[0], a[1]))
+                # requests.append((1,14))
             s.work(requests, i)
         else:
             s.work([], i)
