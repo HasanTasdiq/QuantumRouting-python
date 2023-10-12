@@ -145,8 +145,8 @@ class Topo:
         for node in self.nodes:
             # print('in node ' , node.id , len(self.nodes))
             for neighbor in _neighbors[node.id]:
-                print('in node ' , neighbor )
-                print('in node 2 ' ,  self.nodes[neighbor].id)
+                # print('in node ' , neighbor )
+                # print('in node 2 ' ,  self.nodes[neighbor].id)
 
                 node.neighbors.append(self.nodes[neighbor])
         
@@ -294,8 +294,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            # G = Topo.create_custom_graph()
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 

@@ -155,7 +155,7 @@ class AlgorithmBase:
                     if swapped:
                         # print('if swapped ' , swapped)
                         
-                        link.assignQubits()
+                        # link.assignQubits()
                         link.entangled = True
                         link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
                         link.subLinks.append(link1)
