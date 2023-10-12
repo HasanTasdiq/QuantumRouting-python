@@ -589,6 +589,10 @@ class SEERCACHE3(AlgorithmBase):
                     else:
                         self.topo.needLinksDict[key].append(self.timeSlot)
                     print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
+                    if l1.isVirtualLink:
+                        print('!!!! virtual !!!!  ' , l1.n1.id , l1.n2.id)
+                    if l2.isVirtualLink:
+                        print('!!!! virtual !!!!  ' , l2.n1.id , l2.n2.id)
                     
                     if swapped:
                         attemptedLinks.add(l1)
@@ -614,6 +618,7 @@ class SEERCACHE3(AlgorithmBase):
             usedLinksCount = 0
             for path in successPath:
                 print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
+                print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
 
                 for node , link in path:
                     if link is not None:
@@ -691,8 +696,10 @@ class SEERCACHE3(AlgorithmBase):
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , len(self.topo.links) +  sum(link.isVirtualLink for link in self.topo.links))
         
         print('[' , self.name, ']', ' total entanglement: ' , totalEntanglement)
+
+        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
         
-        print('[' , self.name, ']', ' p5 end')
+        print('[' , self.name, ']', ' -----------------p5 end--------------')
         # print('----------------------')
 
         return self.result

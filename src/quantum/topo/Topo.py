@@ -806,6 +806,7 @@ class Topo:
                         prev = inc.n2
                     elif inc.n2 == path[-1][0]:
                         prev = inc.n1
+                    path.append((prev , inc))
                         
                     #inc = prev.internalLinks.first { it.contains(inc) }.otherThan(inc)
                     for internalLinks in prev.internalLinks:
@@ -827,7 +828,6 @@ class Topo:
                             inc = l1
                             break
 
-                    path.append((prev , inc))
 
                 path.append((n1 , inc))
                 path.reverse()
