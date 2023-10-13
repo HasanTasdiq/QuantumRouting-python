@@ -461,6 +461,7 @@ class SEERCACHE(AlgorithmBase):
                     (requestInfo.state == 2 and n == dst and n.remainingQubits < 1) or \
                     ((n != src and n != dst) and n.remainingQubits < 2):             
                     unavaliable = True
+            print('unavailable: ' , unavaliable)
 
             # 檢查link資源
             for i in range(0, len(path) - 1):
@@ -474,6 +475,7 @@ class SEERCACHE(AlgorithmBase):
 
                 if not pick:
                     unavaliable = True  
+            print('in p2 ' , src.id , dst.id , requestInfo.state, 'unavailable:', unavaliable , [n.id for n in path])
             
             # 資源不夠 先跳過
             if unavaliable:
@@ -682,21 +684,21 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(10):
-                a = sample(topo.nodes, 2)
-                requests.append((a[0], a[1]))
+            # for j in range(10):
+            #     a = sample(topo.nodes, 2)
+            #     requests.append((a[0], a[1]))
             
-            # ids = [(1,14), (1,16), (4,17), (3,16)]
-            # for (p,q) in ids:
-            #     source = None
-            #     dest = None
-            #     for node in topo.nodes:
+            ids = [(1,14), (1,16), (4,17), (3,16)]
+            for (p,q) in ids:
+                source = None
+                dest = None
+                for node in topo.nodes:
 
-            #         if node.id == p:
-            #             source = node
-            #         if node.id == q:
-            #             dest = node
-            #     requests.append((source , dest))
+                    if node.id == p:
+                        source = node
+                    if node.id == q:
+                        dest = node
+                requests.append((source , dest))
 
             s.work(requests, i)
         else:

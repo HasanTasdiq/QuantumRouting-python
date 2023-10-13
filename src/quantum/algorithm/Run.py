@@ -41,7 +41,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 201, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 101, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -52,10 +52,13 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
     # make copy
     algorithms = []
 
-    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
-    algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
-    algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
+    # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
+    # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+
+
+
     # algorithms.append(SEERCACHE3_2(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
 
     #with pre entanglement
@@ -70,11 +73,11 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    # # algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
-    # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+    algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
+    # algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
+    algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
@@ -82,7 +85,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 10
+    times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -105,9 +108,9 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
             for i in range(ttime):
                 if i < rtime:
                     for _ in range(numOfRequestPerRound):
-                        a = sample([i for i in range(numOfNode)], 2)
+                        # a = sample([i for i in range(numOfNode)], 2)
 
-                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                        a = np.random.choice(len(prob), size=2, replace=False, p=prob)
                         # print('req: ' , a)
                         # for _ in range(int(random.random()*3+1)):
                         ids[i].append((a[0], a[1]))
