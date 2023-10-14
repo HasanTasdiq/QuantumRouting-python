@@ -431,8 +431,8 @@ class SEERCACHE3(AlgorithmBase):
         self.tryPreSwapp()
         self.establishShortestPath()
 
-        print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
-        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
+        print('[' , self.name, '] :', self.timeSlot ,  ', == in p2, len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+        print('[' , self.name, '] :', self.timeSlot ,  ', == in p2 , virtual links ==  :', [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
 
         # p1
         self.descideSegmentation()
