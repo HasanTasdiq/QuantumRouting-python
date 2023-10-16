@@ -22,7 +22,7 @@ EPS = 1e-6
 class REPSCACHE5_3(AlgorithmBase):
     def __init__(self, topo, param=None, name=''):
         super().__init__(topo , param=param)
-        self.name = "REPSCACHE5"
+        self.name = "REPSCACHE5_3"
         self.requests = []
         self.totalRequest = 0
         self.totalUsedQubits = 0
