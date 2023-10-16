@@ -94,12 +94,21 @@ class Node:
             b = random.random() <= self.q
             if b:
                 break
-        if (l1,l2) in self.prevInternalLinks or (l2,l1) in self.prevInternalLinks:
+        if (l1,l2) in self.prevInternalLinks :
             # print('************************###time:' , timeSlot , 'link inside')
 
             if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
                 # print('************************###time:' , timeSlot , 'TRUE!!!!!!')
                 b = True
+                self.prevInternalLinks.remove(l1,l2)
+        elif  (l2,l1) in self.prevInternalLinks:
+            # print('************************###time:' , timeSlot , 'link inside')
+
+            if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
+                # print('************************###time:' , timeSlot , 'TRUE!!!!!!')
+                b = True
+                self.prevInternalLinks.remove(l2,l1)
+
         if b:
             if l1.n1 == self:    
                 l1.s1 = True
