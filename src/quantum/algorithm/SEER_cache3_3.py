@@ -21,9 +21,9 @@ class RequestInfo:
     savetime : int      # req存在中繼點k 還沒送出去經過的時間
     width : int         # seg1 用過的 links
     seg1_success_entanglement: int = 0
-class SEERCACHE3(AlgorithmBase):
+class SEERCACHE3_3(AlgorithmBase):
 
-    def __init__(self, topo , preEnt = False, param = None ,  name ='SEERCACHE'):
+    def __init__(self, topo , preEnt = False, param = None ,  name ='SEERCACHE3_3'):
         super().__init__(topo , preEnt , param=param)
 
         self.pathsSortedDynamically = []
@@ -391,8 +391,7 @@ class SEERCACHE3(AlgorithmBase):
             requestInfo.intermediate.clearIntermediate()
 
         for link in usedLinks:
-            link.keepPhase4Swap()
-            # link.keepEntanglementOnly()
+            link.keepEntanglementOnly()
         
     def resetFailedRequestFor2(self, requestInfo, usedLinks):       # 第二段傳失敗 且超時
         requestInfo.savetime = 0
@@ -404,8 +403,7 @@ class SEERCACHE3(AlgorithmBase):
 
         # 第二段的資源全部釋放
         for link in usedLinks:
-            link.keepPhase4Swap()
-            # link.keepEntanglementOnly()    
+            link.keepEntanglementOnly()    
     
     def resetSucceedRequestFor1(self, requestInfo, usedLinks):      # 第一段傳成功
         requestInfo.state = 2
@@ -599,8 +597,8 @@ class SEERCACHE3(AlgorithmBase):
                         print('!!!! virtual !!!!  ' , l2.n1.id , l2.n2.id)
                     
                     if swapped:
-                        attemptedLinks.add(l1)
-                        attemptedLinks.add(l2)
+                        self.topo.usedLinks.add(link)
+
 
 
 
