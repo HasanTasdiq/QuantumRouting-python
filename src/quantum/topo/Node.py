@@ -100,14 +100,14 @@ class Node:
             if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
                 # print('************************###time:' , timeSlot , 'TRUE!!!!!!')
                 b = True
-                self.prevInternalLinks.remove(l1,l2)
+                self.prevInternalLinks.remove((l1,l2))
         elif  (l2,l1) in self.prevInternalLinks:
             # print('************************###time:' , timeSlot , 'link inside')
 
             if l1.isEntangled(timeSlot) and l2.isEntangled(timeSlot):
                 # print('************************###time:' , timeSlot , 'TRUE!!!!!!')
                 b = True
-                self.prevInternalLinks.remove(l2,l1)
+                self.prevInternalLinks.remove((l2,l1))
 
         if b:
             if l1.n1 == self:    
