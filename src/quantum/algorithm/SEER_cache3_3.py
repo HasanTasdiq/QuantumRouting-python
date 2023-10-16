@@ -21,9 +21,9 @@ class RequestInfo:
     savetime : int      # req存在中繼點k 還沒送出去經過的時間
     width : int         # seg1 用過的 links
     seg1_success_entanglement: int = 0
-class SEERCACHE3_2(AlgorithmBase):
+class SEERCACHE3(AlgorithmBase):
 
-    def __init__(self, topo , preEnt = False, param = None ,  name ='SEERCACHE3_2'):
+    def __init__(self, topo , preEnt = False, param = None ,  name ='SEERCACHE'):
         super().__init__(topo , preEnt , param=param)
 
         self.pathsSortedDynamically = []
@@ -391,7 +391,7 @@ class SEERCACHE3_2(AlgorithmBase):
             requestInfo.intermediate.clearIntermediate()
 
         for link in usedLinks:
-            link.keepEntanglementOnly()
+            link.keepPhase4Swap()
             # link.keepEntanglementOnly()
         
     def resetFailedRequestFor2(self, requestInfo, usedLinks):       # 第二段傳失敗 且超時
@@ -404,7 +404,7 @@ class SEERCACHE3_2(AlgorithmBase):
 
         # 第二段的資源全部釋放
         for link in usedLinks:
-            link.keepEntanglementOnly()
+            link.keepPhase4Swap()
             # link.keepEntanglementOnly()    
     
     def resetSucceedRequestFor1(self, requestInfo, usedLinks):      # 第一段傳成功
@@ -415,14 +415,14 @@ class SEERCACHE3_2(AlgorithmBase):
         # requestInfo.linkseg1 = usedLinks                  # 紀錄seg1用了哪些link seg2成功要釋放資源
 
         # 第一段的資源還是預留的 只是清掉isEntangled(self.timeSlot)跟swap
-        for link in usedLinks:      
-            link.clearEntanglement()
+        # for link in usedLinks:      
+        #     link.clearEntanglement()
 
     def resetSucceedRequestFor2(self, requestInfo, usedLinks):      # 第二段傳成功 
         # 資源全部釋放
         requestInfo.intermediate.clearIntermediate()
-        for link in usedLinks:
-            link.clearEntanglement()
+        # for link in usedLinks:
+        #     link.clearEntanglement()
         # for link in requestInfo.linkseg1: 
         #     link.clearEntanglement()
 
@@ -431,6 +431,8 @@ class SEERCACHE3_2(AlgorithmBase):
         self.tryPreSwapp()
         self.establishShortestPath()
 
+        print('[' , self.name, '] :', self.timeSlot ,  ', == in p2, len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+        print('[' , self.name, '] :', self.timeSlot ,  ', == in p2 , virtual links ==  :', [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
 
         # p1
         self.descideSegmentation()
@@ -468,6 +470,8 @@ class SEERCACHE3_2(AlgorithmBase):
                     (requestInfo.state == 2 and n == dst and n.remainingQubits < 1) or \
                     ((n != src and n != dst) and n.remainingQubits < 2):             
                     unavaliable = True
+            
+            print('unavailable: ' , unavaliable)
 
             # 檢查link資源
             for i in range(0, len(path) - 1):
@@ -481,6 +485,8 @@ class SEERCACHE3_2(AlgorithmBase):
 
                 if not pick:
                     unavaliable = True  
+            
+            print('in p2 ' , src.id , dst.id , requestInfo.state, 'unavailable:', unavaliable , [n.id for n in path])
             
             # 資源不夠 先跳過
             if unavaliable:
@@ -550,6 +556,8 @@ class SEERCACHE3_2(AlgorithmBase):
             attemptedLinks = set()
             # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
+            print('*selected ' , width , [n.id for n in p])
+
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
                 curr = p[i]
@@ -572,23 +580,27 @@ class SEERCACHE3_2(AlgorithmBase):
                 if prevLinks == None or nextLinks == None:
                     break
 
+
                 for (l1, l2) in zip(prevLinks, nextLinks):
-                    usedLinks.add(l1)
-                    usedLinks.add(l2)
-                    # swapped = curr.attemptSwapping2(l1, l2 , timeSlot = self.timeSlot)
-                    # print('l1: ' , l1.n1.id , l1.n2.id , 'l2:' , l2.n1.id , l2.n2.id)
+                    # usedLinks.add(l1)
+                    # usedLinks.add(l2)
                     swapped = curr.attemptSwapping(l1, l2)
+                    # print('l1: ' , l1.n1.id , l1.n2.id , 'l2:' , l2.n1.id , l2.n2.id)
+                    # swapped = curr.attemptSwapping(l1, l2)
                     key = (curr , l1.theOtherEndOf(curr) , l2.theOtherEndOf(curr))
                     if not key in self.topo.needLinksDict:
                         self.topo.needLinksDict[key] = ([self.timeSlot])
                     else:
                         self.topo.needLinksDict[key].append(self.timeSlot)
-                    # swapped = curr.attemptSwapping(l1, l2 )
+                    print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
+                    if l1.isVirtualLink:
+                        print('!!!! virtual !!!!  ' , l1.n1.id , l1.n2.id)
+                    if l2.isVirtualLink:
+                        print('!!!! virtual !!!!  ' , l2.n1.id , l2.n2.id)
+                    
                     if swapped:
-                        # attemptedLinks.add(l1)
-                        # attemptedLinks.add(l2)
-                        self.topo.usedLinks.add(l1)
-                        self.topo.usedLinks.add(l2)
+                        attemptedLinks.add(l1)
+                        attemptedLinks.add(l2)
 
 
 
@@ -607,13 +619,16 @@ class SEERCACHE3_2(AlgorithmBase):
             # p5
             # success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
             successPath = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1] , self.timeSlot)
-            # usedLinksCount = 0
-            # for path in successPath:
-            #     for node , link in path:
-            #         if link is not None:
-            #             self.topo.usedLinks.add(link)
-            #             usedLinks.add(link)
-            #             usedLinksCount += 1
+            usedLinksCount = 0
+            for path in successPath:
+                print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
+                print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
+
+                for node , link in path:
+                    if link is not None:
+                        self.topo.usedLinks.add(link)
+                        usedLinks.add(link)
+                        usedLinksCount += 1
             success = len(successPath)
 
             # print('#####success width:' , success)
@@ -629,13 +644,13 @@ class SEERCACHE3_2(AlgorithmBase):
 
             if success == 0 and len(p) != 2:
                 if requestInfo.state == 0 or requestInfo.state == 1:    # 0, 1
-                    self.resetFailedRequestFor01(requestInfo, usedLinks)
+                    self.resetFailedRequestFor01(requestInfo, attemptedLinks)
                 elif requestInfo.state == 2:                            # 2
                     requestInfo.savetime += 1
                     if requestInfo.savetime > self.r:   # 超出k儲存時間 重頭送 重設req狀態
-                        self.resetFailedRequestFor2(requestInfo, usedLinks)
+                        self.resetFailedRequestFor2(requestInfo, attemptedLinks)
                     else:
-                        self.resetFailedRequestFor01(requestInfo, usedLinks)
+                        self.resetFailedRequestFor01(requestInfo, attemptedLinks)
                 continue
             
             # succeed
@@ -683,15 +698,20 @@ class SEERCACHE3_2(AlgorithmBase):
         print('[' , self.name, '] :', self.timeSlot ,  ', remaining request:', len(self.requestState))
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len links ==  :', len(self.topo.links))
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , len(self.topo.links) +  sum(link.isVirtualLink for link in self.topo.links))
-        print('[' , self.name, ']', ' p5 end')
+        
+        print('[' , self.name, ']', ' total entanglement: ' , totalEntanglement)
+
+        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
+        
+        print('[' , self.name, ']', ' -----------------p5 end--------------')
         # print('----------------------')
 
         return self.result
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.8, 5, 0.002, 6)
-    s = SEERCACHE3_2(topo , preEnt=False, param='ten',name='SEER4')
+    topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
+    s = SEERCACHE3(topo , preEnt=False, param='ten',name='SEER4')
     
     # for i in range(0, 200):
     #     requests = []
@@ -707,9 +727,24 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(15):
-                a = sample(topo.nodes, 2)
-                requests.append((a[0], a[1]))
+
+
+            ids = [(1,14), (1,16), (4,17), (3,16)]
+            for (p,q) in ids:
+                source = None
+                dest = None
+                for node in topo.nodes:
+
+                    if node.id == p:
+                        source = node
+                    if node.id == q:
+                        dest = node
+                requests.append((source , dest))
+            # for j in range(10):
+            #     a = sample(topo.nodes, 2)
+            #     print(a)
+            #     requests.append((a[0], a[1]))
+                # requests.append((1,14))
             s.work(requests, i)
         else:
             s.work([], i)
