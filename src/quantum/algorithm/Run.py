@@ -16,7 +16,7 @@ from REPS_cache4 import REPSCACHE5
 from SEER_cache import SEERCACHE
 from SEER_cache2 import SEERCACHE2
 from SEER_cache3 import SEERCACHE3
-from SEER_cache3_2 import SEERCACHE3_2
+from SEER_cache3_3 import SEERCACHE3_3
 from SEE import SEE
 from SEE2 import SEE2
 from CachedEntanglement import CachedEntanglement
@@ -52,14 +52,14 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.000
     # make copy
     algorithms = []
 
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
     # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
 
 
-    # algorithms.append(SEERCACHE3_2(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -73,11 +73,11 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.000
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    algorithms.append(REPS(copy.deepcopy(topo)))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-    algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    # algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
-    algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+    # algorithms.append(REPS(copy.deepcopy(topo)))
+    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
+    # # algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
+    # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
