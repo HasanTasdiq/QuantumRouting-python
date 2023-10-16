@@ -655,8 +655,8 @@ class REPSCACHE5(AlgorithmBase):
                 # print('[REPS-CACHE] attempt:', [node.id for node in path])
                 # print('[REPS-CACHE] (node, link1, link2) :', [(x[0].id , x[1].n1.id , x[1].n2.id , x[2].n1.id , x[2].n2.id) for x in needLink[(SDpair, pathIndex)]])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
-                    # swapped = node.attemptSwapping2(link1, link2, timeSlot = self.timeSlot)
-                    swapped = node.attemptSwapping(link1, link2)
+                    swapped = node.attemptSwapping2(link1, link2, timeSlot = self.timeSlot)
+                    # swapped = node.attemptSwapping(link1, link2)
                     key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
                     if not key in self.topo.needLinksDict:
                         self.topo.needLinksDict[key] = [self.timeSlot]

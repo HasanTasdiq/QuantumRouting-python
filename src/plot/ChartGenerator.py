@@ -152,8 +152,8 @@ class ChartGenerator:
         # AlgoName = ["SEER", "Greedy", "Q-CAST", "REPS"]
         # AlgoName = [ "Q-CAST", "Cache", "REPS"]
         # AlgoName = ["SEER","SEER-Cache", "SEER-Cache2", "Q-CAST", "Q-CAST-Cache", "REPS"]
-        # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
-        AlgoName = ["SEER","SEER-cache", "SEER-re-use-swap","SEER-pre-swap"]
+        AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
+        # AlgoName = ["SEER","SEER-cache", "SEER-re-use-swap","SEER-pre-swap"]
 
         leg = plt.legend(
             AlgoName,
