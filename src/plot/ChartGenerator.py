@@ -43,7 +43,7 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 32
+        fontsize = 22
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
         Xticks_fontsize = fontsize
