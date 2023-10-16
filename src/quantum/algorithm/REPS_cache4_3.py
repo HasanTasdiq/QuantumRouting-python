@@ -19,7 +19,7 @@ from random import sample
 ######################
 
 EPS = 1e-6
-class REPSCACHE5(AlgorithmBase):
+class REPSCACHE5_3(AlgorithmBase):
     def __init__(self, topo, param=None, name=''):
         super().__init__(topo , param=param)
         self.name = "REPSCACHE5"
@@ -655,13 +655,16 @@ class REPSCACHE5(AlgorithmBase):
                 # print('[REPS-CACHE] attempt:', [node.id for node in path])
                 # print('[REPS-CACHE] (node, link1, link2) :', [(x[0].id , x[1].n1.id , x[1].n2.id , x[2].n1.id , x[2].n2.id) for x in needLink[(SDpair, pathIndex)]])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
-                    swapped = node.attemptSwapping2(link1, link2, timeSlot = self.timeSlot)
-                    # swapped = node.attemptSwapping(link1, link2)
+                  
+                    swapped = node.attemptSwapping(link1, link2)
                     key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
                     if not key in self.topo.needLinksDict:
                         self.topo.needLinksDict[key] = [self.timeSlot]
                     else:
                         self.topo.needLinksDict[key].append( self.timeSlot)
+                    if swapped:
+                        self.topo.usedLinks.add(link1)
+                        self.topo.usedLinks.add(link2)
 
                         
 
@@ -690,12 +693,9 @@ class REPSCACHE5(AlgorithmBase):
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     if link1 in self.topo.usedLinks:
                         link1.clearPhase4Swap()
-                    else:
-                        link1.keepPhase4Swap()
                     if link2 in self.topo.usedLinks:
                         link2.clearPhase4Swap()
-                    else:
-                        link2.keepPhase4Swap()
+
                 totalEntanglement += len(successPath)
         self.result.entanglementPerRound.append(totalEntanglement)
         
