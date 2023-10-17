@@ -42,7 +42,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 101, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 200, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [10 , 15, 20 ,25]
+    numOfRequestPerRound = [10 , 15, 20 ,25 , 30 , 35]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction"]
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction]
 
-    topo = Topo.generate(50, 0.8, 5, 0.0002, 6)
+    topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
     jobs = []
 
     tmp_ids = {i : [] for i in range(200)}
