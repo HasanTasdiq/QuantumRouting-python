@@ -277,7 +277,7 @@ class SEERCACHE3_3(AlgorithmBase):
                         selectedNeighbors = []    # type Node
                         selectedNeighbors.clear()
                         for neighbor in last.neighbors:
-                            if neighbor.remainingQubits > 2 or neighbor == dst and neighbor.remainingQubits > 1:
+                            if neighbor.remainingQubits >= 2 or (neighbor == dst and neighbor.remainingQubits >= 1):
                                 for link in neighbor.links:
                                     if link.contains(last) and (not link.assigned):
                                         # print('select neighbor:', neighbor.id)
@@ -301,7 +301,7 @@ class SEERCACHE3_3(AlgorithmBase):
 
                     if p[-1] != dst:
                         continue
-                    
+                    print('p2Extra: ' , [n.id for n in p])
                     # Caculate width for p
                     width = self.topo.widthPhase2(p)
                     
@@ -327,6 +327,7 @@ class SEERCACHE3_3(AlgorithmBase):
                     else:
                         requestInfo.pathseg1 = p
                     requestInfo.taken= True
+                    requestInfo.width = 1
                     
                     found = True
                     # print('[' , self.name, ']', ' P2Extra take')
@@ -522,6 +523,14 @@ class SEERCACHE3_3(AlgorithmBase):
 
         for req in self.requestState:
             requestInfo = self.requestState[req]
+
+            if requestInfo.state == 2:
+                path = requestInfo.pathseg2
+            else:
+                path = requestInfo.pathseg1
+            if requestInfo.taken:
+                print('[[[[[P2]]]]]' , requestInfo.width , [n.id for n in path])
+
             if requestInfo.taken == False:
                 self.result.idleTime += 1
 
@@ -709,7 +718,7 @@ class SEERCACHE3_3(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
-    s = SEERCACHE3(topo , preEnt=False, param='ten',name='SEER4')
+    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER4')
     
     # for i in range(0, 200):
     #     requests = []
@@ -722,9 +731,9 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 100):
+    for i in range(0, 10):
         requests = []
-        if i < 100:
+        if i < 10:
 
 
             ids = [(1,14), (1,16), (4,17), (3,16)]
