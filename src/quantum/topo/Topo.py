@@ -399,6 +399,7 @@ class Topo:
         for i in range(1, len(path) - 1):
             if path[i].remainingQubits / 2 < curMinWidth:
                 curMinWidth = path[i].remainingQubits // 2
+        print('curMinWidth: ' , curMinWidth) 
 
         # Check min links in path
         for i in range(0, len(path) - 1):
@@ -411,6 +412,8 @@ class Topo:
 
             if t < curMinWidth:
                 curMinWidth = t
+
+        print('curMinWidth_: ' , curMinWidth) 
 
         return curMinWidth
         

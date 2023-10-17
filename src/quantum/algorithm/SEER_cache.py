@@ -300,6 +300,7 @@ class SEERCACHE(AlgorithmBase):
 
                     if p[-1] != dst:
                         continue
+                    print('p2Extra: ' , [n.id for n in p])
                     
                     # Caculate width for p
                     width = self.topo.widthPhase2(p)
@@ -326,6 +327,7 @@ class SEERCACHE(AlgorithmBase):
                     else:
                         requestInfo.pathseg1 = p
                     requestInfo.taken= True
+                    requestInfo.width = 1
                     
                     found = True
                     # print('[' , self.name, ']', ' P2Extra take')
@@ -513,6 +515,14 @@ class SEERCACHE(AlgorithmBase):
 
         for req in self.requestState:
             requestInfo = self.requestState[req]
+
+            if requestInfo.state == 2:
+                path = requestInfo.pathseg2
+            else:
+                path = requestInfo.pathseg1
+            if requestInfo.taken:
+                print('[[[[[P2]]]]]' , requestInfo.width , [n.id for n in path])
+
             if requestInfo.taken == False:
                 self.result.idleTime += 1
 
@@ -567,11 +577,12 @@ class SEERCACHE(AlgorithmBase):
                 if prevLinks == None or nextLinks == None:
                     break
                 
-                print('attempt swapping ' , prev.id , curr.id , next.id)
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     usedLinks.add(l1)
                     usedLinks.add(l2)
                     swapped = curr.attemptSwapping(l1, l2)
+                    print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
+
                     if swapped:
                         self.topo.usedLinks.add(l1)
                         self.topo.usedLinks.add(l2)
