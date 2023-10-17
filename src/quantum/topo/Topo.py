@@ -106,7 +106,7 @@ class Topo:
         _neighbors = {_node: [] for _node in _nodes}
         for _node in _nodes:
             (p1, p2) = _positions[_node]
-            # _positions[_node] = (p1 * 2000, p2 * 2000)
+            _positions[_node] = (p1 * 2000, p2 * 2000)
             # _positions[_node] = (p1 * 500,  p2 * 500)
             _positions[_node] = (p1 * 1400,  p2 * 1400)
             _neighbors[_node] = list(nx.neighbors(G,_node))
@@ -115,8 +115,8 @@ class Topo:
         # Construct Node 
         #---------
         for _node in _nodes:
-            # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
-            self.nodes.append(Node(_node, _positions[_node], 10 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], 10 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -169,7 +169,7 @@ class Topo:
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             rand = int(random.random()*5+3) # 3~7
-            rand = 3
+            # rand = 3
             
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
