@@ -276,7 +276,7 @@ class SEERCACHE(AlgorithmBase):
                         selectedNeighbors = []    # type Node
                         selectedNeighbors.clear()
                         for neighbor in last.neighbors:
-                            if neighbor.remainingQubits > 2 or neighbor == dst and neighbor.remainingQubits > 1:
+                            if neighbor.remainingQubits >= 2 or (neighbor == dst and neighbor.remainingQubits >= 1):
                                 for link in neighbor.links:
                                     if link.contains(last) and (not link.assigned):
                                         # print('select neighbor:', neighbor.id)
