@@ -108,7 +108,7 @@ class Topo:
             (p1, p2) = _positions[_node]
             _positions[_node] = (p1 * 2000, p2 * 2000)
             # _positions[_node] = (p1 * 500,  p2 * 500)
-            _positions[_node] = (p1 * 1400,  p2 * 1400)
+            # _positions[_node] = (p1 * 1400,  p2 * 1400)
             _neighbors[_node] = list(nx.neighbors(G,_node))
             print('neighbors of node ' , len(_neighbors[_node]))
           
