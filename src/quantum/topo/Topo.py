@@ -294,8 +294,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            # G = Topo.create_custom_graph()
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 

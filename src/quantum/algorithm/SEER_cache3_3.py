@@ -731,9 +731,9 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 10):
+    for i in range(0, 100):
         requests = []
-        if i < 10:
+        if i < 100:
 
 
             ids = [(1,14), (1,16), (4,17), (3,16)]
