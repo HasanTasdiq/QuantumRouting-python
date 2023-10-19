@@ -659,6 +659,7 @@ class SEERCACHE(AlgorithmBase):
         for req in self.requestState:
             # self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
+        entSum = sum(self.result.entanglementPerRound)
 
         # self.topo.clearAllEntanglements()
         self.topo.resetEntanglement()
@@ -670,7 +671,7 @@ class SEERCACHE(AlgorithmBase):
         print('[' , self.name, ']', ' waiting time:',  self.result.waitingTime)
         print('[' , self.name, ']', ' idle time:', self.result.idleTime)
         print('[' , self.name, '] :', self.timeSlot ,  ', remaining request:', len(self.requestState))
-        print('[' , self.name, ']', ' total entanglement: ' , totalEntanglement)
+        print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
         print('[' , self.name, ']', ' p5 end')
         # print('----------------------')
 
@@ -695,21 +696,21 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            # for j in range(10):
-            #     a = sample(topo.nodes, 2)
-            #     requests.append((a[0], a[1]))
+            for j in range(10):
+                a = sample(topo.nodes, 2)
+                requests.append((a[0], a[1]))
             
-            ids = [(1,14), (1,16), (4,17), (3,16)]
-            for (p,q) in ids:
-                source = None
-                dest = None
-                for node in topo.nodes:
+            # ids = [(1,15), (1,16), (4,17), (3,16)]
+            # for (p,q) in ids:
+            #     source = None
+            #     dest = None
+            #     for node in topo.nodes:
 
-                    if node.id == p:
-                        source = node
-                    if node.id == q:
-                        dest = node
-                requests.append((source , dest))
+            #         if node.id == p:
+            #             source = node
+            #         if node.id == q:
+            #             dest = node
+            #     requests.append((source , dest))
 
             s.work(requests, i)
         else:

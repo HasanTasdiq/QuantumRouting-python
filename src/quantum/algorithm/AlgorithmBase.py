@@ -36,7 +36,7 @@ class AlgorithmResult:
     def Avg(results: list):
         AvgResult = AlgorithmResult()
 
-        ttime = 150
+        ttime = 100
         AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
         AvgResult.entanglementPerRound = [0 for _ in range(ttime)]
         for result in results:
@@ -135,11 +135,14 @@ class AlgorithmBase:
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
 
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
-            #     continue
+                # continue
+            nodeVirtualLink = len([link for link in node1.links if (link.isVirtualLink and link.contains(node2))])
             path = [node1 , node , node2]
-            if self.topo.widthPhase2(path) < 2:
+            if self.topo.widthPhase2(path) < 4:
                 continue
-            
+            # if nodeVirtualLink >= 1:
+            #     continue
+            # continue
             link1 = None
             link2 = None
             for link in node.links:
@@ -173,7 +176,13 @@ class AlgorithmBase:
         print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
 
                         
-    
+    def updateNeighbors(self):
+        for node in self.topo.nodes:
+            node.neighbors = []
+            for link in node.links:
+                neighbor = link.theOtherEndOf(node)
+                if neighbor not in node.neighbors:
+                    node.neighbors.append(neighbor)
     def resetNodeSwaps(self):
         for node in self.topo.nodes:
             for preInternelLinks in node.prevInternalLinks:

@@ -276,6 +276,7 @@ class SEERCACHE3_3(AlgorithmBase):
                         # Select avaliable neighbors of last(local)
                         selectedNeighbors = []    # type Node
                         selectedNeighbors.clear()
+                        # print('===p2Extra neighbours === ' , last.neighbors)
                         for neighbor in last.neighbors:
                             if neighbor.remainingQubits >= 2 or (neighbor == dst and neighbor.remainingQubits >= 1):
                                 for link in neighbor.links:
@@ -428,6 +429,8 @@ class SEERCACHE3_3(AlgorithmBase):
     # p1 & p2    
     def p2(self):
         self.tryPreSwapp()
+        self.updateNeighbors()
+
         self.establishShortestPath()
 
         print('[' , self.name, '] :', self.timeSlot ,  ', == in p2, len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
@@ -589,8 +592,8 @@ class SEERCACHE3_3(AlgorithmBase):
 
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
-                    # usedLinks.add(l1)
-                    # usedLinks.add(l2)
+                    usedLinks.add(l1)
+                    usedLinks.add(l2)
                     swapped = curr.attemptSwapping(l1, l2)
                     # print('l1: ' , l1.n1.id , l1.n2.id , 'l2:' , l2.n1.id , l2.n2.id)
                     # swapped = curr.attemptSwapping(l1, l2)
@@ -606,7 +609,8 @@ class SEERCACHE3_3(AlgorithmBase):
                         print('!!!! virtual !!!!  ' , l2.n1.id , l2.n2.id)
                     
                     if swapped:
-                        self.topo.usedLinks.add(link)
+                        self.topo.usedLinks.add(l1)
+                        self.topo.usedLinks.add(l1)
 
 
 
@@ -631,11 +635,11 @@ class SEERCACHE3_3(AlgorithmBase):
                 print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
                 print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
 
-                for node , link in path:
-                    if link is not None:
-                        self.topo.usedLinks.add(link)
-                        usedLinks.add(link)
-                        usedLinksCount += 1
+                # for node , link in path:
+                #     if link is not None:
+                #         self.topo.usedLinks.add(link)
+                #         usedLinks.add(link)
+                #         usedLinksCount += 1
             success = len(successPath)
 
             # print('#####success width:' , success)
@@ -651,13 +655,13 @@ class SEERCACHE3_3(AlgorithmBase):
 
             if success == 0 and len(p) != 2:
                 if requestInfo.state == 0 or requestInfo.state == 1:    # 0, 1
-                    self.resetFailedRequestFor01(requestInfo, attemptedLinks)
+                    self.resetFailedRequestFor01(requestInfo, usedLinks)
                 elif requestInfo.state == 2:                            # 2
                     requestInfo.savetime += 1
                     if requestInfo.savetime > self.r:   # 超出k儲存時間 重頭送 重設req狀態
-                        self.resetFailedRequestFor2(requestInfo, attemptedLinks)
+                        self.resetFailedRequestFor2(requestInfo, usedLinks)
                     else:
-                        self.resetFailedRequestFor01(requestInfo, attemptedLinks)
+                        self.resetFailedRequestFor01(requestInfo, usedLinks)
                 continue
             
             # succeed
@@ -692,6 +696,8 @@ class SEERCACHE3_3(AlgorithmBase):
         for req in self.requestState:
             # self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
+        
+        entSum = sum(self.result.entanglementPerRound)
 
         # self.topo.clearAllEntanglements()
         self.topo.resetEntanglement()
@@ -706,7 +712,7 @@ class SEERCACHE3_3(AlgorithmBase):
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len links ==  :', len(self.topo.links))
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , len(self.topo.links) +  sum(link.isVirtualLink for link in self.topo.links))
         
-        print('[' , self.name, ']', ' total entanglement: ' , totalEntanglement)
+        print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
 
         print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
         
@@ -736,22 +742,21 @@ if __name__ == '__main__':
         if i < 100:
 
 
-            ids = [(1,14), (1,16), (4,17), (3,16)]
-            for (p,q) in ids:
-                source = None
-                dest = None
-                for node in topo.nodes:
+            # ids = [(1,15), (1,16), (4,17), (3,16)]
+            # for (p,q) in ids:
+            #     source = None
+            #     dest = None
+            #     for node in topo.nodes:
 
-                    if node.id == p:
-                        source = node
-                    if node.id == q:
-                        dest = node
-                requests.append((source , dest))
-            # for j in range(10):
-            #     a = sample(topo.nodes, 2)
-            #     print(a)
-            #     requests.append((a[0], a[1]))
-                # requests.append((1,14))
+            #         if node.id == p:
+            #             source = node
+            #         if node.id == q:
+            #             dest = node
+            #     requests.append((source , dest))
+
+            for j in range(10):
+                a = sample(topo.nodes, 2)
+                requests.append((a[0], a[1]))
             s.work(requests, i)
         else:
             s.work([], i)
