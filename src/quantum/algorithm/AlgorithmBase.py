@@ -132,17 +132,20 @@ class AlgorithmBase:
         for (node , node1 , node2) in self.topo.needLinksDict:
             if len(self.topo.needLinksDict[(node , node1 , node2)]) <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
-            # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
 
+            # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
+
             nodeVirtualLink = len([link for link in node1.links if (link.isVirtualLink and link.contains(node2))])
             path = [node1 , node , node2]
-            if self.topo.widthPhase2(path) < 4:
+            if self.topo.widthPhase2(path) < 2:
                 continue
+
             # if nodeVirtualLink >= 1:
             #     continue
             # continue
+            
             link1 = None
             link2 = None
             for link in node.links:
