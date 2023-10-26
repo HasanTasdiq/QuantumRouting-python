@@ -657,11 +657,11 @@ class REPSCACHE5_3(AlgorithmBase):
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                   
                     swapped = node.attemptSwapping(link1, link2)
-                    key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
-                    if not key in self.topo.needLinksDict:
-                        self.topo.needLinksDict[key] = [self.timeSlot]
-                    else:
-                        self.topo.needLinksDict[key].append( self.timeSlot)
+                    # key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
+                    # if not key in self.topo.needLinksDict:
+                    #     self.topo.needLinksDict[key] = [self.timeSlot]
+                    # else:
+                    #     self.topo.needLinksDict[key].append( self.timeSlot)
                     if swapped:
                         self.topo.usedLinks.add(link1)
                         self.topo.usedLinks.add(link2)
@@ -673,8 +673,8 @@ class REPSCACHE5_3(AlgorithmBase):
 
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst , self.timeSlot)
                 usedLinksCount = 0
-                for path in successPath:
-                    for node , link in path:
+                for path2 in successPath:
+                    for node , link in path2:
                         if link is not None:
                             self.topo.usedLinks.add(link)
                             usedLinksCount += 1
@@ -697,6 +697,8 @@ class REPSCACHE5_3(AlgorithmBase):
                         link2.clearPhase4Swap()
 
                 totalEntanglement += len(successPath)
+                self.updateNeedLinksDict(path)
+
         self.result.entanglementPerRound.append(totalEntanglement)
         
         print(self.name , '######+++++++========= total ent: ' , totalEntanglement , 'at time:' , self.timeSlot)
@@ -900,7 +902,7 @@ class REPSCACHE5_3(AlgorithmBase):
 if __name__ == '__main__':
     
     topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
-    s = REPSCACHE5(topo)
+    s = REPSCACHE5_3(topo)
     result = AlgorithmResult()
     samplesPerTime = 40
     ttime = 50
