@@ -87,6 +87,7 @@ class Topo:
         self.G = G
         self.optimal_distance = 130
         self.k_shortest_paths_dict = {}
+        self.k_alternate_paths_dict = {}
         self.needLinks = set()
         self.needLinksDict = {}
         self.preSwapFraction = 1/2
@@ -219,7 +220,14 @@ class Topo:
         # p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
         # print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
-    
+    def updatedG(self):
+        G = nx.Graph()
+        for node in self.nodes:
+            G.add_node(node.id)
+        for link in self.links:
+            if (link.n1.id , link.n2.id) not in G.edges or (link.n2.id , link.n1.id) not in G.edges:
+                G.add_edge((link.n1.id , link.n2.id))
+        return G
     def removeLink(self, link):
 
         link.n1.links.remove(link)
@@ -287,6 +295,16 @@ class Topo:
 
         self.k_shortest_paths_dict[(source,target)] = paths_with_len
         return paths_with_len
+    
+    def k_alternate_paths(self, source, target):
+        if (source,target) in self.k_alternate_paths_dict:
+            return self.k_alternate_paths_dict[(source,target)]
+        k=5
+        paths =  list(
+            islice(nx.shortest_simple_paths(self.updatedG(),  source, target), k)
+        )
+        self.k_alternate_paths_dict[(source,target)] = paths
+        return paths
 
     def generate( n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
