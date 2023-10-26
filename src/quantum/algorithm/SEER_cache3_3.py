@@ -589,7 +589,7 @@ class SEERCACHE3_3(AlgorithmBase):
 
                 if prevLinks == None or nextLinks == None:
                     break
-
+                
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
                     usedLinks.add(l1)
@@ -598,10 +598,10 @@ class SEERCACHE3_3(AlgorithmBase):
                     # print('l1: ' , l1.n1.id , l1.n2.id , 'l2:' , l2.n1.id , l2.n2.id)
                     # swapped = curr.attemptSwapping(l1, l2)
                     key = (curr , l1.theOtherEndOf(curr) , l2.theOtherEndOf(curr))
-                    if not key in self.topo.needLinksDict:
-                        self.topo.needLinksDict[key] = ([self.timeSlot])
-                    else:
-                        self.topo.needLinksDict[key].append(self.timeSlot)
+                    # if not key in self.topo.needLinksDict:
+                    #     self.topo.needLinksDict[key] = ([self.timeSlot])
+                    # else:
+                    #     self.topo.needLinksDict[key].append(self.timeSlot)
                     print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
                     if l1.isVirtualLink:
                         print('!!!! virtual !!!!  ' , l1.n1.id , l1.n2.id)
@@ -612,6 +612,7 @@ class SEERCACHE3_3(AlgorithmBase):
                         self.topo.usedLinks.add(l1)
                         self.topo.usedLinks.add(l1)
 
+            self.updateNeedLinksDict(p)
 
 
 

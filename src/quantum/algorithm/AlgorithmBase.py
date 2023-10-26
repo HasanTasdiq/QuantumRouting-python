@@ -119,6 +119,83 @@ class AlgorithmBase:
             if self.topo.cacheTable[sd] > 1:
                 count +=1
         # print('link to generate ent ' , self.topo.cacheTable)
+    def updateNeedLinksDict(self , path):
+        for i in range(2 , len(path)):
+            segments = self.getSegments(path , i)
+            for (node1 , node2) in segments:
+                if (node1 , node2) in self.topo.needLinksDict:
+                    self.topo.needLinksDict[(node1 , node2)].append(self.timeSlot)
+                elif (node2 , node1) in self.topo.needLinksDict:
+                    self.topo.needLinksDict[(node2 , node1)].append(self.timeSlot)
+                else:
+                    self.topo.needLinksDict[(node1 , node2)] = ([self.timeSlot])
+
+
+    def getSegments(self , a , n):
+        res = []
+        for i in range(len(a) - n):
+            res.append((a[i] , a[i + n]))
+        return res
+    
+    # def tryPreSwapp(self):
+    #     temp_edges = set()
+    #     for link in self.topo.links:
+    #         n1 = link.n1
+    #         n2 = link.n2
+    #         if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
+    #             temp_edges.add((n1,n2))
+
+    #     print('--------------')
+    #     for (node , node1 , node2) in self.topo.needLinksDict:
+    #         if len(self.topo.needLinksDict[(node , node1 , node2)]) <= needlink_timeslot * self.topo.preSwapFraction:
+    #             continue
+
+    #         # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
+    #         #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
+    #             # continue
+
+    #         nodeVirtualLink = len([link for link in node1.links if (link.isVirtualLink and link.contains(node2))])
+    #         path = [node1 , node , node2]
+    #         if self.topo.widthPhase2(path) < 2:
+    #             continue
+
+    #         # if nodeVirtualLink >= 1:
+    #         #     continue
+    #         # continue
+            
+    #         link1 = None
+    #         link2 = None
+    #         for link in node.links:
+    #             if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink and link1 is None:
+    #                 link1 = link
+    #             if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink and link2 is None:
+    #                 link2 = link
+
+    #         if link1 is not None and link2 is not None:
+    #             # if link1.isVirtualLink or link2.isVirtualLink:
+    #             #     print('!!!!!!!!!!!!!!!!!!!!!!! virtual !!!!!!!!!!!!!!!!')
+
+    #             link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+    #             # print('if link.assignable() ' , link.assignable())
+    #             if link.assignable():
+    #                 swapped = node.attemptPreSwapping(link1, link2)
+    #                 if swapped:
+    #                     # print('if swapped ' , swapped)
+                        
+    #                     # link.assignQubits()
+    #                     link.entangled = True
+    #                     link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
+    #                     link.subLinks.append(link1)
+    #                     link.subLinks.append(link2)
+
+    #                     self.topo.addLink(link)
+
+    #                     self.topo.removeLink(link1)
+    #                     self.topo.removeLink(link2)
+
+    #     print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+
+
 
     def tryPreSwapp(self):
         temp_edges = set()
@@ -129,22 +206,18 @@ class AlgorithmBase:
                 temp_edges.add((n1,n2))
 
         print('--------------')
-        for (node , node1 , node2) in self.topo.needLinksDict:
-            if len(self.topo.needLinksDict[(node , node1 , node2)]) <= needlink_timeslot * self.topo.preSwapFraction:
+        for (source , dest) in self.topo.needLinksDict:
+            if len(self.topo.needLinksDict[(source , dest)]) <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
 
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
-
-            nodeVirtualLink = len([link for link in node1.links if (link.isVirtualLink and link.contains(node2))])
-            path = [node1 , node , node2]
+            pathd = self.topo.k_alternate_paths(source , dest)
+           
             if self.topo.widthPhase2(path) < 2:
                 continue
 
-            # if nodeVirtualLink >= 1:
-            #     continue
-            # continue
             
             link1 = None
             link2 = None
@@ -177,6 +250,10 @@ class AlgorithmBase:
                         self.topo.removeLink(link2)
 
         print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+
+
+
+        
 
                         
     def updateNeighbors(self):
