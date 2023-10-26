@@ -226,7 +226,7 @@ class Topo:
             G.add_node(node.id)
         for link in self.links:
             if (link.n1.id , link.n2.id) not in G.edges or (link.n2.id , link.n1.id) not in G.edges:
-                G.add_edge((link.n1.id , link.n2.id))
+                G.add_edge(link.n1.id , link.n2.id)
         return G
     def removeLink(self, link):
 
