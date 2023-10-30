@@ -116,8 +116,8 @@ class Topo:
         # Construct Node 
         #---------
         for _node in _nodes:
-            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
-            # self.nodes.append(Node(_node, _positions[_node], 32 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], 0 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -169,14 +169,17 @@ class Topo:
         linkId = 0
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
-            rand = int(random.random()*5+3) # 3~7
-            # rand = 8
+            # rand = int(random.random()*5+3) # 3~7
+            rand = 8
             
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
                 self.links.append(link)
                 self.nodes[_edge[0]].links.append(link)
                 self.nodes[_edge[1]].links.append(link)
+
+                self.nodes[_edge[0]].remainingQubits += 1
+                self.nodes[_edge[1]].remainingQubits += 1
                 linkId += 1
         self.lastLinkId = linkId
         segmentId = 0
