@@ -120,8 +120,8 @@ class AlgorithmBase:
                 count +=1
         # print('link to generate ent ' , self.topo.cacheTable)
     def updateNeedLinksDict(self , path):
-        # for i in range(2 , len(path)):
-        for i in range(2 ,3 ):
+        for i in range(2 , len(path)):
+        # for i in range(2 ,3 ):
             segments = self.getSegments(path , i)
             for (node1 , node2) in segments:
                 if (node1 , node2) in self.topo.needLinksDict:

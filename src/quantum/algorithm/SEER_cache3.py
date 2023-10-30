@@ -471,7 +471,7 @@ class SEERCACHE3(AlgorithmBase):
                     ((n != src and n != dst) and n.remainingQubits < 2):             
                     unavaliable = True
             
-            print('unavailable: ' , unavaliable)
+            # print('unavailable: ' , unavaliable)
 
             # 檢查link資源
             for i in range(0, len(path) - 1):
@@ -486,7 +486,7 @@ class SEERCACHE3(AlgorithmBase):
                 if not pick:
                     unavaliable = True  
             
-            print('in p2 ' , src.id , dst.id , requestInfo.state, 'unavailable:', unavaliable , [n.id for n in path])
+            # print('in p2 ' , src.id , dst.id , requestInfo.state, 'unavailable:', unavaliable , [n.id for n in path])
             
             # 資源不夠 先跳過
             if unavaliable:
@@ -556,7 +556,7 @@ class SEERCACHE3(AlgorithmBase):
             attemptedLinks = set()
             # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
-            print('*selected ' , width , [n.id for n in p])
+            # print('*selected ' , width , [n.id for n in p])
 
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
@@ -592,11 +592,11 @@ class SEERCACHE3(AlgorithmBase):
                         self.topo.needLinksDict[key] = ([self.timeSlot])
                     else:
                         self.topo.needLinksDict[key].append(self.timeSlot)
-                    print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
-                    if l1.isVirtualLink:
-                        print('!!!! virtual !!!!  ' , l1.n1.id , l1.n2.id)
-                    if l2.isVirtualLink:
-                        print('!!!! virtual !!!!  ' , l2.n1.id , l2.n2.id)
+                    # print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
+                    # if l1.isVirtualLink:
+                    #     print('!!!! virtual !!!!  ' , l1.n1.id , l1.n2.id)
+                    # if l2.isVirtualLink:
+                    #     print('!!!! virtual !!!!  ' , l2.n1.id , l2.n2.id)
                     
                     if swapped:
                         attemptedLinks.add(l1)
@@ -621,8 +621,8 @@ class SEERCACHE3(AlgorithmBase):
             successPath = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1] , self.timeSlot)
             usedLinksCount = 0
             for path in successPath:
-                print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
-                print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
+                # print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
+                # print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
 
                 for node , link in path:
                     if link is not None:

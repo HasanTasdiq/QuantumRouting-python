@@ -300,7 +300,7 @@ class SEERCACHE(AlgorithmBase):
 
                     if p[-1] != dst:
                         continue
-                    print('p2Extra: ' , [n.id for n in p])
+                    # print('p2Extra: ' , [n.id for n in p])
                     
                     # Caculate width for p
                     width = self.topo.widthPhase2(p)
@@ -463,7 +463,7 @@ class SEERCACHE(AlgorithmBase):
                     (requestInfo.state == 2 and n == dst and n.remainingQubits < 1) or \
                     ((n != src and n != dst) and n.remainingQubits < 2):             
                     unavaliable = True
-            print('unavailable: ' , unavaliable)
+            # print('unavailable: ' , unavaliable)
 
             # 檢查link資源
             for i in range(0, len(path) - 1):
@@ -477,7 +477,7 @@ class SEERCACHE(AlgorithmBase):
 
                 if not pick:
                     unavaliable = True  
-            print('in p2 ' , src.id , dst.id , requestInfo.state, 'unavailable:', unavaliable , [n.id for n in path])
+            # print('in p2 ' , src.id , dst.id , requestInfo.state, 'unavailable:', unavaliable , [n.id for n in path])
             
             # 資源不夠 先跳過
             if unavaliable:
@@ -520,8 +520,8 @@ class SEERCACHE(AlgorithmBase):
                 path = requestInfo.pathseg2
             else:
                 path = requestInfo.pathseg1
-            if requestInfo.taken:
-                print('[[[[[P2]]]]]' , requestInfo.width , [n.id for n in path])
+            # if requestInfo.taken:
+            #     print('[[[[[P2]]]]]' , requestInfo.width , [n.id for n in path])
 
             if requestInfo.taken == False:
                 self.result.idleTime += 1
@@ -553,7 +553,7 @@ class SEERCACHE(AlgorithmBase):
             usedLinks = set()
             # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
-            print('selected ' , width , [n.id for n in p])
+            # print('selected ' , width , [n.id for n in p])
 
             for i in range(1, len(p) - 1):
                 prev = p[i-1]
@@ -581,7 +581,7 @@ class SEERCACHE(AlgorithmBase):
                     usedLinks.add(l1)
                     usedLinks.add(l2)
                     swapped = curr.attemptSwapping(l1, l2)
-                    print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
+                    # print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
 
                     if swapped:
                         self.topo.usedLinks.add(l1)
@@ -601,8 +601,8 @@ class SEERCACHE(AlgorithmBase):
             successPaths = self.topo.getEstablishedEntanglements(p[0], p[-1])
             success = len(successPaths)
 
-            for path in successPaths:
-                print('path at time' , self.timeSlot , ':' , [n.id for n  in path ])
+            # for path in successPaths:
+            #     print('path at time' , self.timeSlot , ':' , [n.id for n  in path ])
 
 
             # print('----------------------')
