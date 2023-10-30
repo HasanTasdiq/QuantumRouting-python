@@ -107,9 +107,9 @@ class Topo:
         _neighbors = {_node: [] for _node in _nodes}
         for _node in _nodes:
             (p1, p2) = _positions[_node]
-            # _positions[_node] = (p1 * 2000, p2 * 2000)
+            _positions[_node] = (p1 * 2000, p2 * 2000)
             # _positions[_node] = (p1 * 500,  p2 * 500)
-            _positions[_node] = (p1 * 1400,  p2 * 1400)
+            # _positions[_node] = (p1 * 1400,  p2 * 1400)
             _neighbors[_node] = list(nx.neighbors(G,_node))
             # print('neighbors of node ' , len(_neighbors[_node]))
           
@@ -299,7 +299,7 @@ class Topo:
     def k_alternate_paths(self, source, target):
         if (source,target) in self.k_alternate_paths_dict:
             return self.k_alternate_paths_dict[(source,target)]
-        k=1
+        k=5
         paths =  list(
             islice(nx.shortest_simple_paths(self.updatedG(),  source, target), k)
         )
@@ -417,7 +417,7 @@ class Topo:
         for i in range(1, len(path) - 1):
             if path[i].remainingQubits / 2 < curMinWidth:
                 curMinWidth = path[i].remainingQubits // 2
-        print('curMinWidth: ' , curMinWidth) 
+        # print('curMinWidth: ' , curMinWidth) 
 
         # Check min links in path
         for i in range(0, len(path) - 1):
@@ -431,7 +431,7 @@ class Topo:
             if t < curMinWidth:
                 curMinWidth = t
 
-        print('curMinWidth_: ' , curMinWidth) 
+        # print('curMinWidth_: ' , curMinWidth) 
 
         return curMinWidth
         
