@@ -203,7 +203,7 @@ class Link:
                 if b:
                     self.entangledTimeSlot = timeSlot
                     self.entangled = b
-                    self.assignQubits()
+                    # self.assignQubits()
                 return b
 
     
