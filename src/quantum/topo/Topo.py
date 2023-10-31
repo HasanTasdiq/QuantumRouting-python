@@ -299,10 +299,10 @@ class Topo:
         self.k_shortest_paths_dict[(source,target)] = paths_with_len
         return paths_with_len
     
-    def k_alternate_paths(self, source, target):
+    def k_alternate_paths(self, source, target , k = 5):
         if (source,target) in self.k_alternate_paths_dict:
             return self.k_alternate_paths_dict[(source,target)]
-        k=5
+        k=k
         paths =  list(
             islice(nx.shortest_simple_paths(self.updatedG(),  source, target), k)
         )
@@ -315,8 +315,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            # G = Topo.create_custom_graph()
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
