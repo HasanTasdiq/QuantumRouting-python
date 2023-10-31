@@ -59,6 +59,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.000
     # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
     algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_6'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -85,7 +86,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 50, r = 7, q = 0.8, alpha = 0.000
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 3
+    times = 4
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -201,7 +202,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [  1, 2, 3,4 , 5, 6, 7]
+    skipXlabel = [  0 , 1, 2, 3,4 , 5, 6]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
@@ -255,7 +256,7 @@ if __name__ == '__main__':
 
         for job in jobs:
             job.start()
-            time.sleep(1)
+            # time.sleep(1)
 
         for job in jobs:
             job.join()

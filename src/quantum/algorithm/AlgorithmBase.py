@@ -120,7 +120,10 @@ class AlgorithmBase:
                 count +=1
         # print('link to generate ent ' , self.topo.cacheTable)
     def updateNeedLinksDict(self , path):
-        for i in range(2 , len(path)):
+        upper = len(path)
+        if self.name == 'SEER_6':
+            upper = 3
+        for i in range(2 , upper):
         # for i in range(2 ,3 ):
             segments = self.getSegments(path , i)
             for (node1 , node2) in segments:
@@ -207,22 +210,30 @@ class AlgorithmBase:
                 temp_edges.add((n1,n2))
 
         print('--------------')
+        # for (source , dest) in self.topo.needLinksDict:
+        #     if len(self.topo.needLinksDict[(source , dest)]) >= needlink_timeslot * self.topo.preSwapFraction:
+
+        #         print('***===****src: ' , source.id , 'dest: ' , dest.id , '-', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
+
         for (source , dest) in self.topo.needLinksDict:
 
             if len(self.topo.needLinksDict[(source , dest)]) <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
+            print('***===****src: ' , source.id , 'dest: ' , dest.id , '-', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
 
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
-            print('src: ' , source.id , 'dest: ' , dest.id)
-            paths = self.topo.k_alternate_paths(source.id , dest.id)
+            k = 5
+            if self.name == 'SEER_6':
+                k = 1
+            paths = self.topo.k_alternate_paths(source.id , dest.id , k)
             for path in paths:
-                print('** path len ' , len(path))
+                # print('** path len ' , len(path))
                 
 
                 path2 = [self.topo.nodes[nodeId] for nodeId in path]
-                print([n for n in path])
+                # print([n for n in path])
                 if self.topo.widthPhase2(path2) < 2:
                     continue
 

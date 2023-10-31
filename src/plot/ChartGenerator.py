@@ -155,7 +155,7 @@ class ChartGenerator:
         # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
         # AlgoName = ["REPS","REPS-CACHE","REPS4-PRE-SWAP" ]
         # AlgoName = ["SEER","SEER-cache", "SEER-re-use-swap","SEER-pre-swap"]
-        AlgoName = ["SEER","SEER-cache", "SEER-pre-swap"]
+        AlgoName = ["SEER","SEER-cache", "SEER-pre-swap", "SEER-pre-swap-1hop"]
 
         leg = plt.legend(
             AlgoName,
