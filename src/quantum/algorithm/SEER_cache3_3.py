@@ -738,26 +738,26 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 20):
+    for i in range(0, 40):
         requests = []
-        if i < 20:
+        if i < 40:
 
 
-            ids = [(1,15), (1,16), (4,17), (3,16)]
-            for (p,q) in ids:
-                source = None
-                dest = None
-                for node in topo.nodes:
+            # ids = [(1,15), (1,16), (4,17), (3,16)]
+            # for (p,q) in ids:
+            #     source = None
+            #     dest = None
+            #     for node in topo.nodes:
 
-                    if node.id == p:
-                        source = node
-                    if node.id == q:
-                        dest = node
-                requests.append((source , dest))
+            #         if node.id == p:
+            #             source = node
+            #         if node.id == q:
+            #             dest = node
+            #     requests.append((source , dest))
 
-            # for j in range(10):
-            #     a = sample(topo.nodes, 2)
-            #     requests.append((a[0], a[1]))
+            for j in range(4):
+                a = sample(topo.nodes, 2)
+                requests.append((a[0], a[1]))
             s.work(requests, i)
         else:
             s.work([], i)
