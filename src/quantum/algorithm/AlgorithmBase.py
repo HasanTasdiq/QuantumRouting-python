@@ -121,7 +121,7 @@ class AlgorithmBase:
         # print('link to generate ent ' , self.topo.cacheTable)
     def updateNeedLinksDict(self , path):
         upper = len(path)
-        if self.name == 'SEER_6':
+        if self.name == 'SEER_6' or self.name == 'REPS_6':
             upper = 3
         for i in range(2 , upper):
         # for i in range(2 ,3 ):
@@ -226,7 +226,7 @@ class AlgorithmBase:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
             k = 5
-            if self.name == 'SEER_6':
+            if self.name == 'SEER_6' or self.name == 'REPS_6':
                 
                 k = 1
             paths = self.topo.k_alternate_paths(source.id , dest.id , k)
