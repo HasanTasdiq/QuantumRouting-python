@@ -170,7 +170,7 @@ class Topo:
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             # rand = int(random.random()*5+3) # 3~7
-            rand = 8
+            rand = 4
             
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
@@ -228,7 +228,11 @@ class Topo:
         for node in self.nodes:
             G.add_node(node.id)
         for link in self.links:
-            if (link.n1.id , link.n2.id) not in G.edges or (link.n2.id , link.n1.id) not in G.edges:
+            # print('===========v link ***  in updatedG=========' , (link.n1.id , link.n2.id))
+            
+            if (link.n1.id , link.n2.id) not in G.edges and (link.n2.id , link.n1.id) not in G.edges:
+                # if link.isVirtualLink:
+                #     print('===========v link found in updatedG=========' , (link.n1.id , link.n2.id))
                 G.add_edge(link.n1.id , link.n2.id)
         return G
     def removeLink(self, link):
@@ -306,7 +310,7 @@ class Topo:
         paths =  list(
             islice(nx.shortest_simple_paths(self.updatedG(),  source, target), k)
         )
-        self.k_alternate_paths_dict[(source,target)] = paths
+        # self.k_alternate_paths_dict[(source,target)] = paths
         return paths
 
     def generate( n, q, k, a, degree):
@@ -315,8 +319,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            G = Topo.create_custom_graph()
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
