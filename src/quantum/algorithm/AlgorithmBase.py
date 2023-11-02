@@ -221,6 +221,7 @@ class AlgorithmBase:
                 continue
             print('***===****src-dest: ' , (source.id ,dest.id ), '=', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
 
+
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
@@ -234,61 +235,65 @@ class AlgorithmBase:
                 
 
                 path2 = [self.topo.nodes[nodeId] for nodeId in path]
-                # print([n for n in path])
-                if self.topo.widthPhase2(path2) < 2:
-                    print('self.topo.widthPhase2(path2) ' , self.topo.widthPhase2(path2))
-                    continue
+                print([n for n in path])
+                # if self.topo.widthPhase2(path2) < 2:
+                #     print('self.topo.widthPhase2(path2) ' , self.topo.widthPhase2(path2))
+                #     continue
+                preSwapped = True
+                while self.topo.widthPhase2(path2) > 1 and preSwapped:
+                    preSwapped = False
 
-                for i in range(1 , len(path) - 1):
-                    node1 = self.topo.nodes[path[0]]
-                    node = self.topo.nodes[path[i]]
-                    node2 = self.topo.nodes[path[i + 1]]
+                    for i in range(1 , len(path) - 1):
+                        node1 = self.topo.nodes[path[0]]
+                        node = self.topo.nodes[path[i]]
+                        node2 = self.topo.nodes[path[i + 1]]
 
-            
-                    link1 = None
-                    link2 = None
-                    for link in node.links:
-                        # if link.contains(node1) or link.contains(node2):
-                        #     print('=!=!=======link.isEntangled:' , link.isEntangled(self.timeSlot) , 'link.notSwa:' , link.notSwapped() , 'link1None:', link1 is None , 'link2 is None:',link2 is None)
-                        if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and link1 is None:
-                            link1 = link
-                        if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and link2 is None:
-                            link2 = link
+                
+                        link1 = None
+                        link2 = None
+                        for link in node.links:
+                            # if link.contains(node1) or link.contains(node2):
+                            #     print('=!=!=======link.isEntangled:' , link.isEntangled(self.timeSlot) , 'link.notSwa:' , link.notSwapped() , 'link1None:', link1 is None , 'link2 is None:',link2 is None)
+                            if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and link1 is None:
+                                link1 = link
+                            if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and link2 is None:
+                                link2 = link
 
-                    if link1 is not None and link2 is not None:
-                        # if link1.isVirtualLink or link2.isVirtualLink:
-                        #     print('!!!!!!!!!!!!!!!!!!!!!!! virtual !!!!!!!!!!!!!!!!')
+                        if link1 is not None and link2 is not None:
+                            # if link1.isVirtualLink or link2.isVirtualLink:
+                            #     print('!!!!!!!!!!!!!!!!!!!!!!! virtual !!!!!!!!!!!!!!!!')
 
-                        link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-                        print('if link.assignable() ', (source.id ,dest.id ) , link.assignable())
-                        if link.assignable():
-                            swapped = node.attemptPreSwapping(link1, link2)
-                            # print('if swapped ' , swapped)
+                            link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+                            print('if link.assignable() ', (source.id ,dest.id ) , link.assignable())
+                            if link.assignable():
+                                swapped = node.attemptPreSwapping(link1, link2)
+                                # print('if swapped ' , swapped)
 
-                            if swapped:
-                                
-                                # link.assignQubits()
-                                link.entangled = True
-                                link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
-                                if link1.isVirtualLink:
-                                    link.subLinks.extend(link1.subLinks)
-                                else:
-                                    link.subLinks.append(link1)
+                                if swapped:
+                                    
+                                    # link.assignQubits()
+                                    link.entangled = True
+                                    link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
+                                    if link1.isVirtualLink:
+                                        link.subLinks.extend(link1.subLinks)
+                                    else:
+                                        link.subLinks.append(link1)
 
-                                if link2.isVirtualLink:
-                                    link.subLinks.extend(link2.subLinks)
-                                else:
-                                    link.subLinks.append(link2)
+                                    if link2.isVirtualLink:
+                                        link.subLinks.extend(link2.subLinks)
+                                    else:
+                                        link.subLinks.append(link2)
 
-                                self.topo.addLink(link)
+                                    self.topo.addLink(link)
 
-                                self.topo.removeLink(link1)
-                                self.topo.removeLink(link2)
+                                    self.topo.removeLink(link1)
+                                    self.topo.removeLink(link2)
 
-                                if link.n1 == source and link.n2 == dest:
-                                    print('================complete link created====================' , len(path) , (source.id , dest.id))
-                                    if len(path) >3:
-                                        print([n for n in path])
+                                    if link.n1 == source and link.n2 == dest:
+                                        preSwapped = True
+                                        print('================complete link created====================' , len(path) , (source.id , dest.id))
+                                        if len(path) >3:
+                                            print([n for n in path])
 
         print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
 
