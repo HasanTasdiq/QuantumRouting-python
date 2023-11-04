@@ -144,7 +144,6 @@ class Link:
     #     return b
 
     def tryEntanglement3(self , timeSlot = 0):
-        # print('ent prob', self.p)
 
         b = self.assigned and self.p >= random.random()
         if b:
@@ -153,6 +152,8 @@ class Link:
             
         if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
             return True
+        print('ent prob', self.p , b)
+        
         return b
 
 
@@ -181,6 +182,8 @@ class Link:
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
+        print('ent prob', self.p , b)
+        
         return b
     
     def tryEntanglement(self , timeSlot = 0, param=None):
@@ -204,6 +207,8 @@ class Link:
                     self.entangledTimeSlot = timeSlot
                     self.entangled = b
                     # self.assignQubits()
+                print('ent prob', self.p , b)
+
                 return b
 
     

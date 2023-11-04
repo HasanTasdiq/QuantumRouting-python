@@ -700,8 +700,9 @@ class REPSCACHE5_3(AlgorithmBase):
                 self.updateNeedLinksDict(path)
 
         self.result.entanglementPerRound.append(totalEntanglement)
+        entSum = sum(self.result.entanglementPerRound)
         
-        print(self.name , '######+++++++========= total ent: ' , totalEntanglement , 'at time:' , self.timeSlot)
+        print(self.name , '######+++++++========= total ent: ' , 'till time:' , self.timeSlot , ':=' , entSum)
 
         # for link in self.topo.links:
         #     if link.isVirtualLink:
@@ -901,18 +902,46 @@ class REPSCACHE5_3(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
-    s = REPSCACHE5_3(topo)
+    topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
+    s = REPSCACHE5_3(topo,param='ten',name='REPS_')
     result = AlgorithmResult()
-    samplesPerTime = 40
-    ttime = 50
-    rtime = 50
+    samplesPerTime = 10 * 2
+    ttime = 20
+    rtime = ttime
     requests = {i : [] for i in range(ttime)}
 
-    for i in range(ttime):
-        if i < rtime:
+    # for i in range(ttime):
+    #     if i < rtime:
 
-            # ids = [(63, 93), (89, 13), (82, 77), (96, 71), (99, 40)]
+    #         ids = [(1,15), (1,16), (4,17), (3,16)]
+    #         for (p,q) in ids:
+    #             source = None
+    #             dest = None
+    #             for node in topo.nodes:
+
+    #                 if node.id == p:
+    #                     source = node
+    #                 if node.id == q:
+    #                     dest = node
+    #             requests[i].append((source , dest))
+
+    #         # a = sample(topo.nodes, samplesPerTime)
+    #         # for n in range(0,samplesPerTime,2):
+    #         #     requests[i].append((a[n], a[n+1]))
+    #     print('[REPS-CACHE4] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
+
+    # for i in range(ttime):
+    #     result = s.work(requests[i], i)
+
+
+    for i in range(0, 100):
+        requests = []
+        if i < 100:
+            for j in range(10):
+                a = sample(topo.nodes, 2)
+                requests.append((a[0], a[1]))
+            
+            # ids = [(1,15), (1,16), (4,17), (3,16)]
             # for (p,q) in ids:
             #     source = None
             #     dest = None
@@ -922,15 +951,11 @@ if __name__ == '__main__':
             #             source = node
             #         if node.id == q:
             #             dest = node
-            #     requests[i].append((source , dest))
+            #     requests.append((source , dest))
 
-            a = sample(topo.nodes, samplesPerTime)
-            for n in range(0,samplesPerTime,2):
-                requests[i].append((a[n], a[n+1]))
-        print('[REPS-CACHE4] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
-
-    for i in range(ttime):
-        result = s.work(requests[i], i)
+            s.work(requests, i)
+        else:
+            s.work([], i)
     
 
     # print(result.waitingTime, result.numOfTimeslot)
