@@ -857,9 +857,9 @@ if __name__ == '__main__':
     #     result = s.work(requests[i], i)
 
 
-    for i in range(0, 100):
+    for i in range(0, 200):
         requests = []
-        if i < 100:
+        if i < 200:
             for j in range(10):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
