@@ -152,7 +152,7 @@ class Link:
             
         if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
             return True
-        print('ent prob', self.p , b)
+        # print('ent prob', self.p , b)
         
         return b
 
@@ -182,7 +182,7 @@ class Link:
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
-        print('ent prob', self.p , b)
+        # print('ent prob', self.p , b)
         
         return b
     
@@ -207,7 +207,7 @@ class Link:
                     self.entangledTimeSlot = timeSlot
                     self.entangled = b
                     # self.assignQubits()
-                print('ent prob', self.p , b)
+                # print('ent prob', self.p , b)
 
                 return b
 
