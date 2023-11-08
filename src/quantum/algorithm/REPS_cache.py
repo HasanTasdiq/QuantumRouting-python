@@ -2,7 +2,6 @@ import sys
 import math
 import random
 import gurobipy as gp
-from gurobipy import quicksum
 from queue import PriorityQueue
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
@@ -115,18 +114,18 @@ class REPSCACHE(AlgorithmBase):
         x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "x")
         m.update()
         
-        m.setObjective(quicksum(t[i] for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
+        m.setObjective(gp.quicksum(t[i] for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
 
         for i in range(numOfSDpairs):
             s = self.srcDstPairs[i][0].id
-            m.addConstr(quicksum(f[i, s, v] for v in range(numOfNodes)) - quicksum(f[i, v, s] for v in range(numOfNodes)) == t[i])
+            m.addConstr(gp.quicksum(f[i, s, v] for v in range(numOfNodes)) - gp.quicksum(f[i, v, s] for v in range(numOfNodes)) == t[i])
 
             d = self.srcDstPairs[i][1].id
-            m.addConstr(quicksum(f[i, d, v] for v in range(numOfNodes)) - quicksum(f[i, v, d] for v in range(numOfNodes)) == -t[i])
+            m.addConstr(gp.quicksum(f[i, d, v] for v in range(numOfNodes)) - gp.quicksum(f[i, v, d] for v in range(numOfNodes)) == -t[i])
 
             for u in range(numOfNodes):
                 if u not in [s, d]:
-                    m.addConstr(quicksum(f[i, u, v] for v in range(numOfNodes)) - quicksum(f[i, v, u] for v in range(numOfNodes)) == 0)
+                    m.addConstr(gp.quicksum(f[i, u, v] for v in range(numOfNodes)) - gp.quicksum(f[i, v, u] for v in range(numOfNodes)) == 0)
 
         
         for (u, v) in edgeIndices:
@@ -144,7 +143,7 @@ class REPSCACHE(AlgorithmBase):
             # print('++===+++== later prob ' , self.timeSlot , probability)
 
             # print('++++++ ' , len(links))
-            m.addConstr(quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
+            m.addConstr(gp.quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
 
             capacity = self.edgeCapacity(self.topo.nodes[u], self.topo.nodes[v])
             m.addConstr(x[u, v] <= capacity)
@@ -161,7 +160,7 @@ class REPSCACHE(AlgorithmBase):
                 if u in (n1, n2):
                     edgeContainu.append((n1, n2))
                     edgeContainu.append((n2, n1))
-            m.addConstr(quicksum(x[n1, n2] for (n1, n2) in edgeContainu) <= self.topo.nodes[u].remainingQubits)
+            m.addConstr(gp.quicksum(x[n1, n2] for (n1, n2) in edgeContainu) <= self.topo.nodes[u].remainingQubits)
 
         m.optimize()
 
@@ -346,7 +345,7 @@ class REPSCACHE(AlgorithmBase):
 
         m.update()
         
-        m.setObjective(quicksum(t[i][k] for k in range(maxK) for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
+        m.setObjective(gp.quicksum(t[i][k] for k in range(maxK) for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
 
         for i in range(numOfSDpairs):
             s = self.srcDstPairs[i][0].id
@@ -366,8 +365,8 @@ class REPSCACHE(AlgorithmBase):
                     elif edge[1] == d:
                         neighborOfD.append(edge[0])
                     
-                m.addConstr(quicksum(f[i][k][s][v] for v in neighborOfS) - quicksum(f[i][k][v][s] for v in neighborOfS) == t[i][k])
-                m.addConstr(quicksum(f[i][k][d][v] for v in neighborOfD) - quicksum(f[i][k][v][d] for v in neighborOfD) == -t[i][k])
+                m.addConstr(gp.quicksum(f[i][k][s][v] for v in neighborOfS) - gp.quicksum(f[i][k][v][s] for v in neighborOfS) == t[i][k])
+                m.addConstr(gp.quicksum(f[i][k][d][v] for v in neighborOfD) - gp.quicksum(f[i][k][v][d] for v in neighborOfD) == -t[i][k])
 
                 for u in range(numOfNodes):
                     if u not in [s, d]:
@@ -375,12 +374,12 @@ class REPSCACHE(AlgorithmBase):
                         for v in range(numOfNodes):
                             if v not in [s, d]:
                                 edgeUV.append(v)
-                        m.addConstr(quicksum(f[i][k][u][v] for v in edgeUV) - quicksum(f[i][k][v][u] for v in edgeUV) == 0)
+                        m.addConstr(gp.quicksum(f[i][k][u][v] for v in edgeUV) - gp.quicksum(f[i][k][v][u] for v in edgeUV) == 0)
 
         
         for (u, v) in edgeIndices:
             capacity = self.edgeSuccessfulEntangle(self.topo.nodes[u], self.topo.nodes[v])
-            m.addConstr(quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
+            m.addConstr(gp.quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
 
         m.optimize()
 

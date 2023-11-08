@@ -140,6 +140,8 @@ class Topo:
                         _edges.append((_node, curNode))
                         usedNode.append(curNode)
         # ----------
+        self.virtualLinkCount = {(node1 , node2): 0 for node1 in self.nodes for node2 in self.nodes}
+
                         #print(usedNode)
 
         # Construct node's neighbor list in Node struct
@@ -241,6 +243,9 @@ class Topo:
         link.n2.links.remove(link)
 
         self.links.remove(link)
+
+        if link.isVirtualLink:
+            self.virtualLinkCount[(link.n1 , link.n2)] -= 1
     
     def addLink(self,link):
         self.lastLinkId += 1
@@ -319,8 +324,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            G = Topo.create_custom_graph()
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 

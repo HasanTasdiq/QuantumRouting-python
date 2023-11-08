@@ -724,8 +724,8 @@ class SEERCACHE3_3(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
-    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_6')
+    topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
+    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER')
     
     # for i in range(0, 200):
     #     requests = []
@@ -738,9 +738,9 @@ if __name__ == '__main__':
     #         s.work([], i)
 
     
-    for i in range(0, 40):
+    for i in range(0, 50):
         requests = []
-        if i < 40:
+        if i < 50:
 
 
             # ids = [(1,15), (1,16), (4,17), (3,16)]

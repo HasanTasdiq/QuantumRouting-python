@@ -2,7 +2,6 @@ import sys
 import math
 import random
 import gurobipy as gp
-from gurobipy import quicksum
 from queue import PriorityQueue , Queue
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
@@ -233,7 +232,7 @@ class SEE(AlgorithmBase):
 
         m.update()
         
-        m.setObjective(quicksum(t[i][n] for n in range(maxN) for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
+        m.setObjective(gp.quicksum(t[i][n] for n in range(maxN) for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
 
         for i in range(numOfSDpairs):
             s = self.srcDstPairs[i][0].id
@@ -268,29 +267,29 @@ class SEE(AlgorithmBase):
 
 
                 # --------1a----------------
-                m.addConstr(quicksum(f[i][n][s][v] for v in neighborOfS) - quicksum(f[i][n][v][s] for v in neighborOfS) == t[i][n])
+                m.addConstr(gp.quicksum(f[i][n][s][v] for v in neighborOfS) - gp.quicksum(f[i][n][v][s] for v in neighborOfS) == t[i][n])
                 # --------1b---------------------
-                m.addConstr(quicksum(f[i][n][d][v] for v in neighborOfD) - quicksum(f[i][n][v][d] for v in neighborOfD) == -t[i][n])
+                m.addConstr(gp.quicksum(f[i][n][d][v] for v in neighborOfD) - gp.quicksum(f[i][n][v][d] for v in neighborOfD) == -t[i][n])
 
 
                 # --------1c------------------
                 for u in range(numOfNodes):
                     if u not in [s,d]:    
                         # neighbourOfU = set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
-                        # m.addConstr(quicksum(f[i][n][u][v] for v in neighbourOfU) - quicksum(f[i][n][v][u] for v in neighbourOfU) == 0)
+                        # m.addConstr(gp.quicksum(f[i][n][u][v] for v in neighbourOfU) - gp.quicksum(f[i][n][v][u] for v in neighbourOfU) == 0)
 
 
-                        m.addConstr(quicksum(f[i][n][u][v] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) - quicksum(f[i][n][v][u] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) == 0)
+                        m.addConstr(gp.quicksum(f[i][n][u][v] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) - gp.quicksum(f[i][n][v][u] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]) == 0)
 
 
         
         # ---------------------1d-----------------
         # for (u,v) in edgeIndices: 
-        #     m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * (x[u][v][k] + x[v][u][k])* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+        #     m.addConstr(gp.quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= gp.quicksum((self.entanglementProb(u , v , k) * (x[u][v][k] + x[v][u][k])* math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
         
         for u in range(numOfNodes):
             for v in range(numOfNodes):
-                m.addConstr(quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= quicksum((self.entanglementProb(u , v , k) * x[u][v][k] * math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
+                m.addConstr(gp.quicksum((f[i][n][u][v] + f[i][n][v][u]) for n in range(maxN) for i in range(numOfSDpairs)) <= gp.quicksum((self.entanglementProb(u , v , k) * x[u][v][k] * math.sqrt(self.topo.nodes[u].q*self.topo.nodes[v].q)) for k in range(len(self.topo.k_shortest_paths(u , v , 5)))))
         
         
         # ----------------1e-----------------
@@ -315,7 +314,7 @@ class SEE(AlgorithmBase):
                     j+=1
             capacity = self.edgeFullCapacity(edge[0] , edge[1])
             # print('capacity ' , capacity , 'len(segContainingEdge)' , len(segContainingEdge))
-            m.addConstr(quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
+            m.addConstr(gp.quicksum(x[n1][n2][k] for (n1,n2 ,k) in segContainingEdge) <= capacity)
 
 
 
@@ -334,11 +333,11 @@ class SEE(AlgorithmBase):
             #         neighbourOfU.add(n1)
             # print('len(neighbourOfU)222::::' , len(neighbourOfU) , 'self.topo.nodes[u].remainingQubits' , self.topo.nodes[u].remainingQubits)
 
-            # m.addConstr(quicksum(x[u][v][k] + x[v][u][k] for v in neighbourOfU for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
+            # m.addConstr(gp.quicksum(x[u][v][k] + x[v][u][k] for v in neighbourOfU for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
             # print('list:: ' , [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments])
             # print('set:: ' , set([segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments]))
             # print('-------------------------------')
-            m.addConstr(quicksum(x[u][v][k] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
+            m.addConstr(gp.quicksum(x[u][v][k] for v in [segment.theOtherEndOf(self.topo.nodes[u]).id for segment in self.topo.nodes[u].segments] for k in range(len(self.topo.k_shortest_paths(u , v , 5))) ) <= self.topo.nodes[u].remainingQubits )
 
         # time.sleep(20)
 
