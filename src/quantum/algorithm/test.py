@@ -1,6 +1,6 @@
 import os
 import gurobipy as gp
-from gurobipy import quicksum
+
 import networkx as nx
 import numpy as np
 

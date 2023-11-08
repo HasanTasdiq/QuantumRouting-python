@@ -216,8 +216,9 @@ class AlgorithmBase:
         #         print('***===****src: ' , source.id , 'dest: ' , dest.id , '-', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
 
         for (source , dest) in self.topo.needLinksDict:
-
-            if len(self.topo.needLinksDict[(source , dest)]) <= needlink_timeslot * self.topo.preSwapFraction:
+            successPreSwap = 0
+            timesUsed = len(self.topo.needLinksDict[(source , dest)])
+            if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
             print('***===****src-dest: ' , (source.id ,dest.id ), '=', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
 
@@ -230,6 +231,7 @@ class AlgorithmBase:
                 
                 k = 1
             paths = self.topo.k_alternate_paths(source.id , dest.id , k)
+            print('path len ' , [len(path) for path in paths])
             for path in paths:
                 # print('** path len ' , len(path))
                 
@@ -290,10 +292,18 @@ class AlgorithmBase:
                                     self.topo.removeLink(link2)
 
                                     if link.n1 == source and link.n2 == dest:
+                                        self.topo.virtualLinkCount[source , dest] += 1
                                         preSwapped = True
                                         print('================complete link created====================' , len(path) , (source.id , dest.id))
-                                        if len(path) >3:
-                                            print([n for n in path])
+                                        # if len(path) >3:
+                                        #     print([n for n in path])
+            # if self.topo.virtualLinkCount[(source , dest)] >= timesUsed:
+            #     del self.topo.needLinksDict[(source , dest)]
+        for key in self.topo.virtualLinkCount:
+            if key in self.topo.needLinksDict:
+                if self.topo.virtualLinkCount[key] >= len(self.topo.needLinksDict[key]):
+                    del self.topo.needLinksDict[key]
+
 
         print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
 
