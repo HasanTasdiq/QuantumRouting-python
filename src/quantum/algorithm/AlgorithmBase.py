@@ -220,7 +220,7 @@ class AlgorithmBase:
             timesUsed = len(self.topo.needLinksDict[(source , dest)])
             if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
-            print('***===****src-dest: ' , (source.id ,dest.id ), '=', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
+            # print('***===****src-dest: ' , (source.id ,dest.id ), '=', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
 
 
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
@@ -231,18 +231,18 @@ class AlgorithmBase:
                 
                 k = 1
             paths = self.topo.k_alternate_paths(source.id , dest.id , k)
-            print('path len ' , [len(path) for path in paths])
+            # print('path len ' , [len(path) for path in paths])
             for path in paths:
                 # print('** path len ' , len(path))
                 
 
                 path2 = [self.topo.nodes[nodeId] for nodeId in path]
-                print([n for n in path])
+                # print([n for n in path])
                 # if self.topo.widthPhase2(path2) < 2:
                 #     print('self.topo.widthPhase2(path2) ' , self.topo.widthPhase2(path2))
                 #     continue
                 preSwapped = True
-                while self.topo.widthPhase2(path2) > 1 and preSwapped:
+                while self.topo.widthPhase2(path2) > 5 and preSwapped:
                     preSwapped = False
 
                     for i in range(1 , len(path) - 1):
@@ -266,7 +266,7 @@ class AlgorithmBase:
                             #     print('!!!!!!!!!!!!!!!!!!!!!!! virtual !!!!!!!!!!!!!!!!')
 
                             link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-                            print('if link.assignable() ', (source.id ,dest.id ) , link.assignable())
+                            # print('if link.assignable() ', (source.id ,dest.id ) , link.assignable())
                             if link.assignable():
                                 swapped = node.attemptPreSwapping(link1, link2)
                                 # print('if swapped ' , swapped)
@@ -302,6 +302,7 @@ class AlgorithmBase:
         for key in self.topo.virtualLinkCount:
             if key in self.topo.needLinksDict:
                 if self.topo.virtualLinkCount[key] >= len(self.topo.needLinksDict[key]):
+                    # print('del ****************************************************************del ')
                     del self.topo.needLinksDict[key]
 
 

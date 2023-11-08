@@ -433,8 +433,8 @@ class SEERCACHE3_3(AlgorithmBase):
 
         self.establishShortestPath()
 
-        print('[' , self.name, '] :', self.timeSlot ,  ', == in p2, len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
-        print('[' , self.name, '] :', self.timeSlot ,  ', == in p2 , virtual links ==  :', [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
+        # print('[' , self.name, '] :', self.timeSlot ,  ', == in p2, len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+        # print('[' , self.name, '] :', self.timeSlot ,  ', == in p2 , virtual links ==  :', [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
 
         # p1
         self.descideSegmentation()
@@ -725,7 +725,7 @@ class SEERCACHE3_3(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
-    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER')
+    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_6')
     
     # for i in range(0, 200):
     #     requests = []
@@ -755,7 +755,7 @@ if __name__ == '__main__':
             #             dest = node
             #     requests.append((source , dest))
 
-            for j in range(4):
+            for j in range(100):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)
