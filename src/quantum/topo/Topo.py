@@ -313,7 +313,7 @@ class Topo:
             return self.k_alternate_paths_dict[(source,target)]
         k=k
         paths =  list(
-            islice(nx.shortest_simple_paths(self.G,  source, target), k)
+            islice(nx.shortest_simple_paths(self.updatedG(),  source, target), k)
         )
         self.k_alternate_paths_dict[(source,target)] = paths
         return paths
