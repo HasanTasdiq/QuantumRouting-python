@@ -214,13 +214,19 @@ class AlgorithmBase:
         #     if len(self.topo.needLinksDict[(source , dest)]) >= needlink_timeslot * self.topo.preSwapFraction:
 
         #         print('***===****src: ' , source.id , 'dest: ' , dest.id , '-', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
-
+        tcount =0
         for (source , dest) in self.topo.needLinksDict:
-            successPreSwap = 0
+            
+           
             timesUsed = len(self.topo.needLinksDict[(source , dest)])
+
+            # if tcount < 10:
+
+            #     print('***===****src-dest: ' , (source.id ,dest.id ), '=', timesUsed,'==' ,  self.topo.hopsAway(source , dest , 'hop') )
+            # tcount += 1
+
             if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
-            # print('***===****src-dest: ' , (source.id ,dest.id ), '=', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
 
 
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
@@ -237,7 +243,7 @@ class AlgorithmBase:
                 
 
                 path2 = [self.topo.nodes[nodeId] for nodeId in path]
-                # print([n for n in path])
+                # print([n for n in path] , '==' , self.topo.widthPhase2(path2) , '==')
                 # if self.topo.widthPhase2(path2) < 2:
                 #     print('self.topo.widthPhase2(path2) ' , self.topo.widthPhase2(path2))
                 #     continue
