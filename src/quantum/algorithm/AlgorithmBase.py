@@ -300,7 +300,7 @@ class AlgorithmBase:
                                     if link.n1 == source and link.n2 == dest:
                                         self.topo.virtualLinkCount[source , dest] += 1
                                         preSwapped = True
-                                        print('================complete link created====================' , len(path) , (source.id , dest.id))
+                                        # print('================complete link created====================' , len(path) , (source.id , dest.id))
                                         # if len(path) >3:
                                         #     print([n for n in path])
             # if self.topo.virtualLinkCount[(source , dest)] >= timesUsed:
