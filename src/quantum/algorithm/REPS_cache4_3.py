@@ -21,7 +21,7 @@ EPS = 1e-6
 class REPSCACHE5_3(AlgorithmBase):
     def __init__(self, topo, param=None, name=''):
         super().__init__(topo , param=param)
-        self.name = "REPSCACHE5_3"
+        self.name = name
         self.requests = []
         self.totalRequest = 0
         self.totalUsedQubits = 0
@@ -901,8 +901,8 @@ class REPSCACHE5_3(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
-    s = REPSCACHE5_3(topo,param='ten',name='REPS_6')
+    topo = Topo.generate(50, 0.8, 5, 0.0002, 6)
+    s = REPSCACHE5_3(topo,param='ten',name='REPS_')
     result = AlgorithmResult()
     samplesPerTime = 10 * 2
     ttime = 20
@@ -936,21 +936,21 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            # for j in range(10):
-            #     a = sample(topo.nodes, 2)
-            #     requests.append((a[0], a[1]))
+            for j in range(10):
+                a = sample(topo.nodes, 2)
+                requests.append((a[0], a[1]))
             
-            ids = [(1,15), (1,16), (4,17), (3,16)]
-            for (p,q) in ids:
-                source = None
-                dest = None
-                for node in topo.nodes:
+            # ids = [(1,15), (1,16), (4,17), (3,16)]
+            # for (p,q) in ids:
+            #     source = None
+            #     dest = None
+            #     for node in topo.nodes:
 
-                    if node.id == p:
-                        source = node
-                    if node.id == q:
-                        dest = node
-                requests.append((source , dest))
+            #         if node.id == p:
+            #             source = node
+            #         if node.id == q:
+            #             dest = node
+            #     requests.append((source , dest))
 
             s.work(requests, i)
         else:
