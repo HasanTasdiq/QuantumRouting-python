@@ -248,7 +248,7 @@ class AlgorithmBase:
                 #     print('self.topo.widthPhase2(path2) ' , self.topo.widthPhase2(path2))
                 #     continue
                 preSwapped = True
-                while self.topo.widthPhase2(path2) > 5 and preSwapped:
+                while self.topo.widthPhase2(path2) > 2 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                     preSwapped = False
 
                     for i in range(1 , len(path) - 1):
