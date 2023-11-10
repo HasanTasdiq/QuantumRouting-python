@@ -11,6 +11,7 @@ from topo.Node import Node
 from topo.Link import Link
 from numpy import log as ln
 from random import sample
+import numpy as np
 
 
 ######################
@@ -900,8 +901,8 @@ class REPSCACHE5_3(AlgorithmBase):
 
         return False
 if __name__ == '__main__':
-    
-    topo = Topo.generate(50, 0.8, 5, 0.0002, 6)
+    numOfNode = 50
+    topo = Topo.generate(numOfNode, 0.5, 5, 0.002, 6)
     s = REPSCACHE5_3(topo,param='ten',name='REPS_')
     result = AlgorithmResult()
     samplesPerTime = 10 * 2
@@ -909,6 +910,9 @@ if __name__ == '__main__':
     rtime = ttime
     requests = {i : [] for i in range(ttime)}
 
+    # bias_weights = [x%5==0 for x in range(numOfNode)]
+    bias_weights = [random.random() for x in range(numOfNode)]
+    prob = np.array(bias_weights) / np.sum(bias_weights)
     # for i in range(ttime):
     #     if i < rtime:
 
@@ -936,8 +940,11 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(10):
+            for j in range(100):
                 a = sample(topo.nodes, 2)
+                # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                # a = [topo.nodes[a[0]] , topo.nodes[a[1]]]
+                
                 requests.append((a[0], a[1]))
             
             # ids = [(1,15), (1,16), (4,17), (3,16)]
@@ -951,7 +958,7 @@ if __name__ == '__main__':
             #         if node.id == q:
             #             dest = node
             #     requests.append((source , dest))
-
+            # print(requests)
             s.work(requests, i)
         else:
             s.work([], i)
