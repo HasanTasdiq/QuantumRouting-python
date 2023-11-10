@@ -901,9 +901,9 @@ class REPSCACHE5_3(AlgorithmBase):
 
         return False
 if __name__ == '__main__':
-    numOfNode = 50
-    topo = Topo.generate(numOfNode, 0.5, 5, 0.002, 6)
-    s = REPSCACHE5_3(topo,param='ten',name='REPS_')
+    numOfNode = 18
+    topo = Topo.generate(numOfNode, 0.2, 5, 0.002, 1)
+    s = REPSCACHE5_3(topo,param='ten',name='REPS_6')
     result = AlgorithmResult()
     samplesPerTime = 10 * 2
     ttime = 20
@@ -940,7 +940,7 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(100):
+            for j in range(10):
                 a = sample(topo.nodes, 2)
                 # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
                 # a = [topo.nodes[a[0]] , topo.nodes[a[1]]]
