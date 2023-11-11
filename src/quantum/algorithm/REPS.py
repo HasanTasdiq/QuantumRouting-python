@@ -781,7 +781,7 @@ class REPS(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(18, 0.5, 5, 0.002, 1)
+    topo = Topo.generate(18, 0.2, 5, 0.0002, 1)
     s = REPS(topo)
     result = AlgorithmResult()
     samplesPerTime = 8 * 2
@@ -817,7 +817,7 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(10):
+            for j in range(30):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             
