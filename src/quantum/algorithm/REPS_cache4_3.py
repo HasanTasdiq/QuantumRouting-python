@@ -163,6 +163,8 @@ class REPSCACHE5_3(AlgorithmBase):
             for link in links:
                 if link.isEntangled(self.timeSlot):
                     prob+=1
+                    if link.isVirtualLink:
+                        print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
                 else:
                     prob +=link.p
                 isVirtual = isVirtual or link.isVirtualLink
@@ -172,8 +174,8 @@ class REPSCACHE5_3(AlgorithmBase):
             m.addConstr(gp.quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
 
             capacity = self.edgeCapacity(self.topo.nodes[u], self.topo.nodes[v])
-            # if isVirtual:
-            #     print('for the v link capacity: ', (u,v) , capacity , len(links), probability)
+            if isVirtual:
+                print('for the v link capacity: ', (u,v) , capacity , len(links), probability)
             m.addConstr(x[u, v] <= capacity)
 
 
@@ -233,6 +235,7 @@ class REPSCACHE5_3(AlgorithmBase):
             used += self.fi[SDpair][(u, v)]
             used += self.fi[SDpair][(v, u)]
         if used >= capacity:
+            print('======used ==== ' , used)
             return 0
         return capacity - used
 
@@ -902,7 +905,7 @@ class REPSCACHE5_3(AlgorithmBase):
         return False
 if __name__ == '__main__':
     numOfNode = 18
-    topo = Topo.generate(numOfNode, 0.2, 5, 0.002, 1)
+    topo = Topo.generate(numOfNode, 0.2, 5, 0.0002, 1)
     s = REPSCACHE5_3(topo,param='ten',name='REPS_6')
     result = AlgorithmResult()
     samplesPerTime = 10 * 2
@@ -940,7 +943,7 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(10):
+            for j in range(30):
                 a = sample(topo.nodes, 2)
                 # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
                 # a = [topo.nodes[a[0]] , topo.nodes[a[1]]]
