@@ -27,6 +27,7 @@ class REPSCACHE5_3(AlgorithmBase):
         self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
+        self.pathSelecttion = 0
         # self.param = param
 
     def genNameByComma(self, varName, parName):
@@ -163,8 +164,8 @@ class REPSCACHE5_3(AlgorithmBase):
             for link in links:
                 if link.isEntangled(self.timeSlot):
                     prob+=1
-                    if link.isVirtualLink:
-                        print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
+                    # if link.isVirtualLink:
+                    #     print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
                 else:
                     prob +=link.p
                 isVirtual = isVirtual or link.isVirtualLink
@@ -174,8 +175,8 @@ class REPSCACHE5_3(AlgorithmBase):
             m.addConstr(gp.quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
 
             capacity = self.edgeCapacity(self.topo.nodes[u], self.topo.nodes[v])
-            if isVirtual:
-                print('for the v link capacity: ', (u,v) , capacity , len(links), probability)
+            # if isVirtual:
+            #     print('for the v link capacity: ', (u,v) , capacity , len(links), probability)
             m.addConstr(x[u, v] <= capacity)
 
 
@@ -227,6 +228,7 @@ class REPSCACHE5_3(AlgorithmBase):
         # print('[REPS-CACHE] LP1 end')
     def edgeCapacity(self, u, v):
         capacity = 0
+
         for link in u.links:
             if link.contains(v):
                 capacity += 1
@@ -234,9 +236,9 @@ class REPSCACHE5_3(AlgorithmBase):
         for SDpair in self.srcDstPairs:
             used += self.fi[SDpair][(u, v)]
             used += self.fi[SDpair][(v, u)]
-        if used >= capacity:
-            print('======used ==== ' , used)
-            return 0
+        if used > capacity:
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!======used ==== !!!!!!!!!!!!!!!!!!!!!!!!!!' , used)
+        #     return 0
         return capacity - used
 
     def widthForSort(self, path):
@@ -499,6 +501,7 @@ class REPSCACHE5_3(AlgorithmBase):
                         continue
                     path = path[:-1]
                     self.pathForELS[SDpair].append(path)
+                    self.pathSelecttion += 1
                     pathLen = len(path)
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
@@ -677,6 +680,7 @@ class REPSCACHE5_3(AlgorithmBase):
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst , self.timeSlot)
                 usedLinksCount = 0
                 for path2 in successPath:
+                    # print('successpath: ' , [el[0].id for el in path2])
                     for node , link in path2:
                         if link is not None:
                             self.topo.usedLinks.add(link)
@@ -706,6 +710,8 @@ class REPSCACHE5_3(AlgorithmBase):
         entSum = sum(self.result.entanglementPerRound)
         
         print(self.name , '######+++++++========= total ent: ' , 'till time:' , self.timeSlot , ':=' , entSum)
+        print(self.name , '######+++++++========= total pathSelecttion: ' , 'till time:' , self.timeSlot , ':=' , self.pathSelecttion , '========+++++==========')
+        
 
         # for link in self.topo.links:
         #     if link.isVirtualLink:
