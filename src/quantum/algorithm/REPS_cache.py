@@ -22,6 +22,7 @@ class REPSCACHE(AlgorithmBase):
         self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
+        self.pathSelecttion = 0 
         # self.param = param
 
     def genNameByComma(self, varName, parName):
@@ -443,6 +444,7 @@ class REPSCACHE(AlgorithmBase):
                         continue
                     path = path[:-1]
                     self.pathForELS[SDpair].append(path)
+                    self.pathSelecttion += 1
                     pathLen = len(path)
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
@@ -632,6 +634,7 @@ class REPSCACHE(AlgorithmBase):
         entSum = sum(self.result.entanglementPerRound)
         
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot, ':='  , entSum)
+        print(self.name , '######+++++++========= total pathSelecttion: ' , 'till time:' , self.timeSlot , ':=' , self.pathSelecttion , '========+++++==========')
             
 
     def findPathsForPFT(self, SDpair):
