@@ -501,7 +501,6 @@ class REPSCACHE5_3(AlgorithmBase):
                         continue
                     path = path[:-1]
                     self.pathForELS[SDpair].append(path)
-                    self.pathSelecttion += 1
                     pathLen = len(path)
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
@@ -564,6 +563,8 @@ class REPSCACHE5_3(AlgorithmBase):
             needLink[(i, pathIndex)] = []
 
             Pi[i].append(targetPath)
+            self.pathSelecttion += 1
+
             for nodeIndex in range(1, len(targetPath) - 2):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -622,6 +623,8 @@ class REPSCACHE5_3(AlgorithmBase):
             pathIndex = len(Pi[i])
             needLink[(i, pathIndex)] = []
             Pi[i].append(targetPath)
+            # self.pathSelecttion += 1
+
             for nodeIndex in range(1, len(targetPath) - 1):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -876,6 +879,8 @@ class REPSCACHE5_3(AlgorithmBase):
             return []
     
     def DijkstraForELS(self, SDpair):
+        return False
+
         src = SDpair[0]
         dst = SDpair[1]
         self.parent = {node : self.topo.sentinel for node in self.topo.nodes}
