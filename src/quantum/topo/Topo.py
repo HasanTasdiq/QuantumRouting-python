@@ -13,6 +13,8 @@ from random import sample
 import itertools
 import time
 import matplotlib.pyplot as plt
+from .helper import entanglement_lifetimeslot
+
 
 
 
@@ -324,8 +326,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            G = Topo.create_custom_graph()
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
@@ -979,6 +981,21 @@ class Topo:
     def clearAllEntanglements(self):
         for link in self.links:
             link.clearEntanglement()
+    def restoreOriginalLinks(self , vLink):
+        for link in vLink.subLinks:
+            link.clearEntanglement()
+            self.addLink(link)
+        vLink.subLinks.clear()
+    def generateRequest(self , numOfRequestPerRound):
+        ids = []
+        source_nodes = [node.id for node in self.nodes if node.loc[1] < 500]
+        dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3500]
+        for _ in range(numOfRequestPerRound):
+            ids.append((source_nodes[int(random.random()*len(source_nodes))] , dest_nodes[int(random.random()*len(dest_nodes))]))
+        print('reqs ' , ids)
+        return ids
+
+
 
     def resetEntanglement(self , timeslot = 0):
         for link in self.usedLinks:
@@ -989,7 +1006,12 @@ class Topo:
             #     self.removeLink(link)
 
         for link in set(self.links).difference(self.usedLinks):
-            link.keepEntanglementOnly()
+            if timeslot - link.entangledTimeSlot >=  entanglement_lifetimeslot:
+                link.clearEntanglement()
+            else:
+                if link.isVirtualLink:
+                    self.restoreOriginalLinks(link)
+                link.keepEntanglementOnly()
             
         self.usedLinks.clear()
 

@@ -599,7 +599,7 @@ class REPSCACHE(AlgorithmBase):
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                # print('[REPS-CACHE] attempt:', [node.id for node in path])
+                print('[REPS-CACHE] attempt:' , (src.id , dst.id), [node.id for node in path])
                 # print('[REPS-CACHE] (node, link1, link2) :', [(x[0].id , x[1].n1.id , x[1].n2.id , x[2].n1.id , x[2].n2.id) for x in needLink[(SDpair, pathIndex)]])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     swapped = node.attemptSwapping(link1, link2)
@@ -617,8 +617,8 @@ class REPSCACHE(AlgorithmBase):
                         if link is not None:
                             self.topo.usedLinks.add(link)
                             usedLinksCount += 1
-                # for x in successPath:
-                    # print('[REPS-CACHE] success:', [z.id for z in x])
+                for x in successPath:
+                    print('[REPS-CACHE] success:', [z[0].id for z in x])
                 # print('[REPS-CACHE] success path :', len(successPath))
 
                 if len(successPath):
@@ -794,7 +794,7 @@ class REPSCACHE(AlgorithmBase):
             return []
     
     def DijkstraForELS(self, SDpair):
-        return False
+        # return False
         src = SDpair[0]
         dst = SDpair[1]
         self.parent = {node : self.topo.sentinel for node in self.topo.nodes}
@@ -830,7 +830,7 @@ class REPSCACHE(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(18, 0.2, 5, 0.0002, 1)
+    topo = Topo.generate(50, 0.8, 5, 0.0002, 4)
     s = REPSCACHE(topo,param='ten',name='REPS_CACHE')
 
     result = AlgorithmResult()
