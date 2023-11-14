@@ -988,12 +988,17 @@ class Topo:
         vLink.subLinks.clear()
     def generateRequest(self , numOfRequestPerRound):
         ids = []
+        ret = []
         source_nodes = [node.id for node in self.nodes if node.loc[1] < 500]
-        dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3500]
+        dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3700]
+        print(len(source_nodes) , len(dest_nodes))
+        for _ in range(100):
+            ids.append((source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))]))
+        
         for _ in range(numOfRequestPerRound):
-            ids.append((source_nodes[int(random.random()*len(source_nodes))] , dest_nodes[int(random.random()*len(dest_nodes))]))
-        print('reqs ' , ids)
-        return ids
+            ret.append(ids[int(random.random()*30) + 50])
+        print('reqs ' , ret)
+        return ret
 
 
 
