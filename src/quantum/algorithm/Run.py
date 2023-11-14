@@ -109,15 +109,15 @@ def Run(numOfRequestPerRound = 40, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
         else:
             for i in range(ttime):
                 if i < rtime:
-                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    for _ in range(numOfRequestPerRound):
+                    ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    # for _ in range(numOfRequestPerRound):
 
-                        a = sample([i for i in range(numOfNode)], 2)
+                    #     a = sample([i for i in range(numOfNode)], 2)
 
-                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                        # print('req: ' , a)
-                        # for _ in range(int(random.random()*3+1)):
-                        ids[i].append((a[0], a[1]))
+                    #     # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                    #     # print('req: ' , a)
+                    #     # for _ in range(int(random.random()*3+1)):
+                    #     ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))
         
         for algoIndex in range(len(algorithms)):
