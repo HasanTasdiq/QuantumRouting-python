@@ -415,14 +415,14 @@ class SEERCACHE3_3(AlgorithmBase):
         # requestInfo.linkseg1 = usedLinks                  # 紀錄seg1用了哪些link seg2成功要釋放資源
 
         # 第一段的資源還是預留的 只是清掉isEntangled(self.timeSlot)跟swap
-        # for link in usedLinks:      
-        #     link.clearEntanglement()
+        for link in usedLinks:      
+            link.clearEntanglement()
 
     def resetSucceedRequestFor2(self, requestInfo, usedLinks):      # 第二段傳成功 
         # 資源全部釋放
         requestInfo.intermediate.clearIntermediate()
-        # for link in usedLinks:
-        #     link.clearEntanglement()
+        for link in usedLinks:
+            link.clearEntanglement()
         # for link in requestInfo.linkseg1: 
         #     link.clearEntanglement()
 
@@ -592,8 +592,7 @@ class SEERCACHE3_3(AlgorithmBase):
                 
 
                 for (l1, l2) in zip(prevLinks, nextLinks):
-                    usedLinks.add(l1)
-                    usedLinks.add(l2)
+
                     swapped = curr.attemptSwapping(l1, l2)
                     # print('l1: ' , l1.n1.id , l1.n2.id , 'l2:' , l2.n1.id , l2.n2.id)
                     # swapped = curr.attemptSwapping(l1, l2)
@@ -611,6 +610,8 @@ class SEERCACHE3_3(AlgorithmBase):
                     if swapped:
                         self.topo.usedLinks.add(l1)
                         self.topo.usedLinks.add(l1)
+                        usedLinks.add(l1)
+                        usedLinks.add(l2)
 
             self.updateNeedLinksDict(p)
 
@@ -715,7 +716,8 @@ class SEERCACHE3_3(AlgorithmBase):
         
         print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
 
-        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
+        # print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
+        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
         
         print('[' , self.name, ']', ' -----------------p5 end--------------')
         # print('----------------------')
@@ -725,7 +727,7 @@ class SEERCACHE3_3(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
-    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_6')
+    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_')
     
     # for i in range(0, 200):
     #     requests = []
@@ -755,7 +757,7 @@ if __name__ == '__main__':
             #             dest = node
             #     requests.append((source , dest))
 
-            for j in range(100):
+            for j in range(30):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)

@@ -59,7 +59,7 @@ class Link:
         for internalLink in self.n2.internalLinks:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
-        if self.isVirtualLink:
+        if self.isVirtualLink and self in self.topo.links:
             for link_ in self.subLinks:
                 link_.clearEntanglement()
                 self.topo.addLink(link_)                    

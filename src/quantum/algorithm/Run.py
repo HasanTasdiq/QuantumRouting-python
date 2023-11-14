@@ -87,7 +87,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 4
+    times = 5
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -109,7 +109,9 @@ def Run(numOfRequestPerRound = 20, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
         else:
             for i in range(ttime):
                 if i < rtime:
+                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
                     for _ in range(numOfRequestPerRound):
+
                         a = sample([i for i in range(numOfNode)], 2)
 
                         # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
@@ -173,7 +175,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [25 , 30 , 35 , 40 , 45 ]
+    numOfRequestPerRound = [40 , 50 , 60 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150, 200]
