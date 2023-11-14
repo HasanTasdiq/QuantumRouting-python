@@ -599,7 +599,7 @@ class REPSCACHE(AlgorithmBase):
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                print('[REPS-CACHE] attempt:' , (src.id , dst.id), [node.id for node in path])
+                # print('[REPS-CACHE] attempt:' , (src.id , dst.id), [node.id for node in path])
                 # print('[REPS-CACHE] (node, link1, link2) :', [(x[0].id , x[1].n1.id , x[1].n2.id , x[2].n1.id , x[2].n2.id) for x in needLink[(SDpair, pathIndex)]])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     swapped = node.attemptSwapping(link1, link2)
@@ -617,8 +617,8 @@ class REPSCACHE(AlgorithmBase):
                         if link is not None:
                             self.topo.usedLinks.add(link)
                             usedLinksCount += 1
-                for x in successPath:
-                    print('[REPS-CACHE] success:', [z[0].id for z in x])
+                # for x in successPath:
+                #     print('[REPS-CACHE] success:', [z[0].id for z in x])
                 # print('[REPS-CACHE] success path :', len(successPath))
 
                 if len(successPath):
