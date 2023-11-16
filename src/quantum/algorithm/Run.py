@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
         for Ylabel in Ylabels:
             filename = Xlabel + "_" + Ylabel + ".txt"
-            F = open(targetFilePath + filename, "w")
+            F = open(targetFilePath + filename, "a")
             for i in range(len(Xparameters[XlabelIndex])):
                 Xaxis = str(Xparameters[XlabelIndex][i])
                 Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     # sampleRounds = [0, 5, 10, 15, 20, 25]
 
     filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
-    F = open(targetFilePath + filename, "w")
+    F = open(targetFilePath + filename, "a")
     for roundIndex in sampleRounds:
         Xaxis = str(roundIndex)
         Yaxis = [result.remainRequestPerRound[roundIndex] for result in results]
