@@ -19,16 +19,17 @@ class RequestInfo:
     pathseg2: list 
     taken : bool        # 是否可處理這個req (已預定資源)
     savetime : int      # req存在中繼點k 還沒送出去經過的時間
-    width : dict         # seg1 用過的 links
+    width : int         # seg1 用過的 links
     seg1_success_entanglement: int = 0
 
 
-class MyAlgorithm(AlgorithmBase):
+class SEERCACHE(AlgorithmBase):
 
-    def __init__(self, topo , preEnt = False):
-        super().__init__(topo , preEnt)
+    def __init__(self, topo , preEnt = False, param = None ,  name ='SEERCACHE'):
+        super().__init__(topo , preEnt , param=param)
+
         self.pathsSortedDynamically = []
-        self.name = "My"
+        self.name = name
         self.r = 40                     # 暫存回合
         self.givenShortestPath = {}     # {(src, dst): path, ...}               path表
         # self.socialRelationship = {}  # {Node : [Node, ...], ...}             node-social表
@@ -110,7 +111,7 @@ class MyAlgorithm(AlgorithmBase):
         return currentRound
       
     def expectedRound(self, p1, p2):
-        # print('[MyAlgo]', 'p1:', p1,'p2:', p2)
+        # print('[' , self.name, ']', '', 'p1:', p1,'p2:', p2)
         # prev_a = 0
         # a = 0 
         # b = 0 
@@ -139,7 +140,7 @@ class MyAlgorithm(AlgorithmBase):
         for _ in range(times):
             roundSum += self.Round(p1, p2, self.r)
 
-        # print('[MyAlgo]', 'expect:', roundSum / times)
+        # print('[' , self.name, ']', '', 'expect:', roundSum / times)
         return roundSum / times
 
     def genSocialRelationship(self):
@@ -198,7 +199,7 @@ class MyAlgorithm(AlgorithmBase):
         for req in self.srcDstPairs:
             src, dst = req[0], req[1]
             path_sd = self.givenShortestPath[(src, dst)]
-            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(path_sd), [path_sd], None, False, 0, {})
+            self.requestState[(src, dst, self.timeSlot)] = RequestInfo(0, None, len(path_sd), path_sd, None, False, 0, 0)
             P_sd = self.Pr(self.givenShortestPath[(src, dst)])
             minNum = 1 / P_sd
             # print('minNum:', minNum)
@@ -212,7 +213,7 @@ class MyAlgorithm(AlgorithmBase):
 
                 if expectKey in self.expectTable:
                     curMin = self.expectTable[expectKey]
-                    # print('[MyAlgo] get from table')
+                    # print('[' , self.name, ']', ' get from table')
                 else:
                     P_sk = self.Pr(path_sk)
                     P_kd = self.Pr(path_kd)
@@ -222,7 +223,7 @@ class MyAlgorithm(AlgorithmBase):
                 # print('curMin:', curMin)
                 if minNum > curMin:    # 分2段 取k中間  
                     minNum = curMin
-                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), [path_sk], [path_kd], False, 0, {})
+                    self.requestState[(src, dst, self.timeSlot)] = RequestInfo(1, k, len(path_sk), path_sk, path_kd, False, 0, 0)
 
             # 模擬用掉這個k的一個Qubits 紀錄剩下的數量
             k = self.requestState[(src, dst, self.timeSlot)].intermediate
@@ -275,144 +276,6 @@ class MyAlgorithm(AlgorithmBase):
                         selectedNeighbors = []    # type Node
                         selectedNeighbors.clear()
                         for neighbor in last.neighbors:
-                            if neighbor.remainingQubits > 2 or neighbor == dst and neighbor.remainingQubits > 1:
-                                for link in neighbor.links:
-                                    if link.contains(last) and (not link.assigned):
-                                        # print('select neighbor:', neighbor.id)
-                                        selectedNeighbors.append(neighbor)
-                                        break
-
-                        # Choose the neighbor with smallest number of hop from it to dst
-                        next = self.topo.sentinel
-                        hopsCurMinNum = sys.maxsize
-                        for selectedNeighbor in selectedNeighbors:
-                            hopsNum = self.topo.hopsAway(selectedNeighbor, dst, 'Hop')      
-                            if hopsCurMinNum > hopsNum:
-                                hopsCurMinNum = hopsNum
-                                next = selectedNeighbor
-
-                        # If have cycle, break
-                        if next == self.topo.sentinel or next in p:
-                            break 
-                        p.append(next)
-                    # while end
-
-                    if p[-1] != dst:
-                        continue
-                    
-                    # Caculate width for p
-                    width = self.topo.widthPhase2(p)
-                    
-                    if width == 0:
-                        continue
-                    
-                    # Assign Qubits for links in path     
-                    for i in range(0, len(p) - 1):
-                        n1 = p[i]
-                        n2 = p[i+1]
-                        for link in n1.links:
-                            if link.contains(n2) and (not link.assigned):
-                                self.totalUsedQubits += 2
-                                link.assignQubits()
-                                break 
-
-                    if requestInfo.state == 1:
-                        self.totalUsedQubits += 1
-                        dst.assignIntermediate()
-                    
-                    if requestInfo.state == 2:
-                        requestInfo.pathseg2.append(p)
-                    else:
-                        requestInfo.pathseg1.append(p)
-                    requestInfo.taken= True
-                    requestInfo.width[tuple(p)] = 1
-                    
-                    found = True
-                    # print('[MyAlgo] P2Extra take')
-
-                elif requestInfo.taken:
-                    if src.remainingQubits < 1:
-                        continue
-                    
-                    if requestInfo.state == 2:
-                        pathseg = requestInfo.pathseg2
-                    else:
-                        pathseg = requestInfo.pathseg1
-                    
-                    # 檢查資源
-                    for p in pathseg:
-                        unavaliable = False
-                        for n in p:
-                            if ((n == src or n == dst) and n.remainingQubits < 1) or \
-                                ((n != src and n != dst) and n.remainingQubits < 2):             
-                                unavaliable = True
-
-                        # 檢查link資源
-                        for i in range(0, len(p) - 1):
-                            n1 = p[i]
-                            n2 = p[i+1]
-                            pick = False
-                            for link in n1.links:
-                                if link.contains(n2) and (not link.assigned):
-                                    pick = True
-                                    continue
-
-                            if not pick:
-                                unavaliable = True  
-                        
-                        # 資源不夠 先跳過
-                        if unavaliable:
-                            continue
-
-                        # 分配資源給path
-                        for i in range(0, len(p) - 1):
-                            n1 = p[i]
-                            n2 = p[i+1]
-                            for link in n1.links:
-                                if link.contains(n2) and (not link.assigned):
-                                    self.totalUsedQubits += 2
-                                    link.assignQubits()
-                                    break
-                        if tuple(p) not in requestInfo.width:
-                            requestInfo.width[tuple(p)] = 0
-                        requestInfo.width[tuple(p)] += 1
-                        found = True
-            # for end
-            if not found:
-                break
-        # while end
-    def p2Extra2(self):
-
-        while True:
-            found = False
-
-            for req in self.requestState:
-                requestInfo = self.requestState[req]
-
-                if requestInfo.state == 0: 
-                    src, dst = req[0], req[1]
-                elif requestInfo.state == 1:
-                    src, dst = req[0], requestInfo.intermediate
-                elif requestInfo.state == 2:
-                    src, dst = requestInfo.intermediate, req[1]
-
-                if True:
-                    if src.remainingQubits < 1:
-                        continue
-                    p = []
-                    p.append(src)
-                    
-                    # Find a shortest path by greedy min hop  
-                    while True:
-                        last = p[-1]
-                        if last == dst:
-                            break
-
-                        # Select avaliable neighbors of last(local)
-                        selectedNeighbors = []    # type Node
-                        selectedNeighbors.clear()
-                        # print('===p2Extra neighbours === ' , last.neighbors)
-                        for neighbor in last.neighbors:
                             if neighbor.remainingQubits >= 2 or (neighbor == dst and neighbor.remainingQubits >= 1):
                                 for link in neighbor.links:
                                     if link.contains(last) and (not link.assigned):
@@ -438,6 +301,7 @@ class MyAlgorithm(AlgorithmBase):
                     if p[-1] != dst:
                         continue
                     # print('p2Extra: ' , [n.id for n in p])
+                    
                     # Caculate width for p
                     width = self.topo.widthPhase2(p)
                     
@@ -459,25 +323,71 @@ class MyAlgorithm(AlgorithmBase):
                         dst.assignIntermediate()
                     
                     if requestInfo.state == 2:
-                        requestInfo.pathseg2.append(p)
+                        requestInfo.pathseg2 = p
                     else:
-                        requestInfo.pathseg1.append(p)
+                        requestInfo.pathseg1 = p
                     requestInfo.taken= True
-                    requestInfo.width[tuple(p)] = 1
+                    requestInfo.width = 1
                     
                     found = True
                     # print('[' , self.name, ']', ' P2Extra take')
 
-                
+                elif requestInfo.taken:
+                    if src.remainingQubits < 1:
+                        continue
+                    
+                    if requestInfo.state == 2:
+                        p = requestInfo.pathseg2
+                    else:
+                        p = requestInfo.pathseg1
+                    
+                    # 檢查資源
+                    unavaliable = False
+                    for n in p:
+                        if ((n == src or n == dst) and n.remainingQubits < 1) or \
+                            ((n != src and n != dst) and n.remainingQubits < 2):             
+                            unavaliable = True
+
+                    # 檢查link資源
+                    for i in range(0, len(p) - 1):
+                        n1 = p[i]
+                        n2 = p[i+1]
+                        pick = False
+                        for link in n1.links:
+                            if link.contains(n2) and (not link.assigned):
+                                pick = True
+                                continue
+
+                        if not pick:
+                            unavaliable = True  
+                    
+                    # 資源不夠 先跳過
+                    if unavaliable:
+                        continue
+
+                    # 分配資源給path
+                    for i in range(0, len(p) - 1):
+                        n1 = p[i]
+                        n2 = p[i+1]
+                        for link in n1.links:
+                            if link.contains(n2) and (not link.assigned):
+                                self.totalUsedQubits += 2
+                                link.assignQubits()
+                                break
+
+                    requestInfo.width += 1
+                    found = True
             # for end
             if not found:
                 break
-    def resetFailedRequestFor01(self, requestInfo, usedLinks=[]):      # 第一段傳失敗
+        # while end
+
+    def resetFailedRequestFor01(self, requestInfo, usedLinks):      # 第一段傳失敗
         # for link in usedLinks:
         #     link.clearPhase4Swap()
         
         requestInfo.taken = False
-        requestInfo.width = {}
+        requestInfo.width = 0
         if requestInfo.state == 1:
             requestInfo.intermediate.clearIntermediate()
 
@@ -487,27 +397,27 @@ class MyAlgorithm(AlgorithmBase):
     def resetFailedRequestFor2(self, requestInfo, usedLinks):       # 第二段傳失敗 且超時
         requestInfo.savetime = 0
         requestInfo.state = 1
-        requestInfo.pathlen = min([len(x) for x in requestInfo.pathseg1])
+        requestInfo.pathlen = len(requestInfo.pathseg1)
         requestInfo.intermediate.clearIntermediate()
-        requestInfo.width = {}
+        requestInfo.width = 0
         requestInfo.taken = False # 這邊可能有問題 重新分配資源
 
         # 第二段的資源全部釋放
         for link in usedLinks:
             link.clearEntanglement()    
     
-    def resetSucceedRequestFor1(self, requestInfo, usedLinks=[]):      # 第一段傳成功
+    def resetSucceedRequestFor1(self, requestInfo, usedLinks):      # 第一段傳成功
         requestInfo.state = 2
-        requestInfo.pathlen = min([len(x) for x in requestInfo.pathseg2])
+        requestInfo.pathlen = len(requestInfo.pathseg2)
         requestInfo.taken = False                           # 這邊可能有問題 重新分配資源
-        requestInfo.width = {}
+        requestInfo.width = 0
         # requestInfo.linkseg1 = usedLinks                  # 紀錄seg1用了哪些link seg2成功要釋放資源
 
-        # 第一段的資源還是預留的 只是清掉entangled跟swap
+        # 第一段的資源還是預留的 只是清掉isEntangled(self.timeSlot)跟swap
         for link in usedLinks:      
             link.clearEntanglement()
 
-    def resetSucceedRequestFor2(self, requestInfo, usedLinks={}):      # 第二段傳成功 
+    def resetSucceedRequestFor2(self, requestInfo, usedLinks):      # 第二段傳成功 
         # 資源全部釋放
         requestInfo.intermediate.clearIntermediate()
         for link in usedLinks:
@@ -553,6 +463,7 @@ class MyAlgorithm(AlgorithmBase):
                     (requestInfo.state == 2 and n == dst and n.remainingQubits < 1) or \
                     ((n != src and n != dst) and n.remainingQubits < 2):             
                     unavaliable = True
+            # print('unavailable: ' , unavaliable)
 
             # 檢查link資源
             for i in range(0, len(path) - 1):
@@ -566,6 +477,7 @@ class MyAlgorithm(AlgorithmBase):
 
                 if not pick:
                     unavaliable = True  
+            # print('in p2 ' , src.id , dst.id , requestInfo.state, 'unavailable:', unavaliable , [n.id for n in path])
             
             # 資源不夠 先跳過
             if unavaliable:
@@ -588,23 +500,29 @@ class MyAlgorithm(AlgorithmBase):
             
             # take這個request
             if requestInfo.state == 2:
-                requestInfo.pathseg2.append(path)
+                requestInfo.pathseg2 = path
             else:
-                requestInfo.pathseg1.append(path)
+                requestInfo.pathseg1 = path
             self.result.usedPaths.append(path) #added for pre-entanglement 
             
             requestInfo.taken= True
-            requestInfo.width[tuple(path)] = 1
-
+            requestInfo.width = 1
         
         # p2 繼續找路徑分配資源 
-
-        self.p2Extra()
-        self.p2Extra2()
+        if not self.preEnt:
+            self.p2Extra()
 
 
         for req in self.requestState:
             requestInfo = self.requestState[req]
+
+            if requestInfo.state == 2:
+                path = requestInfo.pathseg2
+            else:
+                path = requestInfo.pathseg1
+            # if requestInfo.taken:
+            #     print('[[[[[P2]]]]]' , requestInfo.width , [n.id for n in path])
+
             if requestInfo.taken == False:
                 self.result.idleTime += 1
 
@@ -615,7 +533,6 @@ class MyAlgorithm(AlgorithmBase):
         sorted(self.requestState, key=lambda q: q[2])
         finishedRequest = []
         totalEntanglement = 0
-
         # p4
         for req in self.requestState:
             requestInfo = self.requestState[req]
@@ -628,74 +545,75 @@ class MyAlgorithm(AlgorithmBase):
             
             # swap
             if requestInfo.state == 2:
-                pathseg = requestInfo.pathseg2
+                p = requestInfo.pathseg2
             else:
-                pathseg = requestInfo.pathseg1
-            successFulEntanglement = 0
-            for p in pathseg:
+                p = requestInfo.pathseg1
 
-                width = requestInfo.width[tuple(p)]
-                usedLinks = set()
-                # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+            width = requestInfo.width
+            usedLinks = set()
+            # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
-                for i in range(1, len(p) - 1):
-                    prev = p[i-1]
-                    curr = p[i]
-                    next = p[i+1]
-                    prevLinks = []
-                    nextLinks = []
-                    
-                    w = width
-                    for link in curr.links:
-                        if link.entangled and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1) and w > 0:
-                            prevLinks.append(link)
-                            w -= 1
+            # print('selected ' , width , [n.id for n in p])
 
-                    w = width
-                    for link in curr.links:
-                        if link.entangled and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1) and w > 0:
-                            nextLinks.append(link)
-                            w -= 1
-
-                    if prevLinks == None or nextLinks == None:
-                        break
-
-                    for (l1, l2) in zip(prevLinks, nextLinks):
-                        usedLinks.add(l1)
-                        usedLinks.add(l2)
-                        curr.attemptSwapping(l1, l2)
+            for i in range(1, len(p) - 1):
+                prev = p[i-1]
+                curr = p[i]
+                next = p[i+1]
+                prevLinks = []
+                nextLinks = []
                 
-                if len(p) == 2:
-                    prev = p[0]
-                    curr = p[1]
-                    for link in prev.links:
-                        if link.entangled and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
-                            usedLinks.add(link)
-                            break
+                w = width
+                for link in curr.links:
+                    if link.isEntangled(self.timeSlot) and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1) and w > 0:
+                        prevLinks.append(link)
+                        w -= 1
+
+                w = width
+                for link in curr.links:
+                    if link.isEntangled(self.timeSlot) and (link.n1 == next and not link.s2 or link.n2 == next and not link.s1) and w > 0:
+                        nextLinks.append(link)
+                        w -= 1
+
+                if prevLinks == None or nextLinks == None:
+                    break
+                
+                for (l1, l2) in zip(prevLinks, nextLinks):
+                    usedLinks.add(l1)
+                    usedLinks.add(l2)
+                    swapped = curr.attemptSwapping(l1, l2)
+                    # print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
+
+                    if swapped:
+                        self.topo.usedLinks.add(l1)
+                        self.topo.usedLinks.add(l2)
+
             
-                # p5
-                success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+            if len(p) == 2:
+                prev = p[0]
+                curr = p[1]
+                for link in prev.links:
+                    if link.isEntangled(self.timeSlot) and (link.n1 == prev and not link.s2 or link.n2 == prev and not link.s1):
+                        usedLinks.add(link)
+                        self.topo.usedLinks.add(link)
+                        break
+         
+            # p5
+            successPaths = self.topo.getEstablishedEntanglements(p[0], p[-1])
+            success = len(successPaths)
 
-                # print('----------------------')
-                # print('[MyAlgo] success:', success)
-                # print('[MyAlgo] state:', requestInfo.state)
-                p2 = self.givenShortestPath[(req[0],req[1])]
-                # print('[MyAlgo] original path:', [x.id for x in p2])
-                # print('[MyAlgo] path:', [x.id for x in p])
+            # for path in successPaths:
+            #     print('path at time' , self.timeSlot , ':' , [n.id for n  in path ])
 
-                # failed
-                for link in usedLinks:
-                    link.clearEntanglement()
-                if success == 0 and len(p) != 2:
-                    continue
-                
-                # succeed
-                if success > 0 or len(p) == 2:
-                    # self.result.usedPaths.append(p) #added for pre-entanglement 
-                    successFulEntanglement += success
-                   
-                    continue
-            if not successFulEntanglement:
+
+            # print('----------------------')
+            # print('[' , self.name, ']', ' success:', success)
+            # print('[' , self.name, ']', ' state:', requestInfo.state)
+            p2 = self.givenShortestPath[(req[0],req[1])]
+            # print('[' , self.name, ']', ' original path:', [x.id for x in p2])
+            # print('[' , self.name, ']', ' path:', [x.id for x in p])
+
+            # failed
+            if success == 0 and len(p) != 2:
                 if requestInfo.state == 0 or requestInfo.state == 1:    # 0, 1
                     self.resetFailedRequestFor01(requestInfo, usedLinks)
                 elif requestInfo.state == 2:                            # 2
@@ -704,15 +622,18 @@ class MyAlgorithm(AlgorithmBase):
                         self.resetFailedRequestFor2(requestInfo, usedLinks)
                     else:
                         self.resetFailedRequestFor01(requestInfo, usedLinks)
-            else:
+                continue
+            
+            # succeed
+            if success > 0 or len(p) == 2:
+                # self.result.usedPaths.append(p) #added for pre-entanglement 
                 if requestInfo.state == 0:      # 0
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
+                    totalEntanglement += success
 
-                    totalEntanglement += successFulEntanglement
 
-                        
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
                     requestInfo.seg1_success_entanglement = success
@@ -722,9 +643,10 @@ class MyAlgorithm(AlgorithmBase):
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
-                    totalEntanglement += min(successFulEntanglement , requestInfo.seg1_success_entanglement)
 
-                    
+                    totalEntanglement += min(success , requestInfo.seg1_success_entanglement)
+
+                continue
             # p5 end
         # p4 end
         self.result.entanglementPerRound.append(totalEntanglement)
@@ -737,17 +659,20 @@ class MyAlgorithm(AlgorithmBase):
         for req in self.requestState:
             # self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
+        entSum = sum(self.result.entanglementPerRound)
 
-        self.topo.clearAllEntanglements()
+        # self.topo.clearAllEntanglements()
+        self.topo.resetEntanglement()
         self.result.remainRequestPerRound.append(len(self.requestState))  
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
         self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
 
         # print('----------------------')
-        print('[MyAlgo] waiting time:',  self.result.waitingTime)
-        print('[MyAlgo] idle time:', self.result.idleTime)
-        print('[MyAlgo]' , self.timeSlot, ' remaining request:', len(self.requestState))
-        print('[MyAlgo] p5 end')
+        print('[' , self.name, ']', ' waiting time:',  self.result.waitingTime)
+        print('[' , self.name, ']', ' idle time:', self.result.idleTime)
+        print('[' , self.name, '] :', self.timeSlot ,  ', remaining request:', len(self.requestState))
+        print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
+        print('[' , self.name, ']', ' p5 end')
         # print('----------------------')
 
         return self.result
@@ -755,7 +680,7 @@ class MyAlgorithm(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
-    s = MyAlgorithm(topo , preEnt=True)
+    s = SEERCACHE(topo , preEnt=False, param='ten')
     
     # for i in range(0, 200):
     #     requests = []
@@ -771,9 +696,22 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(100):
+            for j in range(30):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
+            
+            # ids = [(1,15), (1,16), (4,17), (3,16)]
+            # for (p,q) in ids:
+            #     source = None
+            #     dest = None
+            #     for node in topo.nodes:
+
+            #         if node.id == p:
+            #             source = node
+            #         if node.id == q:
+            #             dest = node
+            #     requests.append((source , dest))
+
             s.work(requests, i)
         else:
             s.work([], i)
