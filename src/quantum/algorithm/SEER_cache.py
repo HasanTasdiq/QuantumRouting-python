@@ -636,7 +636,10 @@ class SEERCACHE(AlgorithmBase):
             successFulEntanglement = 0
             for p in pathseg:
             
-                width = requestInfo.width
+                if tuple(p) in requestInfo.width:
+                    width = requestInfo.width[tuple(p)]
+                else:
+                    width = 0
                 usedLinks = set()
                 # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
@@ -730,7 +733,7 @@ class SEERCACHE(AlgorithmBase):
 
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
-                    requestInfo.seg1_success_entanglement = success
+                    requestInfo.seg1_success_entanglement = successFulEntanglement
 
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo, usedLinks)

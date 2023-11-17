@@ -507,7 +507,7 @@ class MyAlgorithm(AlgorithmBase):
         for link in usedLinks:      
             link.clearEntanglement()
 
-    def resetSucceedRequestFor2(self, requestInfo, usedLinks={}):      # 第二段傳成功 
+    def resetSucceedRequestFor2(self, requestInfo, usedLinks=[]):      # 第二段傳成功 
         # 資源全部釋放
         requestInfo.intermediate.clearIntermediate()
         for link in usedLinks:
@@ -634,7 +634,10 @@ class MyAlgorithm(AlgorithmBase):
             successFulEntanglement = 0
             for p in pathseg:
 
-                width = requestInfo.width[tuple(p)]
+                if tuple(p) in requestInfo.width:
+                    width = requestInfo.width[tuple(p)]
+                else:
+                    width = 0
                 usedLinks = set()
                 # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
@@ -715,7 +718,7 @@ class MyAlgorithm(AlgorithmBase):
                         
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo, usedLinks)
-                    requestInfo.seg1_success_entanglement = success
+                    requestInfo.seg1_success_entanglement = successFulEntanglement
 
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo, usedLinks)
@@ -737,6 +740,7 @@ class MyAlgorithm(AlgorithmBase):
         for req in self.requestState:
             # self.result.unfinishedRequest += 1
             remainTime += self.timeSlot - req[2]
+        entSum = sum(self.result.entanglementPerRound)
 
         self.topo.clearAllEntanglements()
         self.result.remainRequestPerRound.append(len(self.requestState))  
@@ -747,6 +751,8 @@ class MyAlgorithm(AlgorithmBase):
         print('[MyAlgo] waiting time:',  self.result.waitingTime)
         print('[MyAlgo] idle time:', self.result.idleTime)
         print('[MyAlgo]' , self.timeSlot, ' remaining request:', len(self.requestState))
+        print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
+
         print('[MyAlgo] p5 end')
         # print('----------------------')
 
@@ -755,7 +761,7 @@ class MyAlgorithm(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
-    s = MyAlgorithm(topo , preEnt=True)
+    s = MyAlgorithm(topo )
     
     # for i in range(0, 200):
     #     requests = []
@@ -771,7 +777,7 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(100):
+            for j in range(30):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)
