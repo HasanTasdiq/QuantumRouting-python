@@ -232,7 +232,7 @@ class AlgorithmBase:
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
-            k = 5
+            k = 1
             if self.name == 'SEER_6' or self.name == 'REPS_6':
                 
                 k = 1

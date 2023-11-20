@@ -87,7 +87,7 @@ def Run(numOfRequestPerRound = 40, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 5
+    times = 4
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
         for Ylabel in Ylabels:
             filename = Xlabel + "_" + Ylabel + ".txt"
-            F = open(targetFilePath + filename, "a")
+            F = open(targetFilePath + filename, "w")
             for i in range(len(Xparameters[XlabelIndex])):
                 Xaxis = str(Xparameters[XlabelIndex][i])
                 Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     # sampleRounds = [0, 5, 10, 15, 20, 25]
 
     filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
-    F = open(targetFilePath + filename, "a")
+    F = open(targetFilePath + filename, "w")
     for roundIndex in sampleRounds:
         Xaxis = str(roundIndex)
         Yaxis = [result.remainRequestPerRound[roundIndex] for result in results]
