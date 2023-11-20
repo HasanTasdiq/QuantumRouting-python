@@ -703,16 +703,18 @@ class SEERCACHE(AlgorithmBase):
                 # print('[' , self.name, ']', ' path:', [x.id for x in p])
 
                 # failed
-                for link in usedLinks:
-                    link.clearEntanglement()
+           
                 if success == 0 and len(p) != 2:
+                    for link in usedLinks:
+                        link.keepEntanglementOnly()
                     continue
                 
                 # succeed
                 if success > 0 or len(p) == 2:
                     # self.result.usedPaths.append(p) #added for pre-entanglement 
                     successFulEntanglement += success
-                   
+                    for link in usedLinks:
+                        link.clearEntanglement()
                     continue
             if not successFulEntanglement:
                 if requestInfo.state == 0 or requestInfo.state == 1:    # 0, 1

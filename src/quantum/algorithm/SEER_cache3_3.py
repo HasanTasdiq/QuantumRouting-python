@@ -746,16 +746,18 @@ class SEERCACHE3_3(AlgorithmBase):
                 # print('[' , self.name, ']', ' original path:', [x.id for x in p2])
                 # print('[' , self.name, ']', ' path:', [x.id for x in p])
 
-                for link in usedLinks:
-                    link.clearEntanglement()
-                if success == 0 and len(p) != 2:
 
+                if success == 0 and len(p) != 2:
+                    for link in usedLinks:
+                        link.keepEntanglementOnly()
                     continue
                 
                 # succeed
                 # print('+++++++++++++++++++++++success+++++++++++++++++++', success)
                 if success > 0 or len(p) == 2:
                     successFulEntanglement += success
+                    for link in usedLinks:
+                        link.clearEntanglement()
                     continue
 
             if not successFulEntanglement:
