@@ -174,7 +174,7 @@ class Topo:
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             # rand = int(random.random()*5+3) # 3~7
-            rand = 4
+            rand = 8
             
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
@@ -216,6 +216,8 @@ class Topo:
                 # else:
                 #     print('distance of non edge node pair ' , self.distance_by_node(node1.id , node2.id))
                 #     time.sleep(.01)
+        for node in self.nodes:
+            node.maxMem = node.remainingQubits
         print('****** len seg' , len(self.segments))
         print('****** len links' , len(self.links))
         print('****** len edge' , len(self.edges))
@@ -239,7 +241,7 @@ class Topo:
                 #     print('===========v link found in updatedG=========' , (link.n1.id , link.n2.id))
                 G.add_edge(link.n1.id , link.n2.id)
         return G
-    def removeLink(self, link):
+    def removeLink(self, link  , skipNodes = []):
 
         link.n1.links.remove(link)
         link.n2.links.remove(link)
@@ -248,13 +250,31 @@ class Topo:
 
         if link.isVirtualLink:
             self.virtualLinkCount[(link.n1 , link.n2)] -= 1
+
+            if link.n1 not in skipNodes:
+                link.n1.remainingQubits += 1
+            if link.n2 not in skipNodes:
+                link.n2.remainingQubits += 1
+
+
+    def printNodeMem(self):
+        for node in self.nodes:
+            print(node.id , node.remainingQubits , len([link for link in node.links if link.isVirtualLink]) , node.maxMem)
+            if node.maxMem  < len([link for link in node.links if link.isVirtualLink]):
+                exit()
     
-    def addLink(self,link):
+    def addLink(self,link , skipNodes = []):
         self.lastLinkId += 1
 
         link.n1.links.append(link)
         link.n2.links.append(link)
         self.links.append(link)
+
+        if link.isVirtualLink:
+            if link.n1 not in skipNodes:
+                link.n1.remainingQubits -= 1
+            if link.n2 not in skipNodes: 
+                link.n2.remainingQubits -= 1
 
     def segmentCapacity(self, path):
         min_capacity = 1000
@@ -326,8 +346,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            # G = Topo.create_custom_graph()
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
@@ -1012,7 +1032,7 @@ class Topo:
 
         for link in set(self.links).difference(self.usedLinks):
             if timeslot - link.entangledTimeSlot >=  entanglement_lifetimeslot:
-                link.clearEntanglement()
+                link.clearEntanglement(expired = True)
             else:
                 if link.isVirtualLink:
                     self.restoreOriginalLinks(link)

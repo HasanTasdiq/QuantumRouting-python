@@ -121,6 +121,7 @@ class AlgorithmBase:
         # print('link to generate ent ' , self.topo.cacheTable)
     def updateNeedLinksDict(self , path):
         upper = len(path)
+        upper = 4
         if self.name == 'SEER_6' or self.name == 'REPS_6':
             upper = 3
         for i in range(2 , upper):
@@ -232,7 +233,7 @@ class AlgorithmBase:
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
-            k = 1
+            k = 2
             if self.name == 'SEER_6' or self.name == 'REPS_6':
                 
                 k = 1
@@ -248,7 +249,7 @@ class AlgorithmBase:
                 #     print('self.topo.widthPhase2(path2) ' , self.topo.widthPhase2(path2))
                 #     continue
                 preSwapped = True
-                while self.topo.widthPhase2(path2) > 2 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
+                while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                     preSwapped = False
 
                     for i in range(1 , len(path) - 1):
@@ -294,11 +295,11 @@ class AlgorithmBase:
 
                                     self.topo.addLink(link)
 
-                                    self.topo.removeLink(link1)
-                                    self.topo.removeLink(link2)
+                                    self.topo.removeLink(link1 )
+                                    self.topo.removeLink(link2 )
 
                                     if link.n1 == source and link.n2 == dest:
-                                        self.topo.virtualLinkCount[source , dest] += 1
+                                        self.topo.virtualLinkCount[(source , dest)] += 1
                                         preSwapped = True
                                         # print('================complete link created====================' , len(path) , (source.id , dest.id))
                                         # if len(path) >3:
@@ -312,7 +313,8 @@ class AlgorithmBase:
                     del self.topo.needLinksDict[key]
 
 
-        print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+        print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink] )
+        # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
 
 
 

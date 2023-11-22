@@ -42,10 +42,11 @@ class Link:
     def assignQubits(self):
         # prevState = self.assigned
         self.assigned = True
-        self.n1.remainingQubits -= 1
-        self.n2.remainingQubits -= 1
+        if not self.isVirtualLink:
+            self.n1.remainingQubits -= 1
+            self.n2.remainingQubits -= 1
   
-    def clearEntanglement(self):
+    def clearEntanglement(self , expired = False):
         preState = self.assigned
         self.s1 = False
         self.s2 = False
@@ -65,10 +66,12 @@ class Link:
                 self.topo.addLink(link_)                    
             self.topo.removeLink(self)
 
-        if preState:
+        if preState and not self.isVirtualLink:
             self.n1.remainingQubits += 1
             self.n2.remainingQubits += 1
-    
+
+
+
     def keepEntanglementOnly(self):
         preState = self.assigned
         self.s1 = False
@@ -84,7 +87,7 @@ class Link:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
 
-        if preState:
+        if preState and not self.isVirtualLink:
             self.n1.remainingQubits += 1
             self.n2.remainingQubits += 1
     
