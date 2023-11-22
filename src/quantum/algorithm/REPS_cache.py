@@ -830,7 +830,7 @@ class REPSCACHE(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(50, 0.8, 5, 0.0002, 4)
+    topo = Topo.generate(50, 0.8, 5, 0.0002, 6)
     s = REPSCACHE(topo,param='ten',name='REPS_CACHE')
 
     result = AlgorithmResult()

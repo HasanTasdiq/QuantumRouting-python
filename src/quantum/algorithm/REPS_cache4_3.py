@@ -917,7 +917,7 @@ class REPSCACHE5_3(AlgorithmBase):
         return False
 if __name__ == '__main__':
     numOfNode = 50
-    topo = Topo.generate(numOfNode, 0.8, 5, 0.0002, 4)
+    topo = Topo.generate(numOfNode, 0.8, 5, 0.0002, 6)
     s = REPSCACHE5_3(topo,param='ten',name='REPS_6')
     result = AlgorithmResult()
     samplesPerTime = 10 * 2

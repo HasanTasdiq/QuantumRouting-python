@@ -414,7 +414,7 @@ class REPS(AlgorithmBase):
                 for path in paths:
                     width = path[-1]
                     select = (width / self.tki_LP[SDpair][k]) >= random.random()
-                    print('*** path ', select , [p.id for p in path[0:-1]] , width)
+                    # print('*** path ', select , [p.id for p in path[0:-1]] , width)
 
                     if not select:
                         continue
@@ -781,7 +781,7 @@ class REPS(AlgorithmBase):
         return False
 if __name__ == '__main__':
     
-    topo = Topo.generate(18, 0.2, 5, 0.0002, 1)
+    topo = Topo.generate(50, 0.8, 5, 0.0002, 6)
     s = REPS(topo)
     result = AlgorithmResult()
     samplesPerTime = 8 * 2

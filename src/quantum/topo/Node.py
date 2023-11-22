@@ -16,6 +16,7 @@ class Node:
         self.neighbors = [] 
         self.links = [] 
         self.segments = []
+        self.maxMem = 0
 
     def attemptSwapping(self, l1, l2 , times = 1):  # l1 -> Link, l2 -> Link
 

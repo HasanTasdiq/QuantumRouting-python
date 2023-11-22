@@ -817,17 +817,19 @@ class SEERCACHE3_3(AlgorithmBase):
         
         print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
 
-        # print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
-        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
+        # print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
         
         print('[' , self.name, ']', ' -----------------p5 end--------------')
+        # self.topo.printNodeMem()
+
         # print('----------------------')
 
         return self.result
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
+    topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
     s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_')
     
     # for i in range(0, 200):
@@ -846,25 +848,25 @@ if __name__ == '__main__':
     # topo.generateRequest(30)
     # exit()
     
-    for i in range(0, 100):
+    for i in range(0, 10):
         requests = []
         if i < 100:
 
 
-            # ids = [(1,15), (1,16), (4,17), (3,16)]
-            # for (p,q) in ids:
-            #     source = None
-            #     dest = None
-            #     for node in topo.nodes:
+            ids = [(1,15), (1,16), (4,17), (3,16)]
+            for (p,q) in ids:
+                source = None
+                dest = None
+                for node in topo.nodes:
 
-            #         if node.id == p:
-            #             source = node
-            #         if node.id == q:
-            #             dest = node
-            #     requests.append((source , dest))
-            for j in range(30):
-                a = sample(topo.nodes, 2)
-                requests.append((a[0], a[1]))
+                    if node.id == p:
+                        source = node
+                    if node.id == q:
+                        dest = node
+                requests.append((source , dest))
+            # for j in range(30):
+            #     a = sample(topo.nodes, 2)
+            #     requests.append((a[0], a[1]))
             s.work(requests, i)
         else:
             s.work([], i)
