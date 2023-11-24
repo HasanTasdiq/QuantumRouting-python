@@ -87,7 +87,7 @@ def Run(numOfRequestPerRound = 40, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 5
+    times = 3
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime

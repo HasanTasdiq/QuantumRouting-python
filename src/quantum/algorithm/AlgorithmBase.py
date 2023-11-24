@@ -249,7 +249,8 @@ class AlgorithmBase:
                 #     print('self.topo.widthPhase2(path2) ' , self.topo.widthPhase2(path2))
                 #     continue
                 preSwapped = True
-                while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
+                # while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
+                if self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                     preSwapped = False
 
                     for i in range(1 , len(path) - 1):
@@ -306,11 +307,15 @@ class AlgorithmBase:
                                         #     print([n for n in path])
             # if self.topo.virtualLinkCount[(source , dest)] >= timesUsed:
             #     del self.topo.needLinksDict[(source , dest)]
+        toRemoveKeys = []
         for key in self.topo.virtualLinkCount:
             if key in self.topo.needLinksDict:
                 if self.topo.virtualLinkCount[key] >= len(self.topo.needLinksDict[key]):
                     # print('del ****************************************************************del ')
-                    del self.topo.needLinksDict[key]
+                    toRemoveKeys.append(key)
+        for key in toRemoveKeys:
+            del self.topo.needLinksDict[key]
+            self.topo.virtualLinkCount[key] = 0
 
 
         print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink] )
