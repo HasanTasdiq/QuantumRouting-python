@@ -121,7 +121,7 @@ class AlgorithmBase:
         # print('link to generate ent ' , self.topo.cacheTable)
     def updateNeedLinksDict(self , path):
         upper = len(path)
-        upper = 4
+        upper = 3
         if self.name == 'SEER_6' or self.name == 'REPS_6':
             upper = 3
         for i in range(2 , upper):
