@@ -53,8 +53,8 @@ def Run(numOfRequestPerRound = 40, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
     # make copy
     algorithms = []
 
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEER2'))
     # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
