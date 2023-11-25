@@ -154,6 +154,9 @@ class Link:
             self.entangled = b
             
         if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
+            if not b:
+                print('ent not prob', self.p , b)
+
             return True
         # print('ent prob', self.p , b)
         
