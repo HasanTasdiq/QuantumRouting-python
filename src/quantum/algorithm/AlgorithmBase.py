@@ -16,11 +16,12 @@ class AlgorithmResult:
         self.temporaryRatio = 0
         self.numOfTimeslot = 0
         self.totalRuntime = 0
-        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'entanglementPerRound']
+        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'entanglementPerRound' , 'successfulRequest']
         self.remainRequestPerRound = []
         self.usedPaths=[]
         self.entanglementPerRound = []
         self.eps = 0
+        self.successfulRequest = 0
 
     def toDict(self):
         dic = {}
@@ -30,10 +31,11 @@ class AlgorithmResult:
         dic[self.Ylabels[3]] = self.usedQubits
         dic[self.Ylabels[4]] = self.temporaryRatio
         dic[self.Ylabels[5]] = self.eps
+        dic[self.Ylabels[6]] = self.successfulRequest
 
         return dic
     
-    def Avg(results: list):
+    def Avg(results: list , requestPerRound = 0):
         AvgResult = AlgorithmResult()
 
         ttime = 100
@@ -64,10 +66,12 @@ class AlgorithmResult:
         AvgResult.eps /= len(results)
         AvgResult.eps /= ttime
 
+
         for i in range(ttime):
             AvgResult.remainRequestPerRound[i] /= len(results)
             AvgResult.entanglementPerRound[i] /= len(results)
-            
+        
+        AvgResult.successfulRequest = (requestPerRound -  AvgResult.remainRequestPerRound[-1] / ttime ) /requestPerRound * 100
         return AvgResult
 
 class AlgorithmBase:
@@ -121,7 +125,7 @@ class AlgorithmBase:
         # print('link to generate ent ' , self.topo.cacheTable)
     def updateNeedLinksDict(self , path):
         upper = len(path)
-        upper = 3
+        # upper = 4
         if self.name == 'SEER_6' or self.name == 'REPS_6':
             upper = 3
         for i in range(2 , upper):
@@ -202,10 +206,15 @@ class AlgorithmBase:
 
 
     def tryPreSwapp(self):
+        print('--tryPreSwapp(self)--')
+        count = 0
         while True:
             preSwapped = self.tryPreSwapp2()
+            count += preSwapped
             if not preSwapped:
                 break
+        print('[' , self.name, '] :', self.timeSlot , ':' , count)
+        return count
     def tryPreSwapp2(self):
         temp_edges = set()
         for link in self.topo.links:
@@ -220,7 +229,7 @@ class AlgorithmBase:
 
         #         print('***===****src: ' , source.id , 'dest: ' , dest.id , '-', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
         tcount =0
-        preSwapped = False
+        preSwappedCount = 0
         for (source , dest) in self.topo.needLinksDict:
             
            
@@ -306,7 +315,7 @@ class AlgorithmBase:
 
                                     if link.n1 == source and link.n2 == dest:
                                         self.topo.virtualLinkCount[(source , dest)] += 1
-                                        preSwapped = True
+                                        preSwappedCount += 1
                                         # print('================complete link created====================' , len(path) , (source.id , dest.id))
                                         # if len(path) >3:
                                         #     print([n for n in path])
@@ -327,7 +336,7 @@ class AlgorithmBase:
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
 
 
-        return preSwapped
+        return preSwappedCount
         
 
                         
@@ -377,10 +386,14 @@ class AlgorithmBase:
 
         # if self.preEnt:
         #     self.preEntanglement()
+        if self.param == 'ten':
+            self.tryEntanglement()
+
 
         self.p2()
         
-        self.tryEntanglement()
+        if not self.param == 'ten':
+            self.tryEntanglement()
 
         res = self.p4()
 

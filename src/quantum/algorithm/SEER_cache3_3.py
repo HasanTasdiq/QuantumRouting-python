@@ -617,7 +617,7 @@ class SEERCACHE3_3(AlgorithmBase):
         # p2 繼續找路徑分配資源 
         # if not self.preEnt:
         self.p2Extra()
-        self.p2Extra2()
+        # self.p2Extra2()
 
 
         for req in self.requestState:
@@ -830,7 +830,7 @@ class SEERCACHE3_3(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
-    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_6')
+    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_')
     
     # for i in range(0, 200):
     #     requests = []
