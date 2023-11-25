@@ -206,14 +206,14 @@ class AlgorithmBase:
 
 
     def tryPreSwapp(self):
-        print('--tryPreSwapp(self)--')
+        # print('--tryPreSwapp(self)--')
         count = 0
         while True:
             preSwapped = self.tryPreSwapp2()
             count += preSwapped
             if not preSwapped:
                 break
-        print('[' , self.name, '] :', self.timeSlot , ':' , count)
+        # print('[' , self.name, '] :', self.timeSlot , ':' , count)
         return count
     def tryPreSwapp2(self):
         temp_edges = set()
@@ -223,7 +223,7 @@ class AlgorithmBase:
             if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
                 temp_edges.add((n1,n2))
 
-        print('--------------')
+        # print('--------------')
         # for (source , dest) in self.topo.needLinksDict:
         #     if len(self.topo.needLinksDict[(source , dest)]) >= needlink_timeslot * self.topo.preSwapFraction:
 
