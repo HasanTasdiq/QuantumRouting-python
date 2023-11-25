@@ -29,6 +29,7 @@ from numpy import log as ln
 import numpy as np
 import random
 import time
+import os.path
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     for i in range(ttime):
@@ -177,9 +178,9 @@ if __name__ == '__main__':
     # numOfRequestPerRound = [1, 2, 3]
     numOfRequestPerRound = [40 , 50 , 60 ]
     # numOfRequestPerRound = [50 ]
-    # numOfRequestPerRound = [2]
+    numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
-    numOfNodes = [50, 100, 150, 200]
+    numOfNodes = [50, 100, 150]
     # numOfNodes = [20]
     r = [0, 2, 4, 6, 8, 10]
     q = [0.2 , 0.4 , 0.6 , 0.8]
@@ -206,7 +207,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [  1, 2, 3 ,4 , 5, 6 , 7]
+    skipXlabel = [  0 , 1, 3 ,4 , 5, 6 , 7]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
@@ -275,7 +276,10 @@ if __name__ == '__main__':
 
         for Ylabel in Ylabels:
             filename = Xlabel + "_" + Ylabel + ".txt"
-            F = open(targetFilePath + filename, "w")
+            if os.path.isfile(targetFilePath + filename):
+                F = open(targetFilePath + filename, "w")
+            else:
+                F = open(targetFilePath + filename, "w")
             for i in range(len(Xparameters[XlabelIndex])):
                 Xaxis = str(Xparameters[XlabelIndex][i])
                 Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]

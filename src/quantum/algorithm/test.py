@@ -9,6 +9,6 @@ import numpy as np
 # print('SEER' in algoNames[0])
 td = {}
 td[1] = 0
-print(td)
+print(os.path.isfile("../../plot/data/" + "#RequestPerRound_waitingTime.txt"))
 
 
