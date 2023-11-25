@@ -178,7 +178,7 @@ if __name__ == '__main__':
     # numOfRequestPerRound = [1, 2, 3]
     numOfRequestPerRound = [40 , 50 , 60 ]
     # numOfRequestPerRound = [50 ]
-    numOfRequestPerRound = [2]
+    # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
     numOfNodes = [50, 100, 150]
     # numOfNodes = [20]
