@@ -600,7 +600,7 @@ class MyAlgorithm(AlgorithmBase):
         # p2 繼續找路徑分配資源 
 
         self.p2Extra()
-        self.p2Extra2()
+        # self.p2Extra2()
 
 
         for req in self.requestState:

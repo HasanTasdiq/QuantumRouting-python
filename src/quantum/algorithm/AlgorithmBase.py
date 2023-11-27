@@ -208,14 +208,16 @@ class AlgorithmBase:
     def tryPreSwapp(self):
         # print('--tryPreSwapp(self)--')
         count = 0
+        i = 0
         while True:
-            preSwapped = self.tryPreSwapp2()
+            preSwapped = self.tryPreSwapp2(i)
             count += preSwapped
             if not preSwapped:
                 break
+            i += 1
         # print('[' , self.name, '] :', self.timeSlot , ':' , count)
         return count
-    def tryPreSwapp2(self):
+    def tryPreSwapp2(self , it):
         temp_edges = set()
         for link in self.topo.links:
             n1 = link.n1
@@ -252,6 +254,8 @@ class AlgorithmBase:
                 
                 k = 1
             paths = self.topo.k_alternate_paths(source.id , dest.id , k)
+
+            paths = [paths[i]]
             # print('path len ' , [len(path) for path in paths])
             for path in paths:
                 # print('** path len ' , len(path))
