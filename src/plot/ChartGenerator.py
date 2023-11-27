@@ -12,7 +12,8 @@ class ChartGenerator:
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
     def __init__(self, dataName, Ylabel, Xlabel):
         filename = './data/' + dataName
-
+        if Ylabel == 'successfulRequest':
+            Ylabel += ' (%)'
         if not os.path.exists(filename):
             print("file doesn't exist")
             return
@@ -155,7 +156,7 @@ class ChartGenerator:
         # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
         # AlgoName = ["REPS","REPS-CACHE","REPS-PRE-SWAP-multihop", "REPS-PRE-SWAP-1hop" ]
         # AlgoName = ["SEER","SEER-cache", "SEER-re-use-swap","SEER-pre-swap"]
-        AlgoName = ["SEER","SEER-cache", "SEER-pre-swap-multihop", "SEER-pre-swap-1hop"]
+        AlgoName = ["SEER","SEER-cache","SEER-pre-swap-1hop" , "SEER-pre-swap-multihop", ]
 
         leg = plt.legend(
             AlgoName,
