@@ -255,7 +255,7 @@ class AlgorithmBase:
                 k = 1
             paths = self.topo.k_alternate_paths(source.id , dest.id , k)
 
-            paths = [paths[i]]
+            paths = [paths[it]]
             # print('path len ' , [len(path) for path in paths])
             for path in paths:
                 # print('** path len ' , len(path))
