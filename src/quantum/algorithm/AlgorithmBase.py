@@ -209,15 +209,18 @@ class AlgorithmBase:
         # print('--tryPreSwapp(self)--')
         count = 0
         i = 0
+        k = 2
+        if self.name == 'SEER_6' or self.name == 'REPS_6':
+                k = 1
         while True:
-            preSwapped = self.tryPreSwapp2(i)
+            preSwapped = self.tryPreSwapp2(i % k , k)
             count += preSwapped
             if not preSwapped:
                 break
             i += 1
         # print('[' , self.name, '] :', self.timeSlot , ':' , count)
         return count
-    def tryPreSwapp2(self , it):
+    def tryPreSwapp2(self , it , k):
         temp_edges = set()
         for link in self.topo.links:
             n1 = link.n1
@@ -249,10 +252,8 @@ class AlgorithmBase:
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
-            k = 2
-            if self.name == 'SEER_6' or self.name == 'REPS_6':
-                
-                k = 1
+            
+
             paths = self.topo.k_alternate_paths(source.id , dest.id , k)
 
             paths = [paths[it]]
