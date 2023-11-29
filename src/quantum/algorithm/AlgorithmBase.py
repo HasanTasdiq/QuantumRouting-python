@@ -125,10 +125,12 @@ class AlgorithmBase:
         # print('link to generate ent ' , self.topo.cacheTable)
     def updateNeedLinksDict(self , path):
         upper = len(path)
+        lower = 2
         # upper = 4
         if self.name == 'SEER_6' or self.name == 'REPS_6':
+            lower = 2
             upper = 3
-        for i in range(2 , upper):
+        for i in range(lower , upper):
         # for i in range(2 ,3 ):
             segments = self.getSegments(path , i)
             for (node1 , node2) in segments:
@@ -138,6 +140,19 @@ class AlgorithmBase:
                     self.topo.needLinksDict[(node2 , node1)].append(self.timeSlot)
                 else:
                     self.topo.needLinksDict[(node1 , node2)] = ([self.timeSlot])
+
+
+            # if i > 2:
+            #     if (node1 , node2) in self.topo.needLinksDict:
+            #         if len(self.topo.needLinksDict[(node1 , node2)]) > 10:
+            #             print('============== ')
+            #             print('============== ' , node1.id , node2.id)
+            #             print('============== ')
+            #     elif (node2 , node1) in self.topo.needLinksDict:
+            #         if len(self.topo.needLinksDict[(node2 , node1)]) > 10:
+            #             print('============== ')
+            #             print('============== ' , node1.id , node2.id)
+            #             print('============== ')
 
 
     def getSegments(self , a , n):
@@ -209,7 +224,7 @@ class AlgorithmBase:
         # print('--tryPreSwapp(self)--')
         count = 0
         i = 0
-        k = 2
+        k = 1
         if self.name == 'SEER_6' or self.name == 'REPS_6':
                 k = 1
         while True:
@@ -218,7 +233,7 @@ class AlgorithmBase:
             if not preSwapped:
                 break
             i += 1
-        # print('[' , self.name, '] :', self.timeSlot , ':' , count)
+        print('[' , self.name, '] :', self.timeSlot , ':==v link==:' , count)
         return count
     def tryPreSwapp2(self , it , k):
         temp_edges = set()
@@ -247,7 +262,9 @@ class AlgorithmBase:
 
             if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
+            
 
+            
 
             # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
@@ -269,9 +286,10 @@ class AlgorithmBase:
                 #     continue
                 
                 # while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
-                if self.topo.widthPhase2(path2) > 4 and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
+                if self.topo.widthPhase2(path2) > 1 and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                     
-
+                    # if self.topo.hopsAway2(source , dest , 'hop') > 2:
+                    #     self.topo.tmpcount += 1
                     for i in range(1 , len(path) - 1):
                         node1 = self.topo.nodes[path[0]]
                         node = self.topo.nodes[path[i]]
@@ -321,9 +339,15 @@ class AlgorithmBase:
                                     if link.n1 == source and link.n2 == dest:
                                         self.topo.virtualLinkCount[(source , dest)] += 1
                                         preSwappedCount += 1
-                                        # print('================complete link created====================' , len(path) , (source.id , dest.id))
+                                        if self.topo.hopsAway2(source , dest , 'hop') > 2:
+                                            print('================complete link created====================' , self.topo.hopsAway2(source , dest , 'hop') , self.topo.virtualLinkCount[(source , dest)] , len(self.topo.needLinksDict[(source , dest)]) , (source.id , dest.id))
+                                            print(self.topo.needLinksDict[(source , dest)])
+                                            
+                                        # exit()
                                         # if len(path) >3:
                                         #     print([n for n in path])
+                            if len(link.subLinks) > 2:
+                                self.topo.tmpcount += 1
             # if self.topo.virtualLinkCount[(source , dest)] >= timesUsed:
             #     del self.topo.needLinksDict[(source , dest)]
         toRemoveKeys = []
@@ -337,7 +361,7 @@ class AlgorithmBase:
             self.topo.virtualLinkCount[key] = 0
 
 
-        # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink] )
+        # print('[' , self.name, '] :', self.timeSlot ,  ', ==  in tryPreswap() len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink] )
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
 
 
@@ -374,8 +398,8 @@ class AlgorithmBase:
         for key in temp:
             del self.topo.needLinksDict[key]
         
-        # self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1]) * self.topo.hopsAway(item[0][0] , item[0][1] , 'hop')))
-        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1])))
+        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1]) * self.topo.hopsAway2(item[0][0] , item[0][1] , 'hop')))
+        # self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1])))
         
 
     def work(self, pairs: list, time): 
@@ -391,13 +415,13 @@ class AlgorithmBase:
 
         # if self.preEnt:
         #     self.preEntanglement()
-        if self.param == 'ten':
+        if self.name == 'SEER_6' or self.name == 'SEER_':
             self.tryEntanglement()
 
 
         self.p2()
         
-        if not self.param == 'ten':
+        if not (self.name == 'SEER_6' or self.name == 'SEER_'):
             self.tryEntanglement()
 
         res = self.p4()
