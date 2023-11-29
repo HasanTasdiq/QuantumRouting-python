@@ -707,6 +707,7 @@ class SEERCACHE3_3(AlgorithmBase):
                             usedLinks.add(l2)
 
                 self.updateNeedLinksDict(p)
+                # print('==path==' , [n.id for n in p])
 
 
 
@@ -749,7 +750,7 @@ class SEERCACHE3_3(AlgorithmBase):
 
                 if success == 0 and len(p) != 2:
                     for link in usedLinks:
-                        link.keepEntanglementOnly()
+                        link.clearEntanglement()
                     continue
                 
                 # succeed
@@ -819,8 +820,10 @@ class SEERCACHE3_3(AlgorithmBase):
 
         # print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
         print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+        print('[' , self.name, ']', ' -----------------tmp count --------------' , self.topo.tmpcount)
         
         print('[' , self.name, ']', ' -----------------p5 end--------------')
+
         # self.topo.printNodeMem()
 
         # print('----------------------')
@@ -829,8 +832,8 @@ class SEERCACHE3_3(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
-    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_')
+    topo = Topo.generate(18, 0.8, 5, 0.0002, 1)
+    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_6')
     
     # for i in range(0, 200):
     #     requests = []
@@ -864,7 +867,7 @@ if __name__ == '__main__':
             #         if node.id == q:
             #             dest = node
             #     requests.append((source , dest))
-            for j in range(30):
+            for j in range(50):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)
