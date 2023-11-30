@@ -664,10 +664,11 @@ class MyAlgorithm(AlgorithmBase):
                         break
 
                     for (l1, l2) in zip(prevLinks, nextLinks):
-                        usedLinks.add(l1)
-                        usedLinks.add(l2)
-                        curr.attemptSwapping(l1, l2)
-                
+
+                        swapped = curr.attemptSwapping(l1, l2)
+                        if swapped:
+                            usedLinks.add(l1)
+                            usedLinks.add(l2)
                 if len(p) == 2:
                     prev = p[0]
                     curr = p[1]

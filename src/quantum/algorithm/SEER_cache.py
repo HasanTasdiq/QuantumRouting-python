@@ -668,15 +668,15 @@ class SEERCACHE(AlgorithmBase):
                         break
                     
                     for (l1, l2) in zip(prevLinks, nextLinks):
-                        usedLinks.add(l1)
-                        usedLinks.add(l2)
+
                         swapped = curr.attemptSwapping(l1, l2)
                         # print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
 
                         if swapped:
                             self.topo.usedLinks.add(l1)
                             self.topo.usedLinks.add(l2)
-
+                            usedLinks.add(l1)
+                            usedLinks.add(l2)
                 
                 if len(p) == 2:
                     prev = p[0]
@@ -706,7 +706,7 @@ class SEERCACHE(AlgorithmBase):
            
                 if success == 0 and len(p) != 2:
                     for link in usedLinks:
-                        link.keepEntanglementOnly()
+                        link.clearEntanglement()
                     continue
                 
                 # succeed

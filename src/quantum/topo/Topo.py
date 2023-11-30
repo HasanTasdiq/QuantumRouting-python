@@ -250,7 +250,8 @@ class Topo:
         self.links.remove(link)
 
         if link.isVirtualLink:
-            self.virtualLinkCount[(link.n1 , link.n2)] -= 1
+            if self.virtualLinkCount[(link.n1 , link.n2)] > 0: 
+                self.virtualLinkCount[(link.n1 , link.n2)] -= 1
 
             if link.n1 not in skipNodes:
                 link.n1.remainingQubits += 1
@@ -276,6 +277,9 @@ class Topo:
                 link.n1.remainingQubits -= 1
             if link.n2 not in skipNodes: 
                 link.n2.remainingQubits -= 1
+            
+            self.virtualLinkCount[(link.n1 , link.n2)] += 1
+
 
     def segmentCapacity(self, path):
         min_capacity = 1000
@@ -347,8 +351,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            G = Topo.create_custom_graph()
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
