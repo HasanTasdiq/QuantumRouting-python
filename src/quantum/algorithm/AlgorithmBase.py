@@ -6,6 +6,7 @@ from topo.Topo import Topo
 import time
 from topo.helper import needlink_timeslot
 from topo.Link import Link
+import math
 
 class AlgorithmResult:
     def __init__(self):
@@ -233,7 +234,7 @@ class AlgorithmBase:
             if not preSwapped:
                 break
             i += 1
-        print('[' , self.name, '] :', self.timeSlot , ':==v link==:' , count)
+        # print('[' , self.name, '] :', self.timeSlot , ':==v link==:' , count)
         return count
     def tryPreSwapp2(self , it , k):
         temp_edges = set()
@@ -262,6 +263,8 @@ class AlgorithmBase:
 
             if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
+            if self.topo.virtualLinkCount[(source , dest)] >= math.ceil(timesUsed / needlink_timeslot):
+                continue
             
 
             
@@ -286,7 +289,8 @@ class AlgorithmBase:
                 #     continue
                 
                 # while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
-                if self.topo.widthPhase2(path2) > 1 and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
+                width = self.topo.widthPhase2(path2) 
+                if width > 1 and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                     
                     # if self.topo.hopsAway2(source , dest , 'hop') > 2:
                     #     self.topo.tmpcount += 1
@@ -295,57 +299,60 @@ class AlgorithmBase:
                         node = self.topo.nodes[path[i]]
                         node2 = self.topo.nodes[path[i + 1]]
 
-                
-                        link1 = None
-                        link2 = None
+                        w = width
+                        links1 = []
+                        links2 = []
                         for link in node.links:
                             # if link.contains(node1) or link.contains(node2):
                             #     print('=!=!=======link.isEntangled:' , link.isEntangled(self.timeSlot) , 'link.notSwa:' , link.notSwapped() , 'link1None:', link1 is None , 'link2 is None:',link2 is None)
-                            if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and link1 is None:
-                                link1 = link
-                            if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and link2 is None:
-                                link2 = link
+                            if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped():
+                                links1.append(link)
+                            if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped():
+                                links2.append(link)
 
-                        if link1 is not None and link2 is not None:
+                        if len(links1) and len(links2):
                             # if link1.isVirtualLink or link2.isVirtualLink:
                             #     print('!!!!!!!!!!!!!!!!!!!!!!! virtual !!!!!!!!!!!!!!!!')
 
-                            link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-                            # print('if link.assignable() ', (source.id ,dest.id ) , link.assignable())
-                            if link.assignable():
-                                swapped = node.attemptPreSwapping(link1, link2)
-                                # print('if swapped ' , swapped)
+                            for (link1, link2) in zip(links1 , links2):
 
-                                if swapped:
-                                    
-                                    # link.assignQubits()
-                                    link.entangled = True
-                                    link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
-                                    if link1.isVirtualLink:
-                                        link.subLinks.extend(link1.subLinks)
-                                    else:
-                                        link.subLinks.append(link1)
+                                link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+                                # print('if link.assignable() ', (source.id ,dest.id ) , link.assignable())
+                                if link.assignable():
+                                    swapped = node.attemptPreSwapping(link1, link2)
+                                    # print('if swapped ' , swapped)
 
-                                    if link2.isVirtualLink:
-                                        link.subLinks.extend(link2.subLinks)
-                                    else:
-                                        link.subLinks.append(link2)
+                                    if swapped:
+                                        
+                                        # link.assignQubits()
+                                        link.entangled = True
+                                        link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
+                                        if link1.isVirtualLink:
+                                            link.subLinks.extend(link1.subLinks)
+                                        else:
+                                            link.subLinks.append(link1)
 
-                                    self.topo.addLink(link)
+                                        if link2.isVirtualLink:
+                                            link.subLinks.extend(link2.subLinks)
+                                        else:
+                                            link.subLinks.append(link2)
 
-                                    self.topo.removeLink(link1 )
-                                    self.topo.removeLink(link2 )
+                                        self.topo.addLink(link)
 
-                                    if link.n1 == source and link.n2 == dest:
-                                        self.topo.virtualLinkCount[(source , dest)] += 1
-                                        preSwappedCount += 1
-                                        if self.topo.hopsAway2(source , dest , 'hop') > 2:
-                                            print('================complete link created====================' , self.topo.hopsAway2(source , dest , 'hop') , self.topo.virtualLinkCount[(source , dest)] , len(self.topo.needLinksDict[(source , dest)]) , (source.id , dest.id))
-                                            print(self.topo.needLinksDict[(source , dest)])
-                                            
-                                        # exit()
-                                        # if len(path) >3:
-                                        #     print([n for n in path])
+                                        self.topo.removeLink(link1 )
+                                        self.topo.removeLink(link2 )
+
+                                        if link.n1 == source and link.n2 == dest:
+                                            # self.topo.virtualLinkCount[(source , dest)] += 1
+                                            preSwappedCount += 1
+                                            # if self.topo.hopsAway2(source , dest , 'hop') > 2:
+                                            #     print('================complete link created====================' , self.topo.hopsAway2(source , dest , 'hop') , self.topo.virtualLinkCount[(source , dest)] , len(self.topo.needLinksDict[(source , dest)]) , (source.id , dest.id))
+                                            #     print(self.topo.needLinksDict[(source , dest)])
+                                                
+                                            # exit()
+                                            # if len(path) >3:
+                                            #     print([n for n in path])
+                                        break
                             if len(link.subLinks) > 2:
                                 self.topo.tmpcount += 1
             # if self.topo.virtualLinkCount[(source , dest)] >= timesUsed:
