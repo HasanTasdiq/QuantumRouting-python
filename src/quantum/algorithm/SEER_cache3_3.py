@@ -487,8 +487,8 @@ class SEERCACHE3_3(AlgorithmBase):
         if requestInfo.state == 1:
             requestInfo.intermediate.clearIntermediate()
 
-        for link in usedLinks:
-            link.keepEntanglementOnly()
+        # for link in usedLinks:
+        #     link.clearEntanglement()
         
     def resetFailedRequestFor2(self, requestInfo, usedLinks=[]):       # 第二段傳失敗 且超時
         requestInfo.savetime = 0
@@ -499,8 +499,8 @@ class SEERCACHE3_3(AlgorithmBase):
         requestInfo.taken = False # 這邊可能有問題 重新分配資源
 
         # 第二段的資源全部釋放
-        for link in usedLinks:
-            link.keepEntanglementOnly()    
+        # for link in usedLinks:
+        #     link.clearEntanglement()    
     
     def resetSucceedRequestFor1(self, requestInfo, usedLinks=[]):      # 第一段傳成功
         requestInfo.state = 2
@@ -767,9 +767,9 @@ class SEERCACHE3_3(AlgorithmBase):
                 elif requestInfo.state == 2:                            # 2
                     requestInfo.savetime += 1
                     if requestInfo.savetime > self.r:   # 超出k儲存時間 重頭送 重設req狀態
-                        self.resetFailedRequestFor2(requestInfo, usedLinks)
+                        self.resetFailedRequestFor2(requestInfo)
                     else:
-                        self.resetFailedRequestFor01(requestInfo, usedLinks)
+                        self.resetFailedRequestFor01(requestInfo)
             else:
                 if requestInfo.state == 0:      # 0
                     timeToFinish = self.timeSlot - req[2]
