@@ -127,7 +127,7 @@ class AlgorithmBase:
     def updateNeedLinksDict(self , path_):
         if not len(path_):
             return
-        print('path_ ' , [p.id for p in path_])
+        # print('path_ ' , [p.id for p in path_])
 
         path = []
         for i in range(1 , len(path_)):
@@ -148,7 +148,7 @@ class AlgorithmBase:
         # path = path_
         upper = len(path)
         lower = 2
-        # upper = 4
+        upper = 3
         if self.name == 'SEER_6' or self.name == 'REPS_6':
             lower = 2
             upper = 3
@@ -305,7 +305,7 @@ class AlgorithmBase:
 
             paths = self.topo.k_alternate_paths(source.id , dest.id , k)
 
-            paths = [paths[it]]
+            paths = [paths[it - 1]]
             # print('path len ' , [len(path) for path in paths])
             for path in paths:
                 # print('** path len ' , len(path))
