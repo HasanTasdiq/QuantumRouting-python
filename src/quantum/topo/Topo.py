@@ -309,15 +309,16 @@ class Topo:
             return path_cost
         except:
             return math.inf
-    def k_shortest_paths(self, source, target, k = 2):
-        if (source,target) in self.k_shortest_paths_dict:
-            return self.k_shortest_paths_dict[(source,target)]
-        k=1
+    def k_shortest_paths(self, source, target, k = 1):
+        # if (source,target) in self.k_shortest_paths_dict:
+        #     return self.k_shortest_paths_dict[(source,target)]
+        # k=1
         paths_with_len=[]
 
         paths =  list(
             islice(nx.shortest_simple_paths(self.G, source, target, weight='length'), k)
         )
+        # print('in k_shortest_paths ' , len(paths))
 
         for path in paths:
             dist = 0
@@ -328,8 +329,8 @@ class Topo:
                 edge_dist = self.distance(self.nodes[n1].loc , self.nodes[n2].loc)
                 dist += edge_dist
 
-            if len(path) <= 2 or dist < self.optimal_distance:
-                paths_with_len.append((path , dist))
+            # if len(path) <= 2 or dist < self.optimal_distance:
+            paths_with_len.append((path , dist))
             
 
         self.k_shortest_paths_dict[(source,target)] = paths_with_len

@@ -124,7 +124,26 @@ class AlgorithmBase:
             if self.topo.cacheTable[sd] > 1:
                 count +=1
         # print('link to generate ent ' , self.topo.cacheTable)
-    def updateNeedLinksDict(self , path):
+    def updateNeedLinksDict(self , path_):
+        # print('path_ ' , [p.id for p in path_])
+
+        path = []
+        for i in range(1 , len(path_)):
+            n1 = path_[i-1]
+            n2 = path_[i]
+            # print('*33* ' , (n1.id , n2.id) , self.topo.hopsAway2(n1 , n2 , 'Hop'))
+
+            if self.topo.hopsAway2(n1 , n2 , 'Hop') > 1:
+                seg2  = self.topo.k_shortest_paths(n1.id , n2.id , 1)[0][0]
+                # print('** ' ,  (n1.id , n2.id) , [s  for s  in seg2])
+                for n  in seg2[:-1]:
+                    path.append(self.topo.nodes[n])
+            else:
+                path.append(n1)
+
+        path.append(path_[-1])
+        # print('path  ' , [p.id for p in path])
+        # path = path_
         upper = len(path)
         lower = 2
         # upper = 4
@@ -235,6 +254,14 @@ class AlgorithmBase:
                 break
             i += 1
         # print('[' , self.name, '] :', self.timeSlot , ':==v link==:' , count)
+        # print('[' , self.name, '] :', self.timeSlot ,  ', ==  in tryPreswap() len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink] )
+        for link in self.topo.links:
+            if link.isVirtualLink:
+                # print((link.n1.id , link.n2.id) , self.topo.needLinksDict[(link.n1 , link.n2)] , self.topo.virtualLinkCount[(link.n1 , link.n2)] )
+                if self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') > 2:
+                    # print('===========================tmpcount====================================' , (link.n1.id , link.n2.id))
+
+                    self.topo.tmpcount += 1
         return count
     def tryPreSwapp2(self , it , k):
         temp_edges = set()
@@ -248,7 +275,7 @@ class AlgorithmBase:
         # for (source , dest) in self.topo.needLinksDict:
         #     if len(self.topo.needLinksDict[(source , dest)]) >= needlink_timeslot * self.topo.preSwapFraction:
 
-        #         print('***===****src: ' , source.id , 'dest: ' , dest.id , '-', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'hop') )
+        #         print('***===****src: ' , source.id , 'dest: ' , dest.id , '-', len(self.topo.needLinksDict[(source , dest)]),'==' ,  self.topo.hopsAway(source , dest , 'Hop') )
         tcount =0
         preSwappedCount = 0
         for (source , dest) in self.topo.needLinksDict:
@@ -258,7 +285,7 @@ class AlgorithmBase:
 
             # if tcount < 10:
 
-            #     print('***===****src-dest: ' , (source.id ,dest.id ), '=', timesUsed,'==' ,  self.topo.hopsAway(source , dest , 'hop') )
+            #     print('***===****src-dest: ' , (source.id ,dest.id ), '=', timesUsed,'==' ,  self.topo.hopsAway(source , dest , 'Hop') )
             # tcount += 1
 
             if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
@@ -292,7 +319,7 @@ class AlgorithmBase:
                 width = self.topo.widthPhase2(path2) 
                 if width > 1 and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                     
-                    # if self.topo.hopsAway2(source , dest , 'hop') > 2:
+                    # if self.topo.hopsAway2(source , dest , 'Hop') > 2:
                     #     self.topo.tmpcount += 1
                     for i in range(1 , len(path) - 1):
                         node1 = self.topo.nodes[path[0]]
@@ -345,16 +372,16 @@ class AlgorithmBase:
                                         if link.n1 == source and link.n2 == dest:
                                             # self.topo.virtualLinkCount[(source , dest)] += 1
                                             preSwappedCount += 1
-                                            # if self.topo.hopsAway2(source , dest , 'hop') > 2:
-                                            #     print('================complete link created====================' , self.topo.hopsAway2(source , dest , 'hop') , self.topo.virtualLinkCount[(source , dest)] , len(self.topo.needLinksDict[(source , dest)]) , (source.id , dest.id))
+                                            # if self.topo.hopsAway2(source , dest , 'Hop') > 2:
+                                            #     print('================complete link created====================' , self.topo.hopsAway2(source , dest , 'Hop') , self.topo.virtualLinkCount[(source , dest)] , len(self.topo.needLinksDict[(source , dest)]) , (source.id , dest.id))
                                             #     print(self.topo.needLinksDict[(source , dest)])
                                                 
                                             # exit()
                                             # if len(path) >3:
                                             #     print([n for n in path])
                                         break
-                            if len(link.subLinks) > 2:
-                                self.topo.tmpcount += 1
+                            # if len(link.subLinks) > 2:
+                            #     self.topo.tmpcount += 1
             # if self.topo.virtualLinkCount[(source , dest)] >= timesUsed:
             #     del self.topo.needLinksDict[(source , dest)]
         toRemoveKeys = []
@@ -405,7 +432,7 @@ class AlgorithmBase:
         for key in temp:
             del self.topo.needLinksDict[key]
         
-        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1]) * self.topo.hopsAway2(item[0][0] , item[0][1] , 'hop')))
+        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1]) * self.topo.hopsAway2(item[0][0] , item[0][1] , 'Hop')))
         # self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1])))
         
 
