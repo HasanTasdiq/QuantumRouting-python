@@ -832,7 +832,7 @@ class SEERCACHE3_3(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(50, 0.8, 5, 0.0002, 6)
+    topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
     s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_6')
     
     # for i in range(0, 200):

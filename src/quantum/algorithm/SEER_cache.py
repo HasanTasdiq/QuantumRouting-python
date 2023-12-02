@@ -486,7 +486,7 @@ class SEERCACHE(AlgorithmBase):
         # for link in usedLinks:
         #     link.clearEntanglement()
         
-    def resetFailedRequestFor2(self, requestInfo, usedLinks):       # 第二段傳失敗 且超時
+    def resetFailedRequestFor2(self, requestInfo, usedLinks=[]):       # 第二段傳失敗 且超時
         requestInfo.savetime = 0
         requestInfo.state = 1
         requestInfo.pathlen = min([len(x) for x in requestInfo.pathseg1])
@@ -509,7 +509,7 @@ class SEERCACHE(AlgorithmBase):
         # for link in usedLinks:      
         #     link.clearEntanglement()
 
-    def resetSucceedRequestFor2(self, requestInfo, usedLinks={}):      # 第二段傳成功 
+    def resetSucceedRequestFor2(self, requestInfo, usedLinks=[]):      # 第二段傳成功 
         # 資源全部釋放
         requestInfo.intermediate.clearIntermediate()
 
