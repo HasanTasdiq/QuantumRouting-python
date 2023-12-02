@@ -125,7 +125,9 @@ class AlgorithmBase:
                 count +=1
         # print('link to generate ent ' , self.topo.cacheTable)
     def updateNeedLinksDict(self , path_):
-        # print('path_ ' , [p.id for p in path_])
+        if not len(path_):
+            return
+        print('path_ ' , [p.id for p in path_])
 
         path = []
         for i in range(1 , len(path_)):

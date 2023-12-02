@@ -57,6 +57,7 @@ class REPSCACHE5_3(AlgorithmBase):
         print(self.name , " total time:", self.result.waitingTime)
         print(self.name ," remain request:", len(self.requests))
         print(self.name ," current Timeslot:", self.timeSlot)
+        print(self.name ," ==============  tmp count:", self.topo.tmpcount)
 
 
 
@@ -916,8 +917,8 @@ class REPSCACHE5_3(AlgorithmBase):
 
         return False
 if __name__ == '__main__':
-    numOfNode = 50
-    topo = Topo.generate(numOfNode, 0.8, 5, 0.0002, 6)
+    numOfNode = 18
+    topo = Topo.generate(numOfNode, 0.8, 5, 0.0002, 1)
     s = REPSCACHE5_3(topo,param='ten',name='REPS_6')
     result = AlgorithmResult()
     samplesPerTime = 10 * 2
@@ -955,7 +956,7 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(30):
+            for j in range(10):
                 a = sample(topo.nodes, 2)
                 # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
                 # a = [topo.nodes[a[0]] , topo.nodes[a[1]]]
