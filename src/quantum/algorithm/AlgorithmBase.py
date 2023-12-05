@@ -144,11 +144,13 @@ class AlgorithmBase:
                 path.append(n1)
 
         path.append(path_[-1])
+        if len(path) < 3:
+            return
         # print('path  ' , [p.id for p in path])
         # path = path_
         upper = len(path)
         lower = 2
-        upper = 3
+        # upper = 4
         if self.name == 'SEER_6' or self.name == 'REPS_6':
             lower = 2
             upper = 3
@@ -156,6 +158,12 @@ class AlgorithmBase:
         # for i in range(2 ,3 ):
             segments = self.getSegments(path , i)
             for (node1 , node2) in segments:
+                hop = self.topo.hopsAway2(node1 , node2 , 'Hop')
+                if hop < 1:
+                    print("++++&&&&&&&&&&&&******************" , (node1.id , node2.id))
+                    print('path_ ' , [p.id for p in path_])
+                    print('path  ' , [p.id for p in path])
+
                 if (node1 , node2) in self.topo.needLinksDict:
                     self.topo.needLinksDict[(node1 , node2)].append(self.timeSlot)
                 elif (node2 , node1) in self.topo.needLinksDict:
@@ -180,7 +188,8 @@ class AlgorithmBase:
     def getSegments(self , a , n):
         res = []
         for i in range(len(a) - n):
-            res.append((a[i] , a[i + n]))
+            if not (a[i] == a[i+n]) and self.topo.hopsAway2(a[i] , a[i + n] , 'Hop') > 1:
+                res.append((a[i] , a[i + n]))
         return res
     
     # def tryPreSwapp(self):
@@ -302,10 +311,13 @@ class AlgorithmBase:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
             
-
+            k = self.topo.hopsAway2(source , dest , 'Hop') - 1
+            if k < 0:
+                print('k' , k , source.id , dest.id)
+                print([(s.id , d.id) for s , d in self.topo.needLinksDict])
             paths = self.topo.k_alternate_paths(source.id , dest.id , k)
 
-            paths = [paths[it - 1]]
+            # paths = [paths[it]]
             # print('path len ' , [len(path) for path in paths])
             for path in paths:
                 # print('** path len ' , len(path))

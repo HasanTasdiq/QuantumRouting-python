@@ -368,7 +368,7 @@ class Topo:
 
        
         G = nx.Graph()
-        G.add_node(0, pos=[0, 0])
+        G.add_node(0, pos=[.5, 0.3])
         G.add_node(1, pos=[0, 0])
         G.add_node(2, pos=[.3, 0])
         G.add_node(3, pos=[.7, 0])
@@ -388,6 +388,7 @@ class Topo:
         G.add_node(17, pos=[0, .9])
 
         G.add_edge(0, 1)
+        G.add_edge(0, 13)
 
         G.add_edge(1, 2)
         G.add_edge(1, 5)

@@ -43,10 +43,11 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 40, numOfNode = 100, r = 7, q = 0.8, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 100, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 40, numOfNode = 0, r = 7, q = 0.8, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 100, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
+    numOfNode = len(topo.nodes)
     
     topo.setQ(q)
     topo.setAlpha(alpha)
@@ -59,8 +60,8 @@ def Run(numOfRequestPerRound = 40, numOfNode = 100, r = 7, q = 0.8, alpha = 0.00
     # # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
-    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_6'))
-    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_6'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -176,15 +177,15 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [30 , 40]
+    numOfRequestPerRound = [60]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
-    numOfNodes = [50, 100, 150]
+    numOfNodes = [100, 100, 150]
     # numOfNodes = [20]
     r = [0, 2, 4, 6, 8, 10]
     q = [0.2 , 0.4 , 0.6 , 0.8]
-    alpha = [0.0005, 0.001, 0.0015, 0.002]
+    alpha = [0.0004, 0.0003, 0.0002 , 0.0001]
     # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 
@@ -207,7 +208,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [   1, 2 ,  3 ,4 , 5, 6 , 7]
+    skipXlabel = [   1, 2 ,  3 ,4 , 5 ,  6 , 7]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]

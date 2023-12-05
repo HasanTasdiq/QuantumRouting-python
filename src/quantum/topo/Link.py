@@ -194,6 +194,10 @@ class Link:
     
     def tryEntanglement(self , timeSlot = 0, param=None):
         if param == 'every':
+            if self.assigned:
+                return self.tryEntanglement2(timeSlot)  
+            else:
+                return self.tryEntanglementForUnassigned(timeSlot) 
             return self.tryEntanglement2(timeSlot)
         elif param == 'ten' or param == 'everya':
             if self.assigned:
