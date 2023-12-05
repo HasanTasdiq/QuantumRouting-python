@@ -255,7 +255,7 @@ class AlgorithmBase:
         # print('--tryPreSwapp(self)--')
         count = 0
         i = 0
-        k = 2
+        k = 1
         if self.name == 'SEER_6' or self.name == 'REPS_6':
                 k = 1
         while True:
@@ -446,8 +446,8 @@ class AlgorithmBase:
         for key in temp:
             del self.topo.needLinksDict[key]
         
-        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1]) * self.topo.hopsAway2(item[0][0] , item[0][1] , 'Hop')))
-        # self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1])))
+        # self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1]) * self.topo.hopsAway2(item[0][0] , item[0][1] , 'Hop')))
+        self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1])))
         
 
     def work(self, pairs: list, time): 
