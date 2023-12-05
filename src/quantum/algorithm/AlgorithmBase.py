@@ -255,7 +255,7 @@ class AlgorithmBase:
         # print('--tryPreSwapp(self)--')
         count = 0
         i = 0
-        k = 1
+        k = 2
         if self.name == 'SEER_6' or self.name == 'REPS_6':
                 k = 1
         while True:
@@ -331,7 +331,7 @@ class AlgorithmBase:
                 
                 # while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                 width = self.topo.widthPhase2(path2) 
-                if width > 1 and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
+                if width > 1 and self.topo.virtualLinkCount[(source , dest)] < math.ceil(timesUsed / needlink_timeslot):
                     
                     # if self.topo.hopsAway2(source , dest , 'Hop') > 2:
                     #     self.topo.tmpcount += 1
