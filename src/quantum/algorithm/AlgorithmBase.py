@@ -150,7 +150,7 @@ class AlgorithmBase:
         # path = path_
         upper = len(path)
         lower = 2
-        upper = 3
+        upper = 4
         if '1hop' in self.name:
             lower = 2
             upper = 3
