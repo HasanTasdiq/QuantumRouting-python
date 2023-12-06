@@ -150,8 +150,8 @@ class AlgorithmBase:
         # path = path_
         upper = len(path)
         lower = 2
-        upper = 4
-        if self.name == 'SEER_6' or self.name == 'REPS_6':
+        upper = 3
+        if '1hop' in self.name:
             lower = 2
             upper = 3
         for i in range(lower , upper):
@@ -187,7 +187,7 @@ class AlgorithmBase:
         count = 0
         i = 0
         k = 1
-        if self.name == 'SEER_6' or self.name == 'REPS_6':
+        if '1hop' in self.name :
                 k = 1
         while True:
             preSwapped = self.tryPreSwapp2(i % k , k)
@@ -196,7 +196,7 @@ class AlgorithmBase:
                 break
             i += 1
         # print('[' , self.name, '] :', self.timeSlot , ':==v link==:' , count)
-        print('[' , self.name, '] :', self.timeSlot ,  ', ==  in tryPreswap() len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [((link.n1.id , link.n2.id) , self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') -1) for link in self.topo.links if link.isVirtualLink] )
+        # print('[' , self.name, '] :', self.timeSlot ,  ', ==  in tryPreswap() len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [((link.n1.id , link.n2.id) , self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') -1) for link in self.topo.links if link.isVirtualLink] )
         # print(len(self.topo.edges) , [(edge[0].id , edge[1].id) for edge in self.topo.edges])
         for link in self.topo.links:
             if link.isVirtualLink:
@@ -395,14 +395,14 @@ class AlgorithmBase:
 
         # if self.preEnt:
         #     self.preEntanglement()
-        if self.name == 'SEER_6' or self.name == 'SEER_':
-            self.tryEntanglement()
+        # if self.name == 'SEER_6' or self.name == 'SEER_' or self.name == 'SEER_multihop' or 'preswap' in self.name:
+            # self.tryEntanglement()
 
 
         self.p2()
         
-        if not (self.name == 'SEER_6' or self.name == 'SEER_'):
-            self.tryEntanglement()
+        # if not ('preswap' in self.name):
+        self.tryEntanglement()
 
         res = self.p4()
 
