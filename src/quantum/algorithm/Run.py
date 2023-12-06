@@ -60,8 +60,8 @@ def Run(numOfRequestPerRound = 5, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002,
     # # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
-    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_6'))
-    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_6'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER4_2'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -75,13 +75,13 @@ def Run(numOfRequestPerRound = 5, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002,
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
     # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
     # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_6'))
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_3'))
+    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_6'))
+    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_3'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [5 , 10]
+    numOfRequestPerRound = [5 , 10 ]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
@@ -208,7 +208,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [  0, 1,   3 ,4 , 5 ,  6 , 7]
+    skipXlabel = [  1, 2,  3 ,4 , 5 ,  6 , 7]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
