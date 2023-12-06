@@ -833,7 +833,7 @@ class SEERCACHE3_3(AlgorithmBase):
 if __name__ == '__main__':
 
     topo = Topo.generate(18, 0.9, 5, 0.0002, 1)
-    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_')
+    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_preswap_1hop')
     print('=====================main=============================')
     print([(edge[0].id , edge[1].id) for edge in topo.edges])
     
