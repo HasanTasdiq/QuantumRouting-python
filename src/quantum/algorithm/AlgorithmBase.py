@@ -150,7 +150,7 @@ class AlgorithmBase:
         # path = path_
         upper = len(path)
         lower = 2
-        # upper = 4
+        upper = 4
         if self.name == 'SEER_6' or self.name == 'REPS_6':
             lower = 2
             upper = 3
