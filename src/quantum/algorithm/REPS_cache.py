@@ -615,7 +615,7 @@ class REPSCACHE(AlgorithmBase):
                 for path in successPath:
                     for node , link in path:
                         if link is not None:
-                            self.topo.usedLinks.add(link)
+                            # self.topo.usedLinks.add(link)
                             usedLinksCount += 1
                 # for x in successPath:
                 #     print('[REPS-CACHE] success:', [z[0].id for z in x])

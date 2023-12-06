@@ -159,10 +159,11 @@ class AlgorithmBase:
             segments = self.getSegments(path , i)
             for (node1 , node2) in segments:
                 hop = self.topo.hopsAway2(node1 , node2 , 'Hop')
-                if hop < 1:
+                if hop <= 1:
                     print("++++&&&&&&&&&&&&******************" , (node1.id , node2.id))
                     print('path_ ' , [p.id for p in path_])
                     print('path  ' , [p.id for p in path])
+                    quit()
 
                 if (node1 , node2) in self.topo.needLinksDict:
                     self.topo.needLinksDict[(node1 , node2)].append(self.timeSlot)
@@ -172,84 +173,14 @@ class AlgorithmBase:
                     self.topo.needLinksDict[(node1 , node2)] = ([self.timeSlot])
 
 
-            # if i > 2:
-            #     if (node1 , node2) in self.topo.needLinksDict:
-            #         if len(self.topo.needLinksDict[(node1 , node2)]) > 10:
-            #             print('============== ')
-            #             print('============== ' , node1.id , node2.id)
-            #             print('============== ')
-            #     elif (node2 , node1) in self.topo.needLinksDict:
-            #         if len(self.topo.needLinksDict[(node2 , node1)]) > 10:
-            #             print('============== ')
-            #             print('============== ' , node1.id , node2.id)
-            #             print('============== ')
-
 
     def getSegments(self , a , n):
         res = []
         for i in range(len(a) - n):
-            if not (a[i] == a[i+n]) and self.topo.hopsAway2(a[i] , a[i + n] , 'Hop') > 1:
+            if not (a[i] == a[i+n]) and self.topo.hopsAway2(a[i] , a[i + n] , 'Hop') == n:
                 res.append((a[i] , a[i + n]))
         return res
     
-    # def tryPreSwapp(self):
-    #     temp_edges = set()
-    #     for link in self.topo.links:
-    #         n1 = link.n1
-    #         n2 = link.n2
-    #         if (n1,n2) not in temp_edges and (n2,n1) not in temp_edges:
-    #             temp_edges.add((n1,n2))
-
-    #     print('--------------')
-    #     for (node , node1 , node2) in self.topo.needLinksDict:
-    #         if len(self.topo.needLinksDict[(node , node1 , node2)]) <= needlink_timeslot * self.topo.preSwapFraction:
-    #             continue
-
-    #         # if (node1,node2) in temp_edges or (node2,node1) in temp_edges:
-    #         #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
-    #             # continue
-
-    #         nodeVirtualLink = len([link for link in node1.links if (link.isVirtualLink and link.contains(node2))])
-    #         path = [node1 , node , node2]
-    #         if self.topo.widthPhase2(path) < 2:
-    #             continue
-
-    #         # if nodeVirtualLink >= 1:
-    #         #     continue
-    #         # continue
-            
-    #         link1 = None
-    #         link2 = None
-    #         for link in node.links:
-    #             if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink and link1 is None:
-    #                 link1 = link
-    #             if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink and link2 is None:
-    #                 link2 = link
-
-    #         if link1 is not None and link2 is not None:
-    #             # if link1.isVirtualLink or link2.isVirtualLink:
-    #             #     print('!!!!!!!!!!!!!!!!!!!!!!! virtual !!!!!!!!!!!!!!!!')
-
-    #             link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-    #             # print('if link.assignable() ' , link.assignable())
-    #             if link.assignable():
-    #                 swapped = node.attemptPreSwapping(link1, link2)
-    #                 if swapped:
-    #                     # print('if swapped ' , swapped)
-                        
-    #                     # link.assignQubits()
-    #                     link.entangled = True
-    #                     link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
-    #                     link.subLinks.append(link1)
-    #                     link.subLinks.append(link2)
-
-    #                     self.topo.addLink(link)
-
-    #                     self.topo.removeLink(link1)
-    #                     self.topo.removeLink(link2)
-
-    #     print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
-
 
     def tryPreSwapp(self):
         # print('--tryPreSwapp(self)--')
@@ -265,7 +196,8 @@ class AlgorithmBase:
                 break
             i += 1
         # print('[' , self.name, '] :', self.timeSlot , ':==v link==:' , count)
-        # print('[' , self.name, '] :', self.timeSlot ,  ', ==  in tryPreswap() len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink] )
+        print('[' , self.name, '] :', self.timeSlot ,  ', ==  in tryPreswap() len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , [((link.n1.id , link.n2.id) , self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') -1) for link in self.topo.links if link.isVirtualLink] )
+        # print(len(self.topo.edges) , [(edge[0].id , edge[1].id) for edge in self.topo.edges])
         for link in self.topo.links:
             if link.isVirtualLink:
                 # print((link.n1.id , link.n2.id) , self.topo.needLinksDict[(link.n1 , link.n2)] , self.topo.virtualLinkCount[(link.n1 , link.n2)] )
@@ -315,7 +247,7 @@ class AlgorithmBase:
             if k < 0:
                 print('k' , k , source.id , dest.id)
                 print([(s.id , d.id) for s , d in self.topo.needLinksDict])
-            paths = self.topo.k_alternate_paths(source.id , dest.id , k)
+            paths = self.topo.k_alternate_paths(source.id , dest.id , k , self.timeSlot)
 
             # paths = [paths[it]]
             # print('path len ' , [len(path) for path in paths])

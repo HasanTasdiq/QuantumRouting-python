@@ -230,7 +230,7 @@ class Topo:
         # p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
         # print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
-    def updatedG(self):
+    def updatedG(self , timeSlot = 0):
         G = nx.Graph()
         for node in self.nodes:
             G.add_node(node.id)
@@ -241,6 +241,9 @@ class Topo:
                 # if link.isVirtualLink:
                 #     print('===========v link found in updatedG=========' , (link.n1.id , link.n2.id))
                 G.add_edge(link.n1.id , link.n2.id)
+                G.edges[link.n1.id , link.n2.id]['length'] = self.distance(link.n1.loc , link.n2.loc)
+                if link.isEntangled(timeSlot):
+                    G.edges[link.n1.id , link.n2.id]['length'] = 0
         return G
     def removeLink(self, link  , skipNodes = []):
 
@@ -336,24 +339,32 @@ class Topo:
         self.k_shortest_paths_dict[(source,target)] = paths_with_len
         return paths_with_len
     
-    def k_alternate_paths(self, source, target , k = 5):
-        if (source,target) in self.k_alternate_paths_dict:
-            return self.k_alternate_paths_dict[(source,target)]
+    # def k_alternate_paths(self, source, target , k = 5 , timeSlot = 0):
+    #     # if (source,target) in self.k_alternate_paths_dict:
+    #     #     return self.k_alternate_paths_dict[(source,target)]
+    #     k=k
+    #     paths =  list(
+    #         islice(nx.shortest_simple_paths(self.updatedG(timeSlot),  source, target), k)
+    #     )
+    #     self.k_alternate_paths_dict[(source,target)] = paths
+    #     return paths
+    def k_alternate_paths(self, source, target , k = 5 , timeSlot = 0):
+        # if (source,target) in self.k_alternate_paths_dict:
+        #     return self.k_alternate_paths_dict[(source,target)]
         k=k
         paths =  list(
-            islice(nx.shortest_simple_paths(self.updatedG(),  source, target), k)
+            islice(nx.shortest_simple_paths(self.G,  source, target), k)
         )
         self.k_alternate_paths_dict[(source,target)] = paths
         return paths
-
     def generate( n, q, k, a, degree):
         # dist = lambda x, y: distance(x, y)
         # dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            # G = Topo.create_custom_graph()
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
@@ -621,6 +632,7 @@ class Topo:
     def hopsAway2(self, src, dst, greedyType):
         # print('enter hopsAway')
         path = self.shortestPath2(src, dst, greedyType)
+        # print([p.id for p in path[1]])
         return len(path[1]) - 1
 
     def e(self, path: list, width: int, oldP: list):
