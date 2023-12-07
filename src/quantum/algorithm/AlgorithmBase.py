@@ -144,6 +144,8 @@ class AlgorithmBase:
                 path.append(n1)
 
         path.append(path_[-1])
+        if 'multihop' in self.name:
+            path = path_
         if len(path) < 3:
             return
         # print('path  ' , [p.id for p in path])
@@ -177,7 +179,7 @@ class AlgorithmBase:
     def getSegments(self , a , n):
         res = []
         for i in range(len(a) - n):
-            if not (a[i] == a[i+n]) and self.topo.hopsAway2(a[i] , a[i + n] , 'Hop') == n:
+            if not (a[i] == a[i+n]) and self.topo.hopsAway2(a[i] , a[i + n] , 'Hop') >=2:
                 res.append((a[i] , a[i + n]))
         return res
     
