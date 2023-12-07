@@ -43,7 +43,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 5, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 100, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 15, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 100, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [10]
+    numOfRequestPerRound = [30 , 40]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
@@ -208,7 +208,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [ 1, 2 , 3 ,4 , 5 ,  6 , 7]
+    skipXlabel = [ 1, 3 ,4 , 5 ,  6 , 7]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]

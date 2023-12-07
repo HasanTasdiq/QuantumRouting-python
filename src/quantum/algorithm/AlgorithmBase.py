@@ -235,7 +235,9 @@ class AlgorithmBase:
 
             if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
-            if self.topo.virtualLinkCount[(source , dest)] >= math.ceil(timesUsed / needlink_timeslot):
+            k = self.topo.hopsAway2(source , dest , 'Hop') - 1
+            
+            if self.topo.virtualLinkCount[(source , dest)] * k >= math.ceil(timesUsed  / needlink_timeslot):
                 continue
             
 
@@ -245,7 +247,6 @@ class AlgorithmBase:
             #     print('========== found existence =========' , node1.id , node2.id, len(self.topo.needLinksDict[(node , node1 , node2)]))
                 # continue
             
-            k = self.topo.hopsAway2(source , dest , 'Hop') - 1
             if k < 0:
                 print('k' , k , source.id , dest.id)
                 print([(s.id , d.id) for s , d in self.topo.needLinksDict])
@@ -265,7 +266,7 @@ class AlgorithmBase:
                 
                 # while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                 width = self.topo.widthPhase2(path2) 
-                if width > 1 and self.topo.virtualLinkCount[(source , dest)] < math.ceil(timesUsed / needlink_timeslot):
+                if width > 1 and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
                     
                     # if self.topo.hopsAway2(source , dest , 'Hop') > 2:
                     #     self.topo.tmpcount += 1
