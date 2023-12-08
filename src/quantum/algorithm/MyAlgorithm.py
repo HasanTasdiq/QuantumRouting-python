@@ -321,9 +321,9 @@ class MyAlgorithm(AlgorithmBase):
                         dst.assignIntermediate()
                     
                     if requestInfo.state == 2:
-                        requestInfo.pathseg2.append(p)
+                        requestInfo.pathseg2 = [p]
                     else:
-                        requestInfo.pathseg1.append(p)
+                        requestInfo.pathseg1 = [p]
                     requestInfo.taken= True
                     requestInfo.width[tuple(p)] = 1
                     
@@ -373,8 +373,8 @@ class MyAlgorithm(AlgorithmBase):
                                     self.totalUsedQubits += 2
                                     link.assignQubits()
                                     break
-                        if tuple(p) not in requestInfo.width:
-                            requestInfo.width[tuple(p)] = 0
+                        # if tuple(p) not in requestInfo.width:
+                        #     requestInfo.width[tuple(p)] = 0
                         requestInfo.width[tuple(p)] += 1
                         found = True
             # for end
@@ -588,9 +588,9 @@ class MyAlgorithm(AlgorithmBase):
             
             # take這個request
             if requestInfo.state == 2:
-                requestInfo.pathseg2.append(path)
+                requestInfo.pathseg2 = [path]
             else:
-                requestInfo.pathseg1.append(path)
+                requestInfo.pathseg1 = [path]
             self.result.usedPaths.append(path) #added for pre-entanglement 
             
             requestInfo.taken= True

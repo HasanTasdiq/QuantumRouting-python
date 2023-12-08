@@ -363,8 +363,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            # G = Topo.create_custom_graph()
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
@@ -872,7 +872,7 @@ class Topo:
         stack = []
         stack.append((None, n1)) #Pair[Link, Node]
         result = []
-
+        # print('----------------------' , n1.id , n2.id)
         while stack:
             (incoming, current) = stack.pop()
             # if incoming != None:
@@ -938,6 +938,7 @@ class Topo:
                     stack.append((l, l.n2))
                 elif l.n2 == current:
                     stack.append((l, l.n1))
+        # print('-----------end-----------' )
 
         return result
 

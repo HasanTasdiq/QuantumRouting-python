@@ -79,9 +79,21 @@ class SEERCACHE(AlgorithmBase):
         for i in range(len(path) - 1):
             n1 = path[i]
             n2 = path[i+1]
-            d = self.topo.distance(n1.loc, n2.loc)
-            p = math.exp(-self.topo.alpha * d)
-            P *= p
+            # d = self.topo.distance(n1.loc, n2.loc)
+            # p = math.exp(-self.topo.alpha * d)
+            links = [link for link in self.topo.links if ((link.n1 == n1 and link.n2 == n2) or (link.n2 == n1 and link.n1 == n2))]
+            # print(len(links))
+            
+            prob = 0
+            isVirtual = False
+            for link in links:
+                if link.isEntangled(self.timeSlot):
+                    prob+=1
+                    # if link.isVirtualLink:
+                    #     print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
+                else:
+                    prob +=link.p
+            P *= prob
 
         return P * (self.topo.q**(len(path) - 2))
     
@@ -323,9 +335,9 @@ class SEERCACHE(AlgorithmBase):
                         dst.assignIntermediate()
                     
                     if requestInfo.state == 2:
-                        requestInfo.pathseg2.append(p)
+                        requestInfo.pathseg2 = [p]
                     else:
-                        requestInfo.pathseg1.append(p)
+                        requestInfo.pathseg1 = [p]
                     requestInfo.taken= True
                     requestInfo.width[tuple(p)] = 1
                     
@@ -375,8 +387,8 @@ class SEERCACHE(AlgorithmBase):
                                     self.totalUsedQubits += 2
                                     link.assignQubits()
                                     break
-                        if tuple(p) not in requestInfo.width:
-                            requestInfo.width[tuple(p)] = 0
+                        # if tuple(p) not in requestInfo.width:
+                        #     requestInfo.width[tuple(p)] = 0
                         requestInfo.width[tuple(p)] += 1
                         found = True
             # for end
@@ -591,9 +603,9 @@ class SEERCACHE(AlgorithmBase):
             
             # take這個request
             if requestInfo.state == 2:
-                requestInfo.pathseg2.append(path)
+                requestInfo.pathseg2 = [path]
             else:
-                requestInfo.pathseg1.append(path)
+                requestInfo.pathseg1 = [path]
             self.result.usedPaths.append(path) #added for pre-entanglement 
             
             requestInfo.taken= True

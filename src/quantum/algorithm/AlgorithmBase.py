@@ -85,6 +85,7 @@ class AlgorithmBase:
         self.result = AlgorithmResult()
         self.preEnt = preEnt
         self.param = param
+        self.alternatePath = 2
 
     def prepare(self):
         pass

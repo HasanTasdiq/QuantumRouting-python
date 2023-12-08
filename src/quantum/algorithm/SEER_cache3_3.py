@@ -80,9 +80,21 @@ class SEERCACHE3_3(AlgorithmBase):
         for i in range(len(path) - 1):
             n1 = path[i]
             n2 = path[i+1]
-            d = self.topo.distance(n1.loc, n2.loc)
-            p = math.exp(-self.topo.alpha * d)
-            P *= p
+            # d = self.topo.distance(n1.loc, n2.loc)
+            # p = math.exp(-self.topo.alpha * d)
+            links = [link for link in self.topo.links if ((link.n1 == n1 and link.n2 == n2) or (link.n2 == n1 and link.n1 == n2))]
+            # print(len(links))
+            
+            prob = 0
+            isVirtual = False
+            for link in links:
+                if link.isEntangled(self.timeSlot):
+                    prob+=1
+                    # if link.isVirtualLink:
+                    #     print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
+                else:
+                    prob +=link.p
+            P *= prob
 
         return P * (self.topo.q**(len(path) - 2))
     
@@ -324,9 +336,9 @@ class SEERCACHE3_3(AlgorithmBase):
                         dst.assignIntermediate()
                     
                     if requestInfo.state == 2:
-                        requestInfo.pathseg2.append(p)
+                        requestInfo.pathseg2 = [p]
                     else:
-                        requestInfo.pathseg1.append(p)
+                        requestInfo.pathseg1 = [p]
                     requestInfo.taken= True
                     requestInfo.width[tuple(p)] = 1
                     
@@ -376,8 +388,8 @@ class SEERCACHE3_3(AlgorithmBase):
                                     self.totalUsedQubits += 2
                                     link.assignQubits()
                                     break
-                        if tuple(p) not in requestInfo.width:
-                            requestInfo.width[tuple(p)] = 0    
+                        # if tuple(p) not in requestInfo.width:
+                        #     requestInfo.width[tuple(p)] = 0    
                         requestInfo.width[tuple(p)] += 1
                         found = True
             # for end
@@ -393,15 +405,19 @@ class SEERCACHE3_3(AlgorithmBase):
 
             for req in self.requestState:
                 requestInfo = self.requestState[req]
+                no_path = 0
 
                 if requestInfo.state == 0: 
                     src, dst = req[0], req[1]
                 elif requestInfo.state == 1:
                     src, dst = req[0], requestInfo.intermediate
+                    no_path = len(requestInfo.pathseg1)
                 elif requestInfo.state == 2:
                     src, dst = requestInfo.intermediate, req[1]
+                    no_path = len(requestInfo.pathseg2)
 
-                if True:
+
+                if no_path < self.alternatePath:
                     if src.remainingQubits < 1:
                         continue
                     p = []
@@ -465,8 +481,12 @@ class SEERCACHE3_3(AlgorithmBase):
                     
                     if requestInfo.state == 2:
                         requestInfo.pathseg2.append(p)
+                        no_path = len(requestInfo.pathseg2)
+                        
                     else:
                         requestInfo.pathseg1.append(p)
+                        no_path = len(requestInfo.pathseg1)
+
                     requestInfo.taken= True
                     requestInfo.width[tuple(p)] = 1
                     
@@ -606,9 +626,9 @@ class SEERCACHE3_3(AlgorithmBase):
             
             # take這個request
             if requestInfo.state == 2:
-                requestInfo.pathseg2.append(path)
+                requestInfo.pathseg2 = [path]
             else:
-                requestInfo.pathseg1.append(path)
+                requestInfo.pathseg1 = [path]
             self.result.usedPaths.append(path) #added for pre-entanglement 
             
             requestInfo.taken= True
@@ -654,7 +674,17 @@ class SEERCACHE3_3(AlgorithmBase):
                     width = requestInfo.width[tuple(p)]
                 else:
                     width = 0
-                # print('#####width: ' , width)
+                vlink = False
+                for i in range(1, len(p)):
+                    prev = p[i-1]
+                    curr = p[i]
+                    if self.topo.hopsAway(prev , curr , 'Hop') > 1:
+                        vlink = True
+                        break
+
+                
+                    
+
                 usedLinks = set()
                 attemptedLinks = set()
                 # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
@@ -699,7 +729,8 @@ class SEERCACHE3_3(AlgorithmBase):
                         #     print('!!!! virtual !!!!  ' , l1.n1.id , l1.n2.id)
                         # if l2.isVirtualLink:
                         #     print('!!!! virtual !!!!  ' , l2.n1.id , l2.n2.id)
-                        
+                        # if vlink:
+                        #     print(swapped)
                         if swapped:
                             self.topo.usedLinks.add(l1)
                             self.topo.usedLinks.add(l1)
@@ -727,17 +758,22 @@ class SEERCACHE3_3(AlgorithmBase):
                 # success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1] , self.timeSlot)
                 usedLinksCount = 0
-                # for path in successPath:
-                #     print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
-                #     print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
+                for path in successPath:
+                    # print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
+                    # print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
 
-                    # for node , link in path:
-                    #     if link is not None:
-                    #         self.topo.usedLinks.add(link)
-                    #         usedLinks.add(link)
-                    #         usedLinksCount += 1
+                    for node , link in path:
+                        if link is not None:
+                            if link.isVirtualLink:
+                                print('==v link in success == ' , self.topo.hopsAway2(link.n1 , link.n2 , 'Hop'))
+                                if self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') == 1:
+                                    print('1 hop ' , link.n1.id , link.n2.id)
+                            # self.topo.usedLinks.add(link)
+                            # usedLinks.add(link)
+                            # usedLinksCount += 1
                 success = len(successPath)
-
+                if vlink:
+                    print('#####width: ' , width  , success , len(p) == 2)
                 # print('#####success width:' , success)
 
                 # print('----------------------')
@@ -832,9 +868,9 @@ class SEERCACHE3_3(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
-    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_preswap_1hop')
-    # s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_preswap_multihop')
+    topo = Topo.generate(18, 0.9, 5, 0.0002, 1)
+    # s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_preswap_1hop')
+    s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_preswap_multihop')
     print('=====================main=============================')
     print([(edge[0].id , edge[1].id) for edge in topo.edges])
     
@@ -870,7 +906,7 @@ if __name__ == '__main__':
             #         if node.id == q:
             #             dest = node
             #     requests.append((source , dest))
-            for j in range(10):
+            for j in range(30):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)

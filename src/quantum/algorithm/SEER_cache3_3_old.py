@@ -546,6 +546,7 @@ class SEERCACHE3_3(AlgorithmBase):
     
     def resetSucceedRequestFor1(self, requestInfo, usedLinks):      # 第一段傳成功
         requestInfo.state = 2
+        print('==in resetSucceedRequestFor1==' , len(requestInfo.pathseg2))
         requestInfo.pathlen = len(requestInfo.pathseg2)
         requestInfo.taken = False                           # 這邊可能有問題 重新分配資源
         requestInfo.width = 0
