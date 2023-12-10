@@ -110,7 +110,7 @@ class Topo:
         _neighbors = {_node: [] for _node in _nodes}
         for _node in _nodes:
             (p1, p2) = _positions[_node]
-            _positions[_node] = (p1 * 2000, p2 * 4000)
+            _positions[_node] = (p1 * 2000, p2 * 2000)
             # _positions[_node] = (p1 * 500,  p2 * 500)
             # _positions[_node] = (p1 * 1400,  p2 * 1400)
             _neighbors[_node] = list(nx.neighbors(G,_node))
@@ -1037,8 +1037,8 @@ class Topo:
     def generateRequest(self , numOfRequestPerRound):
         ids = []
         ret = []
-        source_nodes = [node.id for node in self.nodes if node.loc[1] < 500]
-        dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3700]
+        source_nodes = [node.id for node in self.nodes if node.loc[1] < 1000]
+        dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3000]
         print(len(source_nodes) , len(dest_nodes))
         for _ in range(100):
             ids.append((source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))]))

@@ -399,7 +399,7 @@ class SEERCACHE3_3(AlgorithmBase):
     
 
     def p2Extra2(self):
-
+        self.updateNeighbors2()
         while True:
             found = False
 
@@ -480,15 +480,20 @@ class SEERCACHE3_3(AlgorithmBase):
                         dst.assignIntermediate()
                     
                     if requestInfo.state == 2:
-                        requestInfo.pathseg2.append(p)
+                        if p not in requestInfo.pathseg2:
+                            requestInfo.pathseg2.append(p)
                         no_path = len(requestInfo.pathseg2)
                         
                     else:
-                        requestInfo.pathseg1.append(p)
+                        if p not in requestInfo.pathseg1:
+                            requestInfo.pathseg1.append(p)
                         no_path = len(requestInfo.pathseg1)
 
                     requestInfo.taken= True
-                    requestInfo.width[tuple(p)] = 1
+                    if tuple(p) not in requestInfo.width:
+                        requestInfo.width[tuple(p)] = 0
+
+                    requestInfo.width[tuple(p)] += 1
                     
                     found = True
                     # print('[' , self.name, ']', ' P2Extra take')
@@ -637,7 +642,7 @@ class SEERCACHE3_3(AlgorithmBase):
         # p2 繼續找路徑分配資源 
         # if not self.preEnt:
         self.p2Extra()
-        # self.p2Extra2()
+        self.p2Extra2()
 
 
         for req in self.requestState:
@@ -758,22 +763,22 @@ class SEERCACHE3_3(AlgorithmBase):
                 # success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1] , self.timeSlot)
                 usedLinksCount = 0
-                for path in successPath:
+                # for path in successPath:
                     # print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
                     # print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
 
-                    for node , link in path:
-                        if link is not None:
-                            if link.isVirtualLink:
-                                print('==v link in success == ' , self.topo.hopsAway2(link.n1 , link.n2 , 'Hop'))
-                                if self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') == 1:
-                                    print('1 hop ' , link.n1.id , link.n2.id)
+                    # for node , link in path:
+                    #     if link is not None:
+                            # if link.isVirtualLink:
+                            #     print('==v link in success == ' , self.topo.hopsAway2(link.n1 , link.n2 , 'Hop'))
+                            #     if self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') == 1:
+                            #         print('1 hop ' , link.n1.id , link.n2.id)
                             # self.topo.usedLinks.add(link)
                             # usedLinks.add(link)
                             # usedLinksCount += 1
                 success = len(successPath)
-                if vlink:
-                    print('#####width: ' , width  , success , len(p) == 2)
+                # if vlink:
+                #     print('#####width: ' , width  , success , len(p) == 2)
                 # print('#####success width:' , success)
 
                 # print('----------------------')
@@ -868,11 +873,11 @@ class SEERCACHE3_3(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(18, 0.9, 5, 0.0002, 1)
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     # s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_preswap_1hop')
     s = SEERCACHE3_3(topo , preEnt=False, param='ten',name='SEER_preswap_multihop')
     print('=====================main=============================')
-    print([(edge[0].id , edge[1].id) for edge in topo.edges])
+    # print([(edge[0].id , edge[1].id) for edge in topo.edges])
     
     # for i in range(0, 200):
     #     requests = []
@@ -890,7 +895,7 @@ if __name__ == '__main__':
     # topo.generateRequest(30)
     # exit()
     
-    for i in range(0, 100 ):
+    for i in range(0, 200 ):
         requests = []
         if i < 300:
 
@@ -906,7 +911,7 @@ if __name__ == '__main__':
             #         if node.id == q:
             #             dest = node
             #     requests.append((source , dest))
-            for j in range(30):
+            for j in range(20):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)
