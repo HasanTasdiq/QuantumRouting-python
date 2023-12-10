@@ -85,7 +85,7 @@ class AlgorithmBase:
         self.result = AlgorithmResult()
         self.preEnt = preEnt
         self.param = param
-        self.alternatePath = 2
+        self.alternatePath = 1
 
     def prepare(self):
         pass
@@ -153,7 +153,7 @@ class AlgorithmBase:
         # path = path_
         upper = len(path)
         lower = 2
-        upper = 3
+        upper = 4
         if '1hop' in self.name:
             lower = 2
             upper = 3
@@ -267,7 +267,7 @@ class AlgorithmBase:
                 
                 # while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                 width = self.topo.widthPhase2(path2) 
-                if width > 1 and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
+                if width >= 4  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
                     
                     # if self.topo.hopsAway2(source , dest , 'Hop') > 2:
                     #     self.topo.tmpcount += 1
@@ -282,9 +282,9 @@ class AlgorithmBase:
                         for link in node.links:
                             # if link.contains(node1) or link.contains(node2):
                             #     print('=!=!=======link.isEntangled:' , link.isEntangled(self.timeSlot) , 'link.notSwa:' , link.notSwapped() , 'link1None:', link1 is None , 'link2 is None:',link2 is None)
-                            if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped():
+                            if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink:
                                 links1.append(link)
-                            if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped():
+                            if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink:
                                 links2.append(link)
 
                         if len(links1) and len(links2):
@@ -357,6 +357,15 @@ class AlgorithmBase:
         for node in self.topo.nodes:
             node.neighbors = []
             for link in node.links:
+                neighbor = link.theOtherEndOf(node)
+                if neighbor not in node.neighbors:
+                    node.neighbors.append(neighbor)
+    def updateNeighbors2(self):
+        for node in self.topo.nodes:
+            node.neighbors = []
+            for link in node.links:
+                if self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') > 2:
+                    continue
                 neighbor = link.theOtherEndOf(node)
                 if neighbor not in node.neighbors:
                     node.neighbors.append(neighbor)
