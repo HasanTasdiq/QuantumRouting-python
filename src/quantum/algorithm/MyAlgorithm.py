@@ -761,7 +761,7 @@ class MyAlgorithm(AlgorithmBase):
     
 if __name__ == '__main__':
 
-    topo = Topo.generate(50, 0.8, 5, 0.0002, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     s = MyAlgorithm(topo )
     
     # for i in range(0, 200):
@@ -778,7 +778,7 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(30):
+            for j in range(50):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             s.work(requests, i)
