@@ -642,7 +642,7 @@ class SEERCACHE3_3(AlgorithmBase):
         # p2 繼續找路徑分配資源 
         # if not self.preEnt:
         self.p2Extra()
-        self.p2Extra2()
+        # self.p2Extra2()
 
 
         for req in self.requestState:
