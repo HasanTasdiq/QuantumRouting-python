@@ -197,7 +197,7 @@ if __name__ == '__main__':
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction"]
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction]
 
-    topo = Topo.generate(100, 0.8, 5, 0.0002, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     jobs = []
 
     tmp_ids = {i : [] for i in range(200)}
