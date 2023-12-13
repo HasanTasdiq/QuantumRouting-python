@@ -94,6 +94,7 @@ class Topo:
         self.needLinksDict = {}
         self.preSwapFraction = 1/2
         self.tmpcount = 0
+        self.entanglementLifetime = 10
 
 
         # for pos in _positions:
@@ -1059,7 +1060,7 @@ class Topo:
             #     self.removeLink(link)
 
         for link in set(self.links).difference(self.usedLinks):
-            if timeslot - link.entangledTimeSlot >=  entanglement_lifetimeslot:
+            if timeslot - link.entangledTimeSlot >=  self.entanglementLifetime:
                 link.clearEntanglement(expired = True)
             else:
                 if link.isVirtualLink:
