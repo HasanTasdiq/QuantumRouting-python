@@ -165,6 +165,9 @@ def mainThreadAlpha(Xparam , topo , result):
 def mainThreadSwapFrac(Xparam , topo , result):
     topo.preSwapFraction = Xparam
     result.extend(Run(topo = copy.deepcopy(topo)))
+def mainThreadEntanglementLifetime(Xparam , topo , result):
+    topo.entanglementLifetime = Xparam
+    result.extend(Run(topo = copy.deepcopy(topo)))
 
 
 
@@ -191,11 +194,12 @@ if __name__ == '__main__':
 
     preSwapFraction = [0.4,  0.6,  0.8 ,  1]
     # preSwapFraction = [0.2, 0.3]
+    entanglementLifetimes = [4,6,8,10]
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
-    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction"]
-    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction]
+    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime']
+    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes]
 
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     jobs = []
@@ -208,7 +212,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [ 0, 1,2,  3, 4 ,5 , 6 ]
+    skipXlabel = [ 0, 1,2,  3, 4 ,5 , 6 ,7]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
@@ -254,6 +258,10 @@ if __name__ == '__main__':
 
             if XlabelIndex == 7: # pre swap fraction
                 job = multiprocessing.Process(target = mainThreadSwapFrac, args = (Xparam , topo , results[Xparam] ))
+                jobs.append(job)
+            
+            if XlabelIndex == 8: # entanglement lifetime
+                job = multiprocessing.Process(target = mainThreadEntanglementLifetime, args = (Xparam , topo , results[Xparam] ))
                 jobs.append(job)
 
             # if XlabelIndex == 7:

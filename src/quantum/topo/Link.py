@@ -35,7 +35,7 @@ class Link:
     def notSwapped(self):  
         return not self.swapped()
     def isEntangled(self , timeSlot):
-        return self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot
+        return self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime
 
 
 
@@ -142,7 +142,7 @@ class Link:
     #         self.entangledTimeSlot = timeSlot
     #         self.entangled = b
             
-    #     if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
+    #     if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
     #         return True
     #     return b
 
@@ -153,7 +153,7 @@ class Link:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
             
-        if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
+        if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
             if not b:
                 print('ent not prob', self.p , b)
 
@@ -171,7 +171,7 @@ class Link:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
             
-        if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
+        if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
             # print('tryEntanglement2 ' , self.n1.id , self.n2.id , timeSlot , True)
             return True
 
@@ -181,7 +181,7 @@ class Link:
     def tryEntanglement1(self , timeSlot = 0):
         b = self.assigned and self.p >= random.random()
  
-        if self.entangled and (timeSlot - self.entangledTimeSlot) < entanglement_lifetimeslot:
+        if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
             # if not b:
             #     print('######cached entanglement found########================')
             return True
