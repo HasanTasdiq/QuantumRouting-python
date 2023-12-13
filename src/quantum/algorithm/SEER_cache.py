@@ -717,7 +717,7 @@ class SEERCACHE(AlgorithmBase):
            
                 if success == 0 and len(p) != 2:
                     for link in usedLinks:
-                        link.clearEntanglement()
+                        link.keepEntanglementOnly()
                     continue
                 
                 # succeed
