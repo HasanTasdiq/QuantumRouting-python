@@ -189,7 +189,7 @@ if __name__ == '__main__':
     # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 
-    preSwapFraction = [0.2,  0.4,  0.6,  0.8 ,  1]
+    preSwapFraction = [0.4,  0.6,  0.8 ,  1]
     # preSwapFraction = [0.2, 0.3]
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
@@ -208,7 +208,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [ 0 , 1, 2,  3 ,4 ,  6 , 7]
+    skipXlabel = [ 0 , 1, 2,  3 ,4 , 5 , 6 ]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
