@@ -55,12 +55,12 @@ def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # make copy
     algorithms = []
 
-    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
-    # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
-    # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
+    # # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
+    # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
-    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
 
     #with pre entanglement
@@ -75,12 +75,12 @@ def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-    # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
-    # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
+    algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
+    # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
+    # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
     # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
 
     
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
     SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 
-    preSwapFraction = [ 0.4,  0.6,  0.8 ,  1]
+    preSwapFraction = [0.4,  0.6,  0.8 ,  1]
     # preSwapFraction = [0.2, 0.3]
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
@@ -208,7 +208,7 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [ 0 , 1, 2,  3 ,4 , 5, 6 ]
+    skipXlabel = [ 0 , 1, 2,  3 ,4 , 5 , 6 ]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
