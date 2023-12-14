@@ -13,7 +13,11 @@ class ChartGenerator:
     def __init__(self, dataName, Ylabel, Xlabel):
         filename = './data/' + dataName
         if Ylabel == 'successfulRequest':
-            Ylabel += ' (%)'
+            Ylabel = '# Successful Request (%)'        
+        if Xlabel == '#RequestPerRound':
+            Xlabel = '# Request Per Time Slot'
+        if Xlabel == 'swapProbability':
+            Xlabel = 'Swap Probability'
         if not os.path.exists(filename):
             print("file doesn't exist")
             return
@@ -154,9 +158,9 @@ class ChartGenerator:
         # AlgoName = [ "Q-CAST", "Cache", "REPS"]
         # AlgoName = ["SEER","SEER-Cache", "SEER-Cache2", "Q-CAST", "Q-CAST-Cache", "REPS"]
         # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
-        # AlgoName = ["REPS","REPS-CACHE","REPS-PRE-SWAP-multihop", "REPS-PRE-SWAP-1hop" ]
+        AlgoName = ["REPS","REPS-cache","REPS-preswap"]
         # AlgoName = ["SEER","SEER-cache", "SEER-re-use-swap","SEER-pre-swap"]
-        AlgoName = ["SEER","SEER-cache","SEER-pre-swap-1hop" , "SEER-pre-swap-multihop", ]
+        # AlgoName = ["SEER","SEER-cache","SEER-pre-swap-1hop" , "SEER-pre-swap-multihop", ]
 
         leg = plt.legend(
             AlgoName,
