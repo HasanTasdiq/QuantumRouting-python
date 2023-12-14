@@ -43,7 +43,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 15, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 50, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 50, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
