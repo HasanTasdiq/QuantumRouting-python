@@ -55,7 +55,7 @@ def Run(numOfRequestPerRound = 15, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # make copy
     algorithms = []
 
-    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
     # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
@@ -89,7 +89,7 @@ def Run(numOfRequestPerRound = 15, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 5
+    times = 8
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
