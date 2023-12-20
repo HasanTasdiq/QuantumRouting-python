@@ -403,12 +403,19 @@ class SEERCACHE(AlgorithmBase):
             for req in self.requestState:
                 requestInfo = self.requestState[req]
 
+                pathseg = []
                 if requestInfo.state == 0: 
                     src, dst = req[0], req[1]
                 elif requestInfo.state == 1:
                     src, dst = req[0], requestInfo.intermediate
+                    pathseg = requestInfo.pathseg2
+
                 elif requestInfo.state == 2:
                     src, dst = requestInfo.intermediate, req[1]
+                    pathseg = requestInfo.pathseg2
+                
+                if self.getTotalPathSuccessProb(pathseg) >= 1:
+                    continue
 
                 if True:
                     if src.remainingQubits < 1:
@@ -472,14 +479,15 @@ class SEERCACHE(AlgorithmBase):
                         self.totalUsedQubits += 1
                         dst.assignIntermediate()
                     
-                    if requestInfo.state == 2:
-                        requestInfo.pathseg2.append(p)
+                    if tuple(p) not in requestInfo.width:
+                        if requestInfo.state == 2:
+                            requestInfo.pathseg2.append(p)
+                        else:
+                            requestInfo.pathseg1.append(p)
+                        requestInfo.taken= True
+                        requestInfo.width[tuple(p)] = 1
                     else:
-                        requestInfo.pathseg1.append(p)
-                    requestInfo.taken= True
-                    requestInfo.width[tuple(p)] = 1
-                    
-                    found = True
+                        requestInfo.width[tuple(p)] += 1
                     # print('[' , self.name, ']', ' P2Extra take')
 
                 
@@ -614,7 +622,7 @@ class SEERCACHE(AlgorithmBase):
         # p2 繼續找路徑分配資源 
         
         self.p2Extra()
-        # self.p2Extra2()
+        self.p2Extra2()
 
 
         for req in self.requestState:
@@ -652,6 +660,8 @@ class SEERCACHE(AlgorithmBase):
                 else:
                     width = 0
                 usedLinks = set()
+                attemptedLinks = set()
+
                 # oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
 
                 # print('selected ' , width , [n.id for n in p])
@@ -684,10 +694,13 @@ class SEERCACHE(AlgorithmBase):
                         # print('attempt swapping ' , prev.id , curr.id , next.id , swapped)
 
                         if swapped:
-                            self.topo.usedLinks.add(l1)
-                            self.topo.usedLinks.add(l2)
-                            usedLinks.add(l1)
-                            usedLinks.add(l2)
+                            attemptedLinks.add(l1)
+                            attemptedLinks.add(l2)
+                            # usedLinks.add(l1)
+                            # usedLinks.add(l2)
+                        #     print('swapped')
+                        # else:
+                        #     print('!!!!!!!!!!!! not swapped !!!!!!!')
                 
                 if len(p) == 2:
                     prev = p[0]
@@ -699,11 +712,17 @@ class SEERCACHE(AlgorithmBase):
                             break
             
                 # p5
-                successPaths = self.topo.getEstablishedEntanglements(p[0], p[-1])
+                successPaths = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1], self.timeSlot)
+                usedLinksCount = 0
+                for path in successPaths:
+                    for node , link in path:
+                        if link is not None:
+                            self.topo.usedLinks.add(link)
+                            usedLinks.add(link)
+                            usedLinksCount += 1
                 success = len(successPaths)
 
-                # for path in successPaths:
-                #     print('path at time' , self.timeSlot , ':' , [n.id for n  in path ])
+
 
 
                 # print('----------------------')
@@ -716,7 +735,7 @@ class SEERCACHE(AlgorithmBase):
                 # failed
            
                 if success == 0 and len(p) != 2:
-                    for link in usedLinks:
+                    for link in attemptedLinks:
                         link.keepEntanglementOnly()
                     continue
                 
@@ -726,6 +745,8 @@ class SEERCACHE(AlgorithmBase):
                     successFulEntanglement += success
                     for link in usedLinks:
                         link.clearEntanglement()
+                    for link in attemptedLinks:
+                        link.keepEntanglementOnly()
                     continue
             if not successFulEntanglement:
                 if requestInfo.state == 0 or requestInfo.state == 1:    # 0, 1

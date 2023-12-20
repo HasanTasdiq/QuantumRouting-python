@@ -275,7 +275,7 @@ class MyAlgorithm(AlgorithmBase):
                         selectedNeighbors = []    # type Node
                         selectedNeighbors.clear()
                         for neighbor in last.neighbors:
-                            if neighbor.remainingQubits > 2 or neighbor == dst and neighbor.remainingQubits > 1:
+                            if neighbor.remainingQubits >= 2 or (neighbor == dst and neighbor.remainingQubits > 1):
                                 for link in neighbor.links:
                                     if link.contains(last) and (not link.assigned):
                                         # print('select neighbor:', neighbor.id)
@@ -388,15 +388,23 @@ class MyAlgorithm(AlgorithmBase):
 
             for req in self.requestState:
                 requestInfo = self.requestState[req]
-
+                pathseg = []
                 if requestInfo.state == 0: 
                     src, dst = req[0], req[1]
                 elif requestInfo.state == 1:
                     src, dst = req[0], requestInfo.intermediate
+                    pathseg = requestInfo.pathseg2
+
                 elif requestInfo.state == 2:
                     src, dst = requestInfo.intermediate, req[1]
+                    pathseg = requestInfo.pathseg2
+                
+                if self.getTotalPathSuccessProb(pathseg) >= 1:
+                    continue
 
                 if True:
+                # if not requestInfo.taken:
+
                     if src.remainingQubits < 1:
                         continue
                     p = []
@@ -458,12 +466,16 @@ class MyAlgorithm(AlgorithmBase):
                         self.totalUsedQubits += 1
                         dst.assignIntermediate()
                     
-                    if requestInfo.state == 2:
-                        requestInfo.pathseg2.append(p)
+                    if tuple(p) not in requestInfo.width:
+                        if requestInfo.state == 2:
+                            requestInfo.pathseg2.append(p)
+                        else:
+                            requestInfo.pathseg1.append(p)
+                        requestInfo.taken= True
+                        requestInfo.width[tuple(p)] = 1
                     else:
-                        requestInfo.pathseg1.append(p)
-                    requestInfo.taken= True
-                    requestInfo.width[tuple(p)] = 1
+                        requestInfo.width[tuple(p)] += 1
+
                     
                     found = True
                     # print('[' , self.name, ']', ' P2Extra take')
@@ -600,7 +612,7 @@ class MyAlgorithm(AlgorithmBase):
         # p2 繼續找路徑分配資源 
 
         self.p2Extra()
-        # self.p2Extra2()
+        self.p2Extra2()
 
 
         for req in self.requestState:
