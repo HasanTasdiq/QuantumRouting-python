@@ -61,9 +61,7 @@ class Link:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
         if self.isVirtualLink and self in self.topo.links:
-            for link_ in self.subLinks:
-                link_.clearEntanglement()
-                self.topo.addLink(link_)                    
+            self.topo.restoreOriginalLinks(self)                 
             self.topo.removeLink(self)
 
         if preState and not self.isVirtualLink:
@@ -153,12 +151,13 @@ class Link:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
             
-        if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
-            if not b:
-                print('ent not prob', self.p , b)
+        # if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
+        #     # if not b:
+        #     #     print('ent not prob', self.p , b)
 
-            return True
-        # print('ent prob', self.p , b)
+        #     return True
+        # if not b:
+        #     print('ent prob', self.p , b)
         
         return b
 
@@ -179,11 +178,12 @@ class Link:
         return b
 
     def tryEntanglement1(self , timeSlot = 0):
-        b = self.assigned and self.p >= random.random()
+        b =self.p >= random.random()
+        # b = self.assigned and self.p >= random.random()
  
         if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
             # if not b:
-            #     print('######cached entanglement found########================')
+            #     print('######cached entanglement found########================' , timeSlot - self.entangledTimeSlot)
             return True
         if b:
             self.entangledTimeSlot = timeSlot
@@ -213,6 +213,10 @@ class Link:
             if self.assignable():
 
                 b = self.p >= random.random()
+                # if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
+                #     if not b:
+                #         print('######cached entanglement found########================' , timeSlot - self.entangledTimeSlot)
+                #     return True
                 if b:
                     self.entangledTimeSlot = timeSlot
                     self.entangled = b

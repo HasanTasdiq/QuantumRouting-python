@@ -251,6 +251,7 @@ class AlgorithmBase:
             if k < 0:
                 print('k' , k , source.id , dest.id)
                 print([(s.id , d.id) for s , d in self.topo.needLinksDict])
+            k = 1
             paths = self.topo.k_alternate_paths(source.id , dest.id , k , self.timeSlot)
 
             # paths = [paths[it]]
@@ -351,7 +352,29 @@ class AlgorithmBase:
 
         return preSwappedCount
         
-
+    def getPathSuccessProb(self , path):
+        totalProb = 1
+        for i in range(1,len(path)):
+            u = path[i-1]
+            v = path[i]
+            links = [link for link in self.topo.links if ((link.n1 == u and link.n2 == v) or (link.n1 == v and link.n2 == u))]
+            prob = 0
+            for link in links:
+                if link.isEntangled(self.timeSlot):
+                    prob+=1
+                else:
+                    prob +=link.p
+            probability = prob/len(links)
+            totalProb = totalProb * probability
+            if i < (len(path) - 1):
+                totalProb = totalProb * self.topo.q
+        return totalProb
+        
+    def getTotalPathSuccessProb(self, paths):
+        totalProb = 0
+        for path in paths:
+            totalProb += self.getPathSuccessProb(path)
+        return totalProb
                         
     def updateNeighbors(self):
         for node in self.topo.nodes:
