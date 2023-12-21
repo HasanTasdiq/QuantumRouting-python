@@ -75,26 +75,36 @@ class SEERCACHE3_3(AlgorithmBase):
                     # print('[system] Construct path: src ->', n1.id, ', dst ->', n2.id, ', path length ->', len(self.givenShortestPath[(n1, n2)]))
         # print('+++ in establishShortestPath total:' , total , '-' , self.timeSlot)
 
+    # def Pr(self, path):
+    #     P = 1
+    #     for i in range(len(path) - 1):
+    #         n1 = path[i]
+    #         n2 = path[i+1]
+    #         # d = self.topo.distance(n1.loc, n2.loc)
+    #         # p = math.exp(-self.topo.alpha * d)
+    #         links = [link for link in self.topo.links if ((link.n1 == n1 and link.n2 == n2) or (link.n2 == n1 and link.n1 == n2))]
+    #         # print(len(links))
+            
+    #         prob = 0
+    #         isVirtual = False
+    #         for link in links:
+    #             if link.isEntangled(self.timeSlot):
+    #                 prob+=1
+    #                 # if link.isVirtualLink:
+    #                 #     print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
+    #             else:
+    #                 prob +=link.p
+    #         P *= prob
+
+    #     return P * (self.topo.q**(len(path) - 2))
     def Pr(self, path):
         P = 1
         for i in range(len(path) - 1):
             n1 = path[i]
             n2 = path[i+1]
-            # d = self.topo.distance(n1.loc, n2.loc)
-            # p = math.exp(-self.topo.alpha * d)
-            links = [link for link in self.topo.links if ((link.n1 == n1 and link.n2 == n2) or (link.n2 == n1 and link.n1 == n2))]
-            # print(len(links))
-            
-            prob = 0
-            isVirtual = False
-            for link in links:
-                if link.isEntangled(self.timeSlot):
-                    prob+=1
-                    # if link.isVirtualLink:
-                    #     print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
-                else:
-                    prob +=link.p
-            P *= prob
+            d = self.topo.distance(n1.loc, n2.loc)
+            p = math.exp(-self.topo.alpha * d)
+            P *= p
 
         return P * (self.topo.q**(len(path) - 2))
     
@@ -398,110 +408,109 @@ class SEERCACHE3_3(AlgorithmBase):
         # while end
     
 
-    def p2Extra2(self):
-        self.updateNeighbors2()
-        while True:
-            found = False
+    # def p2Extra2(self):
+    #     self.updateNeighbors2()
+    #     while True:
+    #         found = False
 
-            for req in self.requestState:
-                requestInfo = self.requestState[req]
-                no_path = 0
+    #         for req in self.requestState:
+    #             requestInfo = self.requestState[req]
+    #             no_path = 0
 
-                if requestInfo.state == 0: 
-                    src, dst = req[0], req[1]
-                elif requestInfo.state == 1:
-                    src, dst = req[0], requestInfo.intermediate
-                    no_path = len(requestInfo.pathseg1)
-                elif requestInfo.state == 2:
-                    src, dst = requestInfo.intermediate, req[1]
-                    no_path = len(requestInfo.pathseg2)
+    #             pathseg = []
+    #             if requestInfo.state == 0: 
+    #                 src, dst = req[0], req[1]
+    #             elif requestInfo.state == 1:
+    #                 src, dst = req[0], requestInfo.intermediate
+    #                 pathseg = requestInfo.pathseg1
+
+    #             elif requestInfo.state == 2:
+    #                 src, dst = requestInfo.intermediate, req[1]
+    #                 pathseg = requestInfo.pathseg2
+                
+    #             if self.getTotalPathSuccessProb(pathseg) >= 1:
+    #                 continue
 
 
-                if no_path < self.alternatePath:
-                    if src.remainingQubits < 1:
-                        continue
-                    p = []
-                    p.append(src)
+    #             if True:
+    #                 if src.remainingQubits < 1:
+    #                     continue
+    #                 p = []
+    #                 p.append(src)
                     
-                    # Find a shortest path by greedy min hop  
-                    while True:
-                        last = p[-1]
-                        if last == dst:
-                            break
+    #                 # Find a shortest path by greedy min hop  
+    #                 while True:
+    #                     last = p[-1]
+    #                     if last == dst:
+    #                         break
 
-                        # Select avaliable neighbors of last(local)
-                        selectedNeighbors = []    # type Node
-                        selectedNeighbors.clear()
-                        # print('===p2Extra neighbours === ' , last.neighbors)
-                        for neighbor in last.neighbors:
-                            if neighbor.remainingQubits >= 2 or (neighbor == dst and neighbor.remainingQubits >= 1):
-                                for link in neighbor.links:
-                                    if link.contains(last) and (not link.assigned):
-                                        # print('select neighbor:', neighbor.id)
-                                        selectedNeighbors.append(neighbor)
-                                        break
+    #                     # Select avaliable neighbors of last(local)
+    #                     selectedNeighbors = []    # type Node
+    #                     selectedNeighbors.clear()
+    #                     # print('===p2Extra neighbours === ' , last.neighbors)
+    #                     for neighbor in last.neighbors:
+    #                         if neighbor.remainingQubits >= 2 or (neighbor == dst and neighbor.remainingQubits >= 1):
+    #                             for link in neighbor.links:
+    #                                 if link.contains(last) and (not link.assigned):
+    #                                     # print('select neighbor:', neighbor.id)
+    #                                     selectedNeighbors.append(neighbor)
+    #                                     break
 
-                        # Choose the neighbor with smallest number of hop from it to dst
-                        next = self.topo.sentinel
-                        hopsCurMinNum = sys.maxsize
-                        for selectedNeighbor in selectedNeighbors:
-                            hopsNum = self.topo.hopsAway(selectedNeighbor, dst, 'Hop')      
-                            if hopsCurMinNum > hopsNum:
-                                hopsCurMinNum = hopsNum
-                                next = selectedNeighbor
+    #                     # Choose the neighbor with smallest number of hop from it to dst
+    #                     next = self.topo.sentinel
+    #                     hopsCurMinNum = sys.maxsize
+    #                     for selectedNeighbor in selectedNeighbors:
+    #                         hopsNum = self.topo.hopsAway(selectedNeighbor, dst, 'Hop')      
+    #                         if hopsCurMinNum > hopsNum:
+    #                             hopsCurMinNum = hopsNum
+    #                             next = selectedNeighbor
 
-                        # If have cycle, break
-                        if next == self.topo.sentinel or next in p:
-                            break 
-                        p.append(next)
-                    # while end
+    #                     # If have cycle, break
+    #                     if next == self.topo.sentinel or next in p:
+    #                         break 
+    #                     p.append(next)
+    #                 # while end
 
-                    if p[-1] != dst:
-                        continue
-                    # print('p2Extra: ' , [n.id for n in p])
-                    # Caculate width for p
-                    width = self.topo.widthPhase2(p)
+    #                 if p[-1] != dst:
+    #                     continue
+    #                 # print('p2Extra: ' , [n.id for n in p])
+    #                 # Caculate width for p
+    #                 width = self.topo.widthPhase2(p)
                     
-                    if width == 0:
-                        continue
+    #                 if width == 0:
+    #                     continue
                     
-                    # Assign Qubits for links in path     
-                    for i in range(0, len(p) - 1):
-                        n1 = p[i]
-                        n2 = p[i+1]
-                        for link in n1.links:
-                            if link.contains(n2) and (not link.assigned):
-                                self.totalUsedQubits += 2
-                                link.assignQubits()
-                                break 
+    #                 # Assign Qubits for links in path     
+    #                 for i in range(0, len(p) - 1):
+    #                     n1 = p[i]
+    #                     n2 = p[i+1]
+    #                     for link in n1.links:
+    #                         if link.contains(n2) and (not link.assigned):
+    #                             self.totalUsedQubits += 2
+    #                             link.assignQubits()
+    #                             break 
 
-                    if requestInfo.state == 1:
-                        self.totalUsedQubits += 1
-                        dst.assignIntermediate()
+    #                 if requestInfo.state == 1:
+    #                     self.totalUsedQubits += 1
+    #                     dst.assignIntermediate()
                     
-                    if requestInfo.state == 2:
-                        if p not in requestInfo.pathseg2:
-                            requestInfo.pathseg2.append(p)
-                        no_path = len(requestInfo.pathseg2)
-                        
-                    else:
-                        if p not in requestInfo.pathseg1:
-                            requestInfo.pathseg1.append(p)
-                        no_path = len(requestInfo.pathseg1)
-
-                    requestInfo.taken= True
-                    if tuple(p) not in requestInfo.width:
-                        requestInfo.width[tuple(p)] = 0
-
-                    requestInfo.width[tuple(p)] += 1
+    #                 if tuple(p) not in requestInfo.width:
+    #                     if requestInfo.state == 2:
+    #                         requestInfo.pathseg2.append(p)
+    #                     else:
+    #                         requestInfo.pathseg1.append(p)
+    #                     requestInfo.taken= True
+    #                     requestInfo.width[tuple(p)] = 1
+    #                 else:
+    #                     requestInfo.width[tuple(p)] += 1
                     
-                    found = True
-                    # print('[' , self.name, ']', ' P2Extra take')
+    #                 found = True
+    #                 # print('[' , self.name, ']', ' P2Extra take')
 
                 
-            # for end
-            if not found:
-                break
+    #         # for end
+    #         if not found:
+    #             break
 
     def resetFailedRequestFor01(self, requestInfo, usedLinks=[]):      # 第一段傳失敗
         # for link in usedLinks:
@@ -642,7 +651,7 @@ class SEERCACHE3_3(AlgorithmBase):
         # p2 繼續找路徑分配資源 
         # if not self.preEnt:
         self.p2Extra()
-        # self.p2Extra2()
+        self.p2SEERExtra2()
 
 
         for req in self.requestState:
@@ -737,10 +746,8 @@ class SEERCACHE3_3(AlgorithmBase):
                         # if vlink:
                         #     print(swapped)
                         if swapped:
-                            self.topo.usedLinks.add(l1)
-                            self.topo.usedLinks.add(l1)
-                            usedLinks.add(l1)
-                            usedLinks.add(l2)
+                            attemptedLinks.add(l1)
+                            attemptedLinks.add(l2)
 
                 self.updateNeedLinksDict(p)
                 # print('==path==' , [n.id for n in p])
@@ -763,19 +770,12 @@ class SEERCACHE3_3(AlgorithmBase):
                 # success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1] , self.timeSlot)
                 usedLinksCount = 0
-                # for path in successPath:
-                    # print('path at time' , self.timeSlot , ':' , [n.id for n , l in path ])
-                    # print('link at time' , self.timeSlot , ':' , [(l.n1.id , l.n2.id) for n , l in path if l is not None])
-
-                    # for node , link in path:
-                    #     if link is not None:
-                            # if link.isVirtualLink:
-                            #     print('==v link in success == ' , self.topo.hopsAway2(link.n1 , link.n2 , 'Hop'))
-                            #     if self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') == 1:
-                            #         print('1 hop ' , link.n1.id , link.n2.id)
-                            # self.topo.usedLinks.add(link)
-                            # usedLinks.add(link)
-                            # usedLinksCount += 1
+                for path in successPath:
+                    for node , link in path:
+                        if link is not None:
+                            self.topo.usedLinks.add(link)
+                            usedLinks.add(link)
+                            usedLinksCount += 1
                 success = len(successPath)
                 # if vlink:
                 #     print('#####width: ' , width  , success , len(p) == 2)
@@ -790,7 +790,7 @@ class SEERCACHE3_3(AlgorithmBase):
 
 
                 if success == 0 and len(p) != 2:
-                    for link in usedLinks:
+                    for link in attemptedLinks:
                         link.keepEntanglementOnly()
                     continue
                 
@@ -800,11 +800,13 @@ class SEERCACHE3_3(AlgorithmBase):
                     successFulEntanglement += success
                     for link in usedLinks:
                         link.clearEntanglement()
+                    for link in attemptedLinks:
+                        link.keepEntanglementOnly()
                     continue
 
             if not successFulEntanglement:
                 if requestInfo.state == 0 or requestInfo.state == 1:    # 0, 1
-                    self.resetFailedRequestFor01(requestInfo, usedLinks)
+                    self.resetFailedRequestFor01(requestInfo)
                 elif requestInfo.state == 2:                            # 2
                     requestInfo.savetime += 1
                     if requestInfo.savetime > self.r:   # 超出k儲存時間 重頭送 重設req狀態
@@ -822,8 +824,12 @@ class SEERCACHE3_3(AlgorithmBase):
                 elif requestInfo.state == 1:    # 1
                     self.resetSucceedRequestFor1(requestInfo)
                     requestInfo.seg1_success_entanglement = successFulEntanglement
+                    # print(' self.resetSucceedRequestFor1(requestInfo)')
+
                 elif requestInfo.state == 2:    # 2
                     self.resetSucceedRequestFor2(requestInfo)
+                    # print(' self.resetSucceedRequestFor1(requestInfo)')
+
                     timeToFinish = self.timeSlot - req[2]
                     self.totalTime += timeToFinish
                     finishedRequest.append(req)
