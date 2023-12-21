@@ -7,6 +7,7 @@ import time
 from topo.helper import needlink_timeslot
 from topo.Link import Link
 import math
+import random
 
 class AlgorithmResult:
     def __init__(self):
@@ -127,7 +128,8 @@ class AlgorithmBase:
         # print('link to generate ent ' , self.topo.cacheTable)
 
     def p2SEERExtra2(self):
-        self.updateNeighbors2()
+        # self.updateNeighbors2()
+        self.updateNeighbors()
         while True:
             found = False
 
@@ -337,7 +339,8 @@ class AlgorithmBase:
 
             #     print('***===****src-dest: ' , (source.id ,dest.id ), '=', timesUsed,'==' ,  self.topo.hopsAway(source , dest , 'Hop') )
             # tcount += 1
-
+            if timesUsed % 2 == 1:
+                continue
             if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
             k = self.topo.hopsAway2(source , dest , 'Hop') - 1
@@ -504,7 +507,7 @@ class AlgorithmBase:
         for node in self.topo.nodes:
             node.neighbors = []
             for link in node.links:
-                if self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') > 2:
+                if self.topo.hopsAway2(link.n1 , link.n2 , 'Hop') > 2 or link.isVirtualLink:
                     continue
                 neighbor = link.theOtherEndOf(node)
                 if neighbor not in node.neighbors:
