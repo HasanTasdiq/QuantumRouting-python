@@ -488,6 +488,25 @@ class Topo:
 
         return curMinWidth
     
+    def widthByProbPhase2(self , path , timeslot = 0):
+        curMaxWidth = 9999
+
+        for i in range(0, len(path) - 1):
+            n1 = path[i]
+            n2 = path[i+1]
+            t = 0
+            for link in n1.links:
+                if link.contains(n2) and link.assigned:
+                    if link.isEntangled(timeslot):
+                        t += 1
+                    else:
+                        # print('link.p ' , link.p)
+                        t += link.p
+            # print('t ' , t)
+            if t < curMaxWidth:
+                curMaxWidth = t
+        return curMaxWidth
+    
     def shortestPath(self, src, dst, greedyType, edges = None):
         return self.shortestPathForPreswap( src, dst, greedyType, edges )
 
