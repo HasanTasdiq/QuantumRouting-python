@@ -339,8 +339,8 @@ class AlgorithmBase:
 
             #     print('***===****src-dest: ' , (source.id ,dest.id ), '=', timesUsed,'==' ,  self.topo.hopsAway(source , dest , 'Hop') )
             # tcount += 1
-            if timesUsed % 2 == 1:
-                continue
+            # if timesUsed % 2 == 1:
+            #     continue
             if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
                 continue
             k = self.topo.hopsAway2(source , dest , 'Hop') - 1
