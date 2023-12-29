@@ -687,7 +687,7 @@ class REPSCACHE5_3(AlgorithmBase):
                     # print('successpath: ' , [el[0].id for el in path2])
                     for node , link in path2:
                         if link is not None:
-                            self.topo.usedLinks.add(link)
+                            # self.topo.usedLinks.add(link)
                             usedLinksCount += 1
                             # if link.isVirtualLink:
                             #     print('++++========++++++ virtual link found +++++==========+++++')
