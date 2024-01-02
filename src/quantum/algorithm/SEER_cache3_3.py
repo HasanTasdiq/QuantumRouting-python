@@ -208,6 +208,9 @@ class SEERCACHE3_3(AlgorithmBase):
                     self.SN[i].append(j)
                     self.SN[j].append(i)
 
+
+        
+
     # p1
     def descideSegmentation(self):
         nodeRemainingQubits = {node: node.remainingQubits for node in self.topo.nodes}
