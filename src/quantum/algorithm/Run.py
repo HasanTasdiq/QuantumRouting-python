@@ -1,7 +1,7 @@
 import multiprocessing
 import sys
 import copy
-sys.path.append("..")
+sys.path.append("../..")
 from AlgorithmBase import AlgorithmBase
 from AlgorithmBase import AlgorithmResult
 from MyAlgorithm import MyAlgorithm
@@ -30,10 +30,15 @@ import numpy as np
 import random
 import time
 import os.path
+# sys.path.append("..")
+from rl.agent import Agent
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
+    if 'preswap' in algo.name:
+        agent = Agent(algo)
     for i in range(ttime):
         result = algo.work(requests[i], i)
+        agent.learn_and_predict()
     if algo.name == "My" or 'SEER' in algo.name:
         print('============ in runThread', algo.name)
         for req in algo.requestState:
@@ -43,7 +48,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 15, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 50, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 2, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 5, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -61,7 +66,7 @@ def Run(numOfRequestPerRound = 15, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -75,13 +80,13 @@ def Run(numOfRequestPerRound = 15, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    algorithms.append(REPS(copy.deepcopy(topo)))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-    # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
-    # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
+    # algorithms.append(REPS(copy.deepcopy(topo)))
+    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
+    # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
+    # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
@@ -89,7 +94,7 @@ def Run(numOfRequestPerRound = 15, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times =5
+    times =1
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime

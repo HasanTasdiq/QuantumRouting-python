@@ -90,6 +90,8 @@ class AlgorithmBase:
 
     def prepare(self):
         pass
+    def postProcess(self):
+        pass
     
     def p2(self):
         pass
@@ -575,6 +577,7 @@ class AlgorithmBase:
         res.totalRuntime += (end - start)
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
 
+        self.postProcess()
         return res
 
 @dataclass
