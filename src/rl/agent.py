@@ -74,7 +74,6 @@ class Agent():
         print('preprocess ' , img)
         return img
 
-    # Our policy that maps state to action parameterized by w
     def policy(self, state,w):
         print('policy ' , w)
         # z = state.dot(w)
@@ -152,9 +151,10 @@ class Agent():
             print("EP: " + str(e) + " Score: " + str(score) + "         ",probs[0]) 
     def learn_and_predict(self):
         state = self.env.reset()
-        probs = self.policy(state,self.w)
-        action = np.random.choice(self.nA,p=probs[0])
-        print(len(self.env.algo.topo.needLinksDict))
+        for key in state:
+            probs = self.policy(state,self.w)
+            action = np.random.choice(self.nA , 1)[0]
+            print(len(self.env.algo.topo.needLinksDict) , action)
     # def update_reward(self):
     #     next_state,reward,done,_ = self.env.step(action)
     #     dsoftmax = self.softmax_grad(probs)[action,:]

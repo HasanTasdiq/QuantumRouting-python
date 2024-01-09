@@ -35,6 +35,6 @@ class RoutingEnv(Env):
         return self.state, reward, done, info
     
     def reset(self):
-        self.state = self.algo
+        self.state = self.algo.topo.needLinksDict
         self.shower_length = 60 
         return self.state
