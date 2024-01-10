@@ -24,14 +24,16 @@ from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 from topo.Node import Node
 from topo.Link import Link
+
 from random import sample
 from numpy import log as ln
 import numpy as np
 import random
 import time
 import os.path
-# sys.path.append("..")
-from rl.agent import Agent
+sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
+from agent import Agent
+
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     if 'preswap' in algo.name:
