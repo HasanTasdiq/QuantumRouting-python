@@ -460,6 +460,71 @@ class AlgorithmBase:
 
 
         return preSwappedCount
+    def tryPreSwapp3(self, pair):
+        source , dest = pair[0], pair[1]
+        timesUsed = len(self.topo.needLinksDict[(source , dest)])
+        if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
+            return
+        k = self.topo.hopsAway2(source , dest , 'Hop') - 1
+            
+        if self.topo.virtualLinkCount[(source , dest)] * k >= math.ceil(timesUsed  / needlink_timeslot):
+            return
+            
+        if k < 0:
+            print('k' , k , source.id , dest.id)
+            print([(s.id , d.id) for s , d in self.topo.needLinksDict])
+        k = 1
+        paths = self.topo.k_alternate_paths(source.id , dest.id , k , self.timeSlot)
+        for path in paths:                
+
+            path2 = [self.topo.nodes[nodeId] for nodeId in path]
+                
+            width = self.topo.widthPhase2(path2) 
+            if width >= 4  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
+                    
+                for i in range(1 , len(path) - 1):
+                    node1 = self.topo.nodes[path[0]]
+                    node = self.topo.nodes[path[i]]
+                    node2 = self.topo.nodes[path[i + 1]]
+
+                    w = width
+                    links1 = []
+                    links2 = []
+                    for link in node.links:
+                        if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink:
+                            links1.append(link)
+                        if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped() and not link.isVirtualLink:
+                            links2.append(link)
+
+                    if len(links1) and len(links2):
+                        for (link1, link2) in zip(links1 , links2):
+
+                            link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+                            if link.assignable():
+                                swapped = node.attemptPreSwapping(link1, link2)
+
+                                if swapped:
+                                        
+                                    link.entangled = True
+                                    link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
+                                    if link1.isVirtualLink:
+                                        link.subLinks.extend(link1.subLinks)
+                                    else:
+                                        link.subLinks.append(link1)
+
+                                    if link2.isVirtualLink:
+                                        link.subLinks.extend(link2.subLinks)
+                                    else:
+                                        link.subLinks.append(link2)
+
+                                    self.topo.addLink(link)
+
+                                    self.topo.removeLink(link1 )
+                                    self.topo.removeLink(link2 )
+
+                                    if link.n1 == source and link.n2 == dest:
+                                        preSwappedCount += 1
+                                    break
         
     # def getPathSuccessProb(self , path):
     #     totalProb = 1

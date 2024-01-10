@@ -1,7 +1,10 @@
 import numpy as np
 import gym
 import matplotlib.pyplot as plt
-from .RoutingEnv import RoutingEnv
+import sys
+# sys.path.append("../../..")
+
+from RoutingEnv import RoutingEnv
 
 #Hyperparameters
 NUM_EPISODES = 2500
@@ -14,7 +17,7 @@ class Agent():
         self.env = RoutingEnv(algo)
         # env = gym.make('Breakout-v0')
         # env.reset()
-        self.nA = 4
+        self.nA = 2
         self.dim = 2 #ball position x*width + ball pos y and player position
         # Init weight
         self.w = np.random.rand(self.dim, self.nA)
@@ -78,9 +81,9 @@ class Agent():
         print('policy ' , w)
         # z = state.dot(w)
         z = np.array([[0.65371988, 0.43197503, 0.14576321, 0.64972099]])
-        print("z",z) 
+        # print("z",z) 
         exp = np.exp(z/2)
-        print("ha",exp/np.sum(exp))
+        # print("ha",exp/np.sum(exp))
         return exp/np.sum(exp)
 
     # Vectorized softmax Jacobian
