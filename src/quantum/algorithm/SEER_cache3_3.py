@@ -560,7 +560,7 @@ class SEERCACHE3_3(AlgorithmBase):
 
     # p1 & p2    
     def p2(self):
-        self.tryPreSwapp()
+        # self.tryPreSwapp()
         self.updateNeighbors()
 
         self.establishShortestPath()
@@ -842,9 +842,13 @@ class SEERCACHE3_3(AlgorithmBase):
         # p5 end
         # p4 end
         self.result.entanglementPerRound.append(totalEntanglement)
+        successReq = 0
         for req in finishedRequest:
             self.requestState.pop(req)
+            successReq += 1
         self.srcDstPairs.clear()
+        self.result.finishedRequestPerRound.append(successReq)
+
 
         remainTime = 0
         for req in self.requestState:

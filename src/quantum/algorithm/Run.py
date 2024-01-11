@@ -39,8 +39,9 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     if 'preswap' in algo.name:
         agent = Agent(algo)
     for i in range(ttime):
-        result = algo.work(requests[i], i)
         agent.learn_and_predict()
+        result = algo.work(requests[i], i)
+        agent.update_reward()
     if algo.name == "My" or 'SEER' in algo.name:
         print('============ in runThread', algo.name)
         for req in algo.requestState:
