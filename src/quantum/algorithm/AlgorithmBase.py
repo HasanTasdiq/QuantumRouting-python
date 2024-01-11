@@ -20,6 +20,7 @@ class AlgorithmResult:
         self.totalRuntime = 0
         self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'entanglementPerRound' , 'successfulRequest']
         self.remainRequestPerRound = []
+        self.finishedRequestPerRound = []
         self.usedPaths=[]
         self.entanglementPerRound = []
         self.eps = 0
@@ -461,6 +462,8 @@ class AlgorithmBase:
 
         return preSwappedCount
     def tryPreSwapp3(self, pair):
+        preSwappedCount = 0
+
         source , dest = pair[0], pair[1]
         timesUsed = len(self.topo.needLinksDict[(source , dest)])
         if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
@@ -525,6 +528,7 @@ class AlgorithmBase:
                                     if link.n1 == source and link.n2 == dest:
                                         preSwappedCount += 1
                                     break
+        return preSwappedCount
         
     # def getPathSuccessProb(self , path):
     #     totalProb = 1

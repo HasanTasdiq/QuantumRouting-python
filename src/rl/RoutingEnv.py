@@ -12,27 +12,16 @@ class RoutingEnv(Env):
         self.algo = algo
         print('=========in Routing env ===== ' , algo.name)
 
-    def step(self, action):
-        self.state += action -1 
-        self.shower_length -= 1 
-        
-        # Calculating the reward
-        if self.state >=37 and self.state <=39: 
-            reward =1 
-        else: 
-            reward = -1 
-        
-        # Checking if shower is done
-        if self.shower_length <= 0: 
-            done = True
-        else:
-            done = False
-        
+    def step(self, pair ,  action):
+        reward = 0
+        if action:
+            reward = self.algo.tryPreSwapp3(pair)
+
         # Setting the placeholder for info
         info = {}
         
         # Returning the step information
-        return self.state, reward, done, info
+        return self.state, reward, info
     
     def reset(self):
         self.state = self.algo.topo.needLinksDict

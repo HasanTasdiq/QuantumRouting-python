@@ -78,7 +78,7 @@ class Agent():
         return img
 
     def policy(self, state,w):
-        print('policy ' , w)
+        # print('policy ' , w)
         # z = state.dot(w)
         z = np.array([[0.65371988, 0.43197503, 0.14576321, 0.64972099]])
         # print("z",z) 
@@ -122,10 +122,10 @@ class Agent():
                 # next_state = np.asarray(extract_state(next_state))[None,:]
 
                 # Compute gradient and save with reward in memory for our weight updates
-                print(action)
+                # print(action)
                 dsoftmax = self.softmax_grad(probs)[action,:]
                 dlog = dsoftmax / probs[0,action]
-                print('dlog ' , dlog)
+                # print('dlog ' , dlog)
                 # grad = state.T.dot(dlog[None,:])
                 grad = np.array([[0.65371988, 0.43197503, 0.14576321, 0.64972099]])
 
@@ -154,10 +154,16 @@ class Agent():
             print("EP: " + str(e) + " Score: " + str(score) + "         ",probs[0]) 
     def learn_and_predict(self):
         state = self.env.reset()
-        for key in state:
+        for pair in state:
             probs = self.policy(state,self.w)
             action = np.random.choice(self.nA , 1)[0]
-            print(len(self.env.algo.topo.needLinksDict) , action)
+            self.env.step(pair , action)
+            # print(len(self.env.algo.topo.needLinksDict) , action)
+    def update_reward(self):
+        print('update reward: ' , self.env.algo.result.finishedRequestPerRound[-1])
+
+
+
     # def update_reward(self):
     #     next_state,reward,done,_ = self.env.step(action)
     #     dsoftmax = self.softmax_grad(probs)[action,:]
