@@ -5,6 +5,9 @@ import sys
 # sys.path.append("../../..")
 
 from RoutingEnv import RoutingEnv
+from itertools import combinations
+import random
+
 
 #Hyperparameters
 NUM_EPISODES = 2500
@@ -24,6 +27,8 @@ class Agent():
 
         # Keep stats for final print of graph
         self.episode_rewards = []
+        self.q_table = {x:(random.random(), random.random()) for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
+        # print(self.q_table)
 
 # extract_state checks the image extracts the state
 # which consists of the x,y position of the ball and
@@ -156,11 +161,37 @@ class Agent():
         state = self.env.reset()
         for pair in state:
             probs = self.policy(state,self.w)
-            action = np.random.choice(self.nA , 1)[0]
+            action = np.argmax(self.q_table[(pair[0].id, pair[1].id)]) if (pair[0].id, pair[1].id) in self.q_table else np.argmax(self.q_table[(pair[1].id, pair[0].id)]) 
+            print('llllll ', action)
             self.env.step(pair , action)
+
             # print(len(self.env.algo.topo.needLinksDict) , action)
     def update_reward(self):
         print('update reward: ' , self.env.algo.result.finishedRequestPerRound[-1])
+        for pair in self.q_table:
+            n1 = self.env.algo.topo.nodes[pair[0]]
+            n2 = self.env.algo.topo.nodes[pair[1]]
+            usedCount = 0
+            used = False
+            if (n1,n2) in  self.env.algo.topo.needLinksDict:
+                usedCount = self.env.algo.topo.needLinksDict[(n1, n2)].count(self.env.algo.timeSlot)
+                used = True
+            elif (n2, n1) in  self.env.algo.topo.needLinksDict:
+                usedCount = self.env.algo.topo.needLinksDict[(n2, n1)].count(self.env.algo.timeSlot)
+                used = True
+            
+            if used:
+                if usedCount > 0:
+                    reward = 1
+                else:
+                    reward = -1
+                max_future_q = np.max(self.q_table[pair])
+        
+            
+
+            
+            
+
 
 
 
