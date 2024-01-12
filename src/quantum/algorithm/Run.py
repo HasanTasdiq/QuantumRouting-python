@@ -32,16 +32,22 @@ import random
 import time
 import os.path
 sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
-from agent import Agent
+# from agent import Agent
+from rl.agent import Agent
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
-    if 'preswap' in algo.name:
+    if '_rl' in algo.name:
         agent = Agent(algo)
     for i in range(ttime):
-        agent.learn_and_predict()
+        if '_rl' in algo.name:
+            agent.learn_and_predict()
+
         result = algo.work(requests[i], i)
-        agent.update_reward()
+
+        if '_rl' in algo.name:
+            agent.update_reward()
+
     if algo.name == "My" or 'SEER' in algo.name:
         print('============ in runThread', algo.name)
         for req in algo.requestState:
@@ -51,7 +57,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 2, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 5, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 50, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -70,6 +76,7 @@ def Run(numOfRequestPerRound = 2, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002,
 
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
     algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_rl'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -97,7 +104,7 @@ def Run(numOfRequestPerRound = 2, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002,
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times =1
+    times = 4
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -188,7 +195,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [25]
+    numOfRequestPerRound = [60]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
@@ -209,7 +216,7 @@ if __name__ == '__main__':
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime']
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes]
 
-    topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
+    topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
     jobs = []
 
     tmp_ids = {i : [] for i in range(200)}

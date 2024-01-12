@@ -4,14 +4,17 @@ import matplotlib.pyplot as plt
 import sys
 # sys.path.append("../../..")
 
-from RoutingEnv import RoutingEnv
+# from RoutingEnv import RoutingEnv
+from .RoutingEnv import RoutingEnv
 from itertools import combinations
 import random
 
 
 #Hyperparameters
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.1
+DISCOUNT = 0.95
+
 GAMMA = 0.99
 
 class Agent():
@@ -28,6 +31,7 @@ class Agent():
         # Keep stats for final print of graph
         self.episode_rewards = []
         self.q_table = {x:(random.random(), random.random()) for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
+        self.last_action_table = {}
         # print(self.q_table)
 
 # extract_state checks the image extracts the state
@@ -162,15 +166,20 @@ class Agent():
         for pair in state:
             probs = self.policy(state,self.w)
             action = np.argmax(self.q_table[(pair[0].id, pair[1].id)]) if (pair[0].id, pair[1].id) in self.q_table else np.argmax(self.q_table[(pair[1].id, pair[0].id)]) 
-            print('llllll ', action)
+            self.last_action_table[pair] = action
+            # print('llllll ', action)
             self.env.step(pair , action)
 
             # print(len(self.env.algo.topo.needLinksDict) , action)
     def update_reward(self):
         print('update reward: ' , self.env.algo.result.finishedRequestPerRound[-1])
         for pair in self.q_table:
+            if not pair in self.last_action_table:
+                continue
             n1 = self.env.algo.topo.nodes[pair[0]]
             n2 = self.env.algo.topo.nodes[pair[1]]
+            action = self.last_action_table[pair]
+
             usedCount = 0
             used = False
             if (n1,n2) in  self.env.algo.topo.needLinksDict:
@@ -186,6 +195,14 @@ class Agent():
                 else:
                     reward = -1
                 max_future_q = np.max(self.q_table[pair])
+                current_q = self.q_table[pair][action]
+                new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
+                self.q_table[pair][action] = new_q
+        self.last_action_table = {}
+
+
+
+
         
             
 

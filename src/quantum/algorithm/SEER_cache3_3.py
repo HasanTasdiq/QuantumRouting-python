@@ -560,7 +560,8 @@ class SEERCACHE3_3(AlgorithmBase):
 
     # p1 & p2    
     def p2(self):
-        # self.tryPreSwapp()
+        if not '_rl' in self.name:
+            self.tryPreSwapp()
         self.updateNeighbors()
 
         self.establishShortestPath()
