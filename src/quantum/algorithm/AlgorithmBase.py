@@ -528,6 +528,7 @@ class AlgorithmBase:
                                     if link.n1 == source and link.n2 == dest:
                                         preSwappedCount += 1
                                     break
+        # print('preswap3: ' , preSwappedCount)
         return preSwappedCount
         
     # def getPathSuccessProb(self , path):

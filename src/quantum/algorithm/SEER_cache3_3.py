@@ -874,7 +874,7 @@ class SEERCACHE3_3(AlgorithmBase):
         print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
 
         # print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links)  , [(link.n1.id , link.n2.id) for link in self.topo.links if link.isVirtualLink])
-        # print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
+        print('[' , self.name, '] :', self.timeSlot ,  ', == virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) )
         print('[' , self.name, ']', ' -----------------tmp count --------------' , self.topo.tmpcount)
         
         print('[' , self.name, ']', ' -----------------p5 end--------------')
