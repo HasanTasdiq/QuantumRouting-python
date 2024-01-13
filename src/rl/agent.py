@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import sys
 # sys.path.append("../../..")
 
-# from RoutingEnv import RoutingEnv
-from .RoutingEnv import RoutingEnv
+from RoutingEnv import RoutingEnv      #for ubuntu
+# from .RoutingEnv import RoutingEnv   #for mac
 from itertools import combinations
 import random
 
@@ -16,6 +16,8 @@ LEARNING_RATE = 0.1
 DISCOUNT = 0.95
 
 GAMMA = 0.99
+
+ENTANGLEMENT_LIFETIME = 10
 
 class Agent():
     def __init__(self , algo):
@@ -30,7 +32,7 @@ class Agent():
 
         # Keep stats for final print of graph
         self.episode_rewards = []
-        self.q_table = {x:(random.random(), random.random()) for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
+        self.q_table = {x:[random.random(), random.random()] for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
         self.last_action_table = {}
         # print(self.q_table)
 
@@ -163,42 +165,64 @@ class Agent():
             print("EP: " + str(e) + " Score: " + str(score) + "         ",probs[0]) 
     def learn_and_predict(self):
         state = self.env.reset()
+        timeSlot = self.env.algo.timeSlot
         for pair in state:
             probs = self.policy(state,self.w)
-            action = np.argmax(self.q_table[(pair[0].id, pair[1].id)]) if (pair[0].id, pair[1].id) in self.q_table else np.argmax(self.q_table[(pair[1].id, pair[0].id)]) 
-            self.last_action_table[pair] = action
+            if (pair[0].id, pair[1].id) in self.q_table:
+                action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
+                if not (pair[0].id, pair[1].id) in self.last_action_table:
+                    self.last_action_table[(pair[0].id, pair[1].id)] = [(action , timeSlot)]
+                else:
+                    self.last_action_table[(pair[0].id, pair[1].id)].append((action , timeSlot))
+
+            else:
+                action = np.argmax(self.q_table[(pair[1].id, pair[0].id)]) 
+                if not (pair[1].id, pair[0].id) in self.last_action_table:
+                    self.last_action_table[(pair[1].id, pair[0].id)] = [(action , timeSlot)]
+                else:
+                    self.last_action_table[(pair[1].id, pair[0].id)].append((action , timeSlot))
             # print('llllll ', action)
             self.env.step(pair , action)
 
             # print(len(self.env.algo.topo.needLinksDict) , action)
     def update_reward(self):
-        print('update reward: ' , self.env.algo.result.finishedRequestPerRound[-1])
+        # print('update reward: ' , self.last_action_table )
         for pair in self.q_table:
             if not pair in self.last_action_table:
                 continue
-            n1 = self.env.algo.topo.nodes[pair[0]]
-            n2 = self.env.algo.topo.nodes[pair[1]]
-            action = self.last_action_table[pair]
+            for i in range(len(self.last_action_table[pair])):
 
-            usedCount = 0
-            used = False
-            if (n1,n2) in  self.env.algo.topo.needLinksDict:
-                usedCount = self.env.algo.topo.needLinksDict[(n1, n2)].count(self.env.algo.timeSlot)
-                used = True
-            elif (n2, n1) in  self.env.algo.topo.needLinksDict:
-                usedCount = self.env.algo.topo.needLinksDict[(n2, n1)].count(self.env.algo.timeSlot)
-                used = True
-            
-            if used:
-                if usedCount > 0:
-                    reward = 1
-                else:
-                    reward = -1
-                max_future_q = np.max(self.q_table[pair])
-                current_q = self.q_table[pair][action]
-                new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
-                self.q_table[pair][action] = new_q
-        self.last_action_table = {}
+                n1 = self.env.algo.topo.nodes[pair[0]]
+                n2 = self.env.algo.topo.nodes[pair[1]]
+                (action , timeSlot) = self.last_action_table[pair][i]
+
+                usedCount = 0
+                used = False
+                if (n1,n2) in  self.env.algo.topo.needLinksDict:
+                    usedCount = self.env.algo.topo.needLinksDict[(n1, n2)].count(timeSlot)
+                    used = True
+                elif (n2, n1) in  self.env.algo.topo.needLinksDict:
+                    usedCount = self.env.algo.topo.needLinksDict[(n2, n1)].count(timeSlot)
+                    used = True
+                
+                if used:
+                    if usedCount > 0:
+                        reward = 10 - (self.env.algo.timeSlot - timeSlot)
+                    else:
+                        reward = -(10 - (self.env.algo.timeSlot - timeSlot))
+                    max_future_q = np.max(self.q_table[pair])
+                    current_q = self.q_table[pair][action]
+                    new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
+                    # print('new q:', new_q , 'current_q:', current_q , 'max_future_q:', max_future_q)
+
+
+                    self.q_table[pair][action] = new_q
+
+        for pair in self.last_action_table:
+            # print(self.last_action_table[pair])
+            self.last_action_table[pair] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
+
+
 
 
 

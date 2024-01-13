@@ -32,8 +32,8 @@ import random
 import time
 import os.path
 sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
-# from agent import Agent
-from rl.agent import Agent
+from agent import Agent    #for ubuntu
+# from rl.agent import Agent   #for mac
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
@@ -104,7 +104,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 4
+    times = 8
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
