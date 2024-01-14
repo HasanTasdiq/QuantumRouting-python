@@ -295,6 +295,8 @@ class AlgorithmBase:
     
 
     def tryPreSwapp(self):
+        if '_rl' in self.name:
+            return
         # print('--tryPreSwapp(self)--')
         count = 0
         i = 0
@@ -303,6 +305,7 @@ class AlgorithmBase:
                 k = 1
         while True:
             preSwapped = self.tryPreSwapp2(i % k , k)
+            break     #make same as rl 
             count += preSwapped
             if not preSwapped:
                 break
@@ -461,7 +464,25 @@ class AlgorithmBase:
 
 
         return preSwappedCount
-    def tryPreSwapp3(self, pair):
+    
+
+    def tryPreSwapp_rl(self, pair):
+        if '_rl' in self.name:
+            return
+        # print('--tryPreSwapp(self)--')
+        count = 0
+        i = 0
+        k = 1
+        if '1hop' in self.name :
+                k = 1
+        while True:
+            preSwapped = self.tryPreSwapp_pair(pair)
+            count += preSwapped
+            if not preSwapped:
+                break
+            i += 1
+        return count
+    def tryPreSwapp_pair(self, pair):
         preSwappedCount = 0
 
         source , dest = pair[0], pair[1]
