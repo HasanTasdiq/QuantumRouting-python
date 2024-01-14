@@ -15,7 +15,7 @@ class RoutingEnv(Env):
     def step(self, pair ,  action):
         reward = 0
         if action:
-            reward = self.algo.tryPreSwapp3(pair)
+            reward = self.algo.tryPreSwapp_rl(pair)
 
         # Setting the placeholder for info
         info = {}
