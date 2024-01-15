@@ -20,10 +20,10 @@ GAMMA = 0.99
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-epsilon = 0.5  # not a constant, qoing to be decayed
+EPSILON_ = 0.5  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
 END_EPSILON_DECAYING = 100
-epsilon_decay_value = epsilon/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
+EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 class Agent():
@@ -171,12 +171,13 @@ class Agent():
             foutstep.write('\n')
             print("EP: " + str(e) + " Score: " + str(score) + "         ",probs[0]) 
     def learn_and_predict(self):
+        global EPSILON_
         state = self.env.reset()
         timeSlot = self.env.algo.timeSlot
         for pair in state:
             probs = self.policy(state,self.w)
             if (pair[0].id, pair[1].id) in self.q_table:
-                if np.random.random() > epsilon:
+                if np.random.random() > EPSILON_:
                     # Get action from Q table
                     action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
                 else:
@@ -188,7 +189,7 @@ class Agent():
                     self.last_action_table[(pair[0].id, pair[1].id)].append((action , timeSlot))
 
             else:
-                if np.random.random() > epsilon:
+                if np.random.random() > EPSILON_:
                     # Get action from Q table
                     action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
                 else:
@@ -202,7 +203,7 @@ class Agent():
             # print('llllll ', action)
             self.env.step(pair , action)
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
-            epsilon -= epsilon_decay_value
+            EPSILON_ -= EPSILON_DECAY_VALUE
 
             # print(len(self.env.algo.topo.needLinksDict) , action)
     def update_reward(self):
