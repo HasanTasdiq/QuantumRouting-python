@@ -191,7 +191,7 @@ class Agent():
             else:
                 if np.random.random() > EPSILON_:
                     # Get action from Q table
-                    action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
+                    action = np.argmax(self.q_table[(pair[1].id, pair[0].id)])
                 else:
                     # Get random action
                     action = np.random.randint(0, 2)
