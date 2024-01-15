@@ -18,6 +18,13 @@ DISCOUNT = 0.95
 GAMMA = 0.99
 
 ENTANGLEMENT_LIFETIME = 10
+# Exploration settings
+
+epsilon = 0.5  # not a constant, qoing to be decayed
+START_EPSILON_DECAYING = 1
+END_EPSILON_DECAYING = 100
+epsilon_decay_value = epsilon/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
+
 
 class Agent():
     def __init__(self , algo):
@@ -169,20 +176,33 @@ class Agent():
         for pair in state:
             probs = self.policy(state,self.w)
             if (pair[0].id, pair[1].id) in self.q_table:
-                action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
+                if np.random.random() > epsilon:
+                    # Get action from Q table
+                    action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
+                else:
+                    # Get random action
+                    action = np.random.randint(0, 2)
                 if not (pair[0].id, pair[1].id) in self.last_action_table:
                     self.last_action_table[(pair[0].id, pair[1].id)] = [(action , timeSlot)]
                 else:
                     self.last_action_table[(pair[0].id, pair[1].id)].append((action , timeSlot))
 
             else:
-                action = np.argmax(self.q_table[(pair[1].id, pair[0].id)]) 
+                if np.random.random() > epsilon:
+                    # Get action from Q table
+                    action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
+                else:
+                    # Get random action
+                    action = np.random.randint(0, 2)
                 if not (pair[1].id, pair[0].id) in self.last_action_table:
                     self.last_action_table[(pair[1].id, pair[0].id)] = [(action , timeSlot)]
                 else:
                     self.last_action_table[(pair[1].id, pair[0].id)].append((action , timeSlot))
+
             # print('llllll ', action)
             self.env.step(pair , action)
+        if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
+            epsilon -= epsilon_decay_value
 
             # print(len(self.env.algo.topo.needLinksDict) , action)
     def update_reward(self):

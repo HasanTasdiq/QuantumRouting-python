@@ -12,10 +12,10 @@ from itertools import combinations
 td = {}
 td[1] = 0
 
-q_table = {x:(random.random(), random.random()) for x in list(combinations([1,2,3], 2)) }
-print(q_table)
+# q_table = {x:(random.random(), random.random()) for x in list(combinations([1,2,3], 2)) }
+# print(q_table)
 
-action = np.argmax(q_table[(2,3)])
-print(action)
+# action = np.argmax(q_table[(2,3)])
+print(np.random.randint(0, 2))
 
 
