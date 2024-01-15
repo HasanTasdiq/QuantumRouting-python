@@ -467,9 +467,6 @@ class AlgorithmBase:
     
 
     def tryPreSwapp_rl(self, pair):
-        if '_rl' in self.name:
-            return
-        # print('--tryPreSwapp(self)--')
         count = 0
         i = 0
         k = 1
