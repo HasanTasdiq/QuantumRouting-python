@@ -95,6 +95,7 @@ class Topo:
         self.preSwapFraction = 1/2
         self.tmpcount = 0
         self.entanglementLifetime = 10
+        self.reward = {}
 
 
         # for pos in _positions:
@@ -1072,7 +1073,7 @@ class Topo:
 
     def resetEntanglement(self , timeslot = 0):
         for link in self.usedLinks:
-            link.clearEntanglement()
+            link.clearEntanglement(timeslot = timeslot)
             # if link.isVirtualLink:
             #     for link_ in link.subLinks:
             #         self.addLink(link_) 
@@ -1080,7 +1081,7 @@ class Topo:
 
         for link in set(self.links).difference(self.usedLinks):
             if timeslot - link.entangledTimeSlot >=  self.entanglementLifetime:
-                link.clearEntanglement(expired = True)
+                link.clearEntanglement(expired = True , timeslot = timeslot)
             else:
                 if link.isVirtualLink:
                     self.restoreOriginalLinks(link)

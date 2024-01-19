@@ -6,7 +6,7 @@ from .helper import entanglement_lifetimeslot
 
 class Link:
     
-    def __init__(self, topo, n1: Node, n2: Node, s1: bool, s2: bool, id: int, l: float , isVirtualLink = False):
+    def __init__(self, topo, n1: Node, n2: Node, s1: bool, s2: bool, id: int, l: float , isVirtualLink = False, vtimeslot = 0):
         self.id, self.n1, self.n2, self.s1, self.s2, self.alpha = id, n1, n2, s1, s2, topo.alpha
         self.assigned = False
         self.entangled = False
@@ -14,6 +14,7 @@ class Link:
         self.p = math.exp(-self.alpha * l)
         self.l = l
         self.isVirtualLink = isVirtualLink
+        self.vtimeslot = vtimeslot
         self.subLinks = []
         self.topo = topo
         # print(self.n1.id, self.n2.id, self.p)
@@ -46,12 +47,13 @@ class Link:
             self.n1.remainingQubits -= 1
             self.n2.remainingQubits -= 1
   
-    def clearEntanglement(self , expired = False):
+    def clearEntanglement(self , expired = False , timeslot = 0):
         preState = self.assigned
         self.s1 = False
         self.s2 = False
         self.assigned = False
         self.entangled = False
+
 
         for internalLink in self.n1.internalLinks:
             if self in internalLink:
@@ -67,6 +69,16 @@ class Link:
         if preState and not self.isVirtualLink:
             self.n1.remainingQubits += 1
             self.n2.remainingQubits += 1
+        
+        if self.isVirtualLink and expired:
+            if (self.n1.id , self.n2.id , self.vtimeslot ) in self.topo.reward:
+                reward = self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )]
+                self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward + (-10)
+            else:     
+                 self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = -10 
+        elif self.isVirtualLink:
+             self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = 10 - (timeslot - self.vtimeslot)
+             
 
 
 

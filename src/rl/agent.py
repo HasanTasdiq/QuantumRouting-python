@@ -211,33 +211,41 @@ class Agent():
         for pair in self.q_table:
             if not pair in self.last_action_table:
                 continue
+            reward = 0
             for i in range(len(self.last_action_table[pair])):
 
                 n1 = self.env.algo.topo.nodes[pair[0]]
                 n2 = self.env.algo.topo.nodes[pair[1]]
                 (action , timeSlot) = self.last_action_table[pair][i]
 
-                usedCount = 0
-                used = False
-                if (n1,n2) in  self.env.algo.topo.needLinksDict:
-                    usedCount = self.env.algo.topo.needLinksDict[(n1, n2)].count(timeSlot)
-                    used = True
-                elif (n2, n1) in  self.env.algo.topo.needLinksDict:
-                    usedCount = self.env.algo.topo.needLinksDict[(n2, n1)].count(timeSlot)
-                    used = True
+                # usedCount = 0
+                # used = False
+                # if (n1,n2) in  self.env.algo.topo.needLinksDict:
+                #     usedCount = self.env.algo.topo.needLinksDict[(n1, n2)].count(timeSlot)
+                #     used = True
+                # elif (n2, n1) in  self.env.algo.topo.needLinksDict:
+                #     usedCount = self.env.algo.topo.needLinksDict[(n2, n1)].count(timeSlot)
+                #     used = True
                 
-                if used:
-                    if usedCount > 0:
-                        reward = 10 - (self.env.algo.timeSlot - timeSlot)
-                    else:
-                        reward = -(10 - (self.env.algo.timeSlot - timeSlot))
-                    max_future_q = np.max(self.q_table[pair])
-                    current_q = self.q_table[pair][action]
-                    new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
-                    # print('new q:', new_q , 'current_q:', current_q , 'max_future_q:', max_future_q)
+                # if used:
+                #     if usedCount > 0:
+                #         reward += 10 - (self.env.algo.timeSlot - timeSlot)
+                #     else:
+                #         reward += -(10 - (self.env.algo.timeSlot - timeSlot))
+                if (pair[0] , pair[1] , timeSlot) in self.env.algo.topo.reward:
+                    reward = self.env.algo.topo.reward[(pair[0] , pair[1] , timeSlot)]
+                elif (pair[1] , pair[0] , timeSlot) in self.env.algo.topo.reward:
+                    reward = self.env.algo.topo.reward[(pair[1] , pair[0] , timeSlot)]
+                else:
+                    continue
+
+                max_future_q = np.max(self.q_table[pair])
+                current_q = self.q_table[pair][action]
+                new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
+                print('new q:', new_q , 'current_q:', current_q , 'max_future_q:', max_future_q , 'reward:' , reward)
 
 
-                    self.q_table[pair][action] = new_q
+                self.q_table[pair][action] = new_q
 
         for pair in self.last_action_table:
             # print(self.last_action_table[pair])
