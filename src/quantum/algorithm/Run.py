@@ -57,7 +57,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 200, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 2000, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -74,8 +74,8 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
     algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_rl'))
 
     #with pre entanglement
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [30]
+    numOfRequestPerRound = [60]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
