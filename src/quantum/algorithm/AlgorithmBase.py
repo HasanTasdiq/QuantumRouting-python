@@ -277,12 +277,30 @@ class AlgorithmBase:
                     print('path  ' , [p.id for p in path])
                     quit()
 
+                needLinksDictLen = 1
                 if (node1 , node2) in self.topo.needLinksDict:
                     self.topo.needLinksDict[(node1 , node2)].append(self.timeSlot)
+                    needLinksDictLen = len(self.topo.needLinksDict[(node1 , node2)])
                 elif (node2 , node1) in self.topo.needLinksDict:
                     self.topo.needLinksDict[(node2 , node1)].append(self.timeSlot)
+                    needLinksDictLen = len(self.topo.needLinksDict[(node2 , node1)])
                 else:
                     self.topo.needLinksDict[(node1 , node2)] = ([self.timeSlot])
+                
+                vLinkCount = len([link for link in node1.links if link.theOtherEndOf(node1) == node2])
+
+                if not vLinkCount and needLinksDictLen >= needlink_timeslot * self.topo.preSwapFraction -1:
+                    if (node1.id , node2.id , self.timeSlot) in self.topo.reward:
+                        reward =  self.topo.reward[(node1.id , node2.id , self.timeSlot)]
+                        self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward + (-10)
+                    elif (node2.id , node1.id , self.timeSlot) in self.topo.reward:
+                        reward =  self.topo.reward[(node2.id , node1.id , self.timeSlot)]
+                        self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward + (-10)
+                    else:
+                        self.topo.reward[(node2.id , node1.id , self.timeSlot)] = -10
+
+
+
 
 
 
@@ -305,7 +323,7 @@ class AlgorithmBase:
                 k = 1
         while True:
             preSwapped = self.tryPreSwapp2(i % k , k)
-            break     #make same as rl 
+            # break     #one attempt only 
             count += preSwapped
             if not preSwapped:
                 break
@@ -407,7 +425,7 @@ class AlgorithmBase:
 
                             for (link1, link2) in zip(links1 , links2):
 
-                                link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+                                link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True , vtimeslot = self.timeSlot)
                                 # print('if link.assignable() ', (source.id ,dest.id ) , link.assignable())
                                 if link.assignable():
                                     swapped = node.attemptPreSwapping(link1, link2)
@@ -485,11 +503,11 @@ class AlgorithmBase:
         source , dest = pair[0], pair[1]
         timesUsed = len(self.topo.needLinksDict[(source , dest)])
         if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
-            return
+            return 0
         k = self.topo.hopsAway2(source , dest , 'Hop') - 1
             
         if self.topo.virtualLinkCount[(source , dest)] * k >= math.ceil(timesUsed  / needlink_timeslot):
-            return
+            return 0
             
         if k < 0:
             print('k' , k , source.id , dest.id)
@@ -520,7 +538,7 @@ class AlgorithmBase:
                     if len(links1) and len(links2):
                         for (link1, link2) in zip(links1 , links2):
 
-                            link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
+                            link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True, vtimeslot = self.timeSlot)
                             if link.assignable():
                                 swapped = node.attemptPreSwapping(link1, link2)
 
