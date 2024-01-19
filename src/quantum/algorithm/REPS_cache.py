@@ -9,6 +9,7 @@ from AlgorithmBase import AlgorithmResult
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
+from topo.helper import request_timeout
 from numpy import log as ln
 from random import sample
 
@@ -587,7 +588,7 @@ class REPSCACHE(AlgorithmBase):
         # print('[REPS-CACHE] ELS end')
         # print('[REPS-CACHE]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         totalEntanglement = 0
-
+        successReq = 0
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -626,6 +627,7 @@ class REPSCACHE(AlgorithmBase):
                         if (src, dst) == (request[0], request[1]):
                             # print('[REPS-CACHE] finish time:', self.timeSlot - request[2])
                             self.requests.remove(request)
+                            successReq += 1
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     if link1 in self.topo.usedLinks:
@@ -634,11 +636,16 @@ class REPSCACHE(AlgorithmBase):
                         link2.clearPhase4Swap()
                 totalEntanglement += len(successPath)
         self.result.entanglementPerRound.append(totalEntanglement)
+        self.result.successfulRequest += successReq
+        
         entSum = sum(self.result.entanglementPerRound)
         
+        self.filterReqeuest()
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot, ':='  , entSum)
         print(self.name , '######+++++++========= total pathSelecttion: ' , 'till time:' , self.timeSlot , ':=' , self.pathSelecttion , '========+++++==========')
             
+    def filterReqeuest(self):
+        self.requests = list(filter(lambda x: self.timeSlot -  x[2] < request_timeout , self.requests))
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]

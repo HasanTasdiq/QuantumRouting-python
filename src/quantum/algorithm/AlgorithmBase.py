@@ -50,7 +50,7 @@ class AlgorithmResult:
             AvgResult.idleTime += result.idleTime
             AvgResult.usedQubits += result.usedQubits
             AvgResult.temporaryRatio += result.temporaryRatio
-            AvgResult.successfulRequest += result.ssuccessfulRequestu
+            AvgResult.successfulRequest += result.successfulRequest
 
             Len = len(result.remainRequestPerRound)
             if ttime != Len:
