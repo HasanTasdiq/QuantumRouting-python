@@ -750,9 +750,13 @@ class MyAlgorithm(AlgorithmBase):
         # p4 end
         self.result.entanglementPerRound.append(totalEntanglement)
 
+        successReq = 0
         for req in finishedRequest:
             self.requestState.pop(req)
+            successReq += 1
         self.srcDstPairs.clear()
+        self.result.finishedRequestPerRound.append(successReq)
+        self.result.successfulRequest += successReq
 
         remainTime = 0
         for req in self.requestState:
@@ -769,14 +773,16 @@ class MyAlgorithm(AlgorithmBase):
         print('[MyAlgo] waiting time:',  self.result.waitingTime)
         print('[MyAlgo] idle time:', self.result.idleTime)
         print('[MyAlgo]' , self.timeSlot, ' remaining request:', len(self.requestState))
+        print('[MyAlgo]' , self.timeSlot, ' successful request:', self.result.successfulRequest)
         print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
 
         print('[MyAlgo] p5 end')
         # print('----------------------')
+        self.filterReqeuest()
 
         return self.result
     def filterReqeuest(self):
-        self.requestState = {k:v for k,v in self.requestState.tems() if (self.timeSlot -  k[2]) < request_timeout}
+        self.requestState = {k:v for k,v in self.requestState.items() if (self.timeSlot -  k[2]) < request_timeout}
     
 if __name__ == '__main__':
 

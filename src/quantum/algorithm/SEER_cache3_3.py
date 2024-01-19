@@ -869,6 +869,8 @@ class SEERCACHE3_3(AlgorithmBase):
         print('[' , self.name, ']', ' waiting time:',  self.result.waitingTime)
         print('[' , self.name, ']', ' idle time:', self.result.idleTime)
         print('[' , self.name, '] :', self.timeSlot ,  ', remaining request:', len(self.requestState))
+        print('[' , self.name, '] :' , self.timeSlot, ' successful request:', self.result.successfulRequest)
+
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len links ==  :', len(self.topo.links))
         # print('[' , self.name, '] :', self.timeSlot ,  ', == len virtual links ==  :', sum(link.isVirtualLink for link in self.topo.links) , len(self.topo.links) +  sum(link.isVirtualLink for link in self.topo.links))
         
@@ -887,7 +889,7 @@ class SEERCACHE3_3(AlgorithmBase):
 
         return self.result
     def filterReqeuest(self):
-        self.requestState = {k:v for k,v in self.requestState.tems() if (self.timeSlot -  k[2]) < request_timeout}
+        self.requestState = {k:v for k,v in self.requestState.items() if (self.timeSlot -  k[2]) < request_timeout}
     
 if __name__ == '__main__':
 
