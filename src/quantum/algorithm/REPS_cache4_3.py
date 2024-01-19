@@ -12,6 +12,7 @@ from topo.Link import Link
 from numpy import log as ln
 from random import sample
 import numpy as np
+from topo.helper import request_timeout
 
 
 ######################
@@ -56,6 +57,8 @@ class REPSCACHE5_3(AlgorithmBase):
         
         print(self.name , " total time:", self.result.waitingTime)
         print(self.name ," remain request:", len(self.requests))
+        print('[' , self.name, '] :' , self.timeSlot, ' successful request::', self.result.successfulRequest)
+
         print(self.name ," current Timeslot:", self.timeSlot)
         print(self.name ," ==============  tmp count:", self.topo.tmpcount)
 
@@ -651,6 +654,7 @@ class REPSCACHE5_3(AlgorithmBase):
         # print('[REPS-CACHE] ELS end')
         # print('[REPS-CACHE]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         totalEntanglement = 0
+        successReq = 0
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -701,6 +705,7 @@ class REPSCACHE5_3(AlgorithmBase):
                         if (src, dst) == (request[0], request[1]):
                             # print('[REPS-CACHE] finish time:', self.timeSlot - request[2])
                             self.requests.remove(request)
+                            successReq += 1
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     if link1 in self.topo.usedLinks:
@@ -712,12 +717,13 @@ class REPSCACHE5_3(AlgorithmBase):
                 self.updateNeedLinksDict(path)
 
         self.result.entanglementPerRound.append(totalEntanglement)
+        self.result.successfulRequest += successReq
         entSum = sum(self.result.entanglementPerRound)
         
         print(self.name , '######+++++++========= total ent: ' , 'till time:' , self.timeSlot , ':=' , entSum)
         print(self.name , '######+++++++========= total pathSelecttion: ' , 'till time:' , self.timeSlot , ':=' , self.pathSelecttion , '========+++++==========')
         
-
+        self.filterReqeuest()
         # for link in self.topo.links:
         #     if link.isVirtualLink:
         #         self.topo.links.remove(link)
@@ -726,6 +732,8 @@ class REPSCACHE5_3(AlgorithmBase):
         #         if link.isVirtualLink:
         #             node.links.remove(link)
 
+    def filterReqeuest(self):
+        self.requests = list(filter(lambda x: self.timeSlot -  x[2] < request_timeout , self.requests))
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]
