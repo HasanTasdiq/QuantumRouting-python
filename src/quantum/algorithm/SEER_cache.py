@@ -9,6 +9,7 @@ from AlgorithmBase import PickedPath
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
+from topo.helper import request_timeout
 
 @dataclass
 class RequestInfo:
@@ -828,6 +829,8 @@ class SEERCACHE(AlgorithmBase):
         # print('----------------------')
 
         return self.result
+    def filterReqeuest(self):
+        self.requestState = {k:v for k,v in self.requestState.tems() if (self.timeSlot -  k[2]) < request_timeout}
     
 if __name__ == '__main__':
 

@@ -9,7 +9,7 @@ from AlgorithmBase import PickedPath
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
-
+from topo.helper import request_timeout
 @dataclass
 class RequestInfo:
     state: int          # 0 代表src直接送到dst, 1 代表src送到K, 2 代表k送到dst
@@ -849,6 +849,7 @@ class SEERCACHE3_3(AlgorithmBase):
             successReq += 1
         self.srcDstPairs.clear()
         self.result.finishedRequestPerRound.append(successReq)
+        self.result.successfulRequest += successReq
 
 
         remainTime = 0
@@ -882,8 +883,11 @@ class SEERCACHE3_3(AlgorithmBase):
         # self.topo.printNodeMem()
 
         # print('----------------------')
+        self.filterReqeuest()
 
         return self.result
+    def filterReqeuest(self):
+        self.requestState = {k:v for k,v in self.requestState.tems() if (self.timeSlot -  k[2]) < request_timeout}
     
 if __name__ == '__main__':
 

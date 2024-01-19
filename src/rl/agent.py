@@ -242,7 +242,7 @@ class Agent():
                 max_future_q = np.max(self.q_table[pair])
                 current_q = self.q_table[pair][action]
                 new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
-                print('new q:', new_q , 'current_q:', current_q , 'max_future_q:', max_future_q , 'reward:' , reward)
+                # print('new q:', new_q , 'current_q:', current_q , 'max_future_q:', max_future_q , 'reward:' , reward)
 
 
                 self.q_table[pair][action] = new_q
