@@ -50,6 +50,7 @@ class AlgorithmResult:
             AvgResult.idleTime += result.idleTime
             AvgResult.usedQubits += result.usedQubits
             AvgResult.temporaryRatio += result.temporaryRatio
+            AvgResult.successfulRequest += result.ssuccessfulRequestu
 
             Len = len(result.remainRequestPerRound)
             if ttime != Len:
@@ -66,6 +67,7 @@ class AlgorithmResult:
         AvgResult.idleTime /= len(results)
         AvgResult.usedQubits /= len(results)
         AvgResult.temporaryRatio /= len(results)
+        AvgResult.successfulRequest /= len(results)
         AvgResult.eps /= len(results)
         AvgResult.eps /= ttime
 
@@ -74,7 +76,7 @@ class AlgorithmResult:
             AvgResult.remainRequestPerRound[i] /= len(results)
             AvgResult.entanglementPerRound[i] /= len(results)
         
-        AvgResult.successfulRequest = (requestPerRound -  AvgResult.remainRequestPerRound[-1] / ttime ) /requestPerRound * 100
+        # AvgResult.successfulRequest = (requestPerRound -  AvgResult.remainRequestPerRound[-1] / ttime ) /requestPerRound * 100
         return AvgResult
 
 class AlgorithmBase:
