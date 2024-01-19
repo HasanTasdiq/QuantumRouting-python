@@ -829,7 +829,8 @@ class SEERCACHE(AlgorithmBase):
         print('[' , self.name, ']', ' waiting time:',  self.result.waitingTime)
         print('[' , self.name, ']', ' idle time:', self.result.idleTime)
         print('[' , self.name, '] :', self.timeSlot, ', remaining request:', len(self.requestState))
-        print('[' , self.name, '] :', self.timeSlot, ', successful request:', self.result.successfulRequest)
+        print('[' , self.name, '] :', self.timeSlot, ',total successful request:', self.result.successfulRequest)
+        print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
 
         print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
         print('[' , self.name, ']', ' p5 end')

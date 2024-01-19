@@ -773,7 +773,9 @@ class MyAlgorithm(AlgorithmBase):
         print('[MyAlgo] waiting time:',  self.result.waitingTime)
         print('[MyAlgo] idle time:', self.result.idleTime)
         print('[MyAlgo]' , self.timeSlot, ' remaining request:', len(self.requestState))
-        print('[MyAlgo]' , self.timeSlot, ' successful request:', self.result.successfulRequest)
+        print('[MyAlgo]' , self.timeSlot, ' total successful request:', self.result.successfulRequest)
+        print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
+
         print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
 
         print('[MyAlgo] p5 end')
