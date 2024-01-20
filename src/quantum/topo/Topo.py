@@ -14,6 +14,8 @@ import itertools
 import time
 import matplotlib.pyplot as plt
 from .helper import entanglement_lifetimeslot
+from random import sample
+
 
 
 
@@ -221,10 +223,21 @@ class Topo:
                 #     time.sleep(.01)
         for node in self.nodes:
             node.maxMem = node.remainingQubits
+        
+        self.requests = []
+        source_nodes = [node.id for node in self.nodes if node.loc[1] < 1000]
+        dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3000]
+        print(len(source_nodes) , len(dest_nodes))
+        for _ in range(200):
+            req = (source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))])
+            if req not in self.requests:
+                self.requests.append(req)
+        
         print('****** len seg' , len(self.segments))
         print('****** len links' , len(self.links))
         print('****** len edge' , len(self.edges))
         print('****** edgenum' , edgenum)
+        print('****** self.req len' , len(self.requests))
 
 
 
@@ -1056,17 +1069,17 @@ class Topo:
             self.addLink(link)
         vLink.subLinks.clear()
     def generateRequest(self , numOfRequestPerRound):
-        ids = []
+        # ids = []
         ret = []
-        source_nodes = [node.id for node in self.nodes if node.loc[1] < 1000]
-        dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3000]
-        print(len(source_nodes) , len(dest_nodes))
-        for _ in range(100):
-            ids.append((source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))]))
-        
-        for _ in range(numOfRequestPerRound):
-            ret.append(ids[int(random.random()*30) + 50])
-        print('reqs ' , ret)
+        # source_nodes = [node.id for node in self.nodes if node.loc[1] < 1000]
+        # dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3000]
+        # print(len(source_nodes) , len(dest_nodes))
+        # for _ in range(100):
+        #     ids.append((source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))]))
+        ret = sample(self.requests , numOfRequestPerRound)
+        # for _ in range(numOfRequestPerRound):
+        #     ret.append(self.requests[int(random.random()*30) + 50])
+        # print('reqs ' , ret)
         return ret
 
 
