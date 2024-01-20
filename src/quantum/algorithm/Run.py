@@ -106,7 +106,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 10
+    times = 1
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -128,7 +128,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
         else:
             for i in range(ttime):
                 if i < rtime:
-                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    ids[i] = topo.generateRequest(numOfRequestPerRound)
                     for _ in range(numOfRequestPerRound):
 
                         a = sample([i for i in range(numOfNode)], 2)
