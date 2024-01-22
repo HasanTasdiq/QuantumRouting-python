@@ -15,6 +15,8 @@ import time
 import matplotlib.pyplot as plt
 from .helper import entanglement_lifetimeslot
 from random import sample
+import pickle
+
 
 
 
@@ -225,13 +227,32 @@ class Topo:
             node.maxMem = node.remainingQubits
         
         self.requests = []
-        source_nodes = [node.id for node in self.nodes if node.loc[1] < 1000]
-        dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3000]
-        print(len(source_nodes) , len(dest_nodes))
-        for _ in range(200):
-            req = (source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))])
-            if req not in self.requests:
-                self.requests.append(req)
+        try:
+            # print('in try req')
+            f = open('requests.txt', 'r')
+            for x in f.readlines():
+                x = x.replace('\n' , '').replace('(' , '').replace(')' , '').split(',')
+                x = [int(i) for i in x]
+                x = tuple(x)
+                self.requests.append(x)
+            f.close()
+            # print(self.requests)
+        except Exception as e:
+            # print('in except req' , e)
+            source_nodes = [node.id for node in self.nodes if node.loc[1] < 1000]
+            dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3000]
+            print(len(source_nodes) , len(dest_nodes))
+
+            for _ in range(200):
+                req = (source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))])
+                if req not in self.requests:
+                    self.requests.append(req)
+            
+            # Using "with open" syntax to automatically close the file
+            with open('requests.txt', 'w') as file:
+                for req in self.requests:
+                    file.write(str(req) + '\n')
+
         
         print('****** len seg' , len(self.segments))
         print('****** len links' , len(self.links))
@@ -378,7 +399,12 @@ class Topo:
         
         checker = TopoConnectionChecker()
         while True:
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            try:
+                G = G = pickle.load(open('graph.pickle', 'rb'))
+            except:
+                G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+                pickle.dump(G, open('graph.pickle', 'wb'))
+
             # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
