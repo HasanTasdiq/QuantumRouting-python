@@ -8,6 +8,9 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 # from .RoutingEnv import RoutingEnv   #for mac
 from itertools import combinations
 import random
+import pickle 
+import threading
+
 
 
 #Hyperparameters
@@ -27,7 +30,7 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 class Agent():
-    def __init__(self , algo):
+    def __init__(self , algo , pid):
         #Initializations
         self.env = RoutingEnv(algo)
         # env = gym.make('Breakout-v0')
@@ -39,7 +42,17 @@ class Agent():
 
         # Keep stats for final print of graph
         self.episode_rewards = []
-        self.q_table = {x:[random.random(), random.random()] for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
+        try:
+            print('in agent try' , pid)
+            with open('q_table.pkl', 'rb') as f:
+                self.q_table = pickle.load(f)
+        except:
+            print('in agent except')
+
+            self.q_table = {x:[random.random(), random.random()] for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
+            with open('q_table.pkl', 'wb') as f:
+                pickle.dump(self.q_table, f)
+
         self.last_action_table = {}
         # print(self.q_table)
 
