@@ -44,7 +44,9 @@ class REPS(AlgorithmBase):
 
 
         print('[REPS] idle time:', self.result.idleTime)
-        print('[REPS] remainRequestPerRound:', self.result.remainRequestPerRound)
+        print('[' , self.name, '] :' , self.timeSlot, ' successful request::', self.result.successfulRequest)
+
+        print('[REPS] remainRequestPerRound:', self.result.remainRequestPerRound[-1])
         print('[REPS] avg usedQubits:', self.result.usedQubits)
 
     def AddNewSDpairs(self):
@@ -597,6 +599,8 @@ class REPS(AlgorithmBase):
         entSum = sum(self.result.entanglementPerRound)
         self.filterReqeuest()
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
+        print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
+
     def filterReqeuest(self):
         self.requests = list(filter(lambda x: self.timeSlot -  x[2] < request_timeout , self.requests))
 
