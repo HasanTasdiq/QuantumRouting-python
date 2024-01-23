@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import sys
 # sys.path.append("../../..")
 
-from RoutingEnv import RoutingEnv      #for ubuntu
-# from .RoutingEnv import RoutingEnv   #for mac
+# from RoutingEnv import RoutingEnv      #for ubuntu
+from .RoutingEnv import RoutingEnv   #for mac
 from itertools import combinations
 import random
 import pickle 
@@ -42,15 +42,16 @@ class Agent():
 
         # Keep stats for final print of graph
         self.episode_rewards = []
+        qFileName = 'q_table' + str(len(algo.topo.nodes)) + '_' + str(pid) + '.pkl'
         try:
             print('in agent try' , pid)
-            with open('q_table.pkl', 'rb') as f:
+            with open(qFileName, 'rb') as f:
                 self.q_table = pickle.load(f)
         except:
             print('in agent except')
 
             self.q_table = {x:[random.random(), random.random()] for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
-            with open('q_table.pkl', 'wb') as f:
+            with open(qFileName, 'wb') as f:
                 pickle.dump(self.q_table, f)
 
         self.last_action_table = {}
@@ -263,6 +264,11 @@ class Agent():
         for pair in self.last_action_table:
             # print(self.last_action_table[pair])
             self.last_action_table[pair] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
+        
+        if (self.env.algo.timeslot + 1 ) % 100 == 0:
+            with open(self.qFileName, 'wb') as f:
+                pickle.dump(self.q_table, f)
+                print('-------------::::::: q table saved :::::::-------------')
 
 
 
