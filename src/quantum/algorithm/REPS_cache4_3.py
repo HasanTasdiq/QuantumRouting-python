@@ -56,8 +56,10 @@ class REPSCACHE5_3(AlgorithmBase):
         self.result.remainRequestPerRound.append(len(self.requests))
         
         print(self.name , " total time:", self.result.waitingTime)
-        print(self.name ," remain request:", len(self.requests))
+        # print(self.name ," remain request:", len(self.requests))
         print('[' , self.name, '] :' , self.timeSlot, ' successful request::', self.result.successfulRequest)
+        print(self.name ,' remainRequestPerRound:', self.result.remainRequestPerRound[-1])
+
 
         print(self.name ," current Timeslot:", self.timeSlot)
         print(self.name ," ==============  tmp count:", self.topo.tmpcount)
@@ -65,7 +67,6 @@ class REPSCACHE5_3(AlgorithmBase):
 
 
         print(self.name ,' idle time:', self.result.idleTime)
-        print(self.name ,' remainRequestPerRound:', self.result.remainRequestPerRound)
         print(self.name ,' avg usedQubits:', self.result.usedQubits)
 
 
@@ -722,6 +723,7 @@ class REPSCACHE5_3(AlgorithmBase):
         
         print(self.name , '######+++++++========= total ent: ' , 'till time:' , self.timeSlot , ':=' , entSum)
         print(self.name , '######+++++++========= total pathSelecttion: ' , 'till time:' , self.timeSlot , ':=' , self.pathSelecttion , '========+++++==========')
+        print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
         
         self.filterReqeuest()
         # for link in self.topo.links:

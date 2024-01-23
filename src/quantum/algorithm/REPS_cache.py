@@ -51,7 +51,9 @@ class REPSCACHE(AlgorithmBase):
 
 
         print('[REPS-CACHE] idle time:', self.result.idleTime)
-        print('[REPS-CACHE] remainRequestPerRound:', self.result.remainRequestPerRound)
+        print('[' , self.name, '] :' , self.timeSlot, ' successful request::', self.result.successfulRequest)
+
+        print('[REPS-CACHE] remainRequestPerRound:', self.result.remainRequestPerRound[-1])
         print('[REPS-CACHE] avg usedQubits:', self.result.usedQubits)
 
 
@@ -643,6 +645,7 @@ class REPSCACHE(AlgorithmBase):
         self.filterReqeuest()
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot, ':='  , entSum)
         print(self.name , '######+++++++========= total pathSelecttion: ' , 'till time:' , self.timeSlot , ':=' , self.pathSelecttion , '========+++++==========')
+        print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
             
     def filterReqeuest(self):
         self.requests = list(filter(lambda x: self.timeSlot -  x[2] < request_timeout , self.requests))
