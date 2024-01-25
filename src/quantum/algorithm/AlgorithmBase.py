@@ -76,7 +76,7 @@ class AlgorithmResult:
             AvgResult.remainRequestPerRound[i] /= len(results)
             AvgResult.entanglementPerRound[i] /= len(results)
         
-        # AvgResult.successfulRequest = (requestPerRound -  AvgResult.remainRequestPerRound[-1] / ttime ) /requestPerRound * 100
+        AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100
         return AvgResult
 
 class AlgorithmBase:
