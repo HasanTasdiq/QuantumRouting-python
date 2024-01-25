@@ -114,9 +114,11 @@ class Topo:
 
         # Construct neighbor table by int type
         _neighbors = {_node: [] for _node in _nodes}
+        x_scale = int(2000 * len(_nodes)/100)
+        y_scale = int(2000 * len(_nodes)/100)
         for _node in _nodes:
             (p1, p2) = _positions[_node]
-            _positions[_node] = (p1 * 2000, p2 * 2000)
+            _positions[_node] = (p1 * x_scale, p2 * y_scale)
             # _positions[_node] = (p1 * 500,  p2 * 500)
             # _positions[_node] = (p1 * 1400,  p2 * 1400)
             _neighbors[_node] = list(nx.neighbors(G,_node))
@@ -181,7 +183,7 @@ class Topo:
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             # rand = int(random.random()*5+3) # 3~7
-            rand = 8
+            rand = 3
             
             for _ in range(0, rand):
                 link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
@@ -227,9 +229,10 @@ class Topo:
             node.maxMem = node.remainingQubits
         
         self.requests = []
+        reqFileName = 'request' + str(len(self.nodes)) + '.txt'
         try:
             # print('in try req')
-            f = open('requests.txt', 'r')
+            f = open(reqFileName, 'r')
             for x in f.readlines():
                 x = x.replace('\n' , '').replace('(' , '').replace(')' , '').split(',')
                 x = [int(i) for i in x]
@@ -239,8 +242,10 @@ class Topo:
             # print(self.requests)
         except Exception as e:
             # print('in except req' , e)
-            source_nodes = [node.id for node in self.nodes if node.loc[1] < 1000]
-            dest_nodes = [node.id for node in self.nodes if node.loc[1] > 3000]
+            x_cut = int(1000 * (len(self.nodes) / 100))
+            y_cut = int(3000 * (len(self.nodes) / 100))
+            source_nodes = [node.id for node in self.nodes if node.loc[1] < x_cut]
+            dest_nodes = [node.id for node in self.nodes if node.loc[1] > y_cut]
             print(len(source_nodes) , len(dest_nodes))
 
             for _ in range(200):
@@ -249,7 +254,7 @@ class Topo:
                     self.requests.append(req)
             
             # Using "with open" syntax to automatically close the file
-            with open('requests.txt', 'w') as file:
+            with open(reqFileName, 'w') as file:
                 for req in self.requests:
                     file.write(str(req) + '\n')
 
@@ -398,12 +403,13 @@ class Topo:
         # dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
         
         checker = TopoConnectionChecker()
+        graphFileName = 'graph' + str(n) +'.pickle'
         while True:
             try:
-                G = G = pickle.load(open('graph.pickle', 'rb'))
+                G = G = pickle.load(open(graphFileName, 'rb'))
             except:
                 G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-                pickle.dump(G, open('graph.pickle', 'wb'))
+                pickle.dump(G, open(graphFileName, 'wb'))
 
             # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
