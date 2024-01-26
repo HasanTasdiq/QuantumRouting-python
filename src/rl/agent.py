@@ -263,7 +263,7 @@ class Agent():
             # print(self.last_action_table[pair])
             self.last_action_table[pair] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
         
-        if (self.env.algo.timeSlot + 1 ) % 10 == 0:
+        if (self.env.algo.timeSlot + 1 ) % 100 == 0:
             with open(self.qFileName, 'wb') as f:
                 pickle.dump(self.q_table, f)
                 print('-------------::::::: q table saved :::::::-------------')
