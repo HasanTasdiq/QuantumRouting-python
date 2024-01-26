@@ -521,7 +521,7 @@ class AlgorithmBase:
             path2 = [self.topo.nodes[nodeId] for nodeId in path]
                 
             width = self.topo.widthPhase2(path2) 
-            if width >= 4  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
+            if width >= 1  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
                     
                 for i in range(1 , len(path) - 1):
                     node1 = self.topo.nodes[path[0]]
