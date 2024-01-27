@@ -37,7 +37,7 @@ sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRou
 
 
 from DQNAgent import Agent    #for ubuntu
-# from rl.agent import Agent   #for mac
+from rl.DQNAgent import Agent   #for mac
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
