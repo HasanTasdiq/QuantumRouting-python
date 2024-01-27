@@ -29,9 +29,9 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1_000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
+MIN_REPLAY_MEMORY_SIZE = 5  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 2  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 3  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -82,6 +82,7 @@ class Agent:
         model.add(Input(shape=self.env.OBSERVATION_SPACE_VALUES))
 
         model.add(Dense(self.env.ACTION_SPACE_SIZE, activation='linear'))  # ACTION_SPACE_SIZE = how many choices (2)
+        print(model.summary)
 
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
         return model
@@ -95,6 +96,8 @@ class Agent:
     def train(self, terminal_state, step):
 
         # Start training only if certain number of samples is already saved
+        print('----------len(self.replay_memory)----------------')
+        print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
 
@@ -112,10 +115,11 @@ class Agent:
 
         X = []
         y = []
+        print(len(minibatch))
 
         # Now we need to enumerate our batches
         for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
-
+            print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
             if not done:
@@ -141,6 +145,8 @@ class Agent:
 
         # If counter reaches set value, update target network with weights of main network
         if self.target_update_counter > UPDATE_TARGET_EVERY:
+            print('------------------self.model.get_weights()-------------------')
+            print(self.model.get_weights())
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
 
@@ -155,18 +161,31 @@ class Agent:
         timeSlot = self.env.algo.timeSlot
         
         for pair in state:
-            current_state = self.env.pair_state(pair)
+            current_state = self.env.pair_state((pair[0].id, pair[1].id) , timeSlot)
+            # print('---------------current state shape --------')
+            # print(current_state.shape)
             if np.random.random() > EPSILON_:
-                # Get action from Q table
+                # Get action from Q net
+                # print('------self.get_qs(current_state)-----')
+                # print(self.get_qs(current_state))
                 action = np.argmax(self.get_qs(current_state))
+                print('---action in learn get_qs-- ' , action)
+
             else:
                 # Get random action
                 action = np.random.randint(0, 2)
+                print('---action in learn rand -- ' , action)
+            
+            if not (pair[0].id, pair[1].id) in self.last_action_table:
+                self.last_action_table[(pair[0].id, pair[1].id)] = [(action , timeSlot)]
+            else:
+                self.last_action_table[(pair[0].id, pair[1].id)].append((action , timeSlot))
+
             self.env.step(pair , action)
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
     def update_reward(self):
-        # print('update reward: ' , self.last_action_table )
+        print('update reward:::::::::::::::::::::::: ' , len(self.last_action_table) )
         for pair in self.last_action_table:
 
             reward = 0
@@ -182,7 +201,7 @@ class Agent:
                     reward = self.env.algo.topo.reward[(pair[1] , pair[0] , timeSlot)]
                 else:
                     continue
-                state = self.env.pair_state(pair)
+                state = self.env.pair_state(pair , timeSlot)
                 self.update_replay_memory((state, action, reward, state, False))
                 self.train(False , timeSlot)
 
