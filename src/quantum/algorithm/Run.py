@@ -33,25 +33,28 @@ import time
 import os.path
 # sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
 # sys.path.insert(0, "/Users/tasdiqulislam/Documents/Quantum Network/Routing/QuantumRouting-python/src/rl") #for my mac
-sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
+# sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
+sys.path.insert(0 , '../../rl')
 from agent import Agent    #for ubuntu
 # from agent import Agent   #for mac
 
 
-# from DQNAgent import Agent    #for ubuntu
+from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
-    if '_rl' in algo.name:
+    if '_qrl' in algo.name:
         agent = Agent(algo , pid)
+    if '_dqrl':
+        agent = DQNAgent(algo , pid)
     for i in range(ttime):
-        if '_rl' in algo.name:
+        if '_qrl' in algo.name or '_dqrl' in algo.name:
             agent.learn_and_predict()
 
         result = algo.work(requests[i], i)
 
-        if '_rl' in algo.name:
+        if '_qrl' in algo.name or '_dqrl' in algo.name:
             agent.update_reward()
 
     if algo.name == "My" or 'SEER' in algo.name:
@@ -82,7 +85,8 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
 
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_rl'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -102,9 +106,10 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
     # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
 
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_rl'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_qrl'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
@@ -112,7 +117,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 10
+    times = 1
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime

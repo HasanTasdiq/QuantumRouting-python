@@ -43,7 +43,8 @@ class RoutingEnv(Env):
                 n2 = link.n2.id
                 graph_state[n1][n2] += 1
                 graph_state[n2][n1] += 1
-        
+        print(state1)
+        print(pair)
         graph_state.append(state1)
 
         return np.array(graph_state)
