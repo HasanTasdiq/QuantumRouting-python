@@ -29,9 +29,9 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 2  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 3  # Terminal states (end of episodes)
+MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -58,8 +58,9 @@ np.random.seed(1)
 if not os.path.isdir('models'):
     os.makedirs('models')
 
-class Agent:
+class DQNAgent:
     def __init__(self ,algo , pid):
+        print('++++++++++initiating DQN agent for:' , algo.name)
         self.env = RoutingEnv(algo)
 
         # Main model
@@ -79,9 +80,22 @@ class Agent:
 
     def create_model(self):
         model = Sequential()
-        model.add(Input(shape=self.env.OBSERVATION_SPACE_VALUES))
+        # model.add(Input(shape=self.env.OBSERVATION_SPACE_VALUES))
 
-        model.add(Dense(self.env.ACTION_SPACE_SIZE, activation='linear'))  # ACTION_SPACE_SIZE = how many choices (2)
+        # model.add(Dense(self.env.ACTION_SPACE_SIZE, activation='linear'))  # ACTION_SPACE_SIZE = how many choices (2)
+        # print(model.summary)
+
+
+        # model.add(Conv2D(256, (3, 3), input_shape=self.env.OBSERVATION_SPACE_VALUES))  # OBSERVATION_SPACE_VALUES = (10, 10, 3) a 10x10 RGB image.
+        # model.add(Activation('relu'))
+        # model.add(MaxPooling2D(pool_size=(2, 2)))
+        # model.add(Dropout(0.2))
+
+
+        model.add(Flatten(input_shape = self.env.OBSERVATION_SPACE_VALUES))  
+        model.add(Dense(24 , activation='relu'))
+
+        model.add(Dense(self.env.ACTION_SPACE_SIZE, activation='linear')) 
         print(model.summary)
 
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
@@ -96,8 +110,8 @@ class Agent:
     def train(self, terminal_state, step):
 
         # Start training only if certain number of samples is already saved
-        print('----------len(self.replay_memory)----------------')
-        print(len(self.replay_memory))
+        # print('----------len(self.replay_memory)----------------')
+        # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
 
@@ -106,20 +120,20 @@ class Agent:
 
         # Get current states from minibatch, then query NN model for Q values
         current_states = np.array([transition[0] for transition in minibatch])
-        current_qs_list = self.model.predict(current_states)
+        current_qs_list = self.model.predict(current_states , verbose=0)
 
         # Get future states from minibatch, then query NN model for Q values
         # When using target network, query it, otherwise main network should be queried
         new_current_states = np.array([transition[3] for transition in minibatch])
-        future_qs_list = self.target_model.predict(new_current_states)
+        future_qs_list = self.target_model.predict(new_current_states , verbose=0)
 
         X = []
         y = []
-        print(len(minibatch))
+        # print(len(minibatch))
 
         # Now we need to enumerate our batches
         for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
-            print('---action-- ' , action)
+            # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
             if not done:
@@ -152,7 +166,7 @@ class Agent:
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
-        return self.model.predict(np.array(state).reshape(-1, *state.shape))[0]
+        return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
 
     def learn_and_predict(self):
         global EPSILON_
@@ -163,18 +177,18 @@ class Agent:
         for pair in state:
             current_state = self.env.pair_state((pair[0].id, pair[1].id) , timeSlot)
             # print('---------------current state shape --------')
-            # print(current_state.shape)
+            # print(current_state)
             if np.random.random() > EPSILON_:
                 # Get action from Q net
                 # print('------self.get_qs(current_state)-----')
                 # print(self.get_qs(current_state))
                 action = np.argmax(self.get_qs(current_state))
-                print('---action in learn get_qs-- ' , action)
+                # print('---action in learn get_qs-- ' , action)
 
             else:
                 # Get random action
                 action = np.random.randint(0, 2)
-                print('---action in learn rand -- ' , action)
+                # print('---action in learn rand -- ' , action)
             
             if not (pair[0].id, pair[1].id) in self.last_action_table:
                 self.last_action_table[(pair[0].id, pair[1].id)] = [(action , timeSlot)]
