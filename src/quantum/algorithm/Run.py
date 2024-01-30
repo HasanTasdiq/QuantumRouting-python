@@ -66,7 +66,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 10000, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 10, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -78,7 +78,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # make copy
     algorithms = []
 
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
     # # # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # # # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
@@ -86,7 +86,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
-    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -117,7 +117,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 1
+    times = 10
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -171,7 +171,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
 
     # print(resultDicts)
     for algoIndex in range(len(algorithms)):
-        results[algoIndex] = AlgorithmResult.Avg(resultDicts[algoIndex].values(), numOfRequestPerRound)
+        results[algoIndex] = AlgorithmResult.Avg(resultDicts[algoIndex].values(), numOfRequestPerRound , algorithms[0].topo)
 
 
     # results[0] = result of GreedyHopRouting = a AlgorithmResult
@@ -208,7 +208,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [10]
+    numOfRequestPerRound = [50]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
