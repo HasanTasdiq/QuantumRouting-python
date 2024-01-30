@@ -613,7 +613,7 @@ class MyAlgorithm(AlgorithmBase):
         # p2 繼續找路徑分配資源 
 
         self.p2Extra()
-        self.p2SEERExtra2()
+        # self.p2SEERExtra2()
 
 
 
@@ -692,7 +692,15 @@ class MyAlgorithm(AlgorithmBase):
                             break
             
                 # p5
+                paths = self.topo.getEstablishedEntanglementsWithLinks(p[0] , p[-1])
+                for path in paths:
+                    for node, link in path:
+                        if link is not None:
+                            link.used = True
+                            self.result.usedLinks += 1
+                
                 success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+                # print('path len ' , len(paths)  , success)
 
                 # print('----------------------')
                 # print('[MyAlgo] success:', success)
@@ -764,6 +772,7 @@ class MyAlgorithm(AlgorithmBase):
             remainTime += self.timeSlot - req[2]
         entSum = sum(self.result.entanglementPerRound)
 
+        # self.stats()
         self.topo.clearAllEntanglements()
         self.result.remainRequestPerRound.append(len(self.requestState))  
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
