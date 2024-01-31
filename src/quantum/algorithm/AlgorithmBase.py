@@ -18,7 +18,7 @@ class AlgorithmResult:
         self.temporaryRatio = 0
         self.numOfTimeslot = 0
         self.totalRuntime = 0
-        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'entanglementPerRound' , 'usedLinks']
+        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'entanglementPerRound' ,'successfulRequest', 'usedLinks']
         self.remainRequestPerRound = []
         self.finishedRequestPerRound = []
         self.usedPaths=[]
@@ -36,7 +36,7 @@ class AlgorithmResult:
         dic[self.Ylabels[4]] = self.temporaryRatio
         dic[self.Ylabels[5]] = self.eps
         dic[self.Ylabels[6]] = self.successfulRequest
-        dic[self.Ylabels[6]] = self.usedLinks
+        dic[self.Ylabels[7]] = self.usedLinks
 
         return dic
     
