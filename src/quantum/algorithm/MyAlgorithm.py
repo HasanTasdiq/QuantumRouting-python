@@ -693,12 +693,12 @@ class MyAlgorithm(AlgorithmBase):
             
                 # p5
                 paths = self.topo.getEstablishedEntanglementsWithLinks(p[0] , p[-1])
-                for path in paths:
-                    for node, link in path:
-                        if link is not None:
-                            link.used = True
-                            self.result.usedLinks += 1
-                
+                # for path in paths:
+                #     for node, link in path:
+                #         if link is not None:
+                #             link.used = True
+                #             self.result.usedLinks += 1
+                self.result.usedLinks += len(usedLinks)
                 success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
                 # print('path len ' , len(paths)  , success)
 
