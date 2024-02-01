@@ -18,13 +18,14 @@ class AlgorithmResult:
         self.temporaryRatio = 0
         self.numOfTimeslot = 0
         self.totalRuntime = 0
-        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'entanglementPerRound' , 'successfulRequest']
+        self.Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio", 'entanglementPerRound' ,'successfulRequest', 'usedLinks']
         self.remainRequestPerRound = []
         self.finishedRequestPerRound = []
         self.usedPaths=[]
         self.entanglementPerRound = []
         self.eps = 0
         self.successfulRequest = 0
+        self.usedLinks = 0
 
     def toDict(self):
         dic = {}
@@ -35,10 +36,11 @@ class AlgorithmResult:
         dic[self.Ylabels[4]] = self.temporaryRatio
         dic[self.Ylabels[5]] = self.eps
         dic[self.Ylabels[6]] = self.successfulRequest
+        dic[self.Ylabels[7]] = self.usedLinks
 
         return dic
     
-    def Avg(results: list , requestPerRound = 0):
+    def Avg(results: list , requestPerRound = 0 , topo = None):
         AvgResult = AlgorithmResult()
 
         ttime = len(results[0].remainRequestPerRound)
@@ -51,6 +53,7 @@ class AlgorithmResult:
             AvgResult.usedQubits += result.usedQubits
             AvgResult.temporaryRatio += result.temporaryRatio
             AvgResult.successfulRequest += result.successfulRequest
+            AvgResult.usedLinks += result.usedLinks
 
             Len = len(result.remainRequestPerRound)
             if ttime != Len:
@@ -68,6 +71,7 @@ class AlgorithmResult:
         AvgResult.usedQubits /= len(results)
         AvgResult.temporaryRatio /= len(results)
         AvgResult.successfulRequest /= len(results)
+        AvgResult.usedLinks /= len(results)
         AvgResult.eps /= len(results)
         AvgResult.eps /= ttime
 
@@ -77,6 +81,8 @@ class AlgorithmResult:
             AvgResult.entanglementPerRound[i] /= len(results)
         
         AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100
+        AvgResult.usedLinks = (AvgResult.usedLinks /ttime) / len(topo.links) * 100
+
         return AvgResult
 
 class AlgorithmBase:
@@ -647,6 +653,11 @@ class AlgorithmBase:
         # self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1]) * self.topo.hopsAway2(item[0][0] , item[0][1] , 'Hop')))
         self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1])))
         
+    def stats(self):
+        usedCount = len([link for link in self.topo.links if link.used])
+        totalLinks = len(self.topo.links)
+        print('used: ' , usedCount , 'out of ' , totalLinks)
+        self.result.usedLinks += usedCount/totalLinks
 
     def work(self, pairs: list, time): 
 

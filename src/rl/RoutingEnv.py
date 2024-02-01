@@ -32,6 +32,10 @@ class RoutingEnv(Env):
         return self.state
     def pair_state(self , pair , timeSlot):
         state1 = [0] * self.SIZE
+        source = self.algo.topo.nodes[state1[pair[0]]]
+        dest = self.algo.topo.nodes[state1[pair[1]]]
+        timesUsed = len(self.algo.topo.needLinksDict[(source , dest)])
+
         state1[pair[0]] = 1
         state1[pair[1]] = 1
 
@@ -43,7 +47,17 @@ class RoutingEnv(Env):
                 n2 = link.n2.id
                 graph_state[n1][n2] += 1
                 graph_state[n2][n1] += 1
-        
+        # print(state1)
+        # print(pair)
         graph_state.append(state1)
 
         return np.array(graph_state)
+    
+
+        #     timesUsed = len(self.topo.needLinksDict[(source , dest)])
+        # if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
+        #     return 0
+        # k = self.topo.hopsAway2(source , dest , 'Hop') - 1
+            
+        # if self.topo.virtualLinkCount[(source , dest)] * k >= math.ceil(timesUsed  / needlink_timeslot):
+        #     return 0

@@ -157,10 +157,10 @@ class ChartGenerator:
         # AlgoName = ["SEER", "Greedy", "Q-CAST", "REPS"]
         # AlgoName = [ "Q-CAST", "Cache", "REPS"]
         # AlgoName = ["SEER","SEER-Cache", "SEER-Cache2", "Q-CAST", "Q-CAST-Cache", "REPS"]
-        # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
+        AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
         # AlgoName = ["REPS","REPS-cache","REPS-preswap"]
         # AlgoName = ["SEER","SEER-cache", "SEER-re-use-swap","SEER-pre-swap"]
-        AlgoName = ["SEER","SEER-cache","SEER-preswap"]
+        # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
 
         leg = plt.legend(
             AlgoName,
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
     # ChartGenerator("numOfnodes_waitingTime.txt", "need #round", "#Request of a round", 0, 0, 25, 5)
     Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity", "preSwapFraction", "entanglementLifetime"]
-    Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio" , "entanglementPerRound" , "successfulRequest"]
+    Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio" , "entanglementPerRound" , "successfulRequest" , "usedLinks"]
     
     for Xlabel in Xlabels:
         for Ylabel in Ylabels:

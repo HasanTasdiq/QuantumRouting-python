@@ -17,6 +17,7 @@ class Link:
         self.vtimeslot = vtimeslot
         self.subLinks = []
         self.topo = topo
+        self.used = False
         # print(self.n1.id, self.n2.id, self.p)
 
     def theOtherEndOf(self, n: Node): 
@@ -53,6 +54,7 @@ class Link:
         self.s2 = False
         self.assigned = False
         self.entangled = False
+        self.used = False
 
 
         for internalLink in self.n1.internalLinks:
