@@ -564,6 +564,7 @@ class REPS(AlgorithmBase):
         # print('[REPS]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         totalEntanglement = 0
         successReq = 0
+        usedLinks = set()
 
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
@@ -576,8 +577,16 @@ class REPS(AlgorithmBase):
                 path = Pi[SDpair][pathIndex]
                 # print('[REPS] attempt:', [node.id for node in path])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
+                    usedLinks.add(link1)
+                    usedLinks.add(link2)
                     node.attemptSwapping(link1, link2)
-                successPath = self.topo.getEstablishedEntanglements(src, dst)
+                successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
+
+                for path in successPath:
+                    for node, link in path:
+                        if link is not None:
+                            link.used = True
+                            # self.result.usedLinks += 1
                 # for x in successPath:
                 #     print('[REPS] success:', [z.id for z in x])
 
@@ -593,6 +602,8 @@ class REPS(AlgorithmBase):
                     link2.clearPhase4Swap()
                 
                 totalEntanglement += len(successPath)
+        self.result.usedLinks += len(usedLinks)
+        
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequest += successReq
         

@@ -38,20 +38,22 @@ from agent import Agent    #for ubuntu
 # from agent import Agent   #for mac
 
 
-# from DQNAgent import Agent    #for ubuntu
+from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
-    if '_rl' in algo.name:
+    if '_qrl' in algo.name:
         agent = Agent(algo , pid)
+    if '_dqrl':
+        agent = DQNAgent(algo , pid)
     for i in range(ttime):
-        if '_rl' in algo.name:
+        if '_qrl' in algo.name or '_dqrl' in algo.name:
             agent.learn_and_predict()
 
         result = algo.work(requests[i], i)
 
-        if '_rl' in algo.name:
+        if '_qrl' in algo.name or '_dqrl' in algo.name:
             agent.update_reward()
 
     if algo.name == "My" or 'SEER' in algo.name:
@@ -86,7 +88,8 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
 
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_rl'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -100,8 +103,8 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
     # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
     # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
@@ -116,7 +119,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 10
+    times = 5
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -170,7 +173,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
 
     # print(resultDicts)
     for algoIndex in range(len(algorithms)):
-        results[algoIndex] = AlgorithmResult.Avg(resultDicts[algoIndex].values(), numOfRequestPerRound)
+        results[algoIndex] = AlgorithmResult.Avg(resultDicts[algoIndex].values(), numOfRequestPerRound , algorithms[0].topo)
 
 
     # results[0] = result of GreedyHopRouting = a AlgorithmResult
@@ -207,7 +210,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [10]
+    numOfRequestPerRound = [30,40,50]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
