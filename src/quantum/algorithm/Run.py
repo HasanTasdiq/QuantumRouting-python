@@ -32,8 +32,8 @@ import random
 import time
 import os.path
 # sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
-sys.path.insert(0, "/Users/tasdiqulislam/Documents/Quantum Network/Routing/QuantumRouting-python/src/rl") #for my mac
-# sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
+# sys.path.insert(0, "/Users/tasdiqulislam/Documents/Quantum Network/Routing/QuantumRouting-python/src/rl") #for my mac
+sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
 from agent import Agent    #for ubuntu
 # from agent import Agent   #for mac
 
