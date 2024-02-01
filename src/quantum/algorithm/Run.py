@@ -32,8 +32,8 @@ import random
 import time
 import os.path
 # sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
-# sys.path.insert(0, "/Users/tasdiqulislam/Documents/Quantum Network/Routing/QuantumRouting-python/src/rl") #for my mac
-sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
+sys.path.insert(0, "/Users/tasdiqulislam/Documents/Quantum Network/Routing/QuantumRouting-python/src/rl") #for my mac
+# sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
 from agent import Agent    #for ubuntu
 # from agent import Agent   #for mac
 
@@ -63,20 +63,24 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 10000, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 200, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
     numOfNode = len(topo.nodes)
     
-    topo.setQ(q)
-    topo.setAlpha(alpha)
+    # topo.setQ(q)
+    # topo.setAlpha(alpha)
+
+
+    topo.setQ(1)
+    topo.setAlpha(0)
 
     # make copy
     algorithms = []
 
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
     # # # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # # # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
@@ -102,9 +106,9 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
     # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
 
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_rl'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_rl'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
@@ -134,7 +138,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
         else:
             for i in range(ttime):
                 if i < rtime:
-                    ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
                     for _ in range(numOfRequestPerRound):
 
                         a = sample([i for i in range(numOfNode)], 2)
