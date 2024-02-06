@@ -25,6 +25,7 @@ class AlgorithmResult:
         self.entanglementPerRound = []
         self.eps = 0
         self.successfulRequest = 0
+        self.successfulRequestPerRound = []
         self.usedLinks = 0
 
     def toDict(self):
@@ -46,6 +47,7 @@ class AlgorithmResult:
         ttime = len(results[0].remainRequestPerRound)
         AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
         AvgResult.entanglementPerRound = [0 for _ in range(ttime)]
+        AvgResult.successfulRequestPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
             AvgResult.waitingTime += result.waitingTime
@@ -61,6 +63,7 @@ class AlgorithmResult:
             
             for i in range(ttime):
                 AvgResult.remainRequestPerRound[i] += result.remainRequestPerRound[i]
+                AvgResult.successfulRequestPerRound[i] += result.successfulRequestPerRound[i]
                 # AvgResult.entanglementPerRound[i] += result.entanglementPerRound[i]
                 AvgResult.eps += result.entanglementPerRound[i]
 
@@ -79,9 +82,12 @@ class AlgorithmResult:
         for i in range(ttime):
             AvgResult.remainRequestPerRound[i] /= len(results)
             AvgResult.entanglementPerRound[i] /= len(results)
+            AvgResult.successfulRequestPerRound[i] /= len(results)
         
         AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100
         AvgResult.usedLinks = (AvgResult.usedLinks /ttime) / len(topo.links) * 100
+
+
 
         return AvgResult
 

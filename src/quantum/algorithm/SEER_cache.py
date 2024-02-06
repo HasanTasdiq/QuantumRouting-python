@@ -809,7 +809,7 @@ class SEERCACHE(AlgorithmBase):
             self.requestState.pop(req)
             successReq += 1
         self.srcDstPairs.clear()
-        self.result.finishedRequestPerRound.append(successReq)
+        self.result.successfulRequestPerRound.append(successReq)
         self.result.successfulRequest += successReq
 
         remainTime = 0
