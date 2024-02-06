@@ -31,9 +31,9 @@ import numpy as np
 import random
 import time
 import os.path
-# sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
+sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
 # sys.path.insert(0, "/Users/tasdiqulislam/Documents/Quantum Network/Routing/QuantumRouting-python/src/rl") #for my mac
-sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
+# sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
 from agent import Agent    #for ubuntu
 # from agent import Agent   #for mac
 
@@ -46,7 +46,7 @@ ttime = 20000
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     if '_qrl' in algo.name:
         agent = Agent(algo , pid)
-    if '_dqrl':
+    if '_dqrl' in algo.name:
         agent = DQNAgent(algo , pid)
     for i in range(ttime):
         if '_qrl' in algo.name or '_dqrl' in algo.name:
