@@ -41,6 +41,7 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
+ttime = 20000
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     if '_qrl' in algo.name:
@@ -65,18 +66,18 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = 200, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
     numOfNode = len(topo.nodes)
     
-    # topo.setQ(q)
-    # topo.setAlpha(alpha)
+    topo.setQ(q)
+    topo.setAlpha(alpha)
 
 
-    topo.setQ(1)
-    topo.setAlpha(0)
+    # topo.setQ(1)
+    # topo.setAlpha(0)
 
     # make copy
     algorithms = []
@@ -86,9 +87,9 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # # # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
     # # # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
 
     #with pre entanglement
@@ -103,8 +104,8 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    algorithms.append(REPS(copy.deepcopy(topo)))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    # algorithms.append(REPS(copy.deepcopy(topo)))
+    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
     # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
     # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
@@ -119,7 +120,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 5
+    times = 7
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -210,7 +211,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [30,40,50]
+    numOfRequestPerRound = [50]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
@@ -312,6 +313,20 @@ if __name__ == '__main__':
             Ydata.append(result)
 
 
+
+        filename = "Timeslot" + "_" + "#successRequest" + ".txt"
+        step = 500
+        sampleRounds = [i for i in range(0 , ttime , step)]
+
+        F = open(targetFilePath + filename, "w")
+        for roundIndex in sampleRounds:
+            Xaxis = str(roundIndex)
+            Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
+            Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
+            # print('Yaxis ' , roundIndex , Yaxis1)
+            Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+            F.write(Xaxis + Yaxis)
+        F.close()
 
         for Ylabel in Ylabels:
             filename = Xlabel + "_" + Ylabel + ".txt"
