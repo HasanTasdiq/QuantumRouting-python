@@ -2,6 +2,10 @@ import numpy as np
 from gym import Env
 from gym.spaces import Box, Discrete
 import random
+import sys
+sys.path.append("..")
+from quantum.topo.helper import needlink_timeslot
+import math
 	
 class RoutingEnv(Env):
     def __init__(self , algo):
@@ -34,8 +38,22 @@ class RoutingEnv(Env):
         state1 = [0] * self.SIZE
         source = self.algo.topo.nodes[state1[pair[0]]]
         dest = self.algo.topo.nodes[state1[pair[1]]]
-        timesUsed = len(self.algo.topo.needLinksDict[(source , dest)])
+        count = 0
+        # print(self.algo.topo.needLinksDict)
+        # if (source , dest) in self.algo.topo.needLinksDict:
+        #     timesUsed = len(self.algo.topo.needLinksDict[(source , dest)])
+        # else:
+        #     timesUsed = len(self.algo.topo.needLinksDict[(dest , source)])
 
+        # try:
+        #     timesUsed = len(self.algo.topo.needLinksDict[(source , dest)])
+        #     # count = self.algo.topo.virtualLinkCount[(source , dest)]
+        # except:
+        #     timesUsed = len(self.algo.topo.needLinksDict[(dest , source)])
+        #     # count = self.algo.topo.virtualLinkCount[(dest , source)]
+
+
+        # demand = math.ceil(timesUsed  / needlink_timeslot) - count
         state1[pair[0]] = 1
         state1[pair[1]] = 1
 
