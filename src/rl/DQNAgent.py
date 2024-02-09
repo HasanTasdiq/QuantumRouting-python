@@ -28,7 +28,7 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 50_000  # How many last steps to keep for model training
+REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
@@ -150,9 +150,11 @@ class DQNAgent:
             X.append(current_state)
             y.append(current_qs)
 
+        # print('=============train start===========')
+        t1 = time.time()
         # Fit on all samples as one batch, log only on terminal state
         self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False, )
-
+        print('=============train done===========' , time.time() - t1)
         # Update target network counter every episode
         if terminal_state:
             self.target_update_counter += 1
@@ -170,36 +172,43 @@ class DQNAgent:
 
     def learn_and_predict(self):
         global EPSILON_
-
+        t1 = time.time()
         state = self.env.reset()
         timeSlot = self.env.algo.timeSlot
         
         for pair in state:
-            current_state = self.env.pair_state((pair[0].id, pair[1].id) , timeSlot)
+            current_state = self.env.pair_state(pair , timeSlot)
             # print('---------------current state shape --------')
             # print(current_state)
             if np.random.random() > EPSILON_:
                 # Get action from Q net
                 # print('------self.get_qs(current_state)-----')
                 # print(self.get_qs(current_state))
+                t2 = time.time()
+
                 action = np.argmax(self.get_qs(current_state))
-                # print('---action in learn get_qs-- ' , action)
+
+                # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
 
             else:
                 # Get random action
                 action = np.random.randint(0, 2)
                 # print('---action in learn rand -- ' , action)
+            next_state = self.env.step(pair , action , timeSlot)
+            if next_state is None:
+                next_state = current_state
             
             if not (pair[0].id, pair[1].id) in self.last_action_table:
-                self.last_action_table[(pair[0].id, pair[1].id)] = [(action , timeSlot)]
+                self.last_action_table[(pair[0].id, pair[1].id)] = [(action , timeSlot , current_state , next_state)]
             else:
-                self.last_action_table[(pair[0].id, pair[1].id)].append((action , timeSlot))
+                self.last_action_table[(pair[0].id, pair[1].id)].append((action , timeSlot , current_state , next_state))
 
-            self.env.step(pair , action)
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
+        print('learn_and_predict done in ' , time.time() - t1 , 'seconds')
     def update_reward(self):
         print('update reward:::::::::::::::::::::::: ' , len(self.last_action_table) )
+        t1 = time.time()
         for pair in self.last_action_table:
 
             reward = 0
@@ -207,7 +216,7 @@ class DQNAgent:
 
                 n1 = self.env.algo.topo.nodes[pair[0]]
                 n2 = self.env.algo.topo.nodes[pair[1]]
-                (action , timeSlot) = self.last_action_table[pair][i]
+                (action , timeSlot , current_state , next_state) = self.last_action_table[pair][i]
 
                 if (pair[0] , pair[1] , timeSlot) in self.env.algo.topo.reward:
                     reward = self.env.algo.topo.reward[(pair[0] , pair[1] , timeSlot)]
@@ -215,9 +224,9 @@ class DQNAgent:
                     reward = self.env.algo.topo.reward[(pair[1] , pair[0] , timeSlot)]
                 else:
                     continue
-                state = self.env.pair_state(pair , timeSlot)
-                self.update_replay_memory((state, action, reward, state, False))
-                self.train(False , timeSlot)
+
+                self.update_replay_memory((current_state, action, reward, next_state, False))
+        self.train(False , self.env.algo.timeSlot)
 
 
 
@@ -225,3 +234,4 @@ class DQNAgent:
             # print(self.last_action_table[pair])
             self.last_action_table[pair] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
         
+        print('update_reward done in ' , time.time() - t1 , 'seconds\n')

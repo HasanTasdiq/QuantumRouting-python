@@ -44,7 +44,8 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
-ttime = 20000
+ttime = 5000
+step = 500
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     if '_qrl' in algo.name:
@@ -85,14 +86,16 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # make copy
     algorithms = []
 
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
-    # # # # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
-    # # # # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
+    # # # # algorithms.append(SEERCACHE2(copy.deepcopy(topo), param = 'ten', name='SEER3'))
+    # # # # # algorithms.append(SEERCACHE3(copy.deepcopy(topo), param = 'ten', name='SEER4'))
 
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_qrl'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_dqrl'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
     algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
 
     #with pre entanglement
@@ -123,7 +126,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 1
+    times = 4
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -214,7 +217,7 @@ if __name__ == '__main__':
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
     # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [50]
+    numOfRequestPerRound = [60]
     # numOfRequestPerRound = [50 ]
     # numOfRequestPerRound = [2]
     totalRequest = [10, 20, 30, 40, 50]
@@ -318,7 +321,6 @@ if __name__ == '__main__':
 
 
         filename = "Timeslot" + "_" + "#successRequest" + ".txt"
-        step = 500
         sampleRounds = [i for i in range(0 , ttime , step)]
 
         F = open(targetFilePath + filename, "w")

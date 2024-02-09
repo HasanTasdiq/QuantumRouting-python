@@ -8,6 +8,7 @@ from topo.helper import needlink_timeslot
 from topo.Link import Link
 import math
 import random
+import time
 
 class AlgorithmResult:
     def __init__(self):
@@ -665,9 +666,9 @@ class AlgorithmBase:
         print('used: ' , usedCount , 'out of ' , totalLinks)
         self.result.usedLinks += usedCount/totalLinks
 
-    def work(self, pairs: list, time): 
-
-        self.timeSlot = time # 紀錄目前回合
+    def work(self, pairs: list, time_): 
+        t1 = time.time()
+        self.timeSlot = time_ # 紀錄目前回合
         self.srcDstPairs.extend(pairs) # 任務追加進去
 
         if self.timeSlot == 0:
@@ -701,7 +702,7 @@ class AlgorithmBase:
 
         res.totalRuntime += (end - start)
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
-
+        print('[' + self.name +']' , time_ , 'time taken: ' , time.time() - t1)
         self.postProcess()
         return res
 
