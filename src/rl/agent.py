@@ -213,7 +213,7 @@ class Agent():
                     self.last_action_table[(pair[1].id, pair[0].id)].append((action , timeSlot))
 
             # print('llllll ', action)
-            self.env.step(pair , action)
+            self.env.step(pair , action , timeSlot)
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
 

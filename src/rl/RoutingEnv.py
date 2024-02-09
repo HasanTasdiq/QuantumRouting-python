@@ -15,20 +15,22 @@ class RoutingEnv(Env):
         self.shower_length = 60
         self.algo = algo
         self.SIZE = len(algo.topo.nodes)
-        self.OBSERVATION_SPACE_VALUES = (self.SIZE +1,self.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.SIZE *2 +1,self.SIZE,)  
         self.ACTION_SPACE_SIZE = 2
         print('=========in Routing env ===== ' , algo.name)
 
-    def step(self, pair ,  action):
+    def step(self, pair ,  action , timeSlot):
         reward = 0
+        state = None
         if action:
             reward = self.algo.tryPreSwapp_rl(pair)
+            state = self.pair_state(pair , timeSlot)
 
         # Setting the placeholder for info
         info = {}
         
         # Returning the step information
-        return self.state, reward, info
+        return state
     
     def reset(self):
         self.state = self.algo.topo.needLinksDict
@@ -36,8 +38,8 @@ class RoutingEnv(Env):
         return self.state
     def pair_state(self , pair , timeSlot):
         state1 = [0] * self.SIZE
-        source = self.algo.topo.nodes[state1[pair[0]]]
-        dest = self.algo.topo.nodes[state1[pair[1]]]
+        source = pair[0]
+        dest = pair[1]
         count = 0
         # print(self.algo.topo.needLinksDict)
         # if (source , dest) in self.algo.topo.needLinksDict:
@@ -54,8 +56,8 @@ class RoutingEnv(Env):
 
 
         # demand = math.ceil(timesUsed  / needlink_timeslot) - count
-        state1[pair[0]] = 1
-        state1[pair[1]] = 1
+        state1[source.id] = 1
+        state1[dest.id] = 1
 
         graph_state = [[0]*self.SIZE]*self.SIZE
 
@@ -68,6 +70,14 @@ class RoutingEnv(Env):
         # print(state1)
         # print(pair)
         graph_state.append(state1)
+
+        req_state = [[0]*self.SIZE]*self.SIZE
+        for req in self.algo.requestState:
+            n1 = req[0].id 
+            n2 = req[1].id 
+            req_state[n1][n2] += 1
+            req_state[n2][n1] += 1
+        graph_state.extend(req_state)
 
         return np.array(graph_state)
     
