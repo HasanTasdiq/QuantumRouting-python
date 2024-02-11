@@ -638,6 +638,8 @@ class REPSCACHE(AlgorithmBase):
                         link2.clearPhase4Swap()
                 totalEntanglement += len(successPath)
         self.result.entanglementPerRound.append(totalEntanglement)
+        self.result.successfulRequestPerRound.append(successReq)
+
         self.result.successfulRequest += successReq
         
         entSum = sum(self.result.entanglementPerRound)

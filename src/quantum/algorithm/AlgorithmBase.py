@@ -304,6 +304,9 @@ class AlgorithmBase:
                 
                 vLinkCount = len([link for link in node1.links if link.theOtherEndOf(node1) == node2])
 
+
+
+                # positive reward as they have been used 
                 if not vLinkCount and needLinksDictLen >= needlink_timeslot * self.topo.preSwapFraction -1:
                     if (node1.id , node2.id , self.timeSlot) in self.topo.reward:
                         reward =  self.topo.reward[(node1.id , node2.id , self.timeSlot)]
