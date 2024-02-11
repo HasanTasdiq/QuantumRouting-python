@@ -45,7 +45,7 @@ from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
 ttime = 5000
-step = 500
+step = 200
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     if '_qrl' in algo.name:
