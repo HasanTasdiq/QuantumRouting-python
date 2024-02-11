@@ -718,6 +718,8 @@ class REPSCACHE5_3(AlgorithmBase):
                 self.updateNeedLinksDict(path)
 
         self.result.entanglementPerRound.append(totalEntanglement)
+        self.result.successfulRequestPerRound.append(successReq)
+
         self.result.successfulRequest += successReq
         entSum = sum(self.result.entanglementPerRound)
         

@@ -605,6 +605,8 @@ class REPS(AlgorithmBase):
         self.result.usedLinks += len(usedLinks)
         
         self.result.entanglementPerRound.append(totalEntanglement)
+        self.result.successfulRequestPerRound.append(successReq)
+
         self.result.successfulRequest += successReq
         
         entSum = sum(self.result.entanglementPerRound)
