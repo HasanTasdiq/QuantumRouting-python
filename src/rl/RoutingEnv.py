@@ -72,12 +72,20 @@ class RoutingEnv(Env):
         graph_state.append(state1)
 
         req_state = [[0]*self.SIZE]*self.SIZE
-        for req in self.algo.requestState:
-            n1 = req[0].id 
-            n2 = req[1].id 
-            req_state[n1][n2] += 1
-            req_state[n2][n1] += 1
-        graph_state.extend(req_state)
+        if  hasattr(self.algo , 'requestState' ):
+            for req in self.algo.requestState:
+                n1 = req[0].id 
+                n2 = req[1].id 
+                req_state[n1][n2] += 1
+                req_state[n2][n1] += 1
+            graph_state.extend(req_state)
+        elif hasattr(self.algo , 'requests' ):
+            for req in self.algo.requests:
+                n1 = req[0].id 
+                n2 = req[1].id 
+                req_state[n1][n2] += 1
+                req_state[n2][n1] += 1
+            graph_state.extend(req_state)
 
         return np.array(graph_state)
     
