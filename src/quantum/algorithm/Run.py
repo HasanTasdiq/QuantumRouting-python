@@ -44,8 +44,25 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
-ttime = 200
-step = 10
+ttime = 500
+step = 50
+times = 1
+# numOfRequestPerRound = [1, 2, 3]
+numOfRequestPerRound = [30]
+# numOfRequestPerRound = [50 ]
+# numOfRequestPerRound = [2]
+totalRequest = [10, 20, 30, 40, 50]
+numOfNodes = [50 , 100 , 150 ]
+# numOfNodes = [20]
+r = [0, 2, 4, 6, 8, 10]
+q = [0.7, 0.8, 0.9, 1]
+alpha = [0.0004, 0.0003, 0.0002 , 0.0001]
+# alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
+SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
+preSwapFraction = [0.4,  0.6,  0.8 ,  1]
+# preSwapFraction = [0.2, 0.3]
+entanglementLifetimes = [4,6,8,10]
+
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
     if '_qrl' in algo.name:
@@ -111,16 +128,16 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
     algorithms.append(REPS(copy.deepcopy(topo)))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-    # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
-    # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
+    # # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
+    # # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
 
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_qrl'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop_dqrl'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
+    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_qrl'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop_dqrl'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
@@ -128,7 +145,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
 
-    times = 6
+    global times
     # times = 10
     results = [[] for _ in range(len(algorithms))]
     ttime = rtime
@@ -218,22 +235,7 @@ if __name__ == '__main__':
     temp = AlgorithmResult()
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
     
-    # numOfRequestPerRound = [1, 2, 3]
-    numOfRequestPerRound = [30]
-    # numOfRequestPerRound = [50 ]
-    # numOfRequestPerRound = [2]
-    totalRequest = [10, 20, 30, 40, 50]
-    numOfNodes = [50 , 100 , 150 ]
-    # numOfNodes = [20]
-    r = [0, 2, 4, 6, 8, 10]
-    q = [0.7, 0.8, 0.9, 1]
-    alpha = [0.0004, 0.0003, 0.0002 , 0.0001]
-    # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
-    SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 
-    preSwapFraction = [0.4,  0.6,  0.8 ,  1]
-    # preSwapFraction = [0.2, 0.3]
-    entanglementLifetimes = [4,6,8,10]
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 

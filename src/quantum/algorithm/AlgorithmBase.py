@@ -302,20 +302,24 @@ class AlgorithmBase:
                 else:
                     self.topo.needLinksDict[(node1 , node2)] = ([self.timeSlot])
                 
-                vLinkCount = len([link for link in node1.links if link.theOtherEndOf(node1) == node2])
+                vLinkCount = len([link for link in node1.links if link.theOtherEndOf(node1) == node2 and link.isVirtualLink])
 
 
 
                 # positive reward as they have been used 
                 if not vLinkCount and needLinksDictLen >= needlink_timeslot * self.topo.preSwapFraction -1:
-                    if (node1.id , node2.id , self.timeSlot) in self.topo.reward:
-                        reward =  self.topo.reward[(node1.id , node2.id , self.timeSlot)]
-                        self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward + (-10)
-                    elif (node2.id , node1.id , self.timeSlot) in self.topo.reward:
-                        reward =  self.topo.reward[(node2.id , node1.id , self.timeSlot)]
-                        self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward + (-10)
-                    else:
-                        self.topo.reward[(node2.id , node1.id , self.timeSlot)] = -10
+                    reward2 = -10
+                elif vLinkCount:
+                    reward2 = 10
+
+                if (node1.id , node2.id , self.timeSlot) in self.topo.reward:
+                    reward =  self.topo.reward[(node1.id , node2.id , self.timeSlot)]
+                    self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward + reward2
+                elif (node2.id , node1.id , self.timeSlot) in self.topo.reward:
+                    reward =  self.topo.reward[(node2.id , node1.id , self.timeSlot)]
+                    self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward + reward2
+                else:
+                    self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward2
 
 
 
