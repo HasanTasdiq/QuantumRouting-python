@@ -307,6 +307,7 @@ class AlgorithmBase:
 
 
                 # positive reward as they have been used 
+                reward2 = 0
                 if not vLinkCount and needLinksDictLen >= needlink_timeslot * self.topo.preSwapFraction -1:
                     reward2 = -10
                 elif vLinkCount:
