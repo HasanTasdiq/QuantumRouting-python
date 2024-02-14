@@ -217,12 +217,8 @@ class DQNAgent:
                 n1 = self.env.algo.topo.nodes[pair[0]]
                 n2 = self.env.algo.topo.nodes[pair[1]]
                 (action , timeSlot , current_state , next_state) = self.last_action_table[pair][i]
-
-                if (pair[0] , pair[1] , timeSlot) in self.env.algo.topo.reward:
-                    reward = self.env.algo.topo.reward[(pair[0] , pair[1] , timeSlot)]
-                elif (pair[1] , pair[0] , timeSlot) in self.env.algo.topo.reward:
-                    reward = self.env.algo.topo.reward[(pair[1] , pair[0] , timeSlot)]
-                else:
+                reward = self.env.find_reward(pair , action , timeSlot)
+                if not reward:
                     continue
 
                 self.update_replay_memory((current_state, action, reward, next_state, False))
