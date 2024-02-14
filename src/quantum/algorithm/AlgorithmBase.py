@@ -542,7 +542,7 @@ class AlgorithmBase:
             path2 = [self.topo.nodes[nodeId] for nodeId in path]
                 
             width = self.topo.widthPhase2(path2) 
-            if width >= 3  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
+            if width >= 2  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
                     
                 for i in range(1 , len(path) - 1):
                     node1 = self.topo.nodes[path[0]]
@@ -669,10 +669,12 @@ class AlgorithmBase:
         self.topo.needLinksDict = dict(sorted(self.topo.needLinksDict.items(), key=lambda item: -len(item[1])))
         
     def stats(self):
-        usedCount = len([link for link in self.topo.links if link.used])
-        totalLinks = len(self.topo.links)
-        print('used: ' , usedCount , 'out of ' , totalLinks)
-        self.result.usedLinks += usedCount/totalLinks
+        totalqbit = 0
+        for node in self.topo.nodes:
+            totalqbit += node.remainingQubits
+        
+        print('[ ' , self.name ,' ] remaining qubit at ' , self.timeSlot , totalqbit)
+    
 
     def work(self, pairs: list, time_): 
         t1 = time.time()
