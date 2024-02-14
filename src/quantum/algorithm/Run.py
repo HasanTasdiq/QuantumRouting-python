@@ -44,9 +44,9 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
-ttime = 500
+ttime = 5000
 step = 200
-times = 1
+times = 6
 nodeNo = 50
 # numOfRequestPerRound = [1, 2, 3]
 numOfRequestPerRound = [50]
