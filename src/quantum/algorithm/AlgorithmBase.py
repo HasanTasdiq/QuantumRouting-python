@@ -4,7 +4,7 @@ import sys
 sys.path.append("..")
 from topo.Topo import Topo  
 import time
-from topo.helper import needlink_timeslot
+from topo.helper import needlink_timeslot , request_timeout
 from topo.Link import Link
 import math
 import random
@@ -125,6 +125,16 @@ class AlgorithmBase:
     #         entangled = segment.tryEntanglement(self.timeSlot, self.param)
     #         # print('entangled ' , entangled , segment.l)
     #         # time.sleep(.001)
+    def filterSEERReqeuest(self):
+        tmp = {}
+        for key in self.requestState:
+            req = self.requestState[key]
+            if self.timeSlot -  key[2] < request_timeout:
+                if req.state == 2:
+                    req.intermediate.clearIntermediate()
+            else:
+                tmp[key] = req
+        self.requestState = tmp
     def preEntanglement(self):
         self.topo.preEntanglement()
 

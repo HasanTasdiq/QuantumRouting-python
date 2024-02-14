@@ -730,12 +730,10 @@ class SEERCACHE(AlgorithmBase):
         print('[' , self.name, ']', ' total entanglement till ' , self.timeSlot , ':' , entSum)
         print('[' , self.name, ']', ' p5 end')
         # print('----------------------')
-        self.filterReqeuest()
+        self.filterSEERReqeuest()
 
         return self.result
-    def filterReqeuest(self):
-        self.requestState = {k:v for k,v in self.requestState.items() if (self.timeSlot -  k[2]) < request_timeout}
-    
+
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.9, 5, 0.0002, 6)
