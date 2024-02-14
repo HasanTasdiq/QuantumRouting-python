@@ -783,12 +783,10 @@ class SEERCACHE3_3(AlgorithmBase):
         # self.topo.printNodeMem()
 
         # print('----------------------')
-        self.filterReqeuest()
+        self.filterSEERReqeuest()
 
         return self.result
-    def filterReqeuest(self):
-        self.requestState = {k:v for k,v in self.requestState.items() if (self.timeSlot -  k[2]) < request_timeout}
-    
+
 if __name__ == '__main__':
 
     topo = Topo.generate(100, 0.8, 5, 0.0002, 6)

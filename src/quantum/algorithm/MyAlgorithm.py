@@ -687,11 +687,11 @@ class MyAlgorithm(AlgorithmBase):
 
         print('[MyAlgo] p5 end')
         # print('----------------------')
-        self.filterReqeuest()
+        self.filterSEERReqeuest()
         self.stats()
 
         return self.result
-    def filterReqeuest(self):
+    def filterSEERReqeuest(self):
         tmp = {}
         for key in self.requestState:
             req = self.requestState[key]
