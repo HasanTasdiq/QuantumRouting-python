@@ -31,7 +31,21 @@ class RoutingEnv(Env):
         
         # Returning the step information
         return state
-    
+    def find_reward(self , pair , action , timeSlot):
+        reward = 0
+        n1 = pair[0]
+        n2 = pair[1]
+        if (pair[0] , pair[1] , timeSlot) in self.algo.topo.reward:
+            reward = self.algo.topo.reward[(pair[0] , pair[1] , timeSlot)]
+        elif (pair[1] , pair[0] , timeSlot) in self.algo.topo.reward:
+            reward = self.algo.topo.reward[(pair[1] , pair[0] , timeSlot)]
+        if not action:
+            return -reward
+        return reward
+
+
+
+
     def reset(self):
         self.state = self.algo.topo.needLinksDict
         self.shower_length = 60 

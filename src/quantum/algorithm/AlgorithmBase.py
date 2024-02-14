@@ -307,20 +307,20 @@ class AlgorithmBase:
 
 
                 # positive reward as they have been used 
-                reward2 = 0
-                if not vLinkCount and needLinksDictLen >= needlink_timeslot * self.topo.preSwapFraction -1:
-                    reward2 = -10
-                elif vLinkCount:
-                    reward2 = 10
+                reward2 = 1
+                # if not vLinkCount and needLinksDictLen >= needlink_timeslot * self.topo.preSwapFraction -1:
+                #     reward2 = -10
+                # elif vLinkCount:
+                #     reward2 = 10
 
-                if (node1.id , node2.id , self.timeSlot) in self.topo.reward:
-                    reward =  self.topo.reward[(node1.id , node2.id , self.timeSlot)]
-                    self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward + reward2
-                elif (node2.id , node1.id , self.timeSlot) in self.topo.reward:
-                    reward =  self.topo.reward[(node2.id , node1.id , self.timeSlot)]
-                    self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward + reward2
-                else:
-                    self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward2
+                # if (node1.id , node2.id , self.timeSlot) in self.topo.reward:
+                #     reward =  self.topo.reward[(node1.id , node2.id , self.timeSlot)]
+                #     self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward + reward2
+                # elif (node2.id , node1.id , self.timeSlot) in self.topo.reward:
+                #     reward =  self.topo.reward[(node2.id , node1.id , self.timeSlot)]
+                #     self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward + reward2
+                # else:
+                #     self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward2
 
 
 
