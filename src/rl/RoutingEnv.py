@@ -6,6 +6,7 @@ import sys
 sys.path.append("..")
 from quantum.topo.helper import needlink_timeslot
 import math
+ENTANGLEMENT_LIFETIME = 10
 	
 class RoutingEnv(Env):
     def __init__(self , algo):
@@ -39,6 +40,8 @@ class RoutingEnv(Env):
             reward = self.algo.topo.reward[(pair[0] , pair[1] , timeSlot)]
         elif (pair[1] , pair[0] , timeSlot) in self.algo.topo.reward:
             reward = self.algo.topo.reward[(pair[1] , pair[0] , timeSlot)]
+        elif self.algo.timeSlot - timeSlot >= ENTANGLEMENT_LIFETIME:
+            reward = -10
         if not action:
             return -reward
         return reward
