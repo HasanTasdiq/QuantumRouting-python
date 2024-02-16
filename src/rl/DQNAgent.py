@@ -205,7 +205,7 @@ class DQNAgent:
 
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
-        print('learn_and_predict done in ' , time.time() - t1 , 'seconds')
+        print('**learn_and_predict drql done in ' , time.time() - t1 , 'seconds')
     def update_reward(self):
         print('update reward:::::::::::::::::::::::: ' , len(self.last_action_table) )
         t1 = time.time()
