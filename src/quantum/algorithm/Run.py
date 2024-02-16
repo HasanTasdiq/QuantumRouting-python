@@ -49,7 +49,7 @@ step = 200
 times = 5
 nodeNo = 50
 # numOfRequestPerRound = [1, 2, 3]
-numOfRequestPerRound = [50]
+numOfRequestPerRound = [50 , 60 , 70]
 # numOfRequestPerRound = [50 ]
 # numOfRequestPerRound = [2]
 totalRequest = [10, 20, 30, 40, 50]
@@ -63,6 +63,9 @@ SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 preSwapFraction = [0.4,  0.6,  0.8 ,  1]
 # preSwapFraction = [0.2, 0.3]
 entanglementLifetimes = [4,6,8,10]
+skipXlabel = [ 0, 1,2,  3 ,5 , 6 ,7,8]
+Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime']
+
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
@@ -88,7 +91,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -242,7 +245,6 @@ if __name__ == '__main__':
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
-    Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime']
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes]
 
     topo = Topo.generate(nodeNo, 0.9, 5, 0.0002, 6)
@@ -256,7 +258,6 @@ if __name__ == '__main__':
                 tmp_ids[i].append((a[0], a[1]))
                
 
-    skipXlabel = [  1,2,  3, 4 ,5 , 6 ,7,8]
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
