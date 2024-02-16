@@ -44,7 +44,7 @@ class REPS(AlgorithmBase):
 
 
         print('[REPS] idle time:', self.result.idleTime)
-        print('[' , self.name, '] :' , self.timeSlot, ' successful request::', self.result.successfulRequest)
+        print('[' , self.name, '] :' , self.timeSlot, ' total successful request::', self.result.successfulRequest)
 
         print('[REPS] remainRequestPerRound:', self.result.remainRequestPerRound[-1])
         print('[REPS] avg usedQubits:', self.result.usedQubits)

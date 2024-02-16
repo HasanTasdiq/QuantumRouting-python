@@ -722,7 +722,7 @@ class AlgorithmBase:
 
         res.totalRuntime += (end - start)
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
-        print('[' + self.name +']' , time_ , 'time taken: ' , time.time() - t1)
+        print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken: ' , time.time() - t1)
         self.postProcess()
         return res
 
