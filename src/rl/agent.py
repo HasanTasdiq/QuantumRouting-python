@@ -13,7 +13,7 @@ import pickle
 
 #Hyperparameters
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.2
 DISCOUNT = 0.95
 
 GAMMA = 0.99
