@@ -332,7 +332,15 @@ class AlgorithmBase:
                 # else:
                 #     self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward2
 
-
+                if not vLinkCount and needLinksDictLen >= needlink_timeslot * self.topo.preSwapFraction -1:
+                    if (node1.id , node2.id , self.timeSlot) in self.topo.reward:
+                        reward =  self.topo.reward[(node1.id , node2.id , self.timeSlot)]
+                        self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward + (-10)
+                    elif (node2.id , node1.id , self.timeSlot) in self.topo.reward:
+                        reward =  self.topo.reward[(node2.id , node1.id , self.timeSlot)]
+                        self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward + (-10)
+                    else:
+                        self.topo.reward[(node2.id , node1.id , self.timeSlot)] = -10
 
 
 
