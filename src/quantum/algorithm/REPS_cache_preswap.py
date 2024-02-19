@@ -183,7 +183,7 @@ class REPSCACHE4(AlgorithmBase):
                 if link.isEntangled(self.timeSlot):
                     prob+=1
                 else:
-                    prob +=link.p
+                    prob +=link.p()
                 isVirtual = isVirtual or link.isVirtualLink
             probability = prob/len(links)
             # print('++===+++== later prob ' , self.timeSlot , probability)
