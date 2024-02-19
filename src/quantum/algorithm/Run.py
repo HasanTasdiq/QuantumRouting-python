@@ -44,11 +44,12 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
-ttime = 2000
+ttime = 10000
 step = 200
 times = 5
 nodeNo = 55
-alpha_ = 0.0002
+alpha_ = 0.002
+degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 numOfRequestPerRound = [50 , 60 ]
@@ -251,7 +252,7 @@ if __name__ == '__main__':
 
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes , requestTimeouts]
 
-    topo = Topo.generate(nodeNo, 0.9, 5,alpha_, 6)
+    topo = Topo.generate(nodeNo, 0.9, 5,alpha_, degree)
     jobs = []
 
     tmp_ids = {i : [] for i in range(200)}
