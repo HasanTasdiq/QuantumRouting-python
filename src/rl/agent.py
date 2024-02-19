@@ -23,7 +23,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.5  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 100
+END_EPSILON_DECAYING = 10000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -41,16 +41,17 @@ class Agent():
         # Keep stats for final print of graph
         self.episode_rewards = []
         self.qFileName = 'q_table' + str(len(algo.topo.nodes)) + '_' + str(pid) + '.pkl'
-        try:
-            print('in agent try' , pid)
-            with open(self.qFileName, 'rb') as f:
-                self.q_table = pickle.load(f)
-        except:
-            print('in agent except')
+        # try:
+        #     print('in agent try' , pid)
+        #     with open(self.qFileName, 'rb') as f:
+        #         self.q_table = pickle.load(f)
+        # except:
+        #     print('in agent except')
 
-            self.q_table = {x:[random.random(), random.random()] for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
-            with open(self.qFileName, 'wb') as f:
-                pickle.dump(self.q_table, f)
+        #     self.q_table = {x:[random.random(), random.random()] for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
+        #     with open(self.qFileName, 'wb') as f:
+        #         pickle.dump(self.q_table, f)
+        self.q_table = {x:[random.random(), random.random()] for x in list(combinations([n.id for n in  self.env.algo.topo.nodes], 2)) }
 
         self.last_action_table = {}
         # print(self.q_table)
@@ -66,8 +67,11 @@ class Agent():
                 if np.random.random() > EPSILON_:
                     # Get action from Q table
                     action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
+                    print('==Action from Q table==')
                 else:
                     # Get random action
+                    print('##from random action##')
+
                     action = np.random.randint(0, 2)
                 if not (pair[0].id, pair[1].id) in self.last_action_table:
                     self.last_action_table[(pair[0].id, pair[1].id)] = [(action , timeSlot)]
