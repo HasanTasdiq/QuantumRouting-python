@@ -93,7 +93,7 @@ class SEERCACHE(AlgorithmBase):
     #                 # if link.isVirtualLink:
     #                 #     print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
     #             else:
-    #                 prob +=link.p
+    #                 prob +=link.p()
     #         P *= prob
 
     #     return P * (self.topo.q**(len(path) - 2))

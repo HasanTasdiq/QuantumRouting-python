@@ -691,17 +691,8 @@ class MyAlgorithm(AlgorithmBase):
         self.stats()
 
         return self.result
-    def filterSEERReqeuest(self):
-        tmp = {}
-        for key in self.requestState:
-            req = self.requestState[key]
-            if self.timeSlot -  key[2] < request_timeout:
-                if req.state == 2:
-                    req.intermediate.clearIntermediate()
-            else:
-                tmp[key] = req
-        self.requestState = tmp
-        # self.requestState = {k:v for k,v in self.requestState.items() if (self.timeSlot -  k[2]) < request_timeout}
+
+        # self.requestState = {k:v for k,v in self.requestState.items() if (self.timeSlot -  k[2]) < self.topo.request_timeout}
     
 if __name__ == '__main__':
 

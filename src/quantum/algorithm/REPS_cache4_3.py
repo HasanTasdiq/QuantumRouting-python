@@ -172,7 +172,7 @@ class REPSCACHE5_3(AlgorithmBase):
                     # if link.isVirtualLink:
                     #     print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
                 else:
-                    prob +=link.p
+                    prob +=link.p()
                 isVirtual = isVirtual or link.isVirtualLink
             probability = prob/len(links)
             # print('++===+++== later prob ' , self.timeSlot , probability)
@@ -737,7 +737,7 @@ class REPSCACHE5_3(AlgorithmBase):
         #             node.links.remove(link)
 
     def filterReqeuest(self):
-        self.requests = list(filter(lambda x: self.timeSlot -  x[2] < request_timeout , self.requests))
+        self.requests = list(filter(lambda x: self.timeSlot -  x[2] < self.topo.requestTimeout , self.requests))
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]

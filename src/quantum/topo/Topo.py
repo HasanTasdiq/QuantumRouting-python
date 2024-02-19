@@ -76,7 +76,7 @@ class TopoConnectionChecker:
 
 class Topo:
 
-    def __init__(self, G, q, k, a, degree):
+    def __init__(self, G, q, k, a, degree , name = 'waxman'):
         _nodes, _edges, _positions = G.nodes(), list(G.edges()), nx.get_node_attributes(G, 'pos')
 
         self.nodes = []
@@ -99,7 +99,9 @@ class Topo:
         self.preSwapFraction = 1/2
         self.tmpcount = 0
         self.entanglementLifetime = 10
+        self.requestTimeout = 5
         self.reward = {}
+        self.name = name
 
 
         # for pos in _positions:
@@ -116,8 +118,13 @@ class Topo:
         _neighbors = {_node: [] for _node in _nodes}
         x_scale = int(2000 * len(_nodes)/100)
         y_scale = int(2000 * len(_nodes)/100)
+        if self.name == 'surfnet':
+            x_scale = 200
+            y_scale = 200
         for _node in _nodes:
-            (p1, p2) = _positions[_node]
+            # print(eval(_positions[_node])[0])
+            # return
+            (p1, p2) = eval(_positions[_node])
             _positions[_node] = (p1 * x_scale, p2 * y_scale)
             # _positions[_node] = (p1 * 500,  p2 * 500)
             # _positions[_node] = (p1 * 1400,  p2 * 1400)
@@ -144,7 +151,7 @@ class Topo:
                             # print(_positions[_node], _positions[_node2], self.distance(_positions[_node], _positions[_node2]))
                             curNode = _node2
                             curLen = dis
-
+                    # print(curNode)
                     if curNode >= 0:
                         _neighbors[_node].append(curNode)
                         _neighbors[curNode].append(_node)
@@ -404,6 +411,8 @@ class Topo:
         
         checker = TopoConnectionChecker()
         graphFileName = 'graph' + str(n) +'.pickle'
+        file = 'SurfnetCore.gml'
+        name = 'waxman'
         while True:
             # try:
             #     G = G = pickle.load(open(graphFileName, 'rb'))
@@ -411,13 +420,17 @@ class Topo:
             #     G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
             #     pickle.dump(G, open(graphFileName, 'wb'))
             
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+
+            name = 'surfnet'
+            G = nx.read_gml(file)
 
             # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
             # Topo.draw_graph(G)
 
-            topo = Topo(G, q, k, a, degree)
+            topo = Topo(G, q, k, a, degree , name)
             checker.setTopo(topo)
             if checker.checkConnected():
                 break
@@ -549,7 +562,7 @@ class Topo:
                         t += 1
                     else:
                         # print('link.p ' , link.p)
-                        t += link.p
+                        t += link.p()
             # print('t ' , t)
             if t < curMaxWidth:
                 curMaxWidth = t
@@ -1174,7 +1187,7 @@ class Topo:
         for link in self.links:
             l = self.distance(link.n1.loc, link.n2.loc)
             link.alpha = self.alpha
-            link.p = math.exp(-self.alpha * l)
+            # link.p = math.exp(-self.alpha * l)
     
     def updateNodes(self):
         for node in self.nodes:

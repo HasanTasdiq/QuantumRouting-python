@@ -126,15 +126,20 @@ class AlgorithmBase:
     #         # print('entangled ' , entangled , segment.l)
     #         # time.sleep(.001)
     def filterSEERReqeuest(self):
+        # if self.topo.requestTimeout >= 10:
+        #     return
         tmp = {}
+        size1 = len(self.requestState)
         for key in self.requestState:
             req = self.requestState[key]
-            if self.timeSlot -  key[2] < request_timeout:
+            if self.timeSlot -  key[2] < self.topo.requestTimeout:
                 if req.state == 2:
                     req.intermediate.clearIntermediate()
             else:
                 tmp[key] = req
         self.requestState = tmp
+        print('[[[[[[[[[[[discarded req]]]]]]]]]]]' , size1 - len(self.requestState))
+        print('[self.topo.requestTimeout ]' , self.topo.requestTimeout)
     def preEntanglement(self):
         self.topo.preEntanglement()
 
@@ -619,7 +624,7 @@ class AlgorithmBase:
     #             if link.isEntangled(self.timeSlot):
     #                 prob+=1
     #             else:
-    #                 prob +=link.p
+    #                 prob +=link.p()
     #         probability = prob/len(links)
     #         totalProb = totalProb * probability
     #         if i < (len(path) - 1):

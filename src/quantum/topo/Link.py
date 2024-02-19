@@ -11,7 +11,8 @@ class Link:
         self.assigned = False
         self.entangled = False
         self.entangledTimeSlot = 0
-        self.p = math.exp(-self.alpha * l)
+        # self.p = math.exp(-self.alpha * l)
+        # print('rnt prob ' , self.p, self.alpha , l)
         self.l = l
         self.isVirtualLink = isVirtualLink
         self.vtimeslot = vtimeslot
@@ -19,7 +20,10 @@ class Link:
         self.topo = topo
         self.used = False
         # print(self.n1.id, self.n2.id, self.p)
-
+    def p(self):
+        # print('rnt prob ' , self.alpha , self.l , math.exp(-self.alpha * self.l))
+         
+        return math.exp(-self.alpha * self.l)
     def theOtherEndOf(self, n: Node): 
         if (self.n1 == n): 
             tmp = self.n2
@@ -174,7 +178,7 @@ class Link:
 
     def tryEntanglement3(self , timeSlot = 0):
 
-        b = self.assigned and self.p >= random.random()
+        b = self.assigned and self.p() >= random.random()
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
@@ -193,7 +197,7 @@ class Link:
     def tryEntanglement2(self , timeSlot = 0):
         # print('ent prob', self.p)
         # print('+++++++++++++++++++++++ every')
-        b = self.p >= random.random()
+        b = self.p() >= random.random()
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
@@ -206,7 +210,7 @@ class Link:
         return b
 
     def tryEntanglement1(self , timeSlot = 0):
-        b =self.p >= random.random()
+        b =self.p() >= random.random()
         # b = self.assigned and self.p >= random.random()
  
         if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:

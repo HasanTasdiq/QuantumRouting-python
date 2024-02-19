@@ -44,13 +44,14 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
-ttime = 20000
-step = 500
+ttime = 2000
+step = 200
 times = 5
-nodeNo = 50
+nodeNo = 55
+alpha_ = 0.0002
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
-numOfRequestPerRound = [50 , 60 , 70 ]
+numOfRequestPerRound = [50 , 60 ]
 # numOfRequestPerRound = [2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 100 , 150 ]
@@ -63,8 +64,10 @@ SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 preSwapFraction = [0.4,  0.6,  0.8 ,  1]
 # preSwapFraction = [0.2, 0.3]
 entanglementLifetimes = [4,6,8,10]
-skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8]
-Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime']
+requestTimeouts = [100,200,300]
+skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
+runLabel = [0]
+Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout']
 
 
 
@@ -91,7 +94,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -107,13 +110,13 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 0.9, alpha = 0.0002
     # make copy
     algorithms = []
 
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
 
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
     algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_qrl'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_dqrl'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
     algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
 
@@ -228,6 +231,9 @@ def mainThreadSwapFrac(Xparam , topo , result):
 def mainThreadEntanglementLifetime(Xparam , topo , result):
     topo.entanglementLifetime = Xparam
     result.extend(Run(topo = copy.deepcopy(topo)))
+def mainThreadRequestTimeout(Xparam , topo , result):
+    topo.requestTimeout = Xparam
+    result.extend(Run(topo = copy.deepcopy(topo)))
 
 
 
@@ -243,9 +249,9 @@ if __name__ == '__main__':
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
-    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes]
+    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes , requestTimeouts]
 
-    topo = Topo.generate(nodeNo, 0.9, 5, 0.0002, 6)
+    topo = Topo.generate(nodeNo, 0.9, 5,alpha_, 6)
     jobs = []
 
     tmp_ids = {i : [] for i in range(200)}
@@ -263,7 +269,9 @@ if __name__ == '__main__':
         jobs = []
         results = {Xparam : multiprocessing.Manager().list() for Xparam in Xparameters[XlabelIndex]}
         pid = 0
-        if XlabelIndex in skipXlabel:
+        # if XlabelIndex in skipXlabel:
+        #     continue
+        if XlabelIndex not in runLabel:
             continue
         for Xparam in Xparameters[XlabelIndex]:
             # results[Xparam] = None
@@ -305,6 +313,9 @@ if __name__ == '__main__':
             
             if XlabelIndex == 8: # entanglement lifetime
                 job = multiprocessing.Process(target = mainThreadEntanglementLifetime, args = (Xparam , topo , results[Xparam] ))
+                jobs.append(job)
+            if XlabelIndex == 9: # request timeout
+                job = multiprocessing.Process(target = mainThreadRequestTimeout, args = (Xparam , topo , results[Xparam] ))
                 jobs.append(job)
 
             # if XlabelIndex == 7:
