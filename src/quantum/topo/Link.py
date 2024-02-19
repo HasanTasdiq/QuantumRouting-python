@@ -244,7 +244,7 @@ class Link:
         if not self.assigned:
             if self.assignable():
 
-                b = self.p >= random.random()
+                b = self.p() >= random.random()
                 # if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
                 #     if not b:
                 #         print('######cached entanglement found########================' , timeSlot - self.entangledTimeSlot)
