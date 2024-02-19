@@ -67,10 +67,10 @@ class Agent():
                 if np.random.random() > EPSILON_:
                     # Get action from Q table
                     action = np.argmax(self.q_table[(pair[0].id, pair[1].id)])
-                    print('==Action from Q table==')
+                    # print('==Action from Q table==')
                 else:
                     # Get random action
-                    print('##from random action##')
+                    # print('##from random action##')
 
                     action = np.random.randint(0, 2)
                 if not (pair[0].id, pair[1].id) in self.last_action_table:
