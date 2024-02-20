@@ -45,6 +45,9 @@ class ChartGenerator:
             "#0000FF",
             "#000000",
             "#900321",
+            "#900121",
+            "#901321",
+            "#943321",
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
@@ -146,9 +149,13 @@ class ChartGenerator:
             Ystart = 0
             Yinterval = 0.2
 
-        marker = ['o', 's', 'v', 'x', 'd']
+        marker = ['o', 's', 'v', 'x', 'd' , '1' , '<' , '*']
+        markers_on = [i for i in range(len(x))]
+        if len(markers_on) > 5:
+            # print(markers_on)
+            markers_on = get_n_index(markers_on , 5)
         for i in range(numOfAlgo):
-            ax1.plot(x, y[i], color = color[i], lw = 2.5, linestyle = "-", marker = marker[i], markersize = 15, markerfacecolor = "none", markeredgewidth = 2.5)
+            ax1.plot(x, y[i], color = color[i], markevery=markers_on, lw = 2.5, linestyle = "-", marker = marker[i], markersize = 15, markerfacecolor = "none", markeredgewidth = 2.5)
         # plt.show()
 
         plt.xticks(fontsize = Xticks_fontsize)
@@ -157,9 +164,9 @@ class ChartGenerator:
         # AlgoName = ["SEER", "Greedy", "Q-CAST", "REPS"]
         # AlgoName = [ "Q-CAST", "Cache", "REPS"]
         # AlgoName = ["SEER","SEER-Cache", "SEER-Cache2", "Q-CAST", "Q-CAST-Cache", "REPS"]
-        AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
+        # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
         # AlgoName = ["REPS","REPS-cache","REPS-preswap"]
-        # AlgoName = ["SEER","SEER-cache", "SEER-re-use-swap","SEER-pre-swap"]
+        AlgoName = ["SEER","SEER-cache", "SEER-1hop-swap","SEER-1hop-swap-qrl","SEER-1hop-swap-dqrl","SEER-multihop-swap", "SEER-multihop-swap-qrl","SEER-multihop-swap-dqrl"]
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
 
         leg = plt.legend(
@@ -207,7 +214,23 @@ class ChartGenerator:
             return str()
         else:
             return "($" + "10" + "^{" + str(multiple) + "}" + "$)"
+        
+def get_n_index(sorted_list, n):
+    if len(sorted_list) < 2 or n < 2:
+        return sorted_list[:n]
 
+    common_diff = sorted_list[1] - sorted_list[0]
+    step_size = (sorted_list[-1] - sorted_list[0]) / (n - 1)
+
+    result = []
+    i = 0
+    while len(result) < n:
+        if i >= len(sorted_list):
+            i = len(sorted_list) - 1
+        # result.append(sorted_list[i])
+        result.append(i)
+        i += int(round(step_size / common_diff))
+    return result
 if __name__ == "__main__":
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
     # ChartGenerator("numOfnodes_waitingTime.txt", "need #round", "#Request of a round", 0, 0, 25, 5)
@@ -222,6 +245,11 @@ if __name__ == "__main__":
 
     Xlabel = "Timeslot"
     Ylabel = "#remainRequest"
+    dataFileName = Xlabel + "_" + Ylabel + ".txt"
+    ChartGenerator(dataFileName, Ylabel, Xlabel)
+
+    Xlabel = "Timeslot"
+    Ylabel = "#successRequest"
     dataFileName = Xlabel + "_" + Ylabel + ".txt"
     ChartGenerator(dataFileName, Ylabel, Xlabel)
 
