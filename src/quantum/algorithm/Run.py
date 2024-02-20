@@ -47,7 +47,7 @@ from DQNAgent import DQNAgent    #for ubuntu
 ttime = 1000
 step = 50
 times = 5
-nodeNo = 50
+nodeNo = 55
 alpha_ = 0.002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
