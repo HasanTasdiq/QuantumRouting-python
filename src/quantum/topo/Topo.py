@@ -124,7 +124,11 @@ class Topo:
         for _node in _nodes:
             # print(eval(_positions[_node])[0])
             # return
-            (p1, p2) = eval(_positions[_node])
+            if len(_positions[_node]) > 2:
+                (p1, p2) = eval(_positions[_node])
+            else:
+                (p1, p2) = _positions[_node]
+
             _positions[_node] = (p1 * x_scale, p2 * y_scale)
             # _positions[_node] = (p1 * 500,  p2 * 500)
             # _positions[_node] = (p1 * 1400,  p2 * 1400)
