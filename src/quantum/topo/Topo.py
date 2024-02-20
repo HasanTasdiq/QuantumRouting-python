@@ -425,10 +425,10 @@ class Topo:
             #     pickle.dump(G, open(graphFileName, 'wb'))
             
 
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
 
-            # name = 'surfnet'
-            # G = nx.read_gml(file)
+            name = 'surfnet'
+            G = nx.read_gml(file)
 
             # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
