@@ -12,7 +12,7 @@ class ChartGenerator:
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
     def __init__(self, dataName, Ylabel, Xlabel):
         filename = './data/' + dataName
-        if Ylabel == 'successfulRequest':
+        if Ylabel == 'successfulRequest' or Ylabel == '#successRequest':
             Ylabel = '# Successful Request (%)'        
         if Xlabel == '#RequestPerRound':
             Xlabel = '# Request Per Time Slot'
@@ -56,6 +56,7 @@ class ChartGenerator:
         Ylabel_fontsize = fontsize
         Xticks_fontsize = fontsize
         Yticks_fontsize = fontsize
+        legSize = 10
             
         # matplotlib.rcParams['text.usetex'] = True
         # fig, ax = plt.subplots(figsize=(8, 6), dpi=600) 
@@ -155,7 +156,7 @@ class ChartGenerator:
             # print(markers_on)
             markers_on = get_n_index(markers_on , 5)
         for i in range(numOfAlgo):
-            ax1.plot(x, y[i], color = color[i], markevery=markers_on, lw = 2.5, linestyle = "-", marker = marker[i], markersize = 15, markerfacecolor = "none", markeredgewidth = 2.5)
+            ax1.plot(x, y[i], color = color[i], markevery=markers_on, lw = 2.5, linestyle = "-", marker = marker[i], markersize = 10, markerfacecolor = "none", markeredgewidth = 2.5)
         # plt.show()
 
         plt.xticks(fontsize = Xticks_fontsize)
@@ -166,14 +167,15 @@ class ChartGenerator:
         # AlgoName = ["SEER","SEER-Cache", "SEER-Cache2", "Q-CAST", "Q-CAST-Cache", "REPS"]
         # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
         # AlgoName = ["REPS","REPS-cache","REPS-preswap"]
-        AlgoName = ["SEER","SEER-cache", "SEER-1hop-swap","SEER-1hop-swap-qrl","SEER-1hop-swap-dqrl","SEER-multihop-swap", "SEER-multihop-swap-qrl","SEER-multihop-swap-dqrl"]
+        # AlgoName = ["SEER","SEER-cache", "SEER-1hop-pre-swap","SEER-multihop-pre-swap", "SEER-multihop-pre-swap-qrl","SEER-multihop-swap-dqrl"]
+        AlgoName = ["REPS","REPS-cache", "REPS-1hop-pre-swap","REPS-multihop-pre-swap", "REPS-multihop-pre-swap-qrl","REPS-multihop-swap-dqrl"]
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
 
         leg = plt.legend(
             AlgoName,
             loc = 10,
             bbox_to_anchor = (0.4, 1.25),
-            prop = {"size": fontsize, "family": "Times New Roman"},
+            prop = {"size": legSize, "family": "Times New Roman"},
             frameon = "False",
             labelspacing = 0.2,
             handletextpad = 0.2,
@@ -230,6 +232,7 @@ def get_n_index(sorted_list, n):
         # result.append(sorted_list[i])
         result.append(i)
         i += int(round(step_size / common_diff))
+    # result.append(len(sorted_list) - 1)
     return result
 if __name__ == "__main__":
     # data檔名 Y軸名稱 X軸名稱 Y軸要除多少(10的多少次方) Y軸起始座標 Y軸終止座標 Y軸座標間的間隔
