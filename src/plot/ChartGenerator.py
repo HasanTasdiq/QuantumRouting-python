@@ -51,12 +51,12 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 22
+        fontsize = 21
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
-        Xticks_fontsize = fontsize
+        Xticks_fontsize = 17
         Yticks_fontsize = fontsize
-        legSize = 10
+        legSize = 18
             
         # matplotlib.rcParams['text.usetex'] = True
         # fig, ax = plt.subplots(figsize=(8, 6), dpi=600) 
@@ -92,7 +92,6 @@ class ChartGenerator:
         ax1.tick_params(direction = "in")
         ax1.tick_params(bottom = True, top = True, left = True, right = True)
         ax1.tick_params(pad = 20)
-
 
         ##data start##
         x = []
@@ -168,7 +167,8 @@ class ChartGenerator:
         # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
         # AlgoName = ["REPS","REPS-cache","REPS-preswap"]
         # AlgoName = ["SEER","SEER-cache", "SEER-1hop-pre-swap","SEER-multihop-pre-swap", "SEER-multihop-pre-swap-qrl","SEER-multihop-swap-dqrl"]
-        AlgoName = ["REPS","REPS-cache", "REPS-1hop-pre-swap","REPS-multihop-pre-swap", "REPS-multihop-pre-swap-qrl","REPS-multihop-swap-dqrl"]
+        AlgoName = ["REPS","REPS-EC", "REPS-PEG-heuristic", "REPS-PEG-qrl"]
+        # AlgoName = ["SEER","SEER-EC", "SEER-PEG-heuristic", "SEER-PEG-qrl"]
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
 
         leg = plt.legend(
@@ -201,6 +201,8 @@ class ChartGenerator:
 
         ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.27)
+        ax1.set_ylim(bottom=30)
+
         # plt.show()
         # plt.tight_layout()
         pdfName = dataName[0:-4]
