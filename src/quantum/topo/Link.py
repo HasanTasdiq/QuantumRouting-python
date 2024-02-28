@@ -76,29 +76,29 @@ class Link:
             self.n1.remainingQubits += 1
             self.n2.remainingQubits += 1
         
-        # reward2 = 10 - (timeslot - self.vtimeslot)
+        reward2 = 10 - (timeslot - self.vtimeslot)
         
-        # if self.isVirtualLink and expired:
-        #     if (self.n1.id , self.n2.id , self.vtimeslot ) in self.topo.reward:
-        #         reward = self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )]
-        #         self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward - reward2
-        #     else:     
-        #          self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = -reward2
-        # elif self.isVirtualLink:
-        #     if (self.n1.id , self.n2.id , self.vtimeslot ) in self.topo.reward:
-        #         reward = self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )]
-        #         self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward + reward2
-        #     else:     
-        #          self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward2
-
         if self.isVirtualLink and expired:
             if (self.n1.id , self.n2.id , self.vtimeslot ) in self.topo.reward:
                 reward = self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )]
-                self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward + (-10)
+                self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward - reward2
             else:     
-                 self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = -10 
+                 self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = -reward2
         elif self.isVirtualLink:
-             self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = 10 - (timeslot - self.vtimeslot)
+            if (self.n1.id , self.n2.id , self.vtimeslot ) in self.topo.reward:
+                reward = self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )]
+                self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward + reward2
+            else:     
+                 self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward2
+
+        # if self.isVirtualLink and expired:
+        #     if (self.n1.id , self.n2.id , self.vtimeslot ) in self.topo.reward:
+        #         reward = self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )]
+        #         self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward + (-10)
+        #     else:     
+        #          self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = -10 
+        # elif self.isVirtualLink:
+        #      self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = 10 - (timeslot - self.vtimeslot)
 
 
 

@@ -110,19 +110,20 @@ class Agent():
 
                 usedCount = 0
                 used = False
-                if (n1,n2) in  self.env.algo.topo.needLinksDict:
-                    usedCount = self.env.algo.topo.needLinksDict[(n1, n2)].count(timeSlot)
-                    used = True
-                elif (n2, n1) in  self.env.algo.topo.needLinksDict:
-                    usedCount = self.env.algo.topo.needLinksDict[(n2, n1)].count(timeSlot)
-                    used = True
+                # if (n1,n2) in  self.env.algo.topo.needLinksDict:
+                #     usedCount = self.env.algo.topo.needLinksDict[(n1, n2)].count(timeSlot)
+                #     used = True
+                # elif (n2, n1) in  self.env.algo.topo.needLinksDict:
+                #     usedCount = self.env.algo.topo.needLinksDict[(n2, n1)].count(timeSlot)
+                #     used = True
                 
-                if used:
-                    if usedCount > 0:
-                        reward += 10 - (self.env.algo.timeSlot - timeSlot)
-                    else:
-                        reward += -(10 - (self.env.algo.timeSlot - timeSlot))
-                # reward = self.env.find_reward(pair , action , timeSlot)
+                # if used:
+                #     if usedCount > 0:
+                #         reward += 10 - (self.env.algo.timeSlot - timeSlot)
+                #     else:
+                #         reward += -(10 - (self.env.algo.timeSlot - timeSlot))
+
+                reward = self.env.find_reward(pair , action , timeSlot)
                 if not reward:
                     continue
 
