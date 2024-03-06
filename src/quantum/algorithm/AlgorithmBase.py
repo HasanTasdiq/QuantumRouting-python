@@ -445,7 +445,10 @@ class AlgorithmBase:
                 
                 # while self.topo.widthPhase2(path2) > 4 and preSwapped and self.topo.virtualLinkCount[(source , dest)] < timesUsed:
                 width = self.topo.widthPhase2(path2) 
-                if width >= 3  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
+
+                max_link_capacity = min([self.topo.link_capacity[(p , q)] for (p , q) in  zip(path[0:-1] , path[1:])])
+
+                if self.topo.virtualLinkCount[(source , dest)] < max_link_capacity * self.topo.preswap_capacity  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
                     
                     # if self.topo.hopsAway2(source , dest , 'Hop') > 2:
                     #     self.topo.tmpcount += 1
@@ -550,13 +553,13 @@ class AlgorithmBase:
         timesUsed = len(self.topo.needLinksDict[(source , dest)])
         if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
             return 0
-        k = self.topo.hopsAway2(source , dest , 'Hop') - 1
+        hop_count = self.topo.hopsAway2(source , dest , 'Hop') - 1
             
-        if self.topo.virtualLinkCount[(source , dest)] * k >= math.ceil(timesUsed  / needlink_timeslot):
-            return 0
+        # if self.topo.virtualLinkCount[(source , dest)] * k >= math.ceil(timesUsed  / needlink_timeslot):
+        #     return 0
             
-        if k < 0:
-            print('k' , k , source.id , dest.id)
+        if hop_count < 0:
+            print('hop_count' , hop_count , source.id , dest.id)
             print([(s.id , d.id) for s , d in self.topo.needLinksDict])
         k = 1
         paths = self.topo.k_alternate_paths(source.id , dest.id , k , self.timeSlot)
@@ -565,7 +568,11 @@ class AlgorithmBase:
             path2 = [self.topo.nodes[nodeId] for nodeId in path]
                 
             width = self.topo.widthPhase2(path2) 
-            if width >= 2  and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
+
+            max_link_capacity = min([self.topo.link_capacity[(p , q)] for (p , q) in  zip(path[0:-1] , path[1:])])
+            print('=================+++==max_link_capacity================++++++= ' , max_link_capacity * self.topo.preswap_capacity , hop_count)
+            # if self.topo.virtualLinkCount[(source , dest)] < max_link_capacity * self.topo.preswap_capacity   and self.topo.virtualLinkCount[(source , dest)] * k < math.ceil(timesUsed / needlink_timeslot):
+            if self.topo.virtualLinkCount[(source , dest)] < max_link_capacity * self.topo.preswap_capacity :
                     
                 for i in range(1 , len(path) - 1):
                     node1 = self.topo.nodes[path[0]]
