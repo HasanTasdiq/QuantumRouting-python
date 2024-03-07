@@ -46,7 +46,7 @@ from DQNAgent import DQNAgent    #for ubuntu
 
 ttime = 500
 step = 50
-times = 1
+times = 5
 nodeNo = 50
 alpha_ = 0.002
 degree = 6
