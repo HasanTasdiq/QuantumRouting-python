@@ -18,6 +18,8 @@ class ChartGenerator:
             Xlabel = '# Request Per Time Slot'
         if Xlabel == 'swapProbability':
             Xlabel = 'Swap Probability'
+        if Xlabel == 'entanglementLifetime':
+            Xlabel = 'Entanglement Lifetime (Time slot)'
         if not os.path.exists(filename):
             print("file doesn't exist")
             return
@@ -51,7 +53,7 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 21
+        fontsize = 15
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
         Xticks_fontsize = 17
@@ -167,9 +169,10 @@ class ChartGenerator:
         # AlgoName = ["REPS","REPS-CACHE", "REPS-RE-USE-SWAPP","REPS4-PRE-SWAP" ]
         # AlgoName = ["REPS","REPS-cache","REPS-preswap"]
         # AlgoName = ["SEER","SEER-cache", "SEER-1hop-pre-swap","SEER-multihop-pre-swap", "SEER-multihop-pre-swap-qrl","SEER-multihop-swap-dqrl"]
-        AlgoName = ["REPS","REPS-EC", "REPS-PEG-heuristic", "REPS-PEG-qrl"]
+        # AlgoName = ["REPS","REPS-EC", "REPS-PEG-heuristic", "REPS-PEG-qrl"]
         # AlgoName = ["SEER","SEER-EC", "SEER-PEG-heuristic", "SEER-PEG-qrl"]
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
+        AlgoName = ["SEER-EC"]
 
         leg = plt.legend(
             AlgoName,
