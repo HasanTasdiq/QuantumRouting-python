@@ -44,8 +44,8 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
-ttime = 10
-step = 5
+ttime = 10000
+step = 500
 times = 5
 nodeNo = 50
 alpha_ = 0.002
