@@ -172,7 +172,7 @@ class ChartGenerator:
         # AlgoName = ["REPS","REPS-EC", "REPS-PEG-heuristic", "REPS-PEG-qrl"]
         # AlgoName = ["SEER","SEER-EC", "SEER-PEG-heuristic", "SEER-PEG-qrl"]
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
-        AlgoName = ["SEER-EC"]
+        AlgoName = ["REPS-EC"]
 
         leg = plt.legend(
             AlgoName,
