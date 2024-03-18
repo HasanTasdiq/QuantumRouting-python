@@ -98,7 +98,8 @@ class DQNAgent:
         model.add(Dense(self.env.ACTION_SPACE_SIZE, activation='linear')) 
         print(model.summary)
 
-        model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
+        # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(), metrics=['accuracy'])
         return model
 
     # Adds step's data to a memory replay array

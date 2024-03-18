@@ -44,8 +44,8 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent    #for ubuntu
 # from rl.DQNAgent import Agent   #for mac
 
-ttime = 10000
-step = 50
+ttime = 2000
+step = 200
 times = 5
 nodeNo = 50
 alpha_ = 0.002
@@ -64,7 +64,7 @@ alpha = [0.001 , 0.002 , 0.003]
 SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 preSwapFraction = [0.4,  0.6,  0.8 ,  1]
 # preSwapFraction = [0.2, 0.3]
-entanglementLifetimes = [1 ,2,3,4,5,6,8,10]
+entanglementLifetimes = [1]
 requestTimeouts = [100,200,300]
 preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]

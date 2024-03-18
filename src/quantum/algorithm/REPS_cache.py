@@ -650,7 +650,7 @@ class REPSCACHE(AlgorithmBase):
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
             
     def filterReqeuest(self):
-        self.requests = list(filter(lambda x: self.timeSlot -  x[2] < self.topo.requestTimeout , self.requests))
+        self.requests = list(filter(lambda x: self.timeSlot -  x[2] < self.topo.requestTimeout -1 , self.requests))
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]

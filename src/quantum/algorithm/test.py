@@ -21,37 +21,24 @@ dp = [[0]*5]*5
 
 
 
+def generateParenthesis(n):
+        """
+        :type n: int
+        :rtype: List[str]
+        """
+        def paren(left , right , current):
+                if len(current) == 2 *n:
+                        res.append(current)
+                        return
+                if left < n:
+                        paren(left +1 , right , current + '(')
+                if right < left:
+                        paren(left , right +1 , current + ')')
+                        
 
-def longestPalindrome( s):
-        """
-        :type s: str
-        :rtype: str
-        """
-        max_ = 0
-        max_i = 0
-        max_j = 0
-        dp = []
-        for i in range(len(s)):
-             r = []
-             for j in range(len(s)):
-                  r.append(0)
-             dp.append(r)
         
-        for i in range(len(s)):
-            for j in range(len(s)):
-                if s[i] == s[-j -1]:
-                    if i>0 and j>0:
-                        dp[i][j] = dp[i-1][j-1] + 1
-                    else:
-                        dp[i][j] = 1
-                else:
-                    dp[i][j] = 0
-                if dp[i][j] > max_:
-                    max_ = dp[i][j]
-                    max_i = i
-                    max_j = j
-        res = s[max_i - max_ + 1 : max_i+1]
-
+        res = []
+        paren(0 , 0 , '')
         return res
 
-print(longestPalindrome('babad'))
+print(generateParenthesis(4))
