@@ -13,13 +13,15 @@ class ChartGenerator:
     def __init__(self, dataName, Ylabel, Xlabel):
         filename = './data/' + dataName
         if Ylabel == 'successfulRequest' or Ylabel == '#successRequest':
-            Ylabel = '# Successful Request (%)'        
+            Ylabel = '  Successful Request (%)  '        
         if Xlabel == '#RequestPerRound':
             Xlabel = '# Request Per Time Slot'
         if Xlabel == 'swapProbability':
             Xlabel = 'Swap Probability'
         if Xlabel == 'entanglementLifetime':
-            Xlabel = 'Entanglement Lifetime (Time slot)'
+            Xlabel = 'Ent. Lifetime (Time slot)'
+        if Xlabel == 'Timeslot':
+            Xlabel = 'Time slot'
         if not os.path.exists(filename):
             print("file doesn't exist")
             return
@@ -53,12 +55,12 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 15
+        fontsize = 30
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
-        Xticks_fontsize = 17
+        Xticks_fontsize = 22
         Yticks_fontsize = fontsize
-        legSize = 18
+        legSize = 25
             
         # matplotlib.rcParams['text.usetex'] = True
         # fig, ax = plt.subplots(figsize=(8, 6), dpi=600) 
@@ -86,7 +88,7 @@ class ChartGenerator:
         }
         
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize = (7, 6), dpi = 600)
+        fig, ax1 = plt.subplots(figsize = (9, 6), dpi = 600)
         # ax1.spines['top'].set_linewidth(1.5)
         # ax1.spines['right'].set_linewidth(1.5)
         # ax1.spines['bottom'].set_linewidth(1.5)
@@ -170,9 +172,9 @@ class ChartGenerator:
         # AlgoName = ["REPS","REPS-cache","REPS-preswap"]
         # AlgoName = ["SEER","SEER-cache", "SEER-1hop-pre-swap","SEER-multihop-pre-swap", "SEER-multihop-pre-swap-qrl","SEER-multihop-swap-dqrl"]
         # AlgoName = ["REPS","REPS-EC", "REPS-PEG-heuristic", "REPS-PEG-qrl"]
-        # AlgoName = ["SEER","SEER-EC", "SEER-PEG-heuristic", "SEER-PEG-qrl"]
+        # AlgoName = ["Original","Ent. Caching", "PES-heuristic", "PES-QRL", "PES-DeepQRL"]
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
-        AlgoName = ["SEER-EC"]
+        AlgoName = ["SEER Ent. Caching" , "REPS Ent. Caching"]
 
         leg = plt.legend(
             AlgoName,
@@ -198,11 +200,11 @@ class ChartGenerator:
 
         plt.yticks(np.arange(Ystart, Yend + Yinterval, step = Yinterval), fontsize = Yticks_fontsize)
         plt.xticks(x)
-        plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 35)
+        plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 10)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
         plt.locator_params(axis='x', nbins=5)  
 
-        ax1.yaxis.set_label_coords(-0.3, 0.5)
+        # ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.27)
         ax1.set_ylim(bottom=30)
 

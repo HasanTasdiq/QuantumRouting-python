@@ -18,40 +18,34 @@ dp = [[0]*5]*5
 
 # print([(p , q) for (p , q) in  zip(path[0:-1] , path[1:])])
 
-
-
-
-
-def longestPalindrome( s):
+class ListNode(object):
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+def swapPairs( head):
         """
-        :type s: str
-        :rtype: str
+        :type head: ListNode
+        :rtype: ListNode
         """
-        max_ = 0
-        max_i = 0
-        max_j = 0
-        dp = []
-        for i in range(len(s)):
-             r = []
-             for j in range(len(s)):
-                  r.append(0)
-             dp.append(r)
-        
-        for i in range(len(s)):
-            for j in range(len(s)):
-                if s[i] == s[-j -1]:
-                    if i>0 and j>0:
-                        dp[i][j] = dp[i-1][j-1] + 1
-                    else:
-                        dp[i][j] = 1
-                else:
-                    dp[i][j] = 0
-                if dp[i][j] > max_:
-                    max_ = dp[i][j]
-                    max_i = i
-                    max_j = j
-        res = s[max_i - max_ + 1 : max_i+1]
+        prev = head
 
-        return res
+        current = prev.next
+        print(current.val)
+        # prevprev = None
+        # while current is not None:
+        #     prev.next = current.next
+        #     current.next = prev
+        #     prevprev = prev
 
-print(longestPalindrome('babad'))
+        #     prev = current.next
+
+head = ListNode(val= 1, next= ListNode(val= 2, next= ListNode(val= 3, next= ListNode(val= 4, next= None))))
+# current = head
+# for i in range(1 , 4):
+#      n = ListNode(i)
+#      current.next = n
+#      current = n
+
+     
+swapPairs(head)
+
