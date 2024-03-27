@@ -132,7 +132,7 @@ class AlgorithmBase:
         size1 = len(self.requestState)
         for key in self.requestState:
             req = self.requestState[key]
-            if self.timeSlot -  key[2] < self.topo.requestTimeout:
+            if self.timeSlot -  key[2] >= self.topo.requestTimeout - 1:
                 if req.state == 2:
                     req.intermediate.clearIntermediate()
             else:
