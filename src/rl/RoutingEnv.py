@@ -107,7 +107,7 @@ class RoutingEnv(Env):
             graph_state.extend(req_state)
 
         return np.array(graph_state)
-    
+
 
         #     timesUsed = len(self.topo.needLinksDict[(source , dest)])
         # if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
