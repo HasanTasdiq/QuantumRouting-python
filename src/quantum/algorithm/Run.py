@@ -41,12 +41,12 @@ from agent import Agent    #for ubuntu
 # from agent import Agent   #for mac
 
 
-from DQNAgent import DQNAgent    #for ubuntu
-# from rl.DQNAgent import Agent   #for mac
+from DQNAgent import DQNAgent   
+from DQNAgentDist import DQNAgentDist   
 
-ttime = 10
+ttime = 2000
 step = 5
-times = 1
+times = 10
 nodeNo = 50
 alpha_ = 0.002
 degree = 6
@@ -68,7 +68,7 @@ entanglementLifetimes = [1]
 requestTimeouts = [100,200,300]
 preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
-runLabel = [4 , 5]
+runLabel = [0]
 Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity"]
 
 
@@ -78,13 +78,16 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
         agent = Agent(algo , pid)
     if '_dqrl' in algo.name:
         agent = DQNAgent(algo , pid)
+    if '_distdqrl' in algo.name:
+        agent = DQNAgentDist(algo , pid)
+
     for i in range(ttime):
-        if '_qrl' in algo.name or '_dqrl' in algo.name:
+        if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
             agent.learn_and_predict()
 
         result = algo.work(requests[i], i)
 
-        if '_qrl' in algo.name or '_dqrl' in algo.name:
+        if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
             agent.update_reward()
 
     if algo.name == "My" or 'SEER' in algo.name:
@@ -120,7 +123,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_dqrl'))
     # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
     # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
+    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_distdqrl'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
