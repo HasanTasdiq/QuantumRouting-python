@@ -231,6 +231,9 @@ class DQNAgentDist:
 
             pair_action_q.append((pair , action , q , current_state))
         
+        if np.random.random() > EPSILON_:
+            pair_action_q.sort(key=lambda x: x[2], reverse=True)
+            # print([x[2] for x in pair_action_q])
 
         for (pair ,action , q , current_state) in pair_action_q:
 

@@ -140,8 +140,8 @@ class Topo:
         # Construct Node 
         #---------
         for _node in _nodes:
-            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
-            # self.nodes.append(Node(_node, _positions[_node], 0 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], 12 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -312,10 +312,10 @@ class Topo:
             if self.virtualLinkCount[(link.n1 , link.n2)] > 0: 
                 self.virtualLinkCount[(link.n1 , link.n2)] -= 1
 
-            if link.n1 not in skipNodes:
-                link.n1.remainingQubits += 1
-            if link.n2 not in skipNodes:
-                link.n2.remainingQubits += 1
+            # if link.n1 not in skipNodes:
+            #     link.n1.remainingQubits += 1
+            # if link.n2 not in skipNodes:
+            #     link.n2.remainingQubits += 1
 
 
     def printNodeMem(self):
@@ -332,10 +332,10 @@ class Topo:
         self.links.append(link)
 
         if link.isVirtualLink:
-            if link.n1 not in skipNodes:
-                link.n1.remainingQubits -= 1
-            if link.n2 not in skipNodes: 
-                link.n2.remainingQubits -= 1
+            # if link.n1 not in skipNodes:
+            #     link.n1.remainingQubits -= 1
+            # if link.n2 not in skipNodes: 
+            #     link.n2.remainingQubits -= 1
             
             self.virtualLinkCount[(link.n1 , link.n2)] += 1
 
