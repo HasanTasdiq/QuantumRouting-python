@@ -688,7 +688,7 @@ class MyAlgorithm(AlgorithmBase):
         print('[MyAlgo] p5 end')
         # print('----------------------')
         self.filterSEERReqeuest()
-        self.stats()
+        # self.stats()
 
         return self.result
 

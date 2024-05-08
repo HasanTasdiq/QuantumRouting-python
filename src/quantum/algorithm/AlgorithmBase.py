@@ -500,6 +500,7 @@ class AlgorithmBase:
 
                                         self.topo.removeLink(link1 )
                                         self.topo.removeLink(link2 )
+                                        # node.remainingQubits += 2
 
                                         if link.n1 == source and link.n2 == dest:
                                             # self.topo.virtualLinkCount[(source , dest)] += 1
@@ -602,11 +603,14 @@ class AlgorithmBase:
                                     link.entangledTimeSlot = min(link1.entangledTimeSlot , link2.entangledTimeSlot)
                                     if link1.isVirtualLink:
                                         link.subLinks.extend(link1.subLinks)
+                                        # node.remainingQubits += 1
                                     else:
                                         link.subLinks.append(link1)
 
                                     if link2.isVirtualLink:
                                         link.subLinks.extend(link2.subLinks)
+                                        # node.remainingQubits += 1
+
                                     else:
                                         link.subLinks.append(link2)
 
@@ -701,10 +705,22 @@ class AlgorithmBase:
         
     def stats(self):
         totalqbit = 0
+        ent = 0
+        qubits = set()
         for node in self.topo.nodes:
+            rem = node.remainingQubits
+            # for link in node.links:
+            #     if link.isEntangled(self.timeSlot):
+            #         rem += 1
+            qubits.add(rem)
             totalqbit += node.remainingQubits
-        
-        print('[ ' , self.name ,' ] remaining qubit at ' , self.timeSlot , totalqbit)
+        for link in self.topo.links:
+            if link.isEntangled(self.timeSlot):
+                ent += 1
+        print('=============================================================')
+        print('[ ' , self.name ,' ] remaining qubit at ' , self.timeSlot , totalqbit + ent*2)
+        print('[ ' , self.name ,' ] qubit set  ' , self.timeSlot , qubits)
+        print('=============================================================')
     
 
     def work(self, pairs: list, time_): 
@@ -730,7 +746,7 @@ class AlgorithmBase:
         self.tryEntanglement()
 
         res = self.p4()
-
+        self.stats()
         # if self.preEnt:
         #     self.updateCacheTable()
 
