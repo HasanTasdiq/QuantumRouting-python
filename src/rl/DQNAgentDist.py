@@ -178,9 +178,9 @@ class DQNAgentDist:
         # print('in get p q')
         for pair in state:
             current_state = self.env.pair_state(pair , timeSlot)
-            # print('getting qs')
+            print('getting qs')
             qs = self.get_qs(current_state)
-            # print('getting qs done! ')
+            print('getting qs done! ')
 
             self.pair_qs[pair] = (current_state , qs)
     def learn_and_predict(self):
@@ -192,28 +192,30 @@ class DQNAgentDist:
         jobs = []
         pairs_len = len(state)
         # print('++pair len ' , pairs_len)
-        num_of_thread = 1
+        num_of_thread = 2
         num_slice = math.ceil(pairs_len/num_of_thread)
         if not num_slice:
             return
 
-        self.get_pair_qs(state , timeSlot)
+        # self.get_pair_qs(state , timeSlot)
 
 
 
-        # for i in range(0  , pairs_len , num_slice):
-        #     start = i
-        #     end = (i + num_slice) if (i +num_slice) < pairs_len else pairs_len
-        #     chunk = list(state.keys())[start: end]
-        #     job = multiprocessing.Process(target = self.get_pair_qs, args = (chunk, timeSlot))
-        #     jobs.append(job)
-        # for job in jobs:
-        #     job.start()
-        # for job in jobs:
-        #     job.join()
+        for i in range(0  , pairs_len , num_slice):
+            start = i
+            end = (i + num_slice) if (i +num_slice) < pairs_len else pairs_len
+            chunk = list(state.keys())[start: end]
+            # print(chunk)
+            job = multiprocessing.Process(target = self.get_pair_qs, args = (chunk, timeSlot))
+            jobs.append(job)
+        for job in jobs:
+            job.start()
+        for job in jobs:
+            job.join()
 
-        for pair in state:
-            current_state , qs = self.pair_qs[pair]
+        # for pair in state:
+        for current_state, qs in self.pair_qs:
+            # current_state , qs = self.pair_qs[pair]
             if np.random.random() > EPSILON_:
                 # Get action from Q net
                 # print('------self.get_qs(current_state)-----')
