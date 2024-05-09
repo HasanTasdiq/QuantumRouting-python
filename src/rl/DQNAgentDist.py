@@ -102,7 +102,7 @@ class DQNAgentDist:
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
         model.compile(loss="mse", optimizer=Adam(), metrics=['accuracy'])
-        # model._make_predict_function()
+        model._make_predict_function()
         return model
 
     # Adds step's data to a memory replay array
@@ -173,10 +173,10 @@ class DQNAgentDist:
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
         # self.model._make_predict_function()
-        model2 = self.create_model()
-        model2.set_weights(self.model.get_weights())
-        return model2.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
-        # return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
+        # model2 = self.create_model()
+        # model2.set_weights(self.model.get_weights())
+        # return model2.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
+        return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
     def get_pair_qs(self , state , timeSlot):
         # print('in get p q')
         for pair in state:
