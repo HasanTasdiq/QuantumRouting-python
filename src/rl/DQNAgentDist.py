@@ -102,7 +102,7 @@ class DQNAgentDist:
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
         model.compile(loss="mse", optimizer=Adam(), metrics=['accuracy'])
-        model._make_predict_function()
+        # model._make_predict_function()
         return model
 
     # Adds step's data to a memory replay array
