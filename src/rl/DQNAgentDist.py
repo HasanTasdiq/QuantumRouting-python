@@ -173,7 +173,10 @@ class DQNAgentDist:
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
         # self.model._make_predict_function()
-        return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
+        model2 = self.create_model()
+        model2.set_weights(self.model.get_weights())
+        return model2.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
+        # return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
     def get_pair_qs(self , state , timeSlot):
         # print('in get p q')
         for pair in state:
