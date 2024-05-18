@@ -181,9 +181,9 @@ class DQNAgentDist:
         # print('in get p q')
         for pair in state:
             current_state = self.env.pair_state(pair , timeSlot)
-            print('getting qs')
+            # print('getting qs')
             qs = self.get_qs(current_state)
-            print('getting qs done! ')
+            # print('getting qs done! ')
 
             self.pair_qs[pair] = (current_state , qs)
     def learn_and_predict(self):
