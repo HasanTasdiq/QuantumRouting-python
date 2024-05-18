@@ -217,8 +217,8 @@ class DQNAgentDist:
         #     job.join()
 
         # for pair in state:
-        for current_state, qs in self.pair_qs:
-            # current_state , qs = self.pair_qs[pair]
+        for pair in self.pair_qs:
+            current_state , qs = self.pair_qs[pair]
             if np.random.random() > EPSILON_:
                 # Get action from Q net
                 # print('------self.get_qs(current_state)-----')
