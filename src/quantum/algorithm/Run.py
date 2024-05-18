@@ -46,7 +46,7 @@ from DQNAgentDist import DQNAgentDist
 
 ttime = 2000
 step = 100
-times = 1
+times = 5
 nodeNo = 50
 alpha_ = 0.002
 degree = 6
