@@ -12,7 +12,7 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 # from .RoutingEnv import RoutingEnv   #for mac
 import multiprocessing
 import math
-
+import torch
 NUM_EPISODES = 2500
 LEARNING_RATE = 0.1
 
@@ -176,16 +176,51 @@ class DQNAgentDist:
         # model2 = self.create_model()
         # model2.set_weights(self.model.get_weights())
         # return model2.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
+
         return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
     def get_pair_qs(self , state , timeSlot):
         # print('in get p q')
         for pair in state:
             current_state = self.env.pair_state(pair , timeSlot)
-            # print('getting qs')
+            print('getting qs')
             qs = self.get_qs(current_state)
-            # print('getting qs done! ')
+            print('getting qs done! ')
 
             self.pair_qs[pair] = (current_state , qs)
+
+
+
+
+
+
+    def get_qs_batch(self, states):
+        
+        sts = list()
+        for pair , state in states:
+            # sts.append(np.array(state).reshape(-1, *state.shape))
+            
+            sts.append(state)
+
+        
+        print('---------- len sts --------------' , len(sts))
+        return self.model.predict(np.array(sts), verbose=0,use_multiprocessing = True, batch_size=1000)
+    
+    def get_pair_qs_batch(self , state , timeSlot):
+        # print('in get p q')
+        if not len(state):
+            return
+        states = []
+        for pair in state:
+            current_state = self.env.pair_state(pair , timeSlot)
+            states.append((pair , current_state))
+
+        print('getting qs')
+        qs = self.get_qs_batch(states)
+        print('getting qs done! ' )
+        for i in range(len(states)):
+            pair , current_state = states[i]
+            self.pair_qs[pair] = (current_state , qs[i])
+
     def learn_and_predict(self):
         global EPSILON_
         t1 = time.time()
@@ -197,24 +232,37 @@ class DQNAgentDist:
         # print('++pair len ' , pairs_len)
         num_of_thread = 2
         num_slice = math.ceil(pairs_len/num_of_thread)
-        if not num_slice:
-            return
+        # num_slice = 1
+        # if not num_slice:
+        #     return
 
-        self.get_pair_qs(state , timeSlot)
+
+        # -----sequntial prediction----
+
+        self.get_pair_qs_batch(state , timeSlot)
 
 
+        # ----------- parallel prediction start -------------
 
         # for i in range(0  , pairs_len , num_slice):
+        # for i in range(0  , 1):
         #     start = i
-        #     end = (i + num_slice) if (i +num_slice) < pairs_len else pairs_len
+        #     # end = (i + num_slice) if (i +num_slice) < pairs_len else pairs_len
+        #     end = pairs_len
         #     chunk = list(state.keys())[start: end]
         #     # print(chunk)
         #     job = multiprocessing.Process(target = self.get_pair_qs, args = (chunk, timeSlot))
         #     jobs.append(job)
         # for job in jobs:
         #     job.start()
+        #     time.sleep(.1)
         # for job in jobs:
         #     job.join()
+
+        # ----------- parallel prediction end -------------
+        
+
+
 
         # for pair in state:
         for pair in self.pair_qs:
