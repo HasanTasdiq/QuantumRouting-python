@@ -202,7 +202,7 @@ class DQNAgentDist:
 
         
         print('---------- len sts --------------' , len(sts))
-        return self.model.predict(np.array(sts), verbose=0, batch_size=1000)
+        return self.model.predict(np.array(sts), verbose=0, batch_size=500)
     
     def get_pair_qs_batch(self , state , timeSlot):
         # print('in get p q')
@@ -215,7 +215,7 @@ class DQNAgentDist:
 
         print('getting qs')
         qs = self.get_qs_batch(states)
-        print('getting qs done! ' )
+        print('getting qs done! '  , len(qs))
         for i in range(len(states)):
             pair , current_state = states[i]
             self.pair_qs[pair] = (current_state , qs[i])
@@ -283,9 +283,11 @@ class DQNAgentDist:
 
             pair_action_q.append((pair , action , q , current_state))
         
-        if np.random.random() > EPSILON_:
-            pair_action_q.sort(key=lambda x: x[2], reverse=True)
+        # if np.random.random() > EPSILON_:
+        #     pair_action_q.sort(key=lambda x: x[2], reverse=True)
             # print([x[2] for x in pair_action_q])
+        
+        pair_action_q.sort(key=lambda x: x[2], reverse=True)
 
         for (pair ,action , q , current_state) in pair_action_q:
 

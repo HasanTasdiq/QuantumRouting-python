@@ -173,8 +173,9 @@ class ChartGenerator:
         # AlgoName = ["SEER","SEER-cache", "SEER-1hop-pre-swap","SEER-multihop-pre-swap", "SEER-multihop-pre-swap-qrl","SEER-multihop-swap-dqrl"]
         # AlgoName = ["REPS","REPS-EC", "REPS-PEG-heuristic", "REPS-PEG-qrl"]
         # AlgoName = ["Original","Ent. Caching", "PES-heuristic", "PES-QRL", "PES-DeepQRL"]
+        AlgoName = ["Original","Ent. Caching", "PES-heuristic", "PES-QRL", "PES-DeepQRL" , '4' , '5' , '6' , '7' ,'8']
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
-        AlgoName = ["SEER Ent. Caching" , "REPS Ent. Caching"]
+        # AlgoName = ["SEER Ent. Caching" , "REPS Ent. Caching"]
 
         leg = plt.legend(
             AlgoName,
