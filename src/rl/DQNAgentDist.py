@@ -202,7 +202,7 @@ class DQNAgentDist:
 
         
         print('---------- len sts --------------' , len(sts))
-        return self.model.predict(np.array(sts), verbose=0, batch_size=500)
+        return self.model.predict(np.array(sts), verbose=0, batch_size=500, workers=5, use_multiprocessing=True)
     
     def get_pair_qs_batch(self , state , timeSlot):
         # print('in get p q')
