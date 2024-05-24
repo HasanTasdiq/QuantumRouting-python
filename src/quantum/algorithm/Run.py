@@ -44,9 +44,9 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent   
 from DQNAgentDist import DQNAgentDist   
 
-ttime = 100000
+ttime = 200000
 step = 500
-times = 1
+times = 4
 nodeNo = 50
 alpha_ = 0.002
 degree = 6
