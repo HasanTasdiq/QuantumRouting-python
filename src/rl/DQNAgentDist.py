@@ -123,12 +123,12 @@ class DQNAgentDist:
 
         # Get current states from minibatch, then query NN model for Q values
         current_states = np.array([transition[0] for transition in minibatch])
-        current_qs_list = self.model.predict(current_states , verbose=0)
+        current_qs_list = self.model.predict(current_states , verbose=0, batch_size=64)
 
         # Get future states from minibatch, then query NN model for Q values
         # When using target network, query it, otherwise main network should be queried
         new_current_states = np.array([transition[3] for transition in minibatch])
-        future_qs_list = self.target_model.predict(new_current_states , verbose=0)
+        future_qs_list = self.target_model.predict(new_current_states , verbose=0, batch_size=64)
 
         X = []
         y = []
