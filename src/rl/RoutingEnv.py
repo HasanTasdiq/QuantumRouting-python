@@ -34,6 +34,12 @@ class RoutingEnv(Env):
         
         # Returning the step information
         return state
+    def assignQubit(self, link , action, timeSlot):
+        state = None
+        if action:
+            link.assignQubits()
+            state = self.ent_state(link , timeSlot)
+        return state
     def find_reward(self , pair , action , timeSlot):
         reward = 0
         n1 = pair[0]
@@ -48,13 +54,56 @@ class RoutingEnv(Env):
             return -reward
         return reward
 
+    def find_reward_ent(self , link  , timeSlot):
+        reward = 0
 
-
+        if (link) in self.algo.topo.reward_ent:
+            reward = self.algo.topo.reward[link]
+        elif self.algo.timeSlot - timeSlot >= ENTANGLEMENT_LIFETIME:
+            reward = -10
+        return reward
 
     def reset(self):
         self.state = self.algo.topo.needLinksDict
         self.shower_length = 60 
         return self.state
+    def ent_state(self, link , timeSlot):
+        state1 = [0] * self.SIZE
+        source = link.n1
+        dest = link.n2
+        count = 0
+        state1[source.id] = 1
+        state1[dest.id] = 1
+
+        graph_state = [[0]*self.SIZE]*self.SIZE
+
+        for link in self.algo.topo.links:
+            if link.assignable():
+                n1 = link.n1.id
+                n2 = link.n2.id
+                graph_state[n1][n2] += 1
+                graph_state[n2][n1] += 1
+        # print(state1)
+        # print(pair)
+        graph_state.append(state1)
+
+        req_state = [[0]*self.SIZE]*self.SIZE
+        if  hasattr(self.algo , 'requestState' ):
+            for req in self.algo.requestState:
+                n1 = req[0].id 
+                n2 = req[1].id 
+                req_state[n1][n2] += 1
+                req_state[n2][n1] += 1
+            graph_state.extend(req_state)
+        elif hasattr(self.algo , 'requests' ):
+            for req in self.algo.requests:
+                n1 = req[0].id 
+                n2 = req[1].id 
+                req_state[n1][n2] += 1
+                req_state[n2][n1] += 1
+            graph_state.extend(req_state)
+
+        return np.array(graph_state)
     def pair_state(self , pair , timeSlot):
         state1 = [0] * self.SIZE
         source = pair[0]

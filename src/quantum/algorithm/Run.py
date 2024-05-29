@@ -14,6 +14,7 @@ from REPS_cache2 import REPSCACHE2
 from REPS_cache_preswap import REPSCACHE4
 from REPS_cache4 import REPSCACHE5
 from REPS_cache4_3 import REPSCACHE5_3
+from REPS_ent_dqrl import REPS_ENT_DQRL
 from SEER_cache import SEERCACHE
 from SEER_cache2 import SEERCACHE2
 from SEER_cache3 import SEERCACHE3
@@ -43,10 +44,11 @@ from agent import Agent    #for ubuntu
 
 from DQNAgent import DQNAgent   
 from DQNAgentDist import DQNAgentDist   
+from DQNAgentDistEnt import DQNAgentDistEnt
 
-ttime = 200000
-step = 500
-times = 4
+ttime = 200
+step = 10
+times = 2
 nodeNo = 50
 alpha_ = 0.002
 degree = 6
@@ -80,6 +82,8 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
         agent = DQNAgent(algo , pid)
     if '_distdqrl' in algo.name:
         agent = DQNAgentDist(algo , pid)
+    if '_entdqrl' in algo.name:
+        algo.entAgent = DQNAgentDistEnt(algo, pid)
 
     for i in range(ttime):
         if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
@@ -123,10 +127,10 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_dqrl'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_distdqrl'))
 
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
-    # # # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
+    # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
+    # # # # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
-    algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_distdqrl'))
+    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_distdqrl'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -153,6 +157,9 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
     # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_qrl'))
     # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl'))
+    
+    
+    algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo),name='REPS_entdqrl'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
