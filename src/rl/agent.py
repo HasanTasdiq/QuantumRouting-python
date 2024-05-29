@@ -40,7 +40,7 @@ class Agent():
 
         # Keep stats for final print of graph
         self.episode_rewards = []
-        self.qFileName = 'q_table' + str(len(algo.topo.nodes)) + '_' + str(pid) + '.pkl'
+        # self.qFileName = 'q_table' + str(len(algo.topo.nodes)) + '_' + str(pid) + '.pkl'
         # try:
         #     print('in agent try' , pid)
         #     with open(self.qFileName, 'rb') as f:
@@ -139,8 +139,8 @@ class Agent():
             # print(self.last_action_table[pair])
             self.last_action_table[pair] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
         
-        if (self.env.algo.timeSlot + 1 ) % 100 == 0:
-            with open(self.qFileName, 'wb') as f:
-                pickle.dump(self.q_table, f)
-                print('-------------::::::: q table saved :::::::-------------')
+        # if (self.env.algo.timeSlot + 1 ) % 100 == 0:
+        #     with open(self.qFileName, 'wb') as f:
+        #         pickle.dump(self.q_table, f)
+        #         print('-------------::::::: q table saved :::::::-------------')
 

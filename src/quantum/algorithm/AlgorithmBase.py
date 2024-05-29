@@ -10,6 +10,7 @@ import math
 import random
 import time
 
+
 class AlgorithmResult:
     def __init__(self):
         self.algorithmRuntime = 0
@@ -103,6 +104,7 @@ class AlgorithmBase:
         self.preEnt = preEnt
         self.param = param
         self.alternatePath = 1
+
 
     def prepare(self):
         pass
@@ -337,18 +339,6 @@ class AlgorithmBase:
                 else:
                     self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward2
 
-                # if not vLinkCount and needLinksDictLen >= needlink_timeslot * self.topo.preSwapFraction -1:
-                #     if (node1.id , node2.id , self.timeSlot) in self.topo.reward:
-                #         reward =  self.topo.reward[(node1.id , node2.id , self.timeSlot)]
-                #         self.topo.reward[(node1.id , node2.id , self.timeSlot)] = reward + (-10)
-                #     elif (node2.id , node1.id , self.timeSlot) in self.topo.reward:
-                #         reward =  self.topo.reward[(node2.id , node1.id , self.timeSlot)]
-                #         self.topo.reward[(node2.id , node1.id , self.timeSlot)] = reward + (-10)
-                #     else:
-                #         self.topo.reward[(node2.id , node1.id , self.timeSlot)] = -10
-
-
-
 
     def getSegments(self , a , n):
         res = []
@@ -490,6 +480,7 @@ class AlgorithmBase:
                                             link.subLinks.extend(link1.subLinks)
                                         else:
                                             link.subLinks.append(link1)
+                                            
 
                                         if link2.isVirtualLink:
                                             link.subLinks.extend(link2.subLinks)

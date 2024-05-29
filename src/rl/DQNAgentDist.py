@@ -200,7 +200,7 @@ class DQNAgentDist:
             
             sts.append(state)
 
-        
+        print(sts)
         print('---------- len sts --------------' , len(sts))
         return self.model.predict(np.array(sts), verbose=0, batch_size=500)
     
@@ -211,9 +211,11 @@ class DQNAgentDist:
         states = []
         for pair in state:
             current_state = self.env.pair_state(pair , timeSlot)
+            # print(current_state)
             states.append((pair , current_state))
 
         print('getting qs')
+        
         qs = self.get_qs_batch(states)
         print('getting qs done! '  , len(qs))
         for i in range(len(states)):

@@ -101,6 +101,7 @@ class Topo:
         self.entanglementLifetime = 10
         self.requestTimeout = 5
         self.reward = {}
+        self.reward_ent = {}
         self.name = name
         self.link_capacity = {}
         self.preswap_capacity = 0.5
@@ -1120,6 +1121,7 @@ class Topo:
             link.clearEntanglement()
     def restoreOriginalLinks(self , vLink):
         for link in vLink.subLinks:
+            self.reward_ent[link] = 5
             link.clearEntanglement()
             self.addLink(link)
         vLink.subLinks.clear()
@@ -1142,6 +1144,7 @@ class Topo:
     def resetEntanglement(self , timeslot = 0):
         for link in self.usedLinks:
             link.clearEntanglement(timeslot = timeslot)
+            self.reward_ent[link] = 10 - (timeslot - link.entangledTimeSlot)
             # if link.isVirtualLink:
             #     for link_ in link.subLinks:
             #         self.addLink(link_) 
