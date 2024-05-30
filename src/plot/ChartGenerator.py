@@ -207,7 +207,7 @@ class ChartGenerator:
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.27)
-        ax1.set_ylim(bottom=30)
+        # ax1.set_ylim(bottom=30)
 
         # plt.show()
         # plt.tight_layout()

@@ -46,15 +46,15 @@ from DQNAgent import DQNAgent
 from DQNAgentDist import DQNAgentDist   
 from DQNAgentDistEnt import DQNAgentDistEnt
 
-ttime = 200
+ttime = 10000
 step = 10
-times = 2
-nodeNo = 50
+times = 1
+nodeNo = 30
 alpha_ = 0.002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
-numOfRequestPerRound = [30]
+numOfRequestPerRound = [20]
 # numOfRequestPerRound = [2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 100 , 150 ]
