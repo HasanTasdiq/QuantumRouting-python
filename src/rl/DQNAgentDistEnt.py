@@ -230,9 +230,10 @@ class DQNAgentDistEnt:
         
         # if np.random.random() > EPSILON_:
         #     pair_action_q.sort(key=lambda x: x[2], reverse=True)
-            # print([x[2] for x in pair_action_q])
+        #     print([x[2] for x in pair_action_q])
         
         link_action_q.sort(key=lambda x: x[2], reverse=True)
+        print([x[2] for x in link_action_q])
 
         for (link ,action , q , current_state) in link_action_q:
 
@@ -259,8 +260,8 @@ class DQNAgentDistEnt:
             reward = 0
             for i in range(len(self.last_action_table[link])):
 
-                (action , timeSlot , current_state , next_state) = self.last_action_table[pair][i]
-                reward = self.env.find_reward_ent(link , action , timeSlot)
+                (action , timeSlot , current_state , next_state) = self.last_action_table[link][i]
+                reward = self.env.find_reward_ent(link  , timeSlot)
                 if not reward:
                     continue
 
