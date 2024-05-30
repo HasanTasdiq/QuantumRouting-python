@@ -233,7 +233,7 @@ class DQNAgentDistEnt:
         #     print([x[2] for x in pair_action_q])
         
         link_action_q.sort(key=lambda x: x[2], reverse=True)
-        print([x[2] for x in link_action_q])
+        # print([x[2] for x in link_action_q])
 
         for (link ,action , q , current_state) in link_action_q:
 
