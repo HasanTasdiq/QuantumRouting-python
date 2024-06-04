@@ -592,6 +592,7 @@ class REPS_ENT_DQRL(AlgorithmBase):
                     for node, link in path:
                         if link is not None:
                             link.used = True
+                            self.topo.reward_ent[link] = 50
                             # self.result.usedLinks += 1
                 # for x in successPath:
                 #     print('[REPS] success:', [z.id for z in x])
@@ -604,6 +605,8 @@ class REPS_ENT_DQRL(AlgorithmBase):
                             successReq += 1
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
+                    if not link is None and not link.used and link.entangled:
+                        self.topo.reward_ent[link] = -5
                     link1.clearPhase4Swap()
                     link2.clearPhase4Swap()
                 
