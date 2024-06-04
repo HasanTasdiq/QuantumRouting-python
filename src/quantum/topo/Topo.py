@@ -141,8 +141,8 @@ class Topo:
         # Construct Node 
         #---------
         for _node in _nodes:
-            # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
-            self.nodes.append(Node(_node, _positions[_node], 12 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], 12 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -1118,6 +1118,7 @@ class Topo:
         
     def clearAllEntanglements(self):
         for link in self.links:
+
             link.clearEntanglement()
     def restoreOriginalLinks(self , vLink):
         for link in vLink.subLinks:
@@ -1144,7 +1145,7 @@ class Topo:
     def resetEntanglement(self , timeslot = 0):
         for link in self.usedLinks:
             link.clearEntanglement(timeslot = timeslot)
-            self.reward_ent[link] = 10 - (timeslot - link.entangledTimeSlot)
+            # self.reward_ent[link] = 50 - (timeslot - link.entangledTimeSlot)
             # if link.isVirtualLink:
             #     for link_ in link.subLinks:
             #         self.addLink(link_) 

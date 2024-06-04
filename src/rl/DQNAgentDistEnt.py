@@ -266,6 +266,7 @@ class DQNAgentDistEnt:
                     continue
 
                 self.update_replay_memory((current_state, action, reward, next_state, False))
+        self.env.algo.topo.reward_ent = {}
         self.train(False , self.env.algo.timeSlot)
 
 
