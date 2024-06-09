@@ -15,6 +15,7 @@ from REPS_cache_preswap import REPSCACHE4
 from REPS_cache4 import REPSCACHE5
 from REPS_cache4_3 import REPSCACHE5_3
 from REPS_ent_dqrl import REPS_ENT_DQRL
+from REPS_cache_ent_dqrl import REPSCACHEENT_DQRL
 from SEER_cache import SEERCACHE
 from SEER_cache2 import SEERCACHE2
 from SEER_cache3 import SEERCACHE3
@@ -46,9 +47,9 @@ from DQNAgent import DQNAgent
 from DQNAgentDist import DQNAgentDist   
 from DQNAgentDistEnt import DQNAgentDistEnt
 
-ttime = 20000
-step = 100
-times = 10
+ttime = 10000
+step = 50
+times = 5
 nodeNo = 50
 alpha_ = 0.002
 degree = 6
@@ -160,6 +161,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     
     algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo),name='REPS_entdqrl'))
+    algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))

@@ -16,7 +16,6 @@ class RoutingEnv(Env):
         self.shower_length = 60
         self.algo = algo
         self.SIZE = len(algo.topo.nodes)
-        self.OBSERVATION_SPACE_VALUES = (self.SIZE *2 +1,self.SIZE,)  
         self.ACTION_SPACE_SIZE = 2
         print('=========in Routing env ===== ' , algo.name)
 
@@ -68,7 +67,8 @@ class RoutingEnv(Env):
         self.shower_length = 60 
         return self.state
     def ent_state(self, link , timeSlot):
-        state1 = [0] * self.SIZE
+        state1 = [0 for i in range(self.SIZE)]
+        state_qm = [0 for i in range(self.SIZE)]
         source = link.n1
         dest = link.n2
         count = 0
@@ -83,9 +83,10 @@ class RoutingEnv(Env):
                 n2 = link.n2.id
                 graph_state[n1][n2] += 1
                 graph_state[n2][n1] += 1
+        for node in self.algo.topo.nodes:
+            state_qm[node.id] = node.remainingQubits
         # print(state1)
         # print(pair)
-        graph_state.append(state1)
 
         req_state = [[0]*self.SIZE]*self.SIZE
         if  hasattr(self.algo , 'requestState' ):
@@ -102,6 +103,9 @@ class RoutingEnv(Env):
                 req_state[n1][n2] += 1
                 req_state[n2][n1] += 1
             graph_state.extend(req_state)
+        graph_state.append(state1)
+        graph_state.append(state_qm)
+
 
         return np.array(graph_state)
     def pair_state(self , pair , timeSlot):

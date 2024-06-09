@@ -605,8 +605,10 @@ class REPS_ENT_DQRL(AlgorithmBase):
                             successReq += 1
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
-                    if not link is None and not link.used and link.entangled:
-                        self.topo.reward_ent[link] = -5
+                    if not link1 is None and not link1.used and link1.entangled:
+                        self.topo.reward_ent[link1] = -5
+                    if not link2 is None and not link2.used and link2.entangled:
+                        self.topo.reward_ent[link2] = -5
                     link1.clearPhase4Swap()
                     link2.clearPhase4Swap()
                 
