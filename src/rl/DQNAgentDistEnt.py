@@ -62,6 +62,7 @@ class DQNAgentDistEnt:
     def __init__(self ,algo , pid):
         print('++++++++++initiating DQN agent for:' , algo.name)
         self.env = RoutingEnv(algo)
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
 
         # Main model
         self.model = self.create_model()
@@ -79,12 +80,13 @@ class DQNAgentDistEnt:
         self.link_qs = {}
 
 
+
     def create_model(self):
         model = Sequential()
 
 
 
-        model.add(Flatten(input_shape = self.env.OBSERVATION_SPACE_VALUES))  
+        model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
         model.add(Dense(24 , activation='relu'))
 
         model.add(Dense(self.env.ACTION_SPACE_SIZE, activation='linear')) 
@@ -251,7 +253,7 @@ class DQNAgentDistEnt:
             EPSILON_ -= EPSILON_DECAY_VALUE
 
         self.link_qs = {}
-        print('**learn_and_predict multicore dqrl done in ' , time.time() - t1 , 'seconds')
+        print('**learn_and_predict multicore ent dqrl done in ' , time.time() - t1 , 'seconds')
     def update_reward(self):
         print('update reward:::::::::::::::::::::::: ' , len(self.last_action_table) )
         t1 = time.time()
