@@ -47,10 +47,10 @@ from DQNAgent import DQNAgent
 from DQNAgentDist import DQNAgentDist   
 from DQNAgentDistEnt import DQNAgentDistEnt
 
-ttime = 10000
-step = 50
+ttime = 500
+step = 10
 times = 5
-nodeNo = 50
+nodeNo = 30
 alpha_ = 0.002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
@@ -76,7 +76,7 @@ Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability",
 
 
 
-def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
+def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     if '_qrl' in algo.name:
         agent = Agent(algo , pid)
     if '_dqrl' in algo.name:
@@ -101,6 +101,23 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict):
             if algo.requestState[req].state == 2:
                 algo.requestState[req].intermediate.clearIntermediate()
     resultDict[pid] = result
+
+
+    success_req = 0
+    
+    for i in range(ttime):
+        success_req += result.successfulRequestPerRound[i]
+
+    print('====================================================')
+    print('====================================================')
+    print('pid: ' , pid , 'success_req: ' , success_req)
+    print('====================================================')
+    print('====================================================')
+    
+    if '_entdqrl' in algo.name and success_req > shared_data['max_success']:
+        print('going to save the model ' , success_req)
+        algo.entAgent.save_model()
+        shared_data['max_success'] = success_req
 
 
 
@@ -146,6 +163,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
     # algorithms.append(REPS(copy.deepcopy(topo)))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_en_all', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
     # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     # # # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
@@ -161,7 +179,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     
     algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo),name='REPS_entdqrl'))
-    algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
+    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
@@ -176,6 +194,9 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     rtime = ttime
 
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
+    shared_data = multiprocessing.Manager().dict()
+   
+    shared_data['max_success'] = 0
     jobs = []
 
 
@@ -211,7 +232,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
                     requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
             
             pid += 1
-            job = multiprocessing.Process(target = runThread, args = (algo, requests, algoIndex, ttime, pid, resultDicts[algoIndex]))
+            job = multiprocessing.Process(target = runThread, args = (algo, requests, algoIndex, ttime, pid, resultDicts[algoIndex] , shared_data))
             jobs.append(job)
 
     for job in jobs:
@@ -362,7 +383,7 @@ if __name__ == '__main__':
 
         filename = "Timeslot" + "_" + "#successRequest" + ".txt"
         sampleRounds = [i for i in range(0 , ttime , step)]
-
+        print(filename)
         F = open(targetFilePath + filename, "w")
         for roundIndex in sampleRounds:
             Xaxis = str(roundIndex)
@@ -370,11 +391,14 @@ if __name__ == '__main__':
             Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
             # print('Yaxis ' , roundIndex , Yaxis1)
             Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+            print(Xaxis + Yaxis)
             F.write(Xaxis + Yaxis)
         F.close()
 
         for Ylabel in Ylabels:
             filename = Xlabel + "_" + Ylabel + ".txt"
+            print(filename)
+
             if os.path.isfile(targetFilePath + filename):
                 F = open(targetFilePath + filename, "w")
             else:
@@ -383,6 +407,8 @@ if __name__ == '__main__':
                 Xaxis = str(Xparameters[XlabelIndex][i])
                 Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
                 Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+                print(Xaxis + Yaxis)
+
                 F.write(Xaxis + Yaxis)
             F.close()
 

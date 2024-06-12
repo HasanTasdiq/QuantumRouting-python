@@ -16,13 +16,14 @@ from random import sample
 
 EPS = 1e-6
 class REPS(AlgorithmBase):
-    def __init__(self, topo):
+    def __init__(self, topo , param = None , name = 'REPS'):
         super().__init__(topo)
-        self.name = "REPS"
+        self.name = name
         self.requests = []
         self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
+        self.param = param
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')

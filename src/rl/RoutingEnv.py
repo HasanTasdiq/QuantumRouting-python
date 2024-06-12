@@ -35,7 +35,7 @@ class RoutingEnv(Env):
         return state
     def assignQubit(self, link , action, timeSlot):
         state = None
-        if action:
+        if action and link.assignable():
             link.assignQubits()
             state = self.ent_state(link , timeSlot)
         return state
@@ -66,6 +66,12 @@ class RoutingEnv(Env):
         self.state = self.algo.topo.needLinksDict
         self.shower_length = 60 
         return self.state
+    
+    def getedges(self , a):
+        res = []
+        for i in range(len(a) - 1):
+            res.append((a[i] , a[i + 1]))
+        return res
     def ent_state(self, link , timeSlot):
         state1 = [0 for i in range(self.SIZE)]
         state_qm = [0 for i in range(self.SIZE)]
@@ -89,20 +95,43 @@ class RoutingEnv(Env):
         # print(pair)
 
         req_state = [[0]*self.SIZE]*self.SIZE
+        # if  hasattr(self.algo , 'requestState' ):
+        #     for req in self.algo.requestState:
+        #         n1 = req[0].id 
+        #         n2 = req[1].id 
+        #         req_state[n1][n2] += 1
+        #         req_state[n2][n1] += 1
+        #     graph_state.extend(req_state)
+        # elif hasattr(self.algo , 'requests' ):
+        #     for req in self.algo.requests:
+        #         n1 = req[0].id 
+        #         n2 = req[1].id 
+        #         req_state[n1][n2] += 1
+        #         req_state[n2][n1] += 1
+        #     graph_state.extend(req_state)
+
+
         if  hasattr(self.algo , 'requestState' ):
             for req in self.algo.requestState:
-                n1 = req[0].id 
-                n2 = req[1].id 
+                n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
+                print('---------------------------------==-=-=-=-=-=-=-=-=-=--')
+                for path , l in self.algo.topo.pair_edge_dict[(n1 , n2)]:
+                    print(path)
                 req_state[n1][n2] += 1
                 req_state[n2][n1] += 1
             graph_state.extend(req_state)
         elif hasattr(self.algo , 'requests' ):
             for req in self.algo.requests:
-                n1 = req[0].id 
-                n2 = req[1].id 
-                req_state[n1][n2] += 1
-                req_state[n2][n1] += 1
+                n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
+                # print('---------------------------------==-=-=-=-=-=-=-=-=-=--')
+                for path, l  in self.algo.topo.pair_edge_dict[(n1 , n2)]:
+                    # print(path)
+                    for pair in self.getedges(path):
+                        # print(pair)
+                        req_state[pair[0]][pair[1]] += 1
+                        req_state[pair[1]][pair[0]] += 1
             graph_state.extend(req_state)
+            
         graph_state.append(state1)
         graph_state.append(state_qm)
 

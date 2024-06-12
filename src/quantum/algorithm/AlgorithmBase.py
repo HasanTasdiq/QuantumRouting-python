@@ -118,10 +118,14 @@ class AlgorithmBase:
         pass
 
     def tryEntanglement(self):
-        for link in self.topo.links:
+        for link in [l for l in self.topo.links if l.assigned]:
+            link.tryEntanglement(self.timeSlot, self.param)
+        for link in [l for l in self.topo.links if not l.assigned]:
             link.tryEntanglement(self.timeSlot, self.param)
         for segment in self.topo.segments:
             entangled = segment.tryEntanglement(self.timeSlot, self.param)
+        
+        print('[=================== '+self.name+'========================] total entangled link ' , len([l for l in self.topo.links if l.entangled]) , '   out of: ' , len([l for l in self.topo.links]))
     # def tryEntanglement(self):
     #     for segment in self.topo.segments:
     #         entangled = segment.tryEntanglement(self.timeSlot, self.param)
@@ -709,7 +713,7 @@ class AlgorithmBase:
             if link.isEntangled(self.timeSlot):
                 ent += 1
         print('=============================================================')
-        print('[ ' , self.name ,' ] remaining qubit at ' , self.timeSlot , totalqbit + ent*2)
+        print('[ ' , self.name ,' ] remaining qubit at ' , self.timeSlot , totalqbit + ent*2 , 'ent: ' , ent)
         print('[ ' , self.name ,' ] qubit set  ' , self.timeSlot , qubits)
         print('=============================================================')
     
