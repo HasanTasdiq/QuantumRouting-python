@@ -200,7 +200,7 @@ class Link:
     def tryEntanglement2(self , timeSlot = 0):
         # print('ent prob', self.p)
         # print('+++++++++++++++++++++++ every')
-        b = self.p() >= random.random()
+        b = self.assigned and self.p() >= random.random()
         if b:
             self.entangledTimeSlot = timeSlot
             self.entangled = b
@@ -213,7 +213,7 @@ class Link:
         return b
 
     def tryEntanglement1(self , timeSlot = 0):
-        b =self.p() >= random.random()
+        b =self.assigned and self.p() >= random.random()
         # b = self.assigned and self.p >= random.random()
  
         if self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime:
@@ -239,6 +239,11 @@ class Link:
                 return self.tryEntanglement1(timeSlot)  
             else:
                 return self.tryEntanglementForUnassigned(timeSlot)
+        elif param == 'reps_ten' or param == 'everya':
+            if self.assigned:
+                return self.tryEntanglement3(timeSlot)  
+            else:
+                return self.tryEntanglementForUnassigned(timeSlot)
         else:
             return self.tryEntanglement3(timeSlot)
     
@@ -260,6 +265,7 @@ class Link:
                 if b:
                     self.entangledTimeSlot = timeSlot
                     self.entangled = b
+                    print('++++++++++++++++++++++++++++++++++++++++====entangled unassigned ==================++++++++++++++++++++++++')
                     # self.assignQubits()
                 # print('ent prob', self.p , b)
 

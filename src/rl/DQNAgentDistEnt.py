@@ -1,6 +1,6 @@
 import numpy as np
 
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatten
 from keras.optimizers import Adam
 from keras import Input
@@ -21,7 +21,7 @@ GAMMA = 0.99
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 0.5  # not a constant, qoing to be decayed
+EPSILON_ = 0.2  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
 END_EPSILON_DECAYING = 100
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
@@ -82,11 +82,23 @@ class DQNAgentDistEnt:
 
 
     def create_model(self):
+        try:
+            model = load_model('DQNAgentDistEnt.keras')
+            print('=====================================================model loaded from DQNAgentDistEnt.keras =====================================')
+            # time.sleep(10)
+            return model
+        except:
+            print('=====================no model found========================')
+            # time.sleep(10)
+
+        
         model = Sequential()
 
 
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
+        model.add(Dense(72 , activation='relu'))
+        model.add(Dense(48 , activation='relu'))
         model.add(Dense(24 , activation='relu'))
 
         model.add(Dense(self.env.ACTION_SPACE_SIZE, activation='linear')) 
@@ -231,11 +243,9 @@ class DQNAgentDistEnt:
             link_action_q.append((link , action , q , current_state))
         
         # if np.random.random() > EPSILON_:
-        #     pair_action_q.sort(key=lambda x: x[2], reverse=True)
-        #     print([x[2] for x in pair_action_q])
-        
+        #     link_action_q.sort(key=lambda x: x[2], reverse=True)
         link_action_q.sort(key=lambda x: x[2], reverse=True)
-        # print([x[2] for x in link_action_q])
+     
 
         for (link ,action , q , current_state) in link_action_q:
 
@@ -278,3 +288,6 @@ class DQNAgentDistEnt:
             self.last_action_table[pair] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
         
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
+    
+    def save_model(self):
+        self.model.save(('DQNAgentDistEnt.keras'))

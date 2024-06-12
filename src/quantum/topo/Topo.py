@@ -94,6 +94,7 @@ class Topo:
         self.optimal_distance = 130
         self.k_shortest_paths_dict = {}
         self.k_alternate_paths_dict = {}
+        self.pair_edge_dict = {}
         self.needLinks = set()
         self.needLinksDict = {}
         self.preSwapFraction = 1/2
@@ -141,8 +142,8 @@ class Topo:
         # Construct Node 
         #---------
         for _node in _nodes:
-            self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
-            # self.nodes.append(Node(_node, _positions[_node], 12 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], 24 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -196,8 +197,8 @@ class Topo:
         linkId = 0
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
-            rand = int(random.random()*5+3) # 3~7
-            # rand = 6
+            # rand = int(random.random()*5+3) # 3~7
+            rand = 6
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
@@ -273,7 +274,7 @@ class Topo:
             with open(reqFileName, 'w') as file:
                 for req in self.requests:
                     file.write(str(req) + '\n')
-
+        self.get_k_shortest_path_edge_dict(k=5)
         
         print('****** len seg' , len(self.segments))
         print('****** len links' , len(self.links))
@@ -369,6 +370,15 @@ class Topo:
             return path_cost
         except:
             return math.inf
+    def get_k_shortest_path_edge_dict(self , k = 5):
+        
+        for n1 in self.nodes:
+            for n2 in self.nodes:
+                if n1.id < n2.id:
+                    self.pair_edge_dict[(n1.id , n2.id)] = self.k_shortest_paths(n1.id , n2.id , k)
+        
+
+
     def k_shortest_paths(self, source, target, k = 1):
         # if (source,target) in self.k_shortest_paths_dict:
         #     return self.k_shortest_paths_dict[(source,target)]
@@ -423,14 +433,14 @@ class Topo:
         file = 'SurfnetCore.gml'
         name = 'waxman'
         while True:
-            # try:
-            #     G = G = pickle.load(open(graphFileName, 'rb'))
-            # except:
-            #     G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            #     pickle.dump(G, open(graphFileName, 'wb'))
+            try:
+                G = G = pickle.load(open(graphFileName, 'rb'))
+            except:
+                G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+                pickle.dump(G, open(graphFileName, 'wb'))
             
 
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
