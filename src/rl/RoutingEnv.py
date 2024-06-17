@@ -50,7 +50,11 @@ class RoutingEnv(Env):
     #     return state    
     def assignQubitEdge(self, edge , action, timeSlot):
         state = None
-        links = [link for link in edge[0].links and link.n2 == edge[1]]
+        links = []
+        for l in edge[0].links:
+            if l.n2 == edge[1]:
+                links.append(l)
+
         for i in action:
             link = links[i]
             if link.assignable():
