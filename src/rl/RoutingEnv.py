@@ -55,7 +55,7 @@ class RoutingEnv(Env):
             if l.n2 == edge[1]:
                 links.append(l)
 
-        for i in action:
+        for i in range(action):
             link = links[i]
             if link.assignable():
                 link.assignQubits()
