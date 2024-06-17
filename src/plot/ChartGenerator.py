@@ -155,9 +155,9 @@ class ChartGenerator:
 
         marker = ['o', 's', 'v', 'x', 'd' , '1' , '<' , '*']
         markers_on = [i for i in range(len(x))]
-        # if len(markers_on) > 5:
-        #     # print(markers_on)
-        #     markers_on = get_n_index(markers_on , 5)
+        if len(markers_on) > 5:
+            # print(markers_on)
+            markers_on = get_n_index(markers_on , 5)
         for i in range(numOfAlgo):
             ax1.plot(x, y[i], color = color[i], markevery=markers_on, lw = 2.5, linestyle = "-", marker = marker[i], markersize = 10, markerfacecolor = "none", markeredgewidth = 2.5)
         # plt.show()

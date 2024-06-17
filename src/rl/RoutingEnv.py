@@ -39,6 +39,24 @@ class RoutingEnv(Env):
             link.assignQubits()
             state = self.ent_state(link , timeSlot)
         return state
+    def assignQubitEdge(self, edge , action, timeSlot):
+        state = None
+        if action:
+            for link in edge[0].links:
+                if link.n2 == edge[1] and link.assignable():
+                    if np.random.random() > 0.5:
+                        link.assignQubits()
+            state = self.ent_state(edge , timeSlot)
+        return state    
+    # def assignQubitEdge(self, edge , action, timeSlot):
+    #     state = None
+    #     links = [link for link in edge[0].links and link.n2 == edge[1]]
+    #     for i in action:
+    #         link = links[i]
+    #         if link.assignable():
+    #             link.assignQubits()
+    #         state = self.ent_state(edge , timeSlot)
+    #     return state
     def find_reward(self , pair , action , timeSlot):
         reward = 0
         n1 = pair[0]
@@ -53,11 +71,13 @@ class RoutingEnv(Env):
             return -reward
         return reward
 
-    def find_reward_ent(self , link  , timeSlot):
+    def find_reward_ent(self , link  , timeSlot , action):
         reward = 0
 
         if (link) in self.algo.topo.reward_ent:
             reward = self.algo.topo.reward_ent[link]
+            if not action:
+                reward = self.algo.topo.negative_reward if reward == self.algo.topo.positive_reward else self.algo.topo.positive_reward
         elif self.algo.timeSlot - timeSlot >= ENTANGLEMENT_LIFETIME:
             reward = -10
         return reward
@@ -75,8 +95,14 @@ class RoutingEnv(Env):
     def ent_state(self, link , timeSlot):
         state1 = [0 for i in range(self.SIZE)]
         state_qm = [0 for i in range(self.SIZE)]
-        source = link.n1
-        dest = link.n2
+
+        try:
+            source = link.n1
+            dest = link.n2
+        except:
+            source = link[0]
+            dest = link[1]
+
         count = 0
         state1[source.id] = 1
         state1[dest.id] = 1
