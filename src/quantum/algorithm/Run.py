@@ -47,9 +47,9 @@ from DQNAgent import DQNAgent
 from DQNAgentDist import DQNAgentDist   
 from DQNAgentDistEnt import DQNAgentDistEnt
 
-ttime = 4000
+ttime = 50
 step = 20
-times = 3
+times = 5
 nodeNo = 30
 alpha_ = 0.002
 degree = 6
@@ -111,6 +111,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     print('====================================================')
     print('====================================================')
     print('pid: ' , pid , 'success_req: ' , success_req)
+    print('pid: ' , pid , 'max_success rate : ' , shared_data['max_success'] / ttime)
     print('====================================================')
     print('====================================================')
     
@@ -162,7 +163,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
+    algorithms.append(REPS(copy.deepcopy(topo)))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_en_all', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
     # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
@@ -178,7 +179,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl'))
     
     
-    algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo),param = 'reps_ten' , name='REPS_entdqrl'))
+    algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl'))
     # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
 
     

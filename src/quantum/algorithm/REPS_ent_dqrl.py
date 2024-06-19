@@ -70,8 +70,8 @@ class REPS_ENT_DQRL(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            # self.PFT() # compute (self.ti, self.fi)
-            self.entAgent.learn_and_predict()
+            self.PFT() # compute (self.ti, self.fi)
+            # self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
     
     def p4(self):
@@ -87,7 +87,7 @@ class REPS_ENT_DQRL(AlgorithmBase):
     # return fi(u, v)
 
     def LP1(self):
-        # print('[REPS] LP1 start')
+        print('[REPS] LP1 start')
         # initialize fi(u, v) ans ti
 
         self.fi_LP = {SDpair : {} for SDpair in self.srcDstPairs}
@@ -151,6 +151,7 @@ class REPS_ENT_DQRL(AlgorithmBase):
             m.addConstr(gp.quicksum(x[n1, n2] for (n1, n2) in edgeContainu) <= self.topo.nodes[u].remainingQubits)
 
         m.optimize()
+        found = False
 
         for i in range(numOfSDpairs):
             SDpair = self.srcDstPairs[i]
@@ -166,14 +167,33 @@ class REPS_ENT_DQRL(AlgorithmBase):
                 varName = self.genNameByComma('f', [i, u.id, v.id])
                 self.fi_LP[SDpair][(u, v)] = m.getVarByName(varName).x
 
+
+
+
             for (u, v) in notEdge:
                 u = self.topo.nodes[u]
                 v = self.topo.nodes[v]
                 self.fi_LP[SDpair][(u, v)] = 0
-            
+
+            # for edge in self.topo.edges:
+            #     u = edge[0]
+            #     v = edge[1]
+            #     need = self.fi_LP[SDpair][(u, v)] + self.fi_LP[SDpair][(v, u)]
+            #     i = 0
+            #     for link in u.links:
+            #         if link.contains(v) and link.assignable():
+            #             link.assignQubits()
+            #             self.totalUsedQubits += 2
+
+            #             i += 1
+            #             found = True
+            #             if i >= need:
+            #                 break
+
             
             varName = self.genNameByComma('t', [i])
             self.ti_LP[SDpair] = m.getVarByName(varName).x
+        return found
         # print('[REPS] LP1 end')
     def edgeCapacity(self, u, v):
         capacity = 0
@@ -200,6 +220,12 @@ class REPS_ENT_DQRL(AlgorithmBase):
             for u in self.topo.nodes:
                 for v in self.topo.nodes:
                     self.fi[SDpair][(u, v)] = 0
+        
+        found = True
+        # while found:
+        #     found = self.LP1()
+        #     return
+        # return
         
         # PFT
         failedFindPath = False
