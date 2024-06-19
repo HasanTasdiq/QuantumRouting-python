@@ -23,7 +23,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.5  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 2000
+END_EPSILON_DECAYING = 200
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -208,69 +208,25 @@ class DQNAgentDistEnt:
         for i in range(len(states)):
             link , current_state = states[i]
             self.link_qs[link] = (current_state , qs[i])
+    
+    # def update_last_action_table(self , action , timeSlot , current_state , next_state):
 
-    def learn_and_predict(self):
-        global EPSILON_
-        t1 = time.time()
-        edges = self.env.algo.topo.edges
-        timeSlot = self.env.algo.timeSlot
-        link_action_q = []
-
-
-        # -----sequntial prediction----
-
-       
-
-        # for pair in state:
-        for link in edges:
-            self.get_link_qs_batch([link] , timeSlot)
-            current_state , qs = self.link_qs[link]
-            if np.random.random() > EPSILON_:
-                # Get action from Q net
-                # print('------self.get_qs(current_state)-----')
-                # print(self.get_qs(current_state))
-                t2 = time.time()
-
-                action = np.argmax(qs)
-                q = qs[action]
-                # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
-
-            else:
-                # Get random action
-                action = np.random.randint(0, 2)
-                q = qs[action]
-
-            next_state  = self.env.assignQubitEdge(link , action , timeSlot)
-            if next_state is None:
-                next_state = current_state
-            
-            if not link in self.last_action_table:
-                self.last_action_table[link] = [(action , timeSlot , current_state , next_state)]
-            else:
-                self.last_action_table[link].append((action , timeSlot , current_state , next_state))
-        
-
-        if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
-            EPSILON_ -= EPSILON_DECAY_VALUE
-
-        self.link_qs = {}
-        print('**learn_and_predict multicore ent dqrl done in ' , time.time() - t1 , 'seconds')
 
     # def learn_and_predict(self):
     #     global EPSILON_
     #     t1 = time.time()
-    #     links = self.env.algo.topo.links
+    #     edges = self.env.algo.topo.edges
     #     timeSlot = self.env.algo.timeSlot
     #     link_action_q = []
-    #     links_len = len(links)
 
 
     #     # -----sequntial prediction----
 
-    #     self.get_link_qs_batch(links , timeSlot)
+       
 
     #     # for pair in state:
-    #     for link in self.link_qs:
+    #     for link in edges:
+    #         self.get_link_qs_batch([link] , timeSlot)
     #         current_state , qs = self.link_qs[link]
     #         if np.random.random() > EPSILON_:
     #             # Get action from Q net
@@ -287,30 +243,79 @@ class DQNAgentDistEnt:
     #             action = np.random.randint(0, 2)
     #             q = qs[action]
 
-    #         link_action_q.append((link , action , q , current_state))
-        
-    #     # if np.random.random() > EPSILON_:
-    #     #     link_action_q.sort(key=lambda x: x[2], reverse=True)
-    #     link_action_q.sort(key=lambda x: x[2], reverse=True)
-     
-
-    #     for (link ,action , q , current_state) in link_action_q:
-
-    #         # print('---action in learn rand -- ' , action)
-    #         next_state = self.env.assignQubit(link , action , timeSlot)
+    #         next_state  = self.env.assignQubitEdge(link , action , timeSlot)
     #         if next_state is None:
     #             next_state = current_state
             
-    #         if not (link.n1.id, link.n2.id) in self.last_action_table:
+    #         if not link in self.last_action_table:
     #             self.last_action_table[link] = [(action , timeSlot , current_state , next_state)]
     #         else:
     #             self.last_action_table[link].append((action , timeSlot , current_state , next_state))
+        
 
     #     if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
     #         EPSILON_ -= EPSILON_DECAY_VALUE
 
     #     self.link_qs = {}
     #     print('**learn_and_predict multicore ent dqrl done in ' , time.time() - t1 , 'seconds')
+
+    def learn_and_predict(self):
+        global EPSILON_
+        t1 = time.time()
+        # links = self.env.algo.topo.links
+        links = self.env.algo.topo.edges
+        timeSlot = self.env.algo.timeSlot
+        link_action_q = []
+        links_len = len(links)
+
+
+
+
+        self.get_link_qs_batch(links , timeSlot)
+
+        # for pair in state:
+        for link in self.link_qs:
+            current_state , qs = self.link_qs[link]
+            if np.random.random() > EPSILON_:
+                # Get action from Q net
+                # print('------self.get_qs(current_state)-----')
+                # print(self.get_qs(current_state))
+                t2 = time.time()
+
+                action = np.argmax(qs)
+                q = qs[action]
+                # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
+
+            else:
+                # Get random action
+                action = np.random.randint(0, 2)
+                q = qs[action]
+
+            link_action_q.append((link , action , q , current_state))
+        
+        # if np.random.random() > EPSILON_:
+        #     link_action_q.sort(key=lambda x: x[2], reverse=True)
+        link_action_q.sort(key=lambda x: x[2], reverse=True)
+     
+
+        for (link ,action , q , current_state) in link_action_q:
+
+            # print('---action in learn rand -- ' , action)
+            # next_state = self.env.assignQubit(link , action , timeSlot)
+            next_state = self.env.assignQubitEdge(link , action , timeSlot)
+            if next_state is None:
+                next_state = current_state
+            
+            if not link in self.last_action_table:
+                self.last_action_table[link] = [(action , timeSlot , current_state , next_state)]
+            else:
+                self.last_action_table[link].append((action , timeSlot , current_state , next_state))
+
+        if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
+            EPSILON_ -= EPSILON_DECAY_VALUE
+
+        self.link_qs = {}
+        print('**learn_and_predict multicore ent dqrl done in ' , time.time() - t1 , 'seconds')
     def update_reward(self):
         print('update reward:::::::::::::::::::::::: ' , len(self.last_action_table) )
         t1 = time.time()
