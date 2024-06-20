@@ -30,7 +30,7 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+MINIBATCH_SIZE = 128  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
@@ -125,6 +125,9 @@ class DQNAgentDistEnt:
 
         # Get a minibatch of random samples from memory replay table
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+
+        
+        print([(m[1] , m[2]) for m in minibatch])
 
         # Get current states from minibatch, then query NN model for Q values
         current_states = np.array([transition[0] for transition in minibatch])

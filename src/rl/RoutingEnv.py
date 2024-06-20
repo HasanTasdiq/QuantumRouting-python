@@ -77,9 +77,12 @@ class RoutingEnv(Env):
 
     def find_reward_ent(self , link  , timeSlot , action):
         reward = 0
+        edge = link
+        if link[1].id < link[0].id:
+            edge = (link[1] , link[0])
 
-        if (link) in self.algo.topo.reward_ent:
-            reward = self.algo.topo.reward_ent[link]
+        if edge in self.algo.topo.reward_ent:
+            reward = self.algo.topo.reward_ent[edge]
             if not action:
                 reward = self.algo.topo.negative_reward if reward == self.algo.topo.positive_reward else self.algo.topo.positive_reward
         elif self.algo.timeSlot - timeSlot >= ENTANGLEMENT_LIFETIME:
