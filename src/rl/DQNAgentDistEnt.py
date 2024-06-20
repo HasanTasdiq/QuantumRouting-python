@@ -101,7 +101,7 @@ class DQNAgentDistEnt:
         model.add(Dense(48 , activation='relu'))
         model.add(Dense(24 , activation='relu'))
 
-        model.add(Dense(7, activation='linear')) 
+        model.add(Dense(2, activation='linear')) 
         print(model.summary)
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
