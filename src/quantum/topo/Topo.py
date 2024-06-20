@@ -107,7 +107,7 @@ class Topo:
         self.link_capacity = {}
         self.preswap_capacity = 0.5
 
-        self.positive_reward = 10
+        self.positive_reward = 25
         self.negative_reward = -5
 
 

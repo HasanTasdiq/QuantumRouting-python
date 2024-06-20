@@ -70,8 +70,8 @@ class REPS_ENT_DQRL(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
-            # self.entAgent.learn_and_predict()
+            # self.PFT() # compute (self.ti, self.fi)
+            self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
     
     def p4(self):
@@ -618,7 +618,12 @@ class REPS_ENT_DQRL(AlgorithmBase):
                     for node, link in path:
                         if link is not None:
                             link.used = True
-                            self.topo.reward_ent[link] = 50
+                            edge = (link.n1 , link.n2)
+                            if link.n2.id < link.n1.id:
+                                edge = (link.n2 , link.n1)
+
+                            self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+
                             # self.result.usedLinks += 1
                 # for x in successPath:
                 #     print('[REPS] success:', [z.id for z in x])
@@ -632,16 +637,22 @@ class REPS_ENT_DQRL(AlgorithmBase):
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     if not link1 is None and not link1.used and link1.entangled:
+                        edge = (link1.n1 , link1.n2)
+                        if link1.n2.id < link1.n1.id:
+                            edge = (link1.n2 , link1.n1)
                         try:
-                            self.topo.reward_ent[(link1.n1 , link1.n2)] += self.topo.negative_reward
+                            self.topo.reward_ent[edge] += self.topo.negative_reward
                         except:
-                            self.topo.reward_ent[(link1.n1 , link1.n2)] = self.topo.negative_reward
+                            self.topo.reward_ent[edge] = self.topo.negative_reward
 
                     if not link2 is None and not link2.used and link2.entangled:
+                        edge = (link2.n1 , link2.n2)
+                        if link2.n2.id < link2.n1.id:
+                            edge = (link2.n2 , link2.n1)
                         try:
-                            self.topo.reward_ent[(link2.n1 , link2.n2)] += self.topo.negative_reward
+                            self.topo.reward_ent[edge] += self.topo.negative_reward
                         except:
-                            self.topo.reward_ent[(link2.n1 , link2.n2)] = self.topo.negative_reward
+                            self.topo.reward_ent[edge] = self.topo.negative_reward
                     link1.clearPhase4Swap()
                     link2.clearPhase4Swap()
                 
