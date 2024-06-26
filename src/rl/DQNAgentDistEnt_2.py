@@ -101,7 +101,7 @@ class DQNAgentDistEnt:
         model.add(Dense(48 , activation='relu'))
         model.add(Dense(24 , activation='relu'))
 
-        model.add(Dense(7, activation='linear')) 
+        model.add(Dense(2, activation='linear')) 
         print(model.summary)
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
@@ -310,7 +310,7 @@ class DQNAgentDistEnt:
 
             # print('---action in learn rand -- ' , action)
             # next_state = self.env.assignQubit(link , action , timeSlot)
-            next_state, assignable2 = self.env.assignQubitEdge(link , action , timeSlot)
+            next_state, assignable2 = self.env.assignQubitEdge_2(link , action , timeSlot)
             if next_state is None:
                 next_state = current_state
             if assignable2:

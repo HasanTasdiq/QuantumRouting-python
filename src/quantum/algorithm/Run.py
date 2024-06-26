@@ -47,9 +47,10 @@ from DQNAgent import DQNAgent
 from DQNAgentDist import DQNAgentDist   
 from DQNAgentDistEnt import DQNAgentDistEnt
 
-ttime = 400
-step = 20
-times = 1
+ttime = 12000
+ttime2 = 1000
+step = 500
+times = 10
 nodeNo = 30
 alpha_ = 0.002
 degree = 6
@@ -85,8 +86,12 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         agent = DQNAgentDist(algo , pid)
     if '_entdqrl' in algo.name:
         algo.entAgent = DQNAgentDistEnt(algo, pid)
+    timeSlot = ttime
+    global ttime2
+    if algo.name == 'REPS':
+        timeSlot = ttime2
 
-    for i in range(ttime):
+    for i in range(timeSlot):
         if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
             agent.learn_and_predict()
 
@@ -163,8 +168,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    # algorithms.append(REPS(copy.deepcopy(topo)))
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_en_all', param = 'reps_ten'))
+    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
+    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
     # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     # # # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
@@ -388,8 +393,16 @@ if __name__ == '__main__':
         F = open(targetFilePath + filename, "w")
         for roundIndex in sampleRounds:
             Xaxis = str(roundIndex)
-            Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
-            Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
+            # Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
+            Yaxis = []
+            # try:
+            #     Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
+            # except:
+            for result in Ydata[0]:
+                try:
+                    Yaxis.append(sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step)
+                except:
+                    Yaxis.append(0)
             # print('Yaxis ' , roundIndex , Yaxis1)
             Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
             print(Xaxis + Yaxis)

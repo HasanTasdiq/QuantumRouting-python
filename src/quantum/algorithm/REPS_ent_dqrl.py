@@ -12,6 +12,8 @@ from topo.Link import Link
 from topo.helper import request_timeout
 from numpy import log as ln
 from random import sample
+import numpy as np
+
 sys.path.insert(0, "../../rl")
 
 from DQNAgentDistEnt import DQNAgentDistEnt  
@@ -71,6 +73,7 @@ class REPS_ENT_DQRL(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
             # self.PFT() # compute (self.ti, self.fi)
+            # self.randPFT()
             self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
     
@@ -209,6 +212,20 @@ class REPS_ENT_DQRL(AlgorithmBase):
     def widthForSort(self, path):
         # path[-1] is the path of weight
         return -path[-1]
+    
+    def randPFT(self):
+        assignable = True
+        while assignable:
+            assignable = False
+        for link in self.topo.links:
+            if link.assignable():
+                assignable = True
+                if np.random.random() > 0.5:
+                
+                    link.assignQubits()
+                    self.totalUsedQubits += 2
+
+            
     
     def PFT(self):
 

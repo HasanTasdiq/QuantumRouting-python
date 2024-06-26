@@ -39,29 +39,34 @@ class RoutingEnv(Env):
             link.assignQubits()
             state = self.ent_state(link , timeSlot)
         return state
-    def assignQubitEdge(self, edge , action, timeSlot):
+    def assignQubitEdge_2(self, edge , action, timeSlot):
         state = None
+        assignable = False
         if action:
             for link in edge[0].links:
                 if link.n2 == edge[1] and link.assignable():
                     if np.random.random() > 0.5:
                         link.assignQubits()
+                        assignable = True
             state = self.ent_state(edge , timeSlot)
-        return state   
+        return state , assignable   
      
-    # def assignQubitEdge(self, edge , action, timeSlot):
-    #     state = None
-    #     links = []
-    #     for l in edge[0].links:
-    #         if l.n2 == edge[1]:
-    #             links.append(l)
+    def assignQubitEdge(self, edge , action, timeSlot):
+        state = None
+        links = []
+        assignable = False
 
-    #     for i in range(action):
-    #         link = links[i]
-    #         if link.assignable():
-    #             link.assignQubits()
-    #         state = self.ent_state(edge , timeSlot)
-    #     return state
+        for l in edge[0].links:
+            if l.n2 == edge[1] and l.assignable():
+                links.append(l)
+
+        for i in range(min(action , len(links))):
+            link = links[i]
+            if link.assignable():
+                link.assignQubits()
+                assignable = True
+            state = self.ent_state(edge , timeSlot)
+        return state , assignable
     def find_reward(self , pair , action , timeSlot):
         reward = 0
         n1 = pair[0]
