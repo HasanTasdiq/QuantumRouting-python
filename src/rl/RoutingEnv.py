@@ -47,6 +47,7 @@ class RoutingEnv(Env):
                 if link.n2 == edge[1] and link.assignable():
                     if np.random.random() > 0.5:
                         link.assignQubits()
+                        self.algo.totalUsedQubits += 2
                         assignable = True
             state = self.ent_state(edge , timeSlot)
         return state , assignable   
@@ -64,6 +65,8 @@ class RoutingEnv(Env):
             link = links[i]
             if link.assignable():
                 link.assignQubits()
+                self.algo.totalUsedQubits += 2
+
                 assignable = True
             state = self.ent_state(edge , timeSlot)
         return state , assignable

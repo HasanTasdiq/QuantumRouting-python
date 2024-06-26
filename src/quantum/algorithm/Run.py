@@ -46,6 +46,7 @@ from agent import Agent    #for ubuntu
 from DQNAgent import DQNAgent   
 from DQNAgentDist import DQNAgentDist   
 from DQNAgentDistEnt import DQNAgentDistEnt
+from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
 ttime = 12000
 ttime2 = 1000
@@ -86,6 +87,8 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         agent = DQNAgentDist(algo , pid)
     if '_entdqrl' in algo.name:
         algo.entAgent = DQNAgentDistEnt(algo, pid)
+    if '_2entdqrl' in algo.name:
+        algo.entAgent = DQNAgentDistEnt_2(algo, pid)
     timeSlot = ttime
     global ttime2
     if algo.name == 'REPS':
@@ -185,6 +188,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     
     algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl'))
+    algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl'))
     # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
 
     
