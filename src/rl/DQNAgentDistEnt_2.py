@@ -58,7 +58,7 @@ np.random.seed(1)
 if not os.path.isdir('models'):
     os.makedirs('models')
 
-class DQNAgentDistEnt:
+class DQNAgentDistEnt_2:
     def __init__(self ,algo , pid):
         print('++++++++++initiating DQN agent for:' , algo.name)
         self.env = RoutingEnv(algo)
