@@ -48,11 +48,11 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 12000
-ttime2 = 1000
-step = 500
-times = 10
-nodeNo = 30
+ttime = 500
+ttime2 = 100
+step = 50
+times = 9
+nodeNo = 50
 alpha_ = 0.002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
@@ -171,8 +171,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
     # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     # # # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
