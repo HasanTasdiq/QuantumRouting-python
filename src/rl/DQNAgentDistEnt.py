@@ -127,7 +127,7 @@ class DQNAgentDistEnt:
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
 
         
-        print([(m[1] , m[2]) for m in minibatch])
+        # print([(m[1] , m[2]) for m in minibatch])
 
         # Get current states from minibatch, then query NN model for Q values
         current_states = np.array([transition[0] for transition in minibatch])
