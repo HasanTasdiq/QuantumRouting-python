@@ -63,6 +63,7 @@ class DQNAgentDistEnt_2:
         print('++++++++++initiating DQN agent for:' , algo.name)
         self.env = RoutingEnv(algo)
         self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
+        self.model_name = 'DQNAgentDistEnt_2.keras'
 
         # Main model
         self.model = self.create_model()
@@ -83,8 +84,8 @@ class DQNAgentDistEnt_2:
 
     def create_model(self):
         try:
-            model = load_model('DQNAgentDistEnt.keras')
-            print('=====================================================model loaded from DQNAgentDistEnt.keras =====================================')
+            model = load_model(self.model_name)
+            print('=====================================================model loaded from ' , self.model_name , ' =====================================')
             # time.sleep(10)
             return model
         except:
@@ -266,6 +267,8 @@ class DQNAgentDistEnt_2:
         assignable = True
         while assignable:
             assignable = self.learn_and_predict2()
+            if 'no_repeat' in self.env.algo.name:
+                break
     def learn_and_predict2(self):
         global EPSILON_
         t1 = time.time()
@@ -352,4 +355,4 @@ class DQNAgentDistEnt_2:
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
     
     def save_model(self):
-        self.model.save(('DQNAgentDistEnt.keras'))
+        self.model.save((self.model_name))
