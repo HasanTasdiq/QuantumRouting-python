@@ -50,14 +50,14 @@ from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
 ttime = 500
 ttime2 = 200
-step = 50
-times = 9
-nodeNo = 50
+step = 5
+times = 10
+nodeNo = 40
 alpha_ = 0.002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
-numOfRequestPerRound = [20]
+numOfRequestPerRound = [40]
 # numOfRequestPerRound = [2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 100 , 150 ]
@@ -92,7 +92,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     timeSlot = ttime
     global ttime2
     if algo.name == 'REPS':
-        timeSlot = ttime2
+        timeSlot = min(ttime2,ttime)
 
     for i in range(timeSlot):
         if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
@@ -172,7 +172,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
     algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
     # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     # # # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
@@ -188,7 +188,9 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     
     algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl'))
+    algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl_no_repeat'))
     algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl'))
+    algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl_no_repeat'))
     # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
 
     
@@ -292,6 +294,7 @@ def mainThreadPreSwapCapacity(Xparam , topo , result):
 
 if __name__ == '__main__':
     print("start Run and Generate data.txt")
+    t1 = time.time()
     targetFilePath = "../../plot/data/"
     temp = AlgorithmResult()
     Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
@@ -430,7 +433,9 @@ if __name__ == '__main__':
                 F.write(Xaxis + Yaxis)
             F.close()
 
-    print('-----EXIT-----')
+    t2 = time.time()
+    print('-----EXIT----- total time taken: ' , (t2-t1)/3600 , ' hours')
+
     exit(0)
     # write remainRequestPerRound
     rtime = 101
