@@ -436,14 +436,14 @@ class Topo:
         file = 'SurfnetCore.gml'
         name = 'waxman'
         while True:
-            # try:
-            #     G = G = pickle.load(open(graphFileName, 'rb'))
-            # except:
-            #     G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            #     pickle.dump(G, open(graphFileName, 'wb'))
+            try:
+                G = G = pickle.load(open(graphFileName, 'rb'))
+            except:
+                G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+                pickle.dump(G, open(graphFileName, 'wb'))
             
 
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
