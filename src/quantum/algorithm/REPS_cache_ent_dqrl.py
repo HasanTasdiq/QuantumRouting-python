@@ -627,7 +627,7 @@ class REPSCACHEENT_DQRL(AlgorithmBase):
                             # self.topo.usedLinks.add(link)
                             edge = (link.n1 , link.n2)
                             usedLinksCount += 1
-                            self.topo.reward_ent[edge] =self.topo.reward_ent[edge] + self.topo.positive_reward if link in self.topo.reward_ent else self.topo.positive_reward
+                            self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if link in self.topo.reward_ent else self.topo.positive_reward
 
                 # for x in successPath:
                 #     print('[REPS-CACHE] success:', [z[0].id for z in x])
