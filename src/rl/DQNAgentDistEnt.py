@@ -63,7 +63,7 @@ class DQNAgentDistEnt:
         print('++++++++++initiating DQN agent for:' , algo.name)
         self.env = RoutingEnv(algo)
         self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
-        self.model_name = 'DQNAgentDistEnt_2.keras'
+        self.model_name = 'DQNAgentDistEnt.keras'
 
         # Main model
         self.model = self.create_model()
