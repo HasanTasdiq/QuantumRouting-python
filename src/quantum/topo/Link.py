@@ -265,7 +265,7 @@ class Link:
                 if b:
                     self.entangledTimeSlot = timeSlot
                     self.entangled = b
-                    print('++++++++++++++++++++++++++++++++++++++++====entangled unassigned ==================++++++++++++++++++++++++')
+                    # print('++++++++++++++++++++++++++++++++++++++++====entangled unassigned ==================++++++++++++++++++++++++')
                     # self.assignQubits()
                 # print('ent prob', self.p , b)
 
