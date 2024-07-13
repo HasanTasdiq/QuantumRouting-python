@@ -91,7 +91,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         algo.entAgent = DQNAgentDistEnt_2(algo, pid)
     timeSlot = ttime
     global ttime2
-    if algo.name == 'REPS':
+    if algo.name == 'REPS' or algo.name == 'REPSCACHE2':
         timeSlot = min(ttime2,ttime)
 
     for i in range(timeSlot):
@@ -123,7 +123,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     print('====================================================')
     print('====================================================')
     
-    if '_entdqrl' in algo.name and success_req > shared_data['max_success']:
+    if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data['max_success']:
         print('going to save the model ' , success_req)
         algo.entAgent.save_model()
         shared_data['max_success'] = success_req
@@ -173,7 +173,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
+    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
     # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
     # # # # # # ## algorithms.append(REPSCACHE4(copy.deepcopy(topo),param='ten',name='REPSCACHE4'))
@@ -193,10 +193,10 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl'))
     algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl_no_repeat'))
 
-    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
-    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl_no_repeat'))
-    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl'))
-    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl_no_repeat'))
+    algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
+    algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl_no_repeat'))
+    algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl'))
+    algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl_no_repeat'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
