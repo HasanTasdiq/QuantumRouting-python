@@ -644,8 +644,8 @@ class REPSCACHEENT_DQRL(AlgorithmBase):
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     if link1 in self.topo.usedLinks:
                         link1.clearPhase4Swap()
-                    else:
-                        edge = self.topo.linktoEdgeSorted(link)
+                    elif link1 is not None:
+                        edge = self.topo.linktoEdgeSorted(link1)
 
                         try:
                             self.topo.reward_ent[edge] += self.topo.negative_reward
@@ -654,8 +654,8 @@ class REPSCACHEENT_DQRL(AlgorithmBase):
 
                     if link2 in self.topo.usedLinks:
                         link2.clearPhase4Swap()
-                    else:
-                        edge = self.topo.linktoEdgeSorted(link)
+                    elif link2 is not None:
+                        edge = self.topo.linktoEdgeSorted(link2)
 
                         try:
                             self.topo.reward_ent[edge] += self.topo.negative_reward
