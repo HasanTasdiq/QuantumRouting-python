@@ -70,7 +70,7 @@ class Link:
                         self.n2.internalLinks.remove(internalLink)
         if self.isVirtualLink and self in self.topo.links:
             
-            self.topo.restoreOriginalLinks(self)                 
+            self.topo.restoreOriginalLinks(self , expired)                 
             self.topo.removeLink(self)
 
         if preState and not self.isVirtualLink:
@@ -92,7 +92,7 @@ class Link:
             else:     
                  self.topo.reward[(self.n1.id , self.n2.id , self.vtimeslot )] = reward2
         elif expired:
-             self.topo.reward_ent[self] = -10
+             self.topo.reward_ent[self] = self.topo.negative_reward
 
         # if self.isVirtualLink and expired:
         #     if (self.n1.id , self.n2.id , self.vtimeslot ) in self.topo.reward:

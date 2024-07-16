@@ -167,7 +167,7 @@ class DQNAgentDist:
         # If counter reaches set value, update target network with weights of main network
         if self.target_update_counter > UPDATE_TARGET_EVERY:
             print('------------------self.model.get_weights()-------------------')
-            print(self.model.get_weights())
+            # print(self.model.get_weights())
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
 
@@ -183,9 +183,9 @@ class DQNAgentDist:
         # print('in get p q')
         for pair in state:
             current_state = self.env.pair_state(pair , timeSlot)
-            print('getting qs')
+            # print('getting qs')
             qs = self.get_qs(current_state)
-            print('getting qs done! ')
+            # print('getting qs done! ')
 
             self.pair_qs[pair] = (current_state , qs)
 
@@ -202,7 +202,7 @@ class DQNAgentDist:
             
             sts.append(state)
 
-        print(sts)
+        # print(sts)
         print('---------- len sts --------------' , len(sts))
         return self.model.predict(np.array(sts), verbose=0, batch_size=500)
     
@@ -216,10 +216,10 @@ class DQNAgentDist:
             # print(current_state)
             states.append((pair , current_state))
 
-        print('getting qs')
+        # print('getting qs')
         
         qs = self.get_qs_batch(states)
-        print('getting qs done! '  , len(qs))
+        # print('getting qs done! '  , len(qs))
         for i in range(len(states)):
             pair , current_state = states[i]
             self.pair_qs[pair] = (current_state , qs[i])
