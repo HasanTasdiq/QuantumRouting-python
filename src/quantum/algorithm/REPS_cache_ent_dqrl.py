@@ -625,9 +625,10 @@ class REPSCACHEENT_DQRL(AlgorithmBase):
                     for node , link in path:
                         if link is not None:
                             # self.topo.usedLinks.add(link)
-                            edge = (link.n1 , link.n2)
+                            edge = self.topo.linktoEdgeSorted(link)
+
                             usedLinksCount += 1
-                            self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if link in self.topo.reward_ent else self.topo.positive_reward
+                            self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
 
                 # for x in successPath:
                 #     print('[REPS-CACHE] success:', [z[0].id for z in x])
@@ -644,18 +645,22 @@ class REPSCACHEENT_DQRL(AlgorithmBase):
                     if link1 in self.topo.usedLinks:
                         link1.clearPhase4Swap()
                     else:
+                        edge = self.topo.linktoEdgeSorted(link)
+
                         try:
-                            self.topo.reward_ent[(link1.n1 , link1.n2)] += self.topo.negative_reward
+                            self.topo.reward_ent[edge] += self.topo.negative_reward
                         except:
-                            self.topo.reward_ent[(link1.n1 , link1.n2)] = self.topo.negative_reward
+                            self.topo.reward_ent[edge] = self.topo.negative_reward
 
                     if link2 in self.topo.usedLinks:
                         link2.clearPhase4Swap()
                     else:
+                        edge = self.topo.linktoEdgeSorted(link)
+
                         try:
-                            self.topo.reward_ent[(link2.n1 , link2.n2)] += self.topo.negative_reward
+                            self.topo.reward_ent[edge] += self.topo.negative_reward
                         except:
-                            self.topo.reward_ent[(link2.n1 , link2.n2)] = self.topo.negative_reward
+                            self.topo.reward_ent[edge] = self.topo.negative_reward
                 totalEntanglement += len(successPath)
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequestPerRound.append(successReq)

@@ -62,6 +62,7 @@ class DQNAgent:
     def __init__(self ,algo , pid):
         print('++++++++++initiating DQN agent for:' , algo.name)
         self.env = RoutingEnv(algo)
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +1,self.env.SIZE,)  
 
         # Main model
         self.model = self.create_model()
@@ -92,7 +93,7 @@ class DQNAgent:
         # model.add(Dropout(0.2))
 
 
-        model.add(Flatten(input_shape = self.env.OBSERVATION_SPACE_VALUES))  
+        model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
         model.add(Dense(24 , activation='relu'))
 
         model.add(Dense(self.env.ACTION_SPACE_SIZE, activation='linear')) 

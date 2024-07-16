@@ -11,6 +11,8 @@ from topo.Node import Node
 from topo.Link import Link
 from numpy import log as ln
 from random import sample
+import numpy as np
+from topo.helper import request_timeout
 
 
 ######################
@@ -18,26 +20,32 @@ from random import sample
 ######################
 
 EPS = 1e-6
-class REPSCACHE4(AlgorithmBase):
+class REPSCACHEENT_DQRL_PSWAP(AlgorithmBase):
     def __init__(self, topo, param=None, name=''):
         super().__init__(topo , param=param)
-        self.name = "REPSCACHE"
+        self.name = name
         self.requests = []
         self.totalRequest = 0
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
+        self.pathSelecttion = 0
         # self.param = param
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
     def genNameByBbracket(self, varName: str, parName: list):
         return (varName + str(parName)).replace(' ', '').replace(',', '][')
+
+
+
+        
     
     def printResult(self):
         print('number of used links ' , len(self.topo.usedLinks))
         # print('first link ' , list(self.topo.usedLinks)[0].n1.id , list(self.topo.usedLinks)[0].n2.id)
         print('total number of links ' , len(self.topo.links))
         print('diff ' , len(set(self.topo.links).difference(self.topo.usedLinks)))
+        print(self.name , 'alpha: ' , self.topo.alpha)
 
         # self.topo.clearAllEntanglements()
         self.topo.resetEntanglement(self.timeSlot)
@@ -47,15 +55,19 @@ class REPSCACHE4(AlgorithmBase):
         # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
         self.result.remainRequestPerRound.append(len(self.requests))
         
-        print("[REPS-CACHE4] total time:", self.result.waitingTime)
-        print("[REPS-CACHE4] remain request:", len(self.requests))
-        print("[REPS-CACHE4] current Timeslot:", self.timeSlot)
+        print(self.name , " total time:", self.result.waitingTime)
+        # print(self.name ," remain request:", len(self.requests))
+        print('[' , self.name, '] :' , self.timeSlot, ' successful request::', self.result.successfulRequest)
+        print(self.name ,' remainRequestPerRound:', self.result.remainRequestPerRound[-1])
+
+
+        print(self.name ," current Timeslot:", self.timeSlot)
+        print(self.name ," ==============  tmp count:", self.topo.tmpcount)
 
 
 
-        print('[REPS-CACHE4] idle time:', self.result.idleTime)
-        print('[REPS-CACHE4] remainRequestPerRound:', self.result.remainRequestPerRound)
-        print('[REPS-CACHE4] avg usedQubits:', self.result.usedQubits)
+        print(self.name ,' idle time:', self.result.idleTime)
+        print(self.name ,' avg usedQubits:', self.result.usedQubits)
 
 
 
@@ -78,7 +90,9 @@ class REPSCACHE4(AlgorithmBase):
         self.tryPreSwapp()
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
+            # self.PFT() # compute (self.ti, self.fi)
+            self.entAgent.learn_and_predict()
+
         # print('[REPS-CACHE] p2 end')
     
     def p4(self):
@@ -87,34 +101,11 @@ class REPSCACHE4(AlgorithmBase):
             self.ELS()
         # print('[REPS-CACHE] p4 end') 
         self.printResult()
+        self.entAgent.update_reward()
+
         return self.result
 
     
-
-
-
-
-    def tryPreSwapp(self):
-
-        for (node , node1 , node2) in self.topo.needLinksDict:
-            link1 = None
-            link2 = None
-            for link in node.links:
-                if link.contains(node1) and link.isEntangled(self.timeSlot) and link.notSwapped():
-                    link1 = link
-                if link.contains(node2) and link.isEntangled(self.timeSlot) and link.notSwapped():
-                    link2 = link
-            if link1 is not None and link2 is not None:
-                link = Link(self.topo, node1, node2, False, False, self.topo.lastLinkId, 0 , isVirtualLink=True)
-                if link.assignable():
-                    swapped = node.attemptPreSwapping(link1, link2)
-                # print('====== swapped in tryPreSwapp() =++++++====' , swapped , node.id , link1.n1.id , link1.n2.id, link2.n1.id ,link2.n2.id)
-                    if swapped:
-                        node1.links.append(link)
-                        node2.links.append(link)
-                        self.topo.links.append(link)
-                        self.topo.lastLinkId += 1
-                        link.assignQubits()
                      
 
 
@@ -172,7 +163,7 @@ class REPSCACHE4(AlgorithmBase):
         
         for (u, v) in edgeIndices:
             dis = self.topo.distance(self.topo.nodes[u].loc, self.topo.nodes[v].loc)
-            probability = math.exp(-self.topo.alpha * dis)
+            # probability = math.exp(-self.topo.alpha * dis)
             # print('++===+++== orig prob ' , self.timeSlot , probability)
             links = [link for link in self.topo.links if ((link.n1.id == u and link.n2.id == v) or (link.n1.id == v and link.n2.id == u))]
             # print('++++++ ' , len(links))
@@ -182,6 +173,8 @@ class REPSCACHE4(AlgorithmBase):
             for link in links:
                 if link.isEntangled(self.timeSlot):
                     prob+=1
+                    # if link.isVirtualLink:
+                    #     print('====================++++++++++++++++vlinkkkkkkkkkkkk++++++++++++++++++==================')
                 else:
                     prob +=link.p()
                 isVirtual = isVirtual or link.isVirtualLink
@@ -244,6 +237,7 @@ class REPSCACHE4(AlgorithmBase):
         # print('[REPS-CACHE] LP1 end')
     def edgeCapacity(self, u, v):
         capacity = 0
+
         for link in u.links:
             if link.contains(v):
                 capacity += 1
@@ -251,8 +245,9 @@ class REPSCACHE4(AlgorithmBase):
         for SDpair in self.srcDstPairs:
             used += self.fi[SDpair][(u, v)]
             used += self.fi[SDpair][(v, u)]
-        if used >= capacity:
-            return 0
+        if used > capacity:
+            print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!======used ==== !!!!!!!!!!!!!!!!!!!!!!!!!!' , used)
+        #     return 0
         return capacity - used
 
     def widthForSort(self, path):
@@ -362,7 +357,9 @@ class REPSCACHE4(AlgorithmBase):
 
         numOfNodes = len(self.topo.nodes)
         numOfSDpairs = len(self.srcDstPairs)
-        numOfFlow = [self.ti[self.srcDstPairs[i]] for i in range(numOfSDpairs)]
+        # numOfFlow = [self.ti[self.srcDstPairs[i]] for i in range(numOfSDpairs)]
+        numOfFlow = [9 for i in range(numOfSDpairs)]
+       
         if len(numOfFlow):
             maxK = max(numOfFlow)
         else:
@@ -484,7 +481,9 @@ class REPSCACHE4(AlgorithmBase):
     def EPS(self):
         self.LP2()
         # initialize fki(u, v), tki
-        numOfFlow = {SDpair : self.ti[SDpair] for SDpair in self.srcDstPairs}
+        # numOfFlow = {SDpair : self.ti[SDpair] for SDpair in self.srcDstPairs}
+        numOfFlow = {SDpair : 9 for SDpair in self.srcDstPairs}
+      
         self.fki = {SDpair : [{} for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.tki = {SDpair : [0 for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.pathForELS = {SDpair : [] for SDpair in self.srcDstPairs}
@@ -577,6 +576,8 @@ class REPSCACHE4(AlgorithmBase):
             needLink[(i, pathIndex)] = []
 
             Pi[i].append(targetPath)
+            self.pathSelecttion += 1
+
             for nodeIndex in range(1, len(targetPath) - 2):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -635,6 +636,8 @@ class REPSCACHE4(AlgorithmBase):
             pathIndex = len(Pi[i])
             needLink[(i, pathIndex)] = []
             Pi[i].append(targetPath)
+            # self.pathSelecttion += 1
+
             for nodeIndex in range(1, len(targetPath) - 1):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -660,6 +663,7 @@ class REPSCACHE4(AlgorithmBase):
         # print('[REPS-CACHE] ELS end')
         # print('[REPS-CACHE]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         totalEntanglement = 0
+        successReq = 0
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -671,18 +675,19 @@ class REPSCACHE4(AlgorithmBase):
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                # print('[REPS-CACHE] attempt:', [node.id for node in path])
+                # print('[REPS-CACHE] attempt:' , (src.id , dst.id), [node.id for node in path])
                 # print('[REPS-CACHE] (node, link1, link2) :', [(x[0].id , x[1].n1.id , x[1].n2.id , x[2].n1.id , x[2].n2.id) for x in needLink[(SDpair, pathIndex)]])
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
+                  
                     swapped = node.attemptSwapping(link1, link2)
+                    # key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
+                    # if not key in self.topo.needLinksDict:
+                    #     self.topo.needLinksDict[key] = [self.timeSlot]
+                    # else:
+                    #     self.topo.needLinksDict[key].append( self.timeSlot)
                     if swapped:
                         self.topo.usedLinks.add(link1)
                         self.topo.usedLinks.add(link2)
-                        key = (node , link1.theOtherEndOf(node) , link2.theOtherEndOf(node))
-                        if not key in self.topo.needLinksDict:
-                            self.topo.needLinksDict[key] = (1 , self.timeSlot)
-                        else:
-                            self.topo.needLinksDict[key] = (self.topo.needLinksDict[key][0] + 1 , self.timeSlot)
 
                         
 
@@ -691,15 +696,27 @@ class REPSCACHE4(AlgorithmBase):
 
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst , self.timeSlot)
                 usedLinksCount = 0
-                for path in successPath:
-                    for node , link in path:
+                for path2 in successPath:
+                    # print('successpath: ' , [el[0].id for el in path2])
+                    for node , link in path2:
                         if link is not None:
-                            self.topo.usedLinks.add(link)
+                            # self.topo.usedLinks.add(link)
                             usedLinksCount += 1
+                            if link.isVirtualLink:
+                                for sublink in link.subLinks:
+                                    edge = self.topo.linktoEdgeSorted(sublink)
+                                    self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+
+                            else:
+                                edge = self.topo.linktoEdgeSorted(link)
+
+                                self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+
                             # if link.isVirtualLink:
-                                # print('++++========++++++ virtual link found +++++==========+++++')
+                            #     print('++++========++++++ virtual link found +++++==========+++++')
                 # for x in successPath:
-                    # print('[REPS-CACHE] success:', [z.id for z in x])
+                #     print('[REPS-CACHE] success:', [z[0].id for z in x])
+
                 # print('[REPS-CACHE] success path :', len(successPath))
 
                 if len(successPath):
@@ -707,21 +724,53 @@ class REPSCACHE4(AlgorithmBase):
                         if (src, dst) == (request[0], request[1]):
                             # print('[REPS-CACHE] finish time:', self.timeSlot - request[2])
                             self.requests.remove(request)
+                            successReq += 1
                             break
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     if link1 in self.topo.usedLinks:
                         link1.clearPhase4Swap()
-                        # if link1.isVirtualLink and link1 in self.topo.links:
-                        #     self.topo.links.remove(link1)
+                    else:
+                        if link1.isVirtualLink:
+                            for sublink in link1.subLinks:
+                                edge = self.topo.linktoEdgeSorted(sublink)
+                                self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+                        else:
+                            edge = self.topo.linktoEdgeSorted(link1)
+                            try:
+                                self.topo.reward_ent[edge] += self.topo.negative_reward
+                            except:
+                                self.topo.reward_ent[edge] = self.topo.negative_reward
+
                     if link2 in self.topo.usedLinks:
                         link2.clearPhase4Swap()
-                        # if link2.isVirtualLink and link2 in self.topo.links:
-                        #     self.topo.links.remove(link2)
-                totalEntanglement += len(successPath)
-        self.result.entanglementPerRound.append(totalEntanglement)
-        
-        print(self.name , '######+++++++========= total ent: ' , totalEntanglement , 'at time:' , self.timeSlot)
+                    else:
+                        if link2.isVirtualLink:
+                            for sublink in link2.subLinks:
+                                edge = self.topo.linktoEdgeSorted(sublink)
 
+                                self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+                        else:
+                            edge = self.topo.linktoEdgeSorted(link2)
+
+                            try:
+                                self.topo.reward_ent[edge] += self.topo.negative_reward
+                            except:
+                                self.topo.reward_ent[edge] = self.topo.negative_reward
+       
+                totalEntanglement += len(successPath)
+                self.updateNeedLinksDict(path)
+
+        self.result.entanglementPerRound.append(totalEntanglement)
+        self.result.successfulRequestPerRound.append(successReq)
+
+        self.result.successfulRequest += successReq
+        entSum = sum(self.result.entanglementPerRound)
+        
+        print(self.name , '######+++++++========= total ent: ' , 'till time:' , self.timeSlot , ':=' , entSum)
+        print(self.name , '######+++++++========= total pathSelecttion: ' , 'till time:' , self.timeSlot , ':=' , self.pathSelecttion , '========+++++==========')
+        print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
+        
+        self.filterReqeuest()
         # for link in self.topo.links:
         #     if link.isVirtualLink:
         #         self.topo.links.remove(link)
@@ -730,6 +779,8 @@ class REPSCACHE4(AlgorithmBase):
         #         if link.isVirtualLink:
         #             node.links.remove(link)
 
+    def filterReqeuest(self):
+        self.requests = list(filter(lambda x: self.timeSlot -  x[2] < self.topo.requestTimeout -1 , self.requests))
 
     def findPathsForPFT(self, SDpair):
         src = SDpair[0]
@@ -885,6 +936,8 @@ class REPSCACHE4(AlgorithmBase):
             return []
     
     def DijkstraForELS(self, SDpair):
+        # return False
+
         src = SDpair[0]
         dst = SDpair[1]
         self.parent = {node : self.topo.sentinel for node in self.topo.nodes}
@@ -919,19 +972,54 @@ class REPSCACHE4(AlgorithmBase):
 
         return False
 if __name__ == '__main__':
-    
-    topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
-    s = REPSCACHE4(topo)
+    numOfNode = 100
+    topo = Topo.generate(numOfNode, 0.9, 5, 0.0002, 6)
+    s = REPSCACHEENT_DQRL_PSWAP(topo,param='ten',name='REPS_preswap_1hop')
+    s = REPSCACHEENT_DQRL_PSWAP(topo,param='ten',name='REPS_preswap_multihop')
     result = AlgorithmResult()
-    samplesPerTime = 10
-    ttime = 50
-    rtime = 50
+    samplesPerTime = 10 * 2
+    ttime = 20
+    rtime = ttime
     requests = {i : [] for i in range(ttime)}
 
-    for i in range(ttime):
-        if i < rtime:
+    # bias_weights = [x%5==0 for x in range(numOfNode)]
+    bias_weights = [random.random() for x in range(numOfNode)]
+    prob = np.array(bias_weights) / np.sum(bias_weights)
+    # for i in range(ttime):
+    #     if i < rtime:
 
-            # ids = [(63, 93), (89, 13), (82, 77), (96, 71), (99, 40)]
+    #         ids = [(1,15), (1,16), (4,17), (3,16)]
+    #         for (p,q) in ids:
+    #             source = None
+    #             dest = None
+    #             for node in topo.nodes:
+
+    #                 if node.id == p:
+    #                     source = node
+    #                 if node.id == q:
+    #                     dest = node
+    #             requests[i].append((source , dest))
+
+    #         # a = sample(topo.nodes, samplesPerTime)
+    #         # for n in range(0,samplesPerTime,2):
+    #         #     requests[i].append((a[n], a[n+1]))
+    #     print('[REPS-CACHE4] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
+
+    # for i in range(ttime):
+    #     result = s.work(requests[i], i)
+
+
+    for i in range(0, 100):
+        requests = []
+        if i < 100:
+            for j in range(20):
+                a = sample(topo.nodes, 2)
+                # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                # a = [topo.nodes[a[0]] , topo.nodes[a[1]]]
+                
+                requests.append((a[0], a[1]))
+            
+            # ids = [(1,15), (1,16), (4,17), (3,16)]
             # for (p,q) in ids:
             #     source = None
             #     dest = None
@@ -941,15 +1029,11 @@ if __name__ == '__main__':
             #             source = node
             #         if node.id == q:
             #             dest = node
-            #     requests[i].append((source , dest))
-
-            a = sample(topo.nodes, samplesPerTime)
-            for n in range(0,samplesPerTime,2):
-                requests[i].append((a[n], a[n+1]))
-        print('[REPS-CACHE4] S/D:' , i , [(a[0].id , a[1].id) for a in requests[i]])
-
-    for i in range(ttime):
-        result = s.work(requests[i], i)
+            #     requests.append((source , dest))
+            # print(requests)
+            s.work(requests, i)
+        else:
+            s.work([], i)
     
 
     # print(result.waitingTime, result.numOfTimeslot)

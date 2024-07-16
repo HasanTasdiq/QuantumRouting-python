@@ -1135,9 +1135,11 @@ class Topo:
         for link in self.links:
 
             link.clearEntanglement()
-    def restoreOriginalLinks(self , vLink):
+    def restoreOriginalLinks(self , vLink , expired = False):
         for link in vLink.subLinks:
-            self.reward_ent[link] = 5
+            if expired:
+                edge = self.linktoEdgeSorted(link)
+                self.reward_ent[edge] = self.negative_reward
             link.clearEntanglement()
             self.addLink(link)
         vLink.subLinks.clear()
@@ -1155,6 +1157,12 @@ class Topo:
         # print('reqs ' , ret)
         return ret
 
+    def linktoEdgeSorted(self , link):
+        edge = (link.n1 , link.n2)
+        if link.n2.id < link.n1.id:
+            edge = (link.n2 , link.n1)
+
+        return edge
 
 
     def resetEntanglement(self , timeslot = 0):
