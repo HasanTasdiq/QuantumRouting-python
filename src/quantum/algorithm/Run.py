@@ -48,10 +48,10 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 500
-ttime2 = 200
+ttime = 20
+ttime2 = 10
 step = 50
-times = 10
+times = 1
 nodeNo = 40
 alpha_ = 0.002
 degree = 6
@@ -75,7 +75,7 @@ preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
 runLabel = [0]
 Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity"]
-
+toRunLessAlgos = ['REPS' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl']
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
@@ -91,7 +91,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         algo.entAgent = DQNAgentDistEnt_2(algo, pid)
     timeSlot = ttime
     global ttime2
-    if algo.name == 'REPS' or algo.name == 'REPSCACHE2':
+    if algo.name in toRunLessAlgos:
         timeSlot = min(ttime2,ttime)
 
     for i in range(timeSlot):
