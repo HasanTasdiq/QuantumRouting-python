@@ -48,8 +48,8 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 15
-ttime2 = 10
+ttime = 400
+ttime2 = 200
 step = 5
 times = 10
 nodeNo = 100
