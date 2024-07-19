@@ -113,13 +113,13 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
     success_req = 0
     
-    for i in range(ttime):
+    for i in range(timeSlot):
         success_req += result.successfulRequestPerRound[i]
 
     print('====================================================')
     print('====================================================')
     print('pid: ' , pid , 'success_req: ' , success_req)
-    print('pid: ' , pid , 'max_success rate : ' , shared_data['max_success'] / ttime)
+    print('pid: ' , pid , 'max_success rate : ' , shared_data['max_success'] / timeSlot)
     print('====================================================')
     print('====================================================')
     
