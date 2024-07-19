@@ -48,11 +48,11 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 200
-ttime2 = 100
+ttime = 400
+ttime2 = 200
 step = 50
 times = 10
-nodeNo = 40
+nodeNo = 100
 alpha_ = 0.002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
@@ -130,7 +130,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
 
 
-def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 40, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
