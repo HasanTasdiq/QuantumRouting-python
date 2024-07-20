@@ -736,6 +736,7 @@ class AlgorithmBase:
 
 
         self.p2()
+        end = process_time()
         
         # if not ('preswap' in self.name):
         self.tryEntanglement()
@@ -746,7 +747,7 @@ class AlgorithmBase:
         #     self.updateCacheTable()
 
         # end   
-        end = process_time()
+        # end = process_time()
 
         self.srcDstPairs.clear()
         self.resetNodeSwaps()
