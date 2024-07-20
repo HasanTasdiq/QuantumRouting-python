@@ -48,16 +48,16 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 400
+ttime = 500
 ttime2 = 200
 step = 5
-times = 10
-nodeNo = 70
+times = 2
+nodeNo = 40
 alpha_ = 0.002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
-numOfRequestPerRound = [40]
+numOfRequestPerRound = [30]
 # numOfRequestPerRound = [2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 100 , 150 ]
@@ -115,18 +115,19 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     
     for i in range(timeSlot):
         success_req += result.successfulRequestPerRound[i]
+    max_success = algo.name + str(len(algo.topo.nodes))+ 'max_success'
 
     print('====================================================')
     print('====================================================')
     print('pid: ' , pid , 'success_req: ' , success_req)
-    print('pid: ' , pid , 'max_success rate : ' , shared_data['max_success'] / timeSlot)
+    print('pid: ' , pid , 'max_success rate : ' , shared_data[max_success] / timeSlot)
     print('====================================================')
     print('====================================================')
     
-    if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data['max_success']:
+    if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
         print('going to save the model ' , success_req)
         algo.entAgent.save_model()
-        shared_data['max_success'] = success_req
+        shared_data[max_success] = success_req
 
 
 
@@ -217,7 +218,10 @@ def Run(numOfRequestPerRound = 40, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
     shared_data = multiprocessing.Manager().dict()
    
-    shared_data['max_success'] = 0
+    for algo in algorithms:
+        max_success = algo.name + str(len(algo.topo.nodes))+ 'max_success'
+        shared_data[max_success] = 0
+    
     jobs = []
 
 
