@@ -20,6 +20,7 @@ from SEER_cache import SEERCACHE
 from SEER_cache2 import SEERCACHE2
 from SEER_cache3 import SEERCACHE3
 from SEER_cache3_3 import SEERCACHE3_3
+from SEER_ent_dqrl import SEER_ENT_DQRL
 from SEE import SEE
 from SEE2 import SEE2
 from CachedEntanglement import CachedEntanglement
@@ -48,7 +49,7 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 2000
+ttime = 200
 ttime2 = 20
 step = 5
 times = 9
@@ -147,7 +148,7 @@ def Run(numOfRequestPerRound = 40, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # make copy
     algorithms = []
 
-    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
 
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))

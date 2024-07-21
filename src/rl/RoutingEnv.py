@@ -138,28 +138,15 @@ class RoutingEnv(Env):
         # print(pair)
 
         req_state = [[0]*self.SIZE]*self.SIZE
-        # if  hasattr(self.algo , 'requestState' ):
-        #     for req in self.algo.requestState:
-        #         n1 = req[0].id 
-        #         n2 = req[1].id 
-        #         req_state[n1][n2] += 1
-        #         req_state[n2][n1] += 1
-        #     graph_state.extend(req_state)
-        # elif hasattr(self.algo , 'requests' ):
-        #     for req in self.algo.requests:
-        #         n1 = req[0].id 
-        #         n2 = req[1].id 
-        #         req_state[n1][n2] += 1
-        #         req_state[n2][n1] += 1
-        #     graph_state.extend(req_state)
 
 
         if  hasattr(self.algo , 'requestState' ):
             for req in self.algo.requestState:
                 n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
-                print('---------------------------------==-=-=-=-=-=-=-=-=-=--')
                 for path , l in self.algo.topo.pair_edge_dict[(n1 , n2)]:
-                    print(path)
+                    for pair in self.getedges(path):
+                        req_state[pair[0]][pair[1]] += 1
+                        req_state[pair[1]][pair[0]] += 1
                 req_state[n1][n2] += 1
                 req_state[n2][n1] += 1
             graph_state.extend(req_state)
