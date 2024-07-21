@@ -26,10 +26,10 @@ class RequestInfo:
 
 class MyAlgorithm(AlgorithmBase):
 
-    def __init__(self, topo , preEnt = False):
+    def __init__(self, topo , preEnt = False, name="My"):
         super().__init__(topo , preEnt)
         self.pathsSortedDynamically = []
-        self.name = "My"
+        self.name = name
         self.r = 40                     # 暫存回合
         self.givenShortestPath = {}     # {(src, dst): path, ...}               path表
         # self.socialRelationship = {}  # {Node : [Node, ...], ...}             node-social表

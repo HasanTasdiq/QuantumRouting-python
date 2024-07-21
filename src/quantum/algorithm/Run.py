@@ -48,11 +48,11 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 500
-ttime2 = 200
+ttime = 2000
+ttime2 = 20
 step = 5
-times = 10
-nodeNo = 100
+times = 9
+nodeNo = 40
 alpha_ = 0.002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
@@ -147,7 +147,7 @@ def Run(numOfRequestPerRound = 40, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # make copy
     algorithms = []
 
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
     # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
 
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
@@ -159,6 +159,8 @@ def Run(numOfRequestPerRound = 40, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # # # # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
     # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_distdqrl'))
+
+    algorithms.append(MyAlgorithm(copy.deepcopy(topo) , name='SEER_entdqrl'))
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
@@ -172,36 +174,39 @@ def Run(numOfRequestPerRound = 40, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # #with pre entanglement
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
-    algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
-    # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    # # # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
+    # # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
+    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop_qrl'))
-    algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop_dqrl'))
+    # # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
+    # # # # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
+
+    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
+    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop_qrl'))
+    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop_dqrl'))
     
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_qrl'))
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl'))
+    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
+    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_qrl'))
+    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl'))
     
     
-    algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl'))
-    # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl_no_repeat'))
-    # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl'))
-    # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl_no_repeat'))
+    # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl'))
+    # # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl_no_repeat'))
+    # # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl'))
+    # # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl_no_repeat'))
 
-    algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
-    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl_no_repeat'))
-    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl'))
-    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl_no_repeat'))
+    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
+    
+    # # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl_no_repeat'))
+    # # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl'))
+    # # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl_no_repeat'))
 
-    algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_entdqrl_1hop_distdqrl'))
-    # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_entdqrl_no_repeat_1hop_distdqrl'))
-    # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_2entdqrl_1hop_distdqrl'))
-    # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_2entdqrl_no_repeat_1hop_distdqrl'))
+    # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_entdqrl_1hop_distdqrl'))
+    
+    # # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_entdqrl_no_repeat_1hop_distdqrl'))
+    # # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_2entdqrl_1hop_distdqrl'))
+    # # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_2entdqrl_no_repeat_1hop_distdqrl'))
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))

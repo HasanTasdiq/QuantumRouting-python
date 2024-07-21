@@ -26,10 +26,10 @@ class RequestInfo:
 
 class SEER_ENT_DQRL(AlgorithmBase):
 
-    def __init__(self, topo , preEnt = False):
+    def __init__(self, topo , preEnt = False, name="my"):
         super().__init__(topo , preEnt)
         self.pathsSortedDynamically = []
-        self.name = "My"
+        self.name = name
         self.r = 40                     # 暫存回合
         self.givenShortestPath = {}     # {(src, dst): path, ...}               path表
         # self.socialRelationship = {}  # {Node : [Node, ...], ...}             node-social表
@@ -439,7 +439,11 @@ class SEER_ENT_DQRL(AlgorithmBase):
 
         if len(self.requestState) > 0:
             self.result.numOfTimeslot += 1
-
+        
+        
+        self.entAgent.learn_and_predict()
+        return
+    
         # p2 (1)
         for req in self.requestState:
             requestInfo = self.requestState[req]
@@ -597,7 +601,17 @@ class SEER_ENT_DQRL(AlgorithmBase):
                 #             link.used = True
                 #             self.result.usedLinks += 1
                 self.result.usedLinks += len(usedLinks)
-                success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+                # success = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
+
+                successPath = self.topo.getEstablishedEntanglementsWithLinks(p[0], p[-1])
+                success = len(successPath)
+                for path in successPath:
+                    for node, link in path:
+                        if link is not None:
+                            link.used = True
+                            edge = self.topo.linktoEdgeSorted(link)
+                            self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+
                 # print('path len ' , len(paths)  , success)
 
                 # print('----------------------')
@@ -609,6 +623,12 @@ class SEER_ENT_DQRL(AlgorithmBase):
 
                 # failed
                 for link in usedLinks:
+                    if not link.used:
+                        edge = self.topo.linktoEdgeSorted(link)
+                        try:
+                            self.topo.reward_ent[edge] += self.topo.negative_reward
+                        except:
+                            self.topo.reward_ent[edge] = self.topo.negative_reward
                     link.clearEntanglement()
                 if success == 0 and len(p) != 2:
                     continue
@@ -689,6 +709,9 @@ class SEER_ENT_DQRL(AlgorithmBase):
         # print('----------------------')
         self.filterSEERReqeuest()
         # self.stats()
+        
+        
+        self.entAgent.update_reward()
 
         return self.result
 
