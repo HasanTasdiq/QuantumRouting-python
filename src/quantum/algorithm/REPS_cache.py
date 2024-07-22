@@ -16,9 +16,9 @@ from random import sample
 
 EPS = 1e-6
 class REPSCACHE(AlgorithmBase):
-    def __init__(self, topo, param=None, name=''):
+    def __init__(self, topo, param=None, name='REPSCACHE'):
         super().__init__(topo , param=param)
-        self.name = "REPSCACHE"
+        self.name = name
         self.requests = []
         self.totalRequest = 0
         self.totalUsedQubits = 0
