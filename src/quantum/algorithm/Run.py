@@ -51,7 +51,7 @@ from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
 ttime = 500
 ttime2 = 200
-step = 5
+step = 50
 times = 10
 nodeNo = 50
 alpha_ = 0.002
@@ -61,7 +61,7 @@ degree = 6
 numOfRequestPerRound = [25,30,35]
 # numOfRequestPerRound = [2]
 totalRequest = [10, 20, 30, 40, 50]
-numOfNodes = [50 , 100 , 150 ]
+numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
 r = [0, 2, 4, 6, 8, 10]
 q = [0.7, 0.8, 0.9]
@@ -74,7 +74,7 @@ entanglementLifetimes = [1]
 requestTimeouts = [100,200,300]
 preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
-runLabel = [0]
+runLabel = [4]
 Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity"]
 toRunLessAlgos = ['REPS' , 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl']
 
@@ -116,7 +116,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     
     for i in range(timeSlot):
         success_req += result.successfulRequestPerRound[i]
-    max_success = algo.name + str(len(algo.topo.nodes))+ 'max_success'
+    max_success = algo.name + str(len(algo.topo.nodes))+str(algo.topo.alpha)+str(algo.topo.q)+ 'max_success'
 
     print('====================================================')
     print('====================================================')
@@ -225,7 +225,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     shared_data = multiprocessing.Manager().dict()
    
     for algo in algorithms:
-        max_success = algo.name + str(len(algo.topo.nodes))+ 'max_success'
+        max_success = algo.name + str(len(algo.topo.nodes))+str(algo.topo.alpha)+str(algo.topo.q)+ 'max_success'
         shared_data[max_success] = 0
     
     jobs = []
