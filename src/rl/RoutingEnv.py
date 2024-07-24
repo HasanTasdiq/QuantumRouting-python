@@ -150,6 +150,7 @@ class RoutingEnv(Env):
                 req_state[n1][n2] += 1
                 req_state[n2][n1] += 1
             graph_state.extend(req_state)
+
         elif hasattr(self.algo , 'requests' ):
             for req in self.algo.requests:
                 n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
@@ -161,7 +162,19 @@ class RoutingEnv(Env):
                         req_state[pair[0]][pair[1]] += 1
                         req_state[pair[1]][pair[0]] += 1
             graph_state.extend(req_state)
-            
+        
+
+        dist_state = [[0]*self.SIZE]*self.SIZE
+
+        for u in self.algo.topo.nodes:
+            for v in self.algo.topo.nodes:
+                dis = self.topo.distance(u.loc, v.loc)
+                dist_state[u.id][v.id] = dis
+                dist_state[v.id][u.id] = dis
+        graph_state.extend(dist_state)
+
+        
+
         graph_state.append(state1)
         graph_state.append(state_qm)
 
