@@ -168,12 +168,12 @@ class RoutingEnv(Env):
 
         for u in self.algo.topo.nodes:
             for v in self.algo.topo.nodes:
-                dis = self.topo.distance(u.loc, v.loc)
+                dis = self.algo.topo.distance(u.loc, v.loc)
                 dist_state[u.id][v.id] = dis
                 dist_state[v.id][u.id] = dis
         graph_state.extend(dist_state)
 
-        
+
 
         graph_state.append(state1)
         graph_state.append(state_qm)
