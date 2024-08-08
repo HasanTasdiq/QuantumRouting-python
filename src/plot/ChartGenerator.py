@@ -22,6 +22,8 @@ class ChartGenerator:
             Xlabel = 'Ent. Lifetime (Time slot)'
         if Xlabel == 'Timeslot':
             Xlabel = 'Time slot'
+        if Ylabel == 'algorithmRuntime':
+            Ylabel = 'Algorithm Runtime (s)'
         if not os.path.exists(filename):
             print("file doesn't exist")
             return
@@ -49,9 +51,9 @@ class ChartGenerator:
             "#0000FF",
             "#000000",
             "#900321",
-            "#900121",
-            "#901321",
-            "#943321",
+            "#F00121",
+            "#401321",
+            "#643321",
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
@@ -60,7 +62,7 @@ class ChartGenerator:
         Ylabel_fontsize = fontsize
         Xticks_fontsize = 22
         Yticks_fontsize = fontsize
-        legSize = 25
+        legSize = 22
             
         # matplotlib.rcParams['text.usetex'] = True
         # fig, ax = plt.subplots(figsize=(8, 6), dpi=600) 
@@ -88,7 +90,7 @@ class ChartGenerator:
         }
         
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize = (9, 6), dpi = 600)
+        fig, ax1 = plt.subplots(figsize = (7, 6), dpi = 600)
         # ax1.spines['top'].set_linewidth(1.5)
         # ax1.spines['right'].set_linewidth(1.5)
         # ax1.spines['bottom'].set_linewidth(1.5)
@@ -173,7 +175,8 @@ class ChartGenerator:
         # AlgoName = ["SEER","SEER-cache", "SEER-1hop-pre-swap","SEER-multihop-pre-swap", "SEER-multihop-pre-swap-qrl","SEER-multihop-swap-dqrl"]
         # AlgoName = ["REPS","REPS-EC", "REPS-PEG-heuristic", "REPS-PEG-qrl"]
         # AlgoName = ["Original","Ent. Caching", "PES-heuristic", "PES-QRL", "PES-DeepQRL"]
-        AlgoName = ["Original","Ent. Caching", "PES-heuristic", "PES-QRL", "PES-DeepQRL" , '4' , '5' , '6' , '7' ,'8']
+        # AlgoName = ["Original","Ent. Caching", "PES-heuristic", "PES-QRL", "PES-DeepQRL" , '4' , '5' , '6' , '7' ,'8']
+        AlgoName = ["Original","Ent. Caching", "PES-DeepQRL", "Original-SEG","Ent. Caching-SEG", "PES-DeepQRL-SEG"]
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
         # AlgoName = ["SEER Ent. Caching" , "REPS Ent. Caching"]
 
@@ -187,7 +190,7 @@ class ChartGenerator:
             handletextpad = 0.2,
             handlelength = 1,
             columnspacing = 0.2,
-            ncol = 1,
+            ncol = 2,
             facecolor = "None",
         )
 
@@ -207,7 +210,7 @@ class ChartGenerator:
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.27)
-        # ax1.set_ylim(bottom=30)
+        # ax1.set_ylim(bottom=20)
 
         # plt.show()
         # plt.tight_layout()
