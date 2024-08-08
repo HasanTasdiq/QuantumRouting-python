@@ -100,7 +100,7 @@ class Topo:
         self.preSwapFraction = 1/2
         self.tmpcount = 0
         self.entanglementLifetime = 10
-        self.requestTimeout = 5
+        self.requestTimeout = 1
         self.reward = {}
         self.reward_ent = {}
         self.name = name
@@ -136,9 +136,9 @@ class Topo:
             else:
                 (p1, p2) = _positions[_node]
 
-            _positions[_node] = (p1 * x_scale, p2 * y_scale)
+            # _positions[_node] = (p1 * x_scale, p2 * y_scale)
             # _positions[_node] = (p1 * 500,  p2 * 500)
-            # _positions[_node] = (p1 * 1400,  p2 * 1400)
+            _positions[_node] = (p1 * 10000,  p2 * 10000)
             _neighbors[_node] = list(nx.neighbors(G,_node))
             # print('neighbors of node ' , len(_neighbors[_node]))
           
@@ -203,7 +203,7 @@ class Topo:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             rand = int(random.random()*5+3) # 3~7
             # rand = int(random.random()*6+3) # 3-10
-            # rand = 6
+            rand = 3
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
@@ -445,7 +445,7 @@ class Topo:
                 pickle.dump(G, open(graphFileName, 'wb'))
             
 
-            # G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.001, domain=(0, 0, 1, 1))
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
