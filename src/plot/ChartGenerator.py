@@ -51,7 +51,7 @@ class ChartGenerator:
             "#0000FF",
             "#000000",
             "#900321",
-            "#F00121",
+            "#ada205",
             "#401321",
             "#643321",
         ]
@@ -97,7 +97,7 @@ class ChartGenerator:
         # ax1.spines['left'].set_linewidth(1.5)
         ax1.tick_params(direction = "in")
         ax1.tick_params(bottom = True, top = True, left = True, right = True)
-        ax1.tick_params(pad = 20)
+        # ax1.tick_params(pad = 2)
 
         ##data start##
         x = []
@@ -176,7 +176,8 @@ class ChartGenerator:
         # AlgoName = ["REPS","REPS-EC", "REPS-PEG-heuristic", "REPS-PEG-qrl"]
         # AlgoName = ["Original","Ent. Caching", "PES-heuristic", "PES-QRL", "PES-DeepQRL"]
         # AlgoName = ["Original","Ent. Caching", "PES-heuristic", "PES-QRL", "PES-DeepQRL" , '4' , '5' , '6' , '7' ,'8']
-        AlgoName = ["Original","Ent. Caching", "PES-DeepQRL", "Original-SEG","Ent. Caching-SEG", "PES-DeepQRL-SEG"]
+        # AlgoName = ["Original","Ent. Caching", "PES-DeepQRL", "Original-SEG","Ent. Caching-SEG", "PES-DeepQRL-SEG"]
+        AlgoName = ["REPS","REPS-EC", "REPS-PES", "REPS-DRL", "REPS-DRL-EC", "REPS-DRL-PES"]
         # AlgoName = ["SEER","SEER-cache","SEER-preswap"]
         # AlgoName = ["SEER Ent. Caching" , "REPS Ent. Caching"]
 
