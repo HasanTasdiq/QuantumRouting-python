@@ -72,6 +72,9 @@ class REPS(AlgorithmBase):
         # print('[REPS] p2 end')
     
     def p4(self):
+        # print([(r[0].id, r[0].id) for r in self.requests])
+        # print([(r[0].id, r[0].id) for r in self.srcDstPairs])
+
         if len(self.srcDstPairs) > 0:
             self.EPS()
             self.ELS()

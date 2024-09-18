@@ -99,12 +99,18 @@ class RoutingEnv(Env):
             reward = -10
         return reward
     
-    def find_reward_routing(self, request , timeSlot, action):
+    def find_reward_routing(self, request , timeSlot,current_node_id,  action):
         reward = 0
-        if (request,action) in self.algo.topo.reward_swap:
-            reward = self.algotopo.reward_swap[(request , node)]
-        else:
-            reward = -10
+        # print('------------find_reward_routing---------' , current_node_id)
+        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node_id) + '_' + str(action)
+        reward = self.algo.topo.reward_swap[key]
+
+        # if (request,current_node_id , action) in self.algo.topo.reward_swap:
+        #     print('------------find_reward_routing---------')
+        #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + current_id + '_' + action.id
+        #     reward = self.algotopo.reward_swap[key]
+        # else:
+        #     reward = -10
         return reward
 
 
@@ -143,10 +149,10 @@ class RoutingEnv(Env):
 
         state_cn[current_node_id] = 1
 
-        state_graph.extend(state_cr)
-        state_graph.extend(state_cn)
+        state_graph.append(state_cr)
+        state_graph.append(state_cn)
 
-        return state_graph
+        return np.array(state_graph)
 
         
         
