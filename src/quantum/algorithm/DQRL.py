@@ -16,10 +16,10 @@ import numpy as np
 
 sys.path.insert(0, "../../rl")
 
-from DQNAgentDistEnt import DQNAgentDistEnt  
+from DQRLAgent import DQRLAgent
 
 EPS = 1e-6
-class DQRL(AlgorithmBase):
+class REPS_ENT_DQRL(AlgorithmBase):
     def __init__(self, topo,param=None, name=''):
         super().__init__(topo)
         self.name = name
@@ -28,6 +28,7 @@ class DQRL(AlgorithmBase):
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
         # self.entAgent = DQNAgentDistEnt(self, 0)
+        self.routingAgent = DQRLAgent(self , 0)
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
@@ -79,12 +80,109 @@ class DQRL(AlgorithmBase):
     
     def p4(self):
         if len(self.srcDstPairs) > 0:
-            self.EPS()
-            self.ELS()
+            # self.EPS()
+            # self.ELS()
+            self.route()
         # print('[REPS] p4 end') 
         self.printResult()
         self.entAgent.update_reward()
         return self.result
+    def route(self):
+        successReq = 0
+        totalEntanglement = 0
+        for request in self.srcDstPairs:
+            src,dst = request[0] , request[1]
+            current_node = request[0]
+            prev_node = None
+            prev_links = []
+            hopCount = 0
+            success = False
+            good_to_search = True
+            width = 0
+            usedLinks = []
+            selectedNodes = []
+            while (not current_node == request[1]) and (hopCount < 15) and good_to_search:
+                current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node)
+                next_node = self.topo.nodes[next_node_id]
+                ent_links = [link for link in current_node.links if (link.isEntangled() and link.contains(next_node) and link.notSwapped())]
+                if not len(ent_links):
+                    good_to_search = False
+                if prev_node is not None:
+                    swapCount = 0
+                    swappedlinks = []
+                    for link1,link2 in zip(prev_links , ent_links):
+                        swapped = current_node.attemptSwapping(link1, link2)
+                        if swapped:
+                            swappedlinks.append(link2)
+                        usedLinks.append(link2)
+                    if len(swappedlinks):
+                        prev_links = swappedlinks
+                    else:
+                        good_to_search = False
+                else:
+                    prev_links = ent_links
+                    usedLinks.extends(prev_link)
+                
+                self.routingAgent.update_action( request ,  next_node  , current_state )
+                
+                if len(prev_links) and next_node == request[1]:
+                    success = True
+                    break
+                else:
+                    selectedNodes.append(next_node)
+                    
+                prev_node = current_node
+                current_node = next_node
+                hopCount += 1
+            
+            if success:
+                successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
+
+                for path in successPath:
+                    for node, link in path:
+                        if link is not None:
+                            link.used = True
+                            edge = self.topo.linktoEdgeSorted(link)
+
+                            self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+                        if node is not None:
+                            try:
+                                self.topo.reward_swap[(request , node)] += self.topo.positive_reward
+                            except:
+                                self.topo.reward_swap[(request , node)] = self.topo.positive_reward
+                print("!!!!!!!success!!!!!!!")
+                self.requests.remove(request)
+                successReq += 1
+                totalEntanglement += len(successPath)
+            else:
+                for link in usedLinks:
+                        edge = self.topo.linktoEdgeSorted(link1)
+                        try:
+                            self.topo.reward_ent[edge] += self.topo.negative_reward
+                        except:
+                            self.topo.reward_ent[edge] = self.topo.negative_reward
+                for node in selectedNodes:
+                    try:
+                        self.topo.reward_swap[(request , node)] += self.topo.positive_reward
+                    except:
+                        self.topo.reward_swap[(request , node)] = self.topo.positive_reward
+            
+            for link in usedLinks:
+                link.clearPhase4Swap()
+
+
+        self.result.usedLinks += len(usedLinks)
+        
+        self.result.entanglementPerRound.append(totalEntanglement)
+        self.result.successfulRequestPerRound.append(successReq)
+
+        self.result.successfulRequest += successReq
+        
+        entSum = sum(self.result.entanglementPerRound)
+        self.filterReqeuest()
+        print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
+        print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
+                    
 
 
     
@@ -103,8 +201,8 @@ class DQRL(AlgorithmBase):
         # path[-1] is the path of weight
         return -path[-1]
     
-
-
+        
+          
     def edgeSuccessfulEntangle(self, u, v):
         if u == v:
             return 0
@@ -668,7 +766,7 @@ class DQRL(AlgorithmBase):
 if __name__ == '__main__':
     
     topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
-    s = REPS(topo)
+    s = DQRL(topo)
     result = AlgorithmResult()
     samplesPerTime = 8 * 2
     ttime = 100

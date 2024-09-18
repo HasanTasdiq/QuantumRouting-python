@@ -103,6 +103,7 @@ class Topo:
         self.requestTimeout = 1
         self.reward = {}
         self.reward_ent = {}
+        self.reward_swap = {}
         self.name = name
         self.link_capacity = {}
         self.preswap_capacity = 0.5
