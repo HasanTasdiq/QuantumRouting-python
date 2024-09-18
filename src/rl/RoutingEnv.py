@@ -98,6 +98,15 @@ class RoutingEnv(Env):
         elif self.algo.timeSlot - timeSlot >= ENTANGLEMENT_LIFETIME:
             reward = -10
         return reward
+    
+    def find_reward_routing(self, request , timeSlot, action):
+        reward = 0
+        if (request,action) in self.algo.topo.reward_swap:
+            reward = self.algotopo.reward_swap[(request , node)]
+        else:
+            reward = -10
+        return reward
+
 
     def reset(self):
         self.state = self.algo.topo.needLinksDict
@@ -109,9 +118,45 @@ class RoutingEnv(Env):
         for i in range(len(a) - 1):
             res.append((a[i] , a[i + 1]))
         return res
+    def routing_state(self , current_request , current_node_id , timeSlot = 0):
+        state_cr = [0 for i in range(self.SIZE)]
+        state_cn = [0 for i in range(self.SIZE)]
+        state_req = [[0]*self.SIZE]*self.SIZE
+        state_graph = [[0]*self.SIZE]*self.SIZE
+
+        for link in self.algo.topo.links:
+            if link.isEntangled(timeSlot) and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] += 1
+                state_graph[n2][n1] += 1
+        
+        if hasattr(self.algo , 'requests' ):
+            for req in self.algo.requests:
+                n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
+                state_req[n1][n2] += 1
+                state_req[n2][n1] += 1
+        state_graph.extend(state_req)
+        
+        state_cr[current_request[0].id] = 1
+        state_cr[current_request[1].id] = 1
+
+        state_cn[current_node_id] = 1
+
+        state_graph.extend(state_cr)
+        state_graph.extend(state_cn)
+
+        return state_graph
+
+        
+        
+
+
     def ent_state(self, link , timeSlot):
         state1 = [0 for i in range(self.SIZE)]
         state_qm = [0 for i in range(self.SIZE)]
+
+
 
         try:
             source = link.n1
