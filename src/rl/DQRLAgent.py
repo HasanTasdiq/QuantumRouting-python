@@ -277,7 +277,7 @@ class DQRLAgent:
     def learn_and_predict_next_node(self , request , current_node):
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
-        current_state = self.env.routing_state(request , current_node , timeSlot)
+        current_state = self.env.routing_state(request , current_node.id , timeSlot)
         if np.random.random() > EPSILON_:
 
             t2 = time.time()
@@ -288,10 +288,12 @@ class DQRLAgent:
         
         return current_state, next_node
     
-    def update_action(self , request ,  next_node  , current_state ):
+    def update_action(self , request ,  action  , current_state ):
+        global EPSILON_
+
         timeSlot = self.env.algo.timeSlot
 
-        next_state = self.env.routing_state(request , next_node , timeSlot)
+        next_state = self.env.routing_state(request , action , timeSlot)
 
         if next_state is None:
             next_state = current_state
@@ -312,7 +314,10 @@ class DQRLAgent:
             for i in range(len(self.last_action_table[request])):
 
                 (action , timeSlot , current_state , next_state) = self.last_action_table[request][i]
-                reward = self.env.find_reward_routing(request  , timeSlot , action)
+                # current_node_id = current_state[2*self.env.SIZE + 1].index(1)
+                current_node_id = np.where(current_state[2*self.env.SIZE + 1] == 1)[0][0]
+                # print(current_state[2*self.env.SIZE + 1], current_node_id, str(current_node_id))
+                reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
                 if not reward:
                     continue
 
@@ -322,10 +327,10 @@ class DQRLAgent:
 
 
         #need to fix!!!!!!!!!!!!!!!!!!!!!!!!
-        for request in self.last_action_table:
-            # print(self.last_action_table[pair])
-            self.last_action_table[request] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
-        
+        # for request in self.last_action_table:
+        #     # print(self.last_action_table[pair])
+        #     self.last_action_table[request] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
+        self.last_action_table = {}
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
     
     def save_model(self):

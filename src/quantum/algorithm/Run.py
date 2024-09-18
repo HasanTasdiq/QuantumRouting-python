@@ -23,6 +23,7 @@ from SEER_cache3_3 import SEERCACHE3_3
 from SEER_ent_dqrl import SEER_ENT_DQRL
 from SEE import SEE
 from SEE2 import SEE2
+from DQRL import QuRA_DQRL
 from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 from topo.Node import Node
@@ -49,17 +50,17 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 50
-ttime2 = 50
+ttime = 500
+ttime2 = 500
 step = 50
-times = 10
-nodeNo = 100
+times = 1
+nodeNo = 30
 alpha_ = 0.0002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [6]
+numOfRequestPerRound = [2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -99,6 +100,8 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
             agent.learn_and_predict()
 
+        # print([(r[0].id, r[1].id) for r in requests[i]])
+        
         result = algo.work(requests[i], i)
 
         if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
@@ -176,7 +179,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
 
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
@@ -211,6 +214,9 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
+
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+
 
     algorithms[0].r = r
     algorithms[0].density = SocialNetworkDensity
@@ -249,7 +255,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
                         a = sample([i for i in range(numOfNode)], 2)
 
                         # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                        # print('req: ' , a)
+                        print('req: ' , a)
                         # for _ in range(int(random.random()*3+1)):
                         ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))
