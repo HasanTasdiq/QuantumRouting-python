@@ -30,6 +30,7 @@ class QuRA_DQRL(AlgorithmBase):
         # self.entAgent = DQNAgentDistEnt(self, 0)
         self.routingAgent = DQRLAgent(self , 0)
         self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
+        self.hopCountThreshold = 25
 
 
     def genNameByComma(self, varName, parName):
@@ -75,9 +76,9 @@ class QuRA_DQRL(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
+            # self.PFT() # compute (self.ti, self.fi)
             # self.randPFT()
-            # self.entAgent.learn_and_predict()
+            self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
     def LP1(self):
         # print('[REPS] LP1 start')
@@ -186,6 +187,9 @@ class QuRA_DQRL(AlgorithmBase):
             # print('========ent_links=======')
             # print((request[0].id, request[1].id))
 
+            if not len(self.findDQRLPath(request)):
+                continue
+
             src,dst = request[0] , request[1]
             current_node = request[0]
             prev_node = None
@@ -198,7 +202,7 @@ class QuRA_DQRL(AlgorithmBase):
             selectedNodes = []
             selectedEdges = []
             path = [current_node.id]
-            while (not current_node == request[1]) and (hopCount < 15) and good_to_search:
+            while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                 
                 current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
                 next_node = self.topo.nodes[next_node_id]
@@ -207,6 +211,7 @@ class QuRA_DQRL(AlgorithmBase):
 
                 if not len(ent_links):
                     good_to_search = False
+                    print((src.id,dst.id) , '=FAILED= no ent links')
                 else:
                     ent_links = [ent_links[0]]
 
@@ -215,14 +220,18 @@ class QuRA_DQRL(AlgorithmBase):
 
                 if current_node == next_node:
                     good_to_search = False
+                    print((src.id,dst.id) , '=FAILED= current_node == next_node')
+
                     
                 if next_node.id in path:
                     good_to_search = False
+                    print((src.id,dst.id) , '=FAILED= loop')
+                    
                 
                 if good_to_search:
-                    dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id]
-                    if not dist:
-                        dist = 1
+                    dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] + 1
+                    # if not dist:
+                    #     dist = 1
                     try:
                         self.topo.reward_swap[key] += self.topo.positive_reward / dist
                     except:
@@ -241,6 +250,8 @@ class QuRA_DQRL(AlgorithmBase):
                             prev_links = swappedlinks
                         else:
                             good_to_search = False
+                            print((src.id,dst.id) , '=FAILED= swap fails')
+
                             
                 else:
                     prev_links = ent_links
@@ -261,6 +272,9 @@ class QuRA_DQRL(AlgorithmBase):
                 prev_node = current_node
                 current_node = next_node
                 hopCount += 1
+                if hopCount >= self.hopCountThreshold:
+                    print((src.id,dst.id) , '=FAILED= hopcount exceeds')
+                 
             
             if success:
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
@@ -286,7 +300,7 @@ class QuRA_DQRL(AlgorithmBase):
                         self.topo.reward_swap[key] += self.topo.positive_reward*2
                     except:
                         self.topo.reward_swap[key] = self.topo.positive_reward*2
-                # print("!!!!!!!success!!!!!!!")
+                print("!!!!!!!success!!!!!!!")
 
                 # print([(r[0].id, r[1].id) for r in self.requests])
 
@@ -339,6 +353,80 @@ class QuRA_DQRL(AlgorithmBase):
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request  after  extra:', successReq)
                     
 
+    def findDQRLPath(self , request):
+            src,dst = request[0] , request[1]
+            current_node = request[0]
+            prev_node = None
+            prev_links = []
+            hopCount = 0
+            success = False
+            good_to_search = True
+            width = 0
+            usedLinks = []
+            selectedNodes = [current_node]
+            selectedEdges = []
+            selectedLinks = []
+            path = [current_node.id]
+            while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
+                
+                current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
+                next_node = self.topo.nodes[next_node_id]
+                ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
+                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+
+                if not len(ent_links):
+                    good_to_search = False
+                    print((src.id,dst.id) , '=FAILED findDQRLPath = not len(ent_links)')
+
+                else:
+                    ent_links = [ent_links[0]]
+                    for link in ent_links:
+                        link.taken = True
+                    selectedLinks.extend(ent_links)
+                    
+
+                # print(current_node.id , next_node_id , len(ent_links))
+
+
+                if current_node == next_node:
+                    good_to_search = False
+                    print((src.id,dst.id) , '=FAILED findDQRLPath = current_node == next_node')
+
+                    
+                if next_node.id in path:
+                    good_to_search = False  
+                    print((src.id,dst.id) , '=FAILED findDQRLPath = loop')
+                                 
+                    
+                if prev_node is None:
+                    prev_links = ent_links
+                    usedLinks.extend(prev_links)
+                
+
+                selectedNodes.append(next_node)
+                selectedEdges.append((current_node, next_node))
+                path.append(next_node.id)
+                
+                if len(prev_links) and next_node == request[1] and good_to_search:
+                    success = True
+                    good_to_search = False
+                
+
+                    
+                prev_node = current_node
+                current_node = next_node
+                hopCount += 1
+                if hopCount >= self.hopCountThreshold:
+                    print((src.id,dst.id) , '=FAILED findDQRLPath = hopCount >= self.hopCountThreshold')
+
+            for link in selectedLinks:
+                link.taken = False
+            if success:
+                print('======@@@@===== findDQRLPath len ' , len(selectedNodes) , 'for ' , (src.id , dst.id))
+
+                return selectedNodes
+            else:
+                return []
 
     def extraRoute(self):
         T = []
@@ -355,7 +443,7 @@ class QuRA_DQRL(AlgorithmBase):
             targetPath = self.findPathForDQRL((src,dst))
             if not len(targetPath):
                 continue
-            print('********* path for ' , (src.id,dst.id) , ': ' , [n.id for n in targetPath])
+            print('********* path for ' , (src.id,dst.id) , ':: ' , len(targetPath) , ':: ' , ': ' , [n.id for n in targetPath])
 
 
             
@@ -376,7 +464,7 @@ class QuRA_DQRL(AlgorithmBase):
 
 
       
-            while (not current_node == dst) and (hopCount < 15) and good_to_search:
+            while (not current_node == dst) and (hopCount < self.hopCountThreshold) and good_to_search:
                 
                 current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
                 next_node = targetPath[i]
@@ -387,17 +475,23 @@ class QuRA_DQRL(AlgorithmBase):
 
                 if not len(ent_links):
                     good_to_search = False
+                    print((src.id,dst.id) , '=FAILED extra route = not len(ent_links)')
+
                 else:
                     ent_links = [ent_links[0]]
 
-                print(current_node.id , next_node_id , len(ent_links))
+                # print(current_node.id , next_node_id , len(ent_links))
 
 
                 if current_node == next_node:
                     good_to_search = False
+                    print((src.id,dst.id) , '=FAILED extra route = current_node == next_node')
+
                     
                 if next_node.id in path:
                     good_to_search = False
+                    print((src.id,dst.id) , '=FAILED extra route = loop')
+
                 
                 if good_to_search:
                     dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id]
@@ -422,6 +516,8 @@ class QuRA_DQRL(AlgorithmBase):
                             prev_links = swappedlinks
                         else:
                             good_to_search = False
+                            print((src.id,dst.id) , '=FAILED extra route = swap fails')
+
                             
                 else:
                     prev_links = ent_links
@@ -442,6 +538,9 @@ class QuRA_DQRL(AlgorithmBase):
                 prev_node = current_node
                 current_node = next_node
                 hopCount += 1
+                if hopCount >= self.hopCountThreshold:
+                    print((src.id,dst.id) , '=FAILED extra route = hopCount >= self.hopCountThreshold')
+
             
             if success:
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
@@ -467,7 +566,7 @@ class QuRA_DQRL(AlgorithmBase):
                         self.topo.reward_swap[key] += self.topo.positive_reward*2
                     except:
                         self.topo.reward_swap[key] = self.topo.positive_reward*2
-                # print("!!!!!!!success!!!!!!!")
+                print("!!!!!!!success!!!!!!!")
 
                 # print([(r[0].id, r[1].id) for r in self.requests])
 
