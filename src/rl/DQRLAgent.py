@@ -63,7 +63,7 @@ class DQRLAgent:
         print('++++++++++initiating DQRL agent for:' , algo.name)
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 + 4,self.env.SIZE,)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
 
         # Main model
@@ -150,7 +150,10 @@ class DQRLAgent:
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
             if not done:
-                max_future_q = np.max(future_qs_list[index])
+                # max_future_q = np.max(future_qs_list[index])
+
+                max_future_q = self.env.max_future_q(current_state , future_qs_list[index])
+                
                 new_q = reward + DISCOUNT * max_future_q
             else:
                 new_q = reward
@@ -200,23 +203,6 @@ class DQRLAgent:
         return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
 
     
-    def get_link_qs_batch(self , links , timeSlot):
-        # print('in get p q')
-        if not len(links):
-            return
-        states = []
-        for link in links:
-            current_state = self.env.routing_state(current_request , current_node , timeSlot)
-            # print(current_state)
-            states.append((link , current_state))
-
-        # print('getting qs')
-        # print(states)
-        qs = self.get_qs_batch(states)
-        # print('getting qs done! '  , len(qs))
-        for i in range(len(states)):
-            link , current_state = states[i]
-            self.link_qs[link] = (current_state , qs[i])
     
     # def update_last_action_table(self , action , timeSlot , current_state , next_state):
 
@@ -274,26 +260,29 @@ class DQRLAgent:
     #         assignable = self.learn_and_predict2()
     #         if 'no_repeat' in self.env.algo.name:
     #             break
-    def learn_and_predict_next_node(self , request , current_node):
+    def learn_and_predict_next_node(self , request , current_node , path):
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
-        current_state = self.env.routing_state(request , current_node.id , timeSlot)
+        current_state = self.env.routing_state(request , current_node.id ,path ,  timeSlot )
         if np.random.random() > EPSILON_:
 
             t2 = time.time()
 
-            next_node = np.argmax(self.get_qs(current_state))
+            # next_node = np.argmax(self.get_qs(current_state))
+            next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state , self.get_qs(current_state)))
+            
         else:  
-            next_node = np.random.randint(0, self.env.SIZE)
+            # next_node = np.random.randint(0, self.env.SIZE)
+            next_node = self.env.rand_neighbor(current_node.id , current_state)
         
         return current_state, next_node
     
-    def update_action(self , request ,  action  , current_state ):
+    def update_action(self , request ,  action  , current_state , path ):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
 
-        next_state = self.env.routing_state(request , action , timeSlot)
+        next_state = self.env.routing_state(request , action , path ,  timeSlot)
 
         if next_state is None:
             next_state = current_state

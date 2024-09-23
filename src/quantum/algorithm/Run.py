@@ -50,17 +50,17 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 50000
-ttime2 = 50000
+ttime = 500
+ttime2 = 100
 step = 50
 times = 1
-nodeNo = 30
+nodeNo = 50
 alpha_ = 0.0002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [2]
+numOfRequestPerRound = [10]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -130,7 +130,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     
     if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
         print('going to save the model ' , success_req)
-        algo.entAgent.save_model()
+        # algo.entAgent.save_model()
         shared_data[max_success] = success_req
 
 
@@ -179,7 +179,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
 
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
+    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
@@ -255,7 +255,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
                         a = sample([i for i in range(numOfNode)], 2)
 
                         # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                        print('req: ' , a)
+                        # print('req: ' , a)
                         # for _ in range(int(random.random()*3+1)):
                         ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))

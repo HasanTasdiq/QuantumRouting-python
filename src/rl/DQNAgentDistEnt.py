@@ -328,7 +328,7 @@ class DQNAgentDistEnt:
             EPSILON_ -= EPSILON_DECAY_VALUE
 
         self.link_qs = {}
-        print('**learn_and_predict multicore ent dqrl done in ' , time.time() - t1 , 'seconds')
+        # print('**learn_and_predict multicore ent dqrl done in ' , time.time() - t1 , 'seconds')
         return assignable
     def update_reward(self):
         print('update reward:::::::::::::::::::::::: ' , len(self.last_action_table) )

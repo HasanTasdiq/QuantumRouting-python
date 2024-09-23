@@ -100,7 +100,7 @@ class Topo:
         self.preSwapFraction = 1/2
         self.tmpcount = 0
         self.entanglementLifetime = 10
-        self.requestTimeout = 1
+        self.requestTimeout = 5
         self.reward = {}
         self.reward_ent = {}
         self.reward_swap = {}
