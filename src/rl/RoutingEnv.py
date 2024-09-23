@@ -17,6 +17,10 @@ class RoutingEnv(Env):
         self.algo = algo
         self.SIZE = len(algo.topo.nodes)
         self.ACTION_SPACE_SIZE = 2
+
+        self.graph = []
+        self.V = self.SIZE
+
         print('=========in Routing env ===== ' , algo.name)
 
     def step(self, pair ,  action , timeSlot):
@@ -124,11 +128,71 @@ class RoutingEnv(Env):
         for i in range(len(a) - 1):
             res.append((a[i] , a[i + 1]))
         return res
-    def routing_state(self , current_request , current_node_id , timeSlot = 0):
+    def minDistance(self, dist, sptSet):
+
+        # Initialize minimum distance for next node
+        min = sys.maxsize
+        min_index = -1
+
+        # Search not nearest vertex not in the
+        # shortest path tree
+        for u in range(self.V):
+            if dist[u] < min and sptSet[u] == False:
+                min = dist[u]
+                min_index = u
+
+        return min_index
+    def printSolution(self, dist):
+        print("Vertex \tDistance from Source")
+        for node in range(self.V):
+            print(node, "\t", dist[node])
+    def dijkstra(self, src):
+
+        dist = [sys.maxsize] * self.V
+        dist[src] = 0
+        sptSet = [False] * self.V
+
+        for cout in range(self.V):
+
+            # Pick the minimum distance vertex from
+            # the set of vertices not yet processed.
+            # x is always equal to src in first iteration
+            x = self.minDistance(dist, sptSet)
+
+            if x < 0:
+                continue
+
+            # Put the minimum distance vertex in the
+            # shortest path tree
+            sptSet[x] = True
+
+            # Update dist value of the adjacent vertices
+            # of the picked vertex only if the current
+            # distance is greater than new distance and
+            # the vertex in not in the shortest path tree
+            for y in range(self.V):
+                if self.graph[x][y] > 0 and sptSet[y] == False and \
+                        dist[y] > dist[x] + self.graph[x][y]:
+                    dist[y] = dist[x] + self.graph[x][y]
+
+        # self.printSolution(dist)
+        return dist
+    def routing_state(self , current_request , current_node_id ,path, timeSlot = 0  ):
         state_cr = [0 for i in range(self.SIZE)]
         state_cn = [0 for i in range(self.SIZE)]
-        state_req = [[0]*self.SIZE]*self.SIZE
-        state_graph = [[0]*self.SIZE]*self.SIZE
+        state_path = [0 for i in range(self.SIZE)]
+
+        state_req = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+
+        # for _ in range(self.SIZE):
+        #     state_req.append([[0]*self.SIZE])
+        #     state_graph.append([[0]*self.SIZE])
+        #     graph.append([[0]*self.SIZE])
 
         for link in self.algo.topo.links:
             if link.isEntangled(timeSlot) and not link.taken:
@@ -136,6 +200,15 @@ class RoutingEnv(Env):
                 n2 = link.n2.id
                 state_graph[n1][n2] += 1
                 state_graph[n2][n1] += 1
+
+                # print(state_graph)
+                
+                graph[n1][n2] = 1
+                graph[n2][n1] = 1
+        self.graph = graph
+        # print(self.graph)
+        dist = self.dijkstra(current_request[1].id)
+
         
         if hasattr(self.algo , 'requests' ):
             for req in self.algo.requests:
@@ -149,8 +222,15 @@ class RoutingEnv(Env):
 
         state_cn[current_node_id] = 1
 
+        for i in range(len(path)):
+            state_path[path[i]] = i + 1
+
         state_graph.append(state_cr)
         state_graph.append(state_cn)
+        state_graph.append(dist)
+        state_graph.append(state_path)
+
+
 
         return np.array(state_graph)
 
@@ -175,7 +255,8 @@ class RoutingEnv(Env):
         state1[source.id] = 1
         state1[dest.id] = 1
 
-        graph_state = [[0]*self.SIZE]*self.SIZE
+        graph_state = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
 
         for link in self.algo.topo.links:
             if link.assignable():
@@ -188,7 +269,8 @@ class RoutingEnv(Env):
         # print(state1)
         # print(pair)
 
-        req_state = [[0]*self.SIZE]*self.SIZE
+        req_state = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
 
 
         if  hasattr(self.algo , 'requestState' ):
@@ -232,7 +314,7 @@ class RoutingEnv(Env):
 
         return np.array(graph_state)
     def pair_state(self , pair , timeSlot):
-        state1 = [0] * self.SIZE
+        state1 = [0 for column in range(self.SIZE)]
         source = pair[0]
         dest = pair[1]
         count = 0
@@ -254,7 +336,8 @@ class RoutingEnv(Env):
         state1[source.id] = 1
         state1[dest.id] = 1
 
-        graph_state = [[0]*self.SIZE]*self.SIZE
+        graph_state = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
 
         for link in self.algo.topo.links:
             if link.isEntangled(timeSlot):
@@ -266,7 +349,8 @@ class RoutingEnv(Env):
         # print(pair)
         graph_state.append(state1)
 
-        req_state = [[0]*self.SIZE]*self.SIZE
+        req_state = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
         if  hasattr(self.algo , 'requestState' ):
             for req in self.algo.requestState:
                 n1 = req[0].id 
@@ -292,3 +376,54 @@ class RoutingEnv(Env):
             
         # if self.topo.virtualLinkCount[(source , dest)] * k >= math.ceil(timesUsed  / needlink_timeslot):
         #     return 0
+    
+    # def neighbors(self , current_node , current_state):
+    #     neighbor_list = current_state[current_node.id]
+
+    #     ret = []
+
+    #     for n in neighbor_list:
+    #         if n > 0:
+    #             ret.append(1)
+    #         else:
+    #             ret.append(0)
+        
+    #     return ret
+    
+    def neighbor_qs(self , current_node_id , current_state , qs):
+        neighbor_list = current_state[current_node_id]
+        path = current_state[2*self.SIZE + 3]
+
+        ret = []
+
+        for i in range(len(neighbor_list)):
+            n = neighbor_list[i]
+            if n > 0 and path[i] == 0:
+                ret.append(qs[i])
+            else:
+                ret.append(float('-inf'))
+        
+        ret[current_node_id] = float('-inf')
+        
+        return ret
+    
+    def rand_neighbor(self , current_node_id , current_state):
+        neighbor_list = current_state[current_node_id]
+        path = current_state[2*self.SIZE + 3]
+
+        ret = []
+
+        for i in range(len(neighbor_list)):
+            n = neighbor_list[i]
+            if n > 0 and path[i] == 0 :
+                ret.append(i)
+        if not len(ret):
+            return np.random.randint(0, self.SIZE)
+        return random.choice(ret)
+    
+    def max_future_q(self , current_state , qs):
+        current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
+
+        return np.max(self.neighbor_qs(current_node_id , current_state , qs))
+
+
