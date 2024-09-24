@@ -727,7 +727,6 @@ class AlgorithmBase:
             self.prepare()
 
         # start
-        start = process_time()
 
         # if self.preEnt:
         #     self.preEntanglement()
@@ -736,12 +735,15 @@ class AlgorithmBase:
 
 
         self.p2()
-        end = process_time()
         
         # if not ('preswap' in self.name):
         self.tryEntanglement()
 
+        start = process_time()
+
         res = self.p4()
+        end = process_time()
+
         self.stats()
         # if self.preEnt:
         #     self.updateCacheTable()
