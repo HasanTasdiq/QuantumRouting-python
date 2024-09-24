@@ -545,6 +545,7 @@ class REPS(AlgorithmBase):
             pathIndex = len(Pi[i])
             needLink[(i, pathIndex)] = []
             Pi[i].append(targetPath)
+            output.append(targetPath)
             for nodeIndex in range(1, len(targetPath) - 1):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -563,7 +564,8 @@ class REPS(AlgorithmBase):
                 nextLink[node].append(targetLink1)
                 needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
             T.remove(i)
-        
+
+        print('** after graph ' , len(output))
         # print('[REPS] ELS end')
         # print('[REPS]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         totalEntanglement = 0
