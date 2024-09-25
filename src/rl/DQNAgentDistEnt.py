@@ -105,8 +105,13 @@ class DQNAgentDistEnt:
         print('after input shape')
 
         model.add(Dense(72 , activation='relu'))
+        print('after input 72')
+
         model.add(Dense(48 , activation='relu'))
+        print('after input 48')
+
         model.add(Dense(24 , activation='relu'))
+        print('after input 24')
 
         model.add(Dense(7, activation='linear')) 
         print('before model summary')
