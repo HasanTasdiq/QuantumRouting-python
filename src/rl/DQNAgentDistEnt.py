@@ -99,7 +99,10 @@ class DQNAgentDistEnt:
 
 
 
-        model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
+        # model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
+        model.add(Flatten(Input(shape = (self.OBSERVATION_SPACE_VALUES,))))  
+        print('after input shape')
+
         model.add(Dense(72 , activation='relu'))
         model.add(Dense(48 , activation='relu'))
         model.add(Dense(24 , activation='relu'))
