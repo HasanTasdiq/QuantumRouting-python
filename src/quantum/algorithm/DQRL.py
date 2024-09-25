@@ -325,9 +325,9 @@ class QuRA_DQRL(AlgorithmBase):
                     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
 
                     try:
-                        self.topo.reward_swap[key] += self.topo.negative_reward*20
+                        self.topo.reward_swap[key] += self.topo.negative_reward
                     except:
-                        self.topo.reward_swap[key] = self.topo.negative_reward*20
+                        self.topo.reward_swap[key] = self.topo.negative_reward
             
             for link in usedLinks:
                 link.clearPhase4Swap()

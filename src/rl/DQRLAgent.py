@@ -295,7 +295,7 @@ class DQRLAgent:
             EPSILON_ -= EPSILON_DECAY_VALUE
     
     def update_reward(self):
-        print('update reward:::::::::::::::::::::::: ' , len(self.last_action_table) )
+        print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_table) )
         t1 = time.time()
         for request in self.last_action_table:
 
