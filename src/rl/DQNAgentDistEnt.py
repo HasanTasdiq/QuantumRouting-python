@@ -93,7 +93,7 @@ class DQNAgentDistEnt:
             print('=====================no model found========================')
             # time.sleep(10)
 
-        
+        print('after try')
         model = Sequential()
 
 
