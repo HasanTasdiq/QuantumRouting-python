@@ -95,6 +95,7 @@ class DQNAgentDistEnt:
 
         print('after try')
         model = Sequential()
+        print('after Sequential')
 
 
 
