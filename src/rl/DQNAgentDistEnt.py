@@ -64,6 +64,7 @@ class DQNAgentDistEnt:
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
         self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *3 +2,self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = ((self.env.SIZE *3 +2)*self.env.SIZE)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQNAgentDistEnt.keras'
 
         # Main model
@@ -100,7 +101,7 @@ class DQNAgentDistEnt:
 
 
         # model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
-        model.add(Flatten(Input(shape = (self.OBSERVATION_SPACE_VALUES,))))  
+        model.add(Input(shape = (self.OBSERVATION_SPACE_VALUES,)))  
         print('after input shape')
 
         model.add(Dense(72 , activation='relu'))
