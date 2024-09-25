@@ -104,11 +104,16 @@ class DQNAgentDistEnt:
         model.add(Dense(24 , activation='relu'))
 
         model.add(Dense(7, activation='linear')) 
+        print('before model summary')
+
         print(model.summary)
+
+        print('before model compile')
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
         model.compile(loss="mse", optimizer=Adam(), metrics=['accuracy'])
         # model._make_predict_function()
+        print('before return model')
         return model
 
     # Adds step's data to a memory replay array
