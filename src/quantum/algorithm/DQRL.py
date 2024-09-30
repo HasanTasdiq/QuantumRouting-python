@@ -182,6 +182,8 @@ class QuRA_DQRL(AlgorithmBase):
     def route(self):
         successReq = 0
         totalEntanglement = 0
+        usedLinks = []
+
         for request in self.srcDstPairs:
 
             # print('========ent_links=======')
@@ -494,7 +496,7 @@ class QuRA_DQRL(AlgorithmBase):
 
                 
                 if good_to_search:
-                    dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id]
+                    dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] +1
                     if not dist:
                         dist = 1
 
