@@ -35,6 +35,8 @@ import numpy as np
 import random
 import time
 import os.path
+import multiprocessing.context as ctx
+ctx._force_start_method('spawn')
 
 # sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
 sys.path.insert(0, "../../rl")
@@ -51,16 +53,16 @@ from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
 ttime = 10000
-ttime2 = 100
+ttime2 = 200
 step = 50
-times = 2
+times = 3
 nodeNo = 50
 alpha_ = 0.0002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [10]
+numOfRequestPerRound = [20]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -340,7 +342,7 @@ if __name__ == '__main__':
                 a = sample([i for i in range(100)], 2)
                 tmp_ids[i].append((a[0], a[1]))
                
-
+    output = ''
     for XlabelIndex in range(len(Xlabels)):
         # continue
         Xlabel = Xlabels[XlabelIndex]
@@ -444,6 +446,8 @@ if __name__ == '__main__':
         for Ylabel in Ylabels:
             filename = Xlabel + "_" + Ylabel + ".txt"
             print(filename)
+            output += filename + '\n'
+
 
             if os.path.isfile(targetFilePath + filename):
                 F = open(targetFilePath + filename, "w")
@@ -454,11 +458,13 @@ if __name__ == '__main__':
                 Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
                 Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
                 print(Xaxis + Yaxis)
+                output += Xaxis + Yaxis + '\n'
 
                 F.write(Xaxis + Yaxis)
             F.close()
 
     t2 = time.time()
+    print(output)
     print('-----EXIT----- total time taken: ' , (t2-t1)/3600 , ' hours')
 
     exit(0)
