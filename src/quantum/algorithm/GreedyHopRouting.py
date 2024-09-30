@@ -116,6 +116,8 @@ class GreedyHopRouting(AlgorithmBase):
         print('[Greedy_H] p2 end')
     
     def p4(self):
+        totalSuccess = 0
+        totalEnt = 0
         for path in self.pathsSortedDynamically:
             _, width, p, time = path
             oldNumOfPairs = len(self.topo.getEstablishedEntanglements(p[0], p[-1]))
@@ -148,9 +150,10 @@ class GreedyHopRouting(AlgorithmBase):
             print('----------------------')
             print('path:', [x.id for x in p])
             succ = len(self.topo.getEstablishedEntanglements(p[0], p[-1])) - oldNumOfPairs
-        
+            totalEnt += succ
             if succ > 0 or len(p) == 2:
                 print('finish time:', self.timeSlot - time)
+                totalSuccess +=1
                 find = (p[0], p[-1], time)
                 if find in self.requests:
                     self.totalTime += self.timeSlot - time
@@ -166,7 +169,10 @@ class GreedyHopRouting(AlgorithmBase):
         self.result.remainRequestPerRound.append(len(self.requests)/self.totalNumOfReq)     
         self.result.waitingTime = (self.totalTime + remainTime) / self.totalNumOfReq + 1
         self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
+        self.result.successfulRequestPerRound.append(totalSuccess)
+        self.result.entanglementPerRound.append(totalEnt)
 
+        print('[Greedy_H] total successful :', totalSuccess)
         print('[Greedy_H] waiting time:', self.result.waitingTime)
         print('[Greedy_H] idle time:', self.result.idleTime)
         print('[Greedy_H] p4 end')
