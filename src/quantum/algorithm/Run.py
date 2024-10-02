@@ -170,7 +170,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
-    algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
+    # algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
 
 
@@ -181,7 +181,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
 
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
+    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
@@ -217,7 +217,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
 
 
     algorithms[0].r = r
