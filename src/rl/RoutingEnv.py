@@ -180,7 +180,7 @@ class RoutingEnv(Env):
     def routing_state(self , current_request , current_node_id ,path, timeSlot = 0  ):
         state_cr = [0 for i in range(self.SIZE)]
         state_cn = [0 for i in range(self.SIZE)]
-        state_path = [0 for i in range(self.SIZE)]
+        # state_path = [0 for i in range(self.SIZE)]
 
         state_req = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
@@ -222,13 +222,13 @@ class RoutingEnv(Env):
 
         state_cn[current_node_id] = 1
 
-        for i in range(len(path)):
-            state_path[path[i]] = i + 1
+        # for i in range(len(path)):
+        #     state_path[path[i]] = i + 1
 
         state_graph.append(state_cr)
         state_graph.append(state_cn)
         state_graph.append(dist)
-        state_graph.append(state_path)
+        # state_graph.append(state_path)
 
 
 
@@ -390,15 +390,18 @@ class RoutingEnv(Env):
         
     #     return ret
     
-    def neighbor_qs(self , current_node_id , current_state , qs):
+    def neighbor_qs(self , current_node_id , current_state , path , qs):
         neighbor_list = current_state[current_node_id]
-        path = current_state[2*self.SIZE + 3]
+        # path = current_state[2*self.SIZE + 3]
+        state_path = [0 for i in range(self.SIZE)]
+        for i in range(len(path)):
+            state_path[path[i]] = i + 1
 
         ret = []
 
         for i in range(len(neighbor_list)):
             n = neighbor_list[i]
-            if n > 0 and path[i] == 0:
+            if n > 0 and state_path[i] == 0:
                 ret.append(qs[i])
             else:
                 ret.append(float('-inf'))
@@ -407,15 +410,18 @@ class RoutingEnv(Env):
         
         return ret
     
-    def rand_neighbor(self , current_node_id , current_state):
+    def rand_neighbor(self , current_node_id , current_state, path):
         neighbor_list = current_state[current_node_id]
-        path = current_state[2*self.SIZE + 3]
+        # path = current_state[2*self.SIZE + 3]
+        state_path = [0 for i in range(self.SIZE)]
+        for i in range(len(path)):
+            state_path[path[i]] = i + 1
 
         ret = []
 
         for i in range(len(neighbor_list)):
             n = neighbor_list[i]
-            if n > 0 and path[i] == 0 :
+            if n > 0 and state_path[i] == 0 :
                 ret.append(i)
         if not len(ret):
             return np.random.randint(0, self.SIZE)

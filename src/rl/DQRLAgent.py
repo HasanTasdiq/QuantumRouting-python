@@ -63,7 +63,7 @@ class DQRLAgent:
         print('++++++++++initiating DQRL agent for:' , algo.name)
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 + 4,self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 + 3,self.env.SIZE,)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
 
         # Main model
@@ -269,11 +269,11 @@ class DQRLAgent:
             t2 = time.time()
 
             # next_node = np.argmax(self.get_qs(current_state))
-            next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state , self.get_qs(current_state)))
+            next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , self.get_qs(current_state)))
             
         else:  
             # next_node = np.random.randint(0, self.env.SIZE)
-            next_node = self.env.rand_neighbor(current_node.id , current_state)
+            next_node = self.env.rand_neighbor(current_node.id , current_state,path)
         
         return current_state, next_node
     
