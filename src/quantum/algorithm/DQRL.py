@@ -204,6 +204,10 @@ class QuRA_DQRL(AlgorithmBase):
                 selectedNodes = []
                 selectedEdges = []
                 path = [current_node.id]
+                failed_no_ent = False
+                failed_loop = False
+                failed_swap = False
+                fail_hopcount = False
                 while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                     
                     current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
@@ -213,6 +217,7 @@ class QuRA_DQRL(AlgorithmBase):
 
                     if not len(ent_links):
                         good_to_search = False
+                        failed_no_ent = True
                         print((src.id,dst.id) , '=FAILED= no ent links')
                     else:
                         ent_links = [ent_links[0]]
@@ -222,12 +227,20 @@ class QuRA_DQRL(AlgorithmBase):
 
                     if current_node == next_node:
                         good_to_search = False
+                        failed_loop = True
                         print((src.id,dst.id) , '=FAILED= current_node == next_node')
 
                         
                     if next_node.id in path:
                         good_to_search = False
+                        failed_loop = True
+
                         print((src.id,dst.id) , '=FAILED= loop')
+                    
+                    hopCount += 1
+                    if hopCount >= self.hopCountThreshold:
+                        fail_hopcount = True
+                        print((src.id,dst.id) , '=FAILED= hopcount exceeds')
                         
                     
                     if good_to_search:
@@ -252,6 +265,7 @@ class QuRA_DQRL(AlgorithmBase):
                                 prev_links = swappedlinks
                             else:
                                 good_to_search = False
+                                failed_swap = True
                                 print((src.id,dst.id) , '=FAILED= swap fails')
 
                                 
@@ -273,9 +287,7 @@ class QuRA_DQRL(AlgorithmBase):
                         
                     prev_node = current_node
                     current_node = next_node
-                    hopCount += 1
-                    if hopCount >= self.hopCountThreshold:
-                        print((src.id,dst.id) , '=FAILED= hopcount exceeds')
+
                     
                 
                 if success:
@@ -323,6 +335,16 @@ class QuRA_DQRL(AlgorithmBase):
                                 self.topo.reward_ent[edge] += self.topo.negative_reward
                             except:
                                 self.topo.reward_ent[edge] = self.topo.negative_reward
+                    
+                    
+                    neg_weight = 0
+                    if failed_no_ent:
+                        neg_weight = 10
+                    elif failed_loop:
+                        neg_weight = 12
+                    elif failed_swap:
+                        neg_weight = 0
+
                     for (current_node, next_node) in selectedEdges:
                         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
 
