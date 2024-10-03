@@ -183,156 +183,156 @@ class QuRA_DQRL(AlgorithmBase):
         successReq = 0
         totalEntanglement = 0
         usedLinks = []
+        if 'greedy_only' not in self.param:
+            for request in self.srcDstPairs:
 
-        for request in self.srcDstPairs:
+                # print('========ent_links=======')
+                # print((request[0].id, request[1].id))
 
-            # print('========ent_links=======')
-            # print((request[0].id, request[1].id))
+                if not len(self.findDQRLPath(request)):
+                    continue
 
-            if not len(self.findDQRLPath(request)):
-                continue
-
-            src,dst = request[0] , request[1]
-            current_node = request[0]
-            prev_node = None
-            prev_links = []
-            hopCount = 0
-            success = False
-            good_to_search = True
-            width = 0
-            usedLinks = []
-            selectedNodes = []
-            selectedEdges = []
-            path = [current_node.id]
-            while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
-                
-                current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
-                next_node = self.topo.nodes[next_node_id]
-                ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
-                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
-
-                if not len(ent_links):
-                    good_to_search = False
-                    print((src.id,dst.id) , '=FAILED= no ent links')
-                else:
-                    ent_links = [ent_links[0]]
-
-                # print(current_node.id , next_node_id , len(ent_links))
-
-
-                if current_node == next_node:
-                    good_to_search = False
-                    print((src.id,dst.id) , '=FAILED= current_node == next_node')
-
+                src,dst = request[0] , request[1]
+                current_node = request[0]
+                prev_node = None
+                prev_links = []
+                hopCount = 0
+                success = False
+                good_to_search = True
+                width = 0
+                usedLinks = []
+                selectedNodes = []
+                selectedEdges = []
+                path = [current_node.id]
+                while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                     
-                if next_node.id in path:
-                    good_to_search = False
-                    print((src.id,dst.id) , '=FAILED= loop')
+                    current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
+                    next_node = self.topo.nodes[next_node_id]
+                    ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
+                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+
+                    if not len(ent_links):
+                        good_to_search = False
+                        print((src.id,dst.id) , '=FAILED= no ent links')
+                    else:
+                        ent_links = [ent_links[0]]
+
+                    # print(current_node.id , next_node_id , len(ent_links))
+
+
+                    if current_node == next_node:
+                        good_to_search = False
+                        print((src.id,dst.id) , '=FAILED= current_node == next_node')
+
+                        
+                    if next_node.id in path:
+                        good_to_search = False
+                        print((src.id,dst.id) , '=FAILED= loop')
+                        
                     
-                
-                if good_to_search:
-                    dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] + 1
-                    # if not dist:
-                    #     dist = 1
-                    try:
-                        self.topo.reward_swap[key] += self.topo.positive_reward / dist
-                    except:
-                        self.topo.reward_swap[key] = self.topo.positive_reward / dist
-                    
-                if prev_node is not None:
                     if good_to_search:
-                        swapCount = 0
-                        swappedlinks = []
-                        for link1,link2 in zip(prev_links , ent_links):
-                            swapped = current_node.attemptSwapping(link1, link2)
-                            if swapped:
-                                swappedlinks.append(link2)
-                            usedLinks.append(link2)
-                        if len(swappedlinks):
-                            prev_links = swappedlinks
-                        else:
-                            good_to_search = False
-                            print((src.id,dst.id) , '=FAILED= swap fails')
-
-                            
-                else:
-                    prev_links = ent_links
-                    usedLinks.extend(prev_links)
-                
-
-                selectedNodes.append(next_node)
-                selectedEdges.append((current_node, next_node))
-                path.append(next_node.id)
-                self.routingAgent.update_action( request ,  next_node_id  , current_state , path )
-                
-                if len(prev_links) and next_node == request[1] and good_to_search:
-                    success = True
-                    good_to_search = False
-                
-
-                    
-                prev_node = current_node
-                current_node = next_node
-                hopCount += 1
-                if hopCount >= self.hopCountThreshold:
-                    print((src.id,dst.id) , '=FAILED= hopcount exceeds')
-                 
-            
-            if success:
-                successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
-
-                for path in successPath:
-                    for node, link in path:
-                        if link is not None:
-                            link.used = True
-                            edge = self.topo.linktoEdgeSorted(link)
-
-                            self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
-                        # if node is not None:
-                        #     try:
-                        #         self.topo.reward_swap[(request , node)] += self.topo.positive_reward
-                        #     except:
-                        #         self.topo.reward_swap[(request , node)] = self.topo.positive_reward
-                        #                     self.topo.reward_ent[edge] = self.topo.negative_reward
-
-                for (current_node, next_node) in selectedEdges:
-                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
-
-                    try:
-                        self.topo.reward_swap[key] += self.topo.positive_reward*2
-                    except:
-                        self.topo.reward_swap[key] = self.topo.positive_reward*2
-                print("!!!!!!!success!!!!!!!")
-
-                # print([(r[0].id, r[1].id) for r in self.requests])
-
-                # self.requests.remove(request)
-                for req in self.requests:
-                    src = req[0]
-                    dst = req[1]
-                    if (src, dst) == (request[0], request[1]):
-                        # print('[REPS] finish time:', self.timeSlot - request[2])
-                        self.requests.remove(req)
-
-                successReq += 1
-                totalEntanglement += len(successPath)
-            else:
-                for link in usedLinks:
-                        edge = self.topo.linktoEdgeSorted(link)
+                        dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] + 1
+                        # if not dist:
+                        #     dist = 1
                         try:
-                            self.topo.reward_ent[edge] += self.topo.negative_reward
+                            self.topo.reward_swap[key] += self.topo.positive_reward / dist
                         except:
-                            self.topo.reward_ent[edge] = self.topo.negative_reward
-                for (current_node, next_node) in selectedEdges:
-                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+                            self.topo.reward_swap[key] = self.topo.positive_reward / dist
+                        
+                    if prev_node is not None:
+                        if good_to_search:
+                            swapCount = 0
+                            swappedlinks = []
+                            for link1,link2 in zip(prev_links , ent_links):
+                                swapped = current_node.attemptSwapping(link1, link2)
+                                if swapped:
+                                    swappedlinks.append(link2)
+                                usedLinks.append(link2)
+                            if len(swappedlinks):
+                                prev_links = swappedlinks
+                            else:
+                                good_to_search = False
+                                print((src.id,dst.id) , '=FAILED= swap fails')
 
-                    try:
-                        self.topo.reward_swap[key] += self.topo.negative_reward
-                    except:
-                        self.topo.reward_swap[key] = self.topo.negative_reward
-            
-            for link in usedLinks:
-                link.clearPhase4Swap()
+                                
+                    else:
+                        prev_links = ent_links
+                        usedLinks.extend(prev_links)
+                    
+
+                    selectedNodes.append(next_node)
+                    selectedEdges.append((current_node, next_node))
+                    path.append(next_node.id)
+                    self.routingAgent.update_action( request ,  next_node_id  , current_state , path )
+                    
+                    if len(prev_links) and next_node == request[1] and good_to_search:
+                        success = True
+                        good_to_search = False
+                    
+
+                        
+                    prev_node = current_node
+                    current_node = next_node
+                    hopCount += 1
+                    if hopCount >= self.hopCountThreshold:
+                        print((src.id,dst.id) , '=FAILED= hopcount exceeds')
+                    
+                
+                if success:
+                    successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
+
+                    for path in successPath:
+                        for node, link in path:
+                            if link is not None:
+                                link.used = True
+                                edge = self.topo.linktoEdgeSorted(link)
+
+                                self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+                            # if node is not None:
+                            #     try:
+                            #         self.topo.reward_swap[(request , node)] += self.topo.positive_reward
+                            #     except:
+                            #         self.topo.reward_swap[(request , node)] = self.topo.positive_reward
+                            #                     self.topo.reward_ent[edge] = self.topo.negative_reward
+
+                    for (current_node, next_node) in selectedEdges:
+                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+
+                        try:
+                            self.topo.reward_swap[key] += self.topo.positive_reward*2
+                        except:
+                            self.topo.reward_swap[key] = self.topo.positive_reward*2
+                    print("!!!!!!!success!!!!!!!")
+
+                    # print([(r[0].id, r[1].id) for r in self.requests])
+
+                    # self.requests.remove(request)
+                    for req in self.requests:
+                        src = req[0]
+                        dst = req[1]
+                        if (src, dst) == (request[0], request[1]):
+                            # print('[REPS] finish time:', self.timeSlot - request[2])
+                            self.requests.remove(req)
+
+                    successReq += 1
+                    totalEntanglement += len(successPath)
+                else:
+                    for link in usedLinks:
+                            edge = self.topo.linktoEdgeSorted(link)
+                            try:
+                                self.topo.reward_ent[edge] += self.topo.negative_reward
+                            except:
+                                self.topo.reward_ent[edge] = self.topo.negative_reward
+                    for (current_node, next_node) in selectedEdges:
+                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+
+                        try:
+                            self.topo.reward_swap[key] += self.topo.negative_reward
+                        except:
+                            self.topo.reward_swap[key] = self.topo.negative_reward
+                
+                for link in usedLinks:
+                    link.clearPhase4Swap()
 
 
         self.result.usedLinks += len(usedLinks)
