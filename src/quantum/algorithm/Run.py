@@ -52,10 +52,10 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 10000
+ttime = 100
 ttime2 = 100
 step = 500
-times = 10
+times = 5
 nodeNo = 50
 alpha_ = 0.0002
 degree = 6
@@ -218,6 +218,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl' , param = 'greedy_only'))
 
 
     algorithms[0].r = r
