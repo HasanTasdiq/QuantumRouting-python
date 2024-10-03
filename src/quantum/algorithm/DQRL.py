@@ -183,14 +183,14 @@ class QuRA_DQRL(AlgorithmBase):
         successReq = 0
         totalEntanglement = 0
         usedLinks = []
-        if 'greedy_only' not in self.param:
+        if not (self.param is not None and 'greedy_only' in self.param):
             for request in self.srcDstPairs:
 
                 # print('========ent_links=======')
                 # print((request[0].id, request[1].id))
 
-                if not len(self.findDQRLPath(request)):
-                    continue
+                # if not len(self.findDQRLPath(request)):
+                #     continue
 
                 src,dst = request[0] , request[1]
                 current_node = request[0]
