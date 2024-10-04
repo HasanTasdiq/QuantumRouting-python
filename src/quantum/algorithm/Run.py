@@ -52,7 +52,7 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 1000
+ttime = 5000
 ttime2 = 200
 step = 500
 times = 8
@@ -131,8 +131,12 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     print('====================================================')
     
     if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
-        print('going to save the model ' , success_req)
+        print('going to save the ent model ' , success_req)
         algo.entAgent.save_model()
+        if hasattr(algo , 'routingAgent' ):
+            algo.routingAgent.save_model()
+            print('going to save the ent model ' , success_req)
+
         shared_data[max_success] = success_req
 
 
@@ -170,7 +174,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
 
     #with pre entanglement
     # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
-    algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
+    # algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
     # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
 
 
@@ -217,8 +221,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl' , param = 'greedy_only'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl' , param = 'greedy_only'))
 
 
     algorithms[0].r = r

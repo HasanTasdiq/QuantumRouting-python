@@ -344,14 +344,16 @@ class QuRA_DQRL(AlgorithmBase):
                         neg_weight = 12
                     elif failed_swap:
                         neg_weight = 0
+                    elif fail_hopcount:
+                        neg_weight = 10
 
                     for (current_node, next_node) in selectedEdges:
                         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
 
                         try:
-                            self.topo.reward_swap[key] += self.topo.negative_reward
+                            self.topo.reward_swap[key] += self.topo.negative_reward * neg_weight
                         except:
-                            self.topo.reward_swap[key] = self.topo.negative_reward
+                            self.topo.reward_swap[key] = self.topo.negative_reward * neg_weight
                 
                 for link in usedLinks:
                     link.clearPhase4Swap()
@@ -361,6 +363,7 @@ class QuRA_DQRL(AlgorithmBase):
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request before extra:', successReq)
 
 
+        extra_successReq , extra_totalEntanglement = 0 , 0
         extra_successReq , extra_totalEntanglement = self.extraRoute()
 
         totalEntanglement += extra_totalEntanglement
@@ -522,10 +525,10 @@ class QuRA_DQRL(AlgorithmBase):
                     if not dist:
                         dist = 1
 
-                    try:
-                        self.topo.reward_swap[key] += self.topo.positive_reward / dist
-                    except:
-                        self.topo.reward_swap[key] = self.topo.positive_reward / dist
+                    # try:
+                    #     self.topo.reward_swap[key] += self.topo.positive_reward / dist
+                    # except:
+                    #     self.topo.reward_swap[key] = self.topo.positive_reward / dist
                     
                 if prev_node is not None:
                     if good_to_search:
@@ -614,10 +617,10 @@ class QuRA_DQRL(AlgorithmBase):
                 for (current_node, next_node) in selectedEdges:
                     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
 
-                    try:
-                        self.topo.reward_swap[key] += self.topo.negative_reward*20
-                    except:
-                        self.topo.reward_swap[key] = self.topo.negative_reward*20
+                    # try:
+                    #     self.topo.reward_swap[key] += self.topo.negative_reward*20
+                    # except:
+                    #     self.topo.reward_swap[key] = self.topo.negative_reward*20
             
             for link in usedLinks:
                 link.clearPhase4Swap()
