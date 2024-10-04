@@ -184,6 +184,7 @@ class QuRA_DQRL(AlgorithmBase):
         totalEntanglement = 0
         usedLinks = []
         if not (self.param is not None and 'greedy_only' in self.param):
+        # if True:
             for request in self.srcDstPairs:
 
                 # print('========ent_links=======')
@@ -213,7 +214,7 @@ class QuRA_DQRL(AlgorithmBase):
                     current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
                     next_node = self.topo.nodes[next_node_id]
                     ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
-                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
                     if not len(ent_links):
                         good_to_search = False
@@ -308,8 +309,8 @@ class QuRA_DQRL(AlgorithmBase):
                             #                     self.topo.reward_ent[edge] = self.topo.negative_reward
 
                     for (current_node, next_node) in selectedEdges:
-                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
-
+                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                        # print(key)
                         try:
                             self.topo.reward_swap[key] += self.topo.positive_reward*2
                         except:
@@ -348,7 +349,7 @@ class QuRA_DQRL(AlgorithmBase):
                         neg_weight = 10
 
                     for (current_node, next_node) in selectedEdges:
-                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
                         try:
                             self.topo.reward_swap[key] += self.topo.negative_reward * neg_weight
@@ -399,7 +400,7 @@ class QuRA_DQRL(AlgorithmBase):
                 current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
                 next_node = self.topo.nodes[next_node_id]
                 ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
-                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
                 if not len(ent_links):
                     good_to_search = False
@@ -498,7 +499,7 @@ class QuRA_DQRL(AlgorithmBase):
                 i+=1
                 next_node_id = next_node.id
                 ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
-                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
                 if not len(ent_links):
                     good_to_search = False
@@ -587,8 +588,8 @@ class QuRA_DQRL(AlgorithmBase):
                         #                     self.topo.reward_ent[edge] = self.topo.negative_reward
 
                 for (current_node, next_node) in selectedEdges:
-                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
-
+                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                    # print(key)
                     try:
                         self.topo.reward_swap[key] += self.topo.positive_reward*2
                     except:
@@ -615,12 +616,17 @@ class QuRA_DQRL(AlgorithmBase):
                         except:
                             self.topo.reward_ent[edge] = self.topo.negative_reward
                 for (current_node, next_node) in selectedEdges:
-                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node_id)
+                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
                     # try:
                     #     self.topo.reward_swap[key] += self.topo.negative_reward*20
                     # except:
                     #     self.topo.reward_swap[key] = self.topo.negative_reward*20
+
+                    try:
+                        self.topo.reward_swap[key] += 0
+                    except:
+                        self.topo.reward_swap[key] = 0
             
             for link in usedLinks:
                 link.clearPhase4Swap()

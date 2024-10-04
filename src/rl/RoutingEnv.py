@@ -430,6 +430,6 @@ class RoutingEnv(Env):
     def max_future_q(self , current_state , qs):
         current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
 
-        return np.max(self.neighbor_qs(current_node_id , current_state , qs))
+        return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
 
 
