@@ -153,11 +153,12 @@ class GreedyHopRouting(AlgorithmBase):
             totalEnt += succ
             if succ > 0 or len(p) == 2:
                 print('finish time:', self.timeSlot - time)
-                totalSuccess +=1
                 find = (p[0], p[-1], time)
                 if find in self.requests:
                     self.totalTime += self.timeSlot - time
                     self.requests.remove(find)
+                    totalSuccess +=1
+
             print('----------------------')
 
         remainTime = 0
@@ -171,6 +172,8 @@ class GreedyHopRouting(AlgorithmBase):
         self.result.usedQubits = self.totalUsedQubits / self.totalNumOfReq
         self.result.successfulRequestPerRound.append(totalSuccess)
         self.result.entanglementPerRound.append(totalEnt)
+        self.result.successfulRequest += totalSuccess
+
 
         print('[Greedy_H] total successful :', totalSuccess)
         print('[Greedy_H] waiting time:', self.result.waitingTime)

@@ -156,6 +156,9 @@ class GreedyGeographicRouting(AlgorithmBase):
         self.topo.clearAllEntanglements()                     
         self.result.waitingTime = self.totalTime + remainTime
 
+        self.result.successfulRequestPerRound.append(totalSuccess)
+        self.result.entanglementPerRound.append(totalEnt)
+
         print('[Greedy_G] waiting time:', self.result.waitingTime)
         print('[Greedy_G] idle time:', self.result.idleTime)
         print('[Greedy_G] p4 end')
