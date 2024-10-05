@@ -183,9 +183,12 @@ class QuRA_DQRL(AlgorithmBase):
         successReq = 0
         totalEntanglement = 0
         usedLinks = []
-        if not (self.param is not None and 'greedy_only' in self.param):
-        # if True:
+        print(self.name , ('greedy_only' in  self.name))
+        # if not (self.param is not None and 'greedy_only' in self.param):
+        if True:
             for request in self.srcDstPairs:
+                if 'greedy_only' in  self.name:
+                    continue
 
                 # print('========ent_links=======')
                 # print((request[0].id, request[1].id))
