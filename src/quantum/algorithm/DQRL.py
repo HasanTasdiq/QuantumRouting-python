@@ -177,7 +177,7 @@ class QuRA_DQRL(AlgorithmBase):
         # print('[REPS] p4 end') 
         self.printResult()
         # self.entAgent.update_reward()
-        self.routingAgent.update_reward()
+        # self.routingAgent.update_reward()
         return self.result
     def route(self):
         successReq = 0
@@ -318,6 +318,8 @@ class QuRA_DQRL(AlgorithmBase):
                             self.topo.reward_swap[key] += self.topo.positive_reward*2
                         except:
                             self.topo.reward_swap[key] = self.topo.positive_reward*2
+                        print(key , '  ==  ' , self.topo.reward_swap[key])
+                        
                     print("!!!!!!!success!!!!!!!")
 
                     # print([(r[0].id, r[1].id) for r in self.requests])
@@ -358,6 +360,8 @@ class QuRA_DQRL(AlgorithmBase):
                             self.topo.reward_swap[key] += self.topo.negative_reward * neg_weight
                         except:
                             self.topo.reward_swap[key] = self.topo.negative_reward * neg_weight
+                        
+                        print(key , '  ==  ' , self.topo.reward_swap[key])
                 
                 for link in usedLinks:
                     link.clearPhase4Swap()
