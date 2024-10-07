@@ -235,7 +235,7 @@ class RoutingEnv(Env):
         #     state_path[path[i]] = i + 1
         # print(state_cr)
         # print(state_cn)
-        print(dist)
+        # print(dist)
 
         state_graph.append(state_cr)
         state_graph.append(state_cn)
