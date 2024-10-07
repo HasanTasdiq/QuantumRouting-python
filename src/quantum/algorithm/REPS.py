@@ -445,6 +445,7 @@ class REPS(AlgorithmBase):
         T = [SDpair for SDpair in self.srcDstPairs]
         output = []
         while len(T) > 0 and self.name == 'REPS':
+        # while len(T) > 0:
             for SDpair in self.srcDstPairs:
                 removePaths = []
                 for path in Ci[SDpair]:
