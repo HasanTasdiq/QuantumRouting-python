@@ -13,7 +13,7 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 import multiprocessing
 import math
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.001
 
 
 GAMMA = 0.99
@@ -31,7 +31,7 @@ DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 2000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 256  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 128  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+UPDATE_TARGET_EVERY = 30  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -73,6 +73,11 @@ class DQRLAgent:
         self.target_model = self.create_model()
         self.target_model.set_weights(self.model.get_weights())
 
+        # print(self.model.get_weights())
+        self.print_weight(self.model)
+
+        # print(self.target_model.get_weights())
+
         # An array with last n steps for training
         self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
 
@@ -83,15 +88,19 @@ class DQRLAgent:
 
 
 
+
+    def print_weight(self , model):
+        for r in model.get_weights():
+            print(r)
     def create_model(self):
-        try:
-            model = load_model(self.model_name)
-            print('=====================================================model loaded from ',self.model_name,' =====================================')
-            # time.sleep(10)
-            return model
-        except:
-            print('=====================no model found========================')
-            # time.sleep(10)
+        # try:
+        #     model = load_model(self.model_name)
+        #     print('=====================================================model loaded from ',self.model_name,' =====================================')
+        #     # time.sleep(10)
+        #     return model
+        # except:
+        #     print('=====================no model found========================')
+        #     # time.sleep(10)
 
         
         model = Sequential()
@@ -105,6 +114,8 @@ class DQRLAgent:
 
         model.add(Dense(self.env.SIZE, activation='linear')) 
         print(model.summary)
+        # print('------------------self.model.get_weights()-------------------')
+        # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
         model.compile(loss="mse", optimizer=Adam(), metrics=['accuracy'])
@@ -120,7 +131,7 @@ class DQRLAgent:
     def train(self, terminal_state, step):
 
         # Start training only if certain number of samples is already saved
-        # print('----------len(self.replay_memory)----------------')
+        print('----------len(self.replay_memory)----------------', len(self.replay_memory))
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
@@ -172,13 +183,17 @@ class DQRLAgent:
         self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False, )
         print('=============train done===========' , time.time() - t1)
         # Update target network counter every episode
-        if terminal_state:
-            self.target_update_counter += 1
+        # if terminal_state:
+        self.target_update_counter += 1
+        print('self.target_update_counter', self.target_update_counter)
 
         # If counter reaches set value, update target network with weights of main network
         if self.target_update_counter > UPDATE_TARGET_EVERY:
             print('------------------self.model.get_weights()-------------------')
-            print(self.model.get_weights())
+            # print(self.model.get_weights())
+            self.print_weight(self.model)
+            time.sleep(2)
+
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
 

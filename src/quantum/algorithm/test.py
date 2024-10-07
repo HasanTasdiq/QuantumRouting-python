@@ -1,6 +1,10 @@
 import itertools
 
-my_list = [1, 2, 3,4]
-permutations = list(itertools.permutations(my_list))
+import sys
 
-print(permutations)
+# max_ = 0
+# for i in range(10000):
+#     rand = int(random.random()*5+3) 
+#     print(rand)
+#     max_ = max(max_ , rand)
+print(sys.maxsize)

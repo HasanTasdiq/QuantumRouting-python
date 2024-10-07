@@ -109,7 +109,9 @@ class Topo:
         self.preswap_capacity = 0.5
 
         self.positive_reward = 25
-        self.negative_reward = -5
+        self.negative_reward = -5        
+        # self.positive_reward = 0.1
+        # self.negative_reward = -0.11
 
 
         # for pos in _positions:

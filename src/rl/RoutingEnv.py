@@ -149,6 +149,7 @@ class RoutingEnv(Env):
     def dijkstra(self, src):
 
         dist = [sys.maxsize] * self.V
+        # dist = [999] * self.V
         dist[src] = 0
         sptSet = [False] * self.V
 
@@ -391,6 +392,16 @@ class RoutingEnv(Env):
     #     return ret
     
     def neighbor_qs(self , current_node_id , current_state , path , qs):
+        # print('==================')
+        # print('==================')
+        # print('==================')
+        # print('==================')
+        # print(qs)
+        # print('==================')
+        # print('==================')
+        # print('==================')
+        # print('==================')
+
         neighbor_list = current_state[current_node_id]
         # path = current_state[2*self.SIZE + 3]
         state_path = [0 for i in range(self.SIZE)]
@@ -398,15 +409,17 @@ class RoutingEnv(Env):
             state_path[path[i]] = i + 1
 
         ret = []
+        min_q = min(qs) 
 
         for i in range(len(neighbor_list)):
             n = neighbor_list[i]
             if n > 0 and state_path[i] == 0:
                 ret.append(qs[i])
             else:
-                ret.append(float('-inf'))
+                ret.append(min_q)
         
-        ret[current_node_id] = float('-inf')
+        ret[current_node_id] = min_q
+        # print(ret)
         
         return ret
     

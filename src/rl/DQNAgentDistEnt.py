@@ -184,8 +184,8 @@ class DQNAgentDistEnt:
         self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False, )
         print('=============train done===========' , time.time() - t1)
         # Update target network counter every episode
-        if terminal_state:
-            self.target_update_counter += 1
+        # if terminal_state:
+        self.target_update_counter += 1
 
         # If counter reaches set value, update target network with weights of main network
         if self.target_update_counter > UPDATE_TARGET_EVERY:
@@ -303,6 +303,7 @@ class DQNAgentDistEnt:
         # for pair in state:
         for link in self.link_qs:
             current_state , qs = self.link_qs[link]
+            
             if np.random.random() > EPSILON_:
                 # Get action from Q net
                 # print('------self.get_qs(current_state)-----')
