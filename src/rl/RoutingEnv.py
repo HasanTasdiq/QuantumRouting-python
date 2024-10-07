@@ -132,6 +132,7 @@ class RoutingEnv(Env):
 
         # Initialize minimum distance for next node
         min = sys.maxsize
+        min = 100
         min_index = -1
 
         # Search not nearest vertex not in the
@@ -148,8 +149,8 @@ class RoutingEnv(Env):
             print(node, "\t", dist[node])
     def dijkstra(self, src):
 
-        dist = [sys.maxsize] * self.V
-        # dist = [999] * self.V
+        # dist = [sys.maxsize] * self.V
+        dist = [100] * self.V
         dist[src] = 0
         sptSet = [False] * self.V
 
@@ -195,17 +196,22 @@ class RoutingEnv(Env):
         #     state_graph.append([[0]*self.SIZE])
         #     graph.append([[0]*self.SIZE])
 
+        # print(len(self.algo.topo.links))
+        count =0
         for link in self.algo.topo.links:
             if link.isEntangled(timeSlot) and not link.taken:
                 n1 = link.n1.id
                 n2 = link.n2.id
                 state_graph[n1][n2] += 1
                 state_graph[n2][n1] += 1
+                count += 1
 
                 # print(state_graph)
                 
                 graph[n1][n2] = 1
                 graph[n2][n1] = 1
+        # print(count)
+        # print(state_graph)
         self.graph = graph
         # print(self.graph)
         dist = self.dijkstra(current_request[1].id)
@@ -216,6 +222,8 @@ class RoutingEnv(Env):
                 n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
                 state_req[n1][n2] += 1
                 state_req[n2][n1] += 1
+        # print(state_req)
+        
         state_graph.extend(state_req)
         
         state_cr[current_request[0].id] = 1
@@ -225,6 +233,9 @@ class RoutingEnv(Env):
 
         # for i in range(len(path)):
         #     state_path[path[i]] = i + 1
+        # print(state_cr)
+        # print(state_cn)
+        print(dist)
 
         state_graph.append(state_cr)
         state_graph.append(state_cn)
@@ -232,7 +243,7 @@ class RoutingEnv(Env):
         # state_graph.append(state_path)
 
 
-
+        # print(state_graph)
         return np.array(state_graph)
 
         
@@ -397,6 +408,10 @@ class RoutingEnv(Env):
         # print('==================')
         # print('==================')
         # print(qs)
+        for q in qs:
+            if math.isnan(q):
+                print('naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaan')
+                quit()
         # print('==================')
         # print('==================')
         # print('==================')

@@ -478,7 +478,7 @@ class QuRA_DQRL(AlgorithmBase):
             targetPath = self.findPathForDQRL((src,dst))
             if not len(targetPath):
                 continue
-            print('********* path for ' , (src.id,dst.id) , ':: ' , len(targetPath) , ':: ' , ': ' , [n.id for n in targetPath])
+            # print('********* path for ' , (src.id,dst.id) , ':: ' , len(targetPath) , ':: ' , ': ' , [n.id for n in targetPath])
 
 
             

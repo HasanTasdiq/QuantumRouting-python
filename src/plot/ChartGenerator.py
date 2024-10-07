@@ -179,8 +179,8 @@ class ChartGenerator:
         # AlgoName = ["Original","Ent. Caching", "PES-DeepQRL", "Original-SEG","Ent. Caching-SEG", "PES-DeepQRL-SEG"]
         # AlgoName = ["REPS","REPS-EC", "REPS-PES", "REPS-DRL", "REPS-DRL-EC", "REPS-DRL-PES"]
         # AlgoName = ["REPS","QuRA"]
-        AlgoName = ["REPS","QuRA-LS", "QuRA-EC", "QuRA-PES"]
-        # AlgoName = ["SEER Ent. Caching" , "REPS Ent. Caching"]
+        # AlgoName = ["REPS","QuRA-LS", "QuRA-EC", "QuRA-PES"]
+        AlgoName = ["REPS" , "SP-par_swap" , "DQRL" , "SP-seq_swap"]
 
         leg = plt.legend(
             AlgoName,
@@ -212,7 +212,7 @@ class ChartGenerator:
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.27)
-        ax1.set_ylim(bottom=20)
+        # ax1.set_ylim(bottom=20)
 
         # plt.show()
         # plt.tight_layout()
