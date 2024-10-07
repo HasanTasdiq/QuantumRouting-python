@@ -168,6 +168,8 @@ class DQRLAgent:
                 new_q = reward + DISCOUNT * max_future_q
             else:
                 new_q = reward
+            # print(new_q)
+            # print(current_state)
 
             # Update Q value for given state
             current_qs = current_qs_list[index]
