@@ -118,7 +118,7 @@ class DQRLAgent:
         # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(lr=0.001 , epsilon=0.01), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam( epsilon=0.01), metrics=['accuracy'])
         # model._make_predict_function()
         return model
 
