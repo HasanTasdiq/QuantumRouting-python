@@ -108,8 +108,8 @@ class DQRLAgent:
 
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
-        model.add(Dense(self.env.SIZE * self.env.SIZE , activation='relu'))
         model.add(Dense(self.env.SIZE * 20 , activation='relu'))
+        model.add(Dense(self.env.SIZE * 15 , activation='relu'))
         model.add(Dense(self.env.SIZE * 5 , activation='relu'))
 
         model.add(Dense(self.env.SIZE, activation='linear')) 
