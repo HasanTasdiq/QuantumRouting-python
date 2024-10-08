@@ -372,7 +372,7 @@ class QuRA_DQRL(AlgorithmBase):
 
 
         extra_successReq , extra_totalEntanglement = 0 , 0
-        extra_successReq , extra_totalEntanglement = self.extraRoute()
+        # extra_successReq , extra_totalEntanglement = self.extraRoute()
 
         totalEntanglement += extra_totalEntanglement
         successReq += extra_successReq
