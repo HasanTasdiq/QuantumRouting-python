@@ -251,10 +251,10 @@ class QuRA_DQRL(AlgorithmBase):
                         dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] + 1
                         # if not dist:
                         #     dist = 1
-                        try:
-                            self.topo.reward_swap[key] += self.topo.positive_reward / dist
-                        except:
-                            self.topo.reward_swap[key] = self.topo.positive_reward / dist
+                        # try:
+                        #     self.topo.reward_swap[key] += self.topo.positive_reward / dist
+                        # except:
+                        #     self.topo.reward_swap[key] = self.topo.positive_reward / dist
                         
                     if prev_node is not None:
                         if good_to_search:
@@ -315,9 +315,9 @@ class QuRA_DQRL(AlgorithmBase):
                         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
                         # print(key)
                         try:
-                            self.topo.reward_swap[key] += self.topo.positive_reward*2
+                            self.topo.reward_swap[key] += self.topo.positive_reward
                         except:
-                            self.topo.reward_swap[key] = self.topo.positive_reward*2
+                            self.topo.reward_swap[key] = self.topo.positive_reward
                         # print(key , '  ==  ' , self.topo.reward_swap[key])
                         
                     # print("!!!!!!!success!!!!!!!")
@@ -344,14 +344,23 @@ class QuRA_DQRL(AlgorithmBase):
                     
                     
                     neg_weight = 0
+                    # if failed_no_ent:
+                    #     neg_weight = 10
+                    # elif failed_loop:
+                    #     neg_weight = 12
+                    # elif failed_swap:
+                    #     neg_weight = 0
+                    # elif fail_hopcount:
+                    #     neg_weight = 10
+                    
                     if failed_no_ent:
-                        neg_weight = 10
+                        neg_weight = 1
                     elif failed_loop:
-                        neg_weight = 12
+                        neg_weight = 1
                     elif failed_swap:
                         neg_weight = 0
                     elif fail_hopcount:
-                        neg_weight = 10
+                        neg_weight = 1
 
                     for (current_node, next_node) in selectedEdges:
                         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
