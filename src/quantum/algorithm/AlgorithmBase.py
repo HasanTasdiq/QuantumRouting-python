@@ -735,6 +735,8 @@ class AlgorithmBase:
 
 
         self.p2()
+        print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken for p2 : ' , time.time() - t1)
+
         
         # if not ('preswap' in self.name):
         self.tryEntanglement()
