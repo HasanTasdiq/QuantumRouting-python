@@ -13,7 +13,7 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 import multiprocessing
 import math
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.001
 
 
 GAMMA = 0.99
@@ -23,13 +23,13 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.5  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 250
+END_EPSILON_DECAYING = 1000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 2000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 256  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 10000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 128  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -73,6 +73,11 @@ class DQRLAgent:
         self.target_model = self.create_model()
         self.target_model.set_weights(self.model.get_weights())
 
+        # print(self.model.get_weights())
+        self.print_weight(self.model)
+
+        # print(self.target_model.get_weights())
+
         # An array with last n steps for training
         self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
 
@@ -83,15 +88,19 @@ class DQRLAgent:
 
 
 
+
+    def print_weight(self , model):
+        for r in model.get_weights():
+            print(r)
     def create_model(self):
-        try:
-            model = load_model(self.model_name)
-            print('=====================================================model loaded from ',self.model_name,' =====================================')
-            # time.sleep(10)
-            return model
-        except:
-            print('=====================no model found========================')
-            # time.sleep(10)
+        # try:
+        #     model = load_model(self.model_name)
+        #     print('=====================================================model loaded from ',self.model_name,' =====================================')
+        #     # time.sleep(10)
+        #     return model
+        # except:
+        #     print('=====================no model found========================')
+        #     # time.sleep(10)
 
         
         model = Sequential()
@@ -99,15 +108,17 @@ class DQRLAgent:
 
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
-        model.add(Dense(72 , activation='relu'))
-        model.add(Dense(48 , activation='relu'))
-        model.add(Dense(24 , activation='relu'))
+        model.add(Dense(self.env.SIZE * 20 , activation='relu'))
+        model.add(Dense(self.env.SIZE * 10 , activation='relu'))
+        # model.add(Dense(self.env.SIZE * 5 , activation='relu'))
 
         model.add(Dense(self.env.SIZE, activation='linear')) 
         print(model.summary)
+        # print('------------------self.model.get_weights()-------------------')
+        # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam( ), metrics=['accuracy'])
         # model._make_predict_function()
         return model
 
@@ -120,7 +131,7 @@ class DQRLAgent:
     def train(self, terminal_state, step):
 
         # Start training only if certain number of samples is already saved
-        # print('----------len(self.replay_memory)----------------')
+        print('----------len(self.replay_memory)----------------', len(self.replay_memory))
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
@@ -157,6 +168,8 @@ class DQRLAgent:
                 new_q = reward + DISCOUNT * max_future_q
             else:
                 new_q = reward
+            # print(new_q)
+            # print(current_state)
 
             # Update Q value for given state
             current_qs = current_qs_list[index]
@@ -169,16 +182,20 @@ class DQRLAgent:
         # print('=============train start===========')
         t1 = time.time()
         # Fit on all samples as one batch, log only on terminal state
-        self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False, )
+        self.model.fit(np.array(X)/100, np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False, )
         print('=============train done===========' , time.time() - t1)
         # Update target network counter every episode
-        if terminal_state:
-            self.target_update_counter += 1
+        # if terminal_state:
+        self.target_update_counter += 1
+        print('self.target_update_counter', self.target_update_counter)
 
         # If counter reaches set value, update target network with weights of main network
         if self.target_update_counter > UPDATE_TARGET_EVERY:
             print('------------------self.model.get_weights()-------------------')
-            print(self.model.get_weights())
+            # print(self.model.get_weights())
+            self.print_weight(self.model)
+            time.sleep(2)
+
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
 
