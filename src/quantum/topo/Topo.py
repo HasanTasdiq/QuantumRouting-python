@@ -110,8 +110,8 @@ class Topo:
 
         self.positive_reward = 0.01
         self.negative_reward = -0.0025        
-        # self.positive_reward = 0
-        # self.negative_reward = 0
+        self.positive_reward = 1
+        self.negative_reward = -1
 
 
         # for pos in _positions:

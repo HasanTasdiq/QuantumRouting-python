@@ -436,8 +436,8 @@ class RoutingEnv(Env):
         ret[current_node_id] = min_q
         # print(ret)
         
-        # return ret
-        return qs
+        return ret
+        # return qs
     
     def rand_neighbor(self , current_node_id , current_state, path):
         neighbor_list = current_state[current_node_id]
@@ -454,8 +454,8 @@ class RoutingEnv(Env):
                 ret.append(i)
         if not len(ret):
             return np.random.randint(0, self.SIZE)
-        # return random.choice(ret)
-        return np.random.randint(0, self.SIZE)
+        return random.choice(ret)
+        # return np.random.randint(0, self.SIZE)
     
     def max_future_q(self , current_state , qs):
         current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
