@@ -23,15 +23,15 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.5  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 1000
+END_EPSILON_DECAYING = 250
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 10000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 128  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 1  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -118,7 +118,7 @@ class DQRLAgent:
         # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.0001 ), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.0002, clipvalue=1.0 ), metrics=['accuracy'])
         # model._make_predict_function()
         return model
 
@@ -166,7 +166,7 @@ class DQRLAgent:
                 max_future_q = self.env.max_future_q(new_current_state , future_qs_list[index])
                 
                 print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-                print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
                 new_q = reward + DISCOUNT * max_future_q
             else:
                 new_q = reward
@@ -192,11 +192,11 @@ class DQRLAgent:
         print('self.target_update_counter', self.target_update_counter)
 
         # If counter reaches set value, update target network with weights of main network
-        if self.target_update_counter > UPDATE_TARGET_EVERY:
+        if self.target_update_counter >= UPDATE_TARGET_EVERY:
             print('------------------self.model.get_weights()-------------------')
             # print(self.model.get_weights())
-            self.print_weight(self.model)
-            time.sleep(2)
+            # self.print_weight(self.model)
+            # time.sleep(2)
 
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
