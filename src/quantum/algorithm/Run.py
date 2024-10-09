@@ -52,7 +52,7 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 5000
+ttime = 10000
 ttime2 = 500
 step = 200
 times = 10
