@@ -107,12 +107,12 @@ class RoutingEnv(Env):
         reward = 0
         # print('------------find_reward_routing---------' , current_node_id)
         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node_id) + '_' + str(action)
-        reward = self.algo.topo.reward_swap[key]
+        reward = self.algo.topo.reward_routing[key]
 
-        # if (request,current_node_id , action) in self.algo.topo.reward_swap:
+        # if (request,current_node_id , action) in self.algo.topo.reward_routing:
         #     print('------------find_reward_routing---------')
         #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + current_id + '_' + action.id
-        #     reward = self.algotopo.reward_swap[key]
+        #     reward = self.algotopo.reward_routing[key]
         # else:
         #     reward = -10
         return reward
@@ -403,11 +403,15 @@ class RoutingEnv(Env):
     #     return ret
     
     def neighbor_qs(self , current_node_id , current_state , path , qs):
-        # print('==================')
-        # print('==================')
-        # print('==================')
-        # print('==================')
-        # print(qs)
+        r = random.random()
+        if  r < 0.01:
+            print('==================')
+            print('==================')
+            print(r)
+            print('==================')
+            print('==================')
+            
+            print(qs)
         for q in qs:
             if math.isnan(q):
                 print('naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaan')
