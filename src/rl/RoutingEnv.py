@@ -132,6 +132,7 @@ class RoutingEnv(Env):
 
         # Initialize minimum distance for next node
         min = sys.maxsize
+        min = 100
         min_index = -1
 
         # Search not nearest vertex not in the
@@ -148,7 +149,8 @@ class RoutingEnv(Env):
             print(node, "\t", dist[node])
     def dijkstra(self, src):
 
-        dist = [sys.maxsize] * self.V
+        # dist = [sys.maxsize] * self.V
+        dist = [100] * self.V
         dist[src] = 0
         sptSet = [False] * self.V
 
@@ -194,17 +196,22 @@ class RoutingEnv(Env):
         #     state_graph.append([[0]*self.SIZE])
         #     graph.append([[0]*self.SIZE])
 
+        # print(len(self.algo.topo.links))
+        count =0
         for link in self.algo.topo.links:
             if link.isEntangled(timeSlot) and not link.taken:
                 n1 = link.n1.id
                 n2 = link.n2.id
                 state_graph[n1][n2] += 1
                 state_graph[n2][n1] += 1
+                count += 1
 
                 # print(state_graph)
                 
                 graph[n1][n2] = 1
                 graph[n2][n1] = 1
+        # print(count)
+        # print(state_graph)
         self.graph = graph
         # print(self.graph)
         dist = self.dijkstra(current_request[1].id)
@@ -215,6 +222,8 @@ class RoutingEnv(Env):
                 n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
                 state_req[n1][n2] += 1
                 state_req[n2][n1] += 1
+        # print(state_req)
+        
         state_graph.extend(state_req)
         
         state_cr[current_request[0].id] = 1
@@ -224,6 +233,9 @@ class RoutingEnv(Env):
 
         # for i in range(len(path)):
         #     state_path[path[i]] = i + 1
+        # print(state_cr)
+        # print(state_cn)
+        # print(dist)
 
         state_graph.append(state_cr)
         state_graph.append(state_cn)
@@ -231,7 +243,7 @@ class RoutingEnv(Env):
         # state_graph.append(state_path)
 
 
-
+        # print(state_graph)
         return np.array(state_graph)
 
         
@@ -391,6 +403,20 @@ class RoutingEnv(Env):
     #     return ret
     
     def neighbor_qs(self , current_node_id , current_state , path , qs):
+        # print('==================')
+        # print('==================')
+        # print('==================')
+        # print('==================')
+        # print(qs)
+        for q in qs:
+            if math.isnan(q):
+                print('naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaan')
+                quit()
+        # print('==================')
+        # print('==================')
+        # print('==================')
+        # print('==================')
+
         neighbor_list = current_state[current_node_id]
         # path = current_state[2*self.SIZE + 3]
         state_path = [0 for i in range(self.SIZE)]
@@ -398,17 +424,20 @@ class RoutingEnv(Env):
             state_path[path[i]] = i + 1
 
         ret = []
+        min_q = min(qs) 
 
         for i in range(len(neighbor_list)):
             n = neighbor_list[i]
             if n > 0 and state_path[i] == 0:
                 ret.append(qs[i])
             else:
-                ret.append(float('-inf'))
+                ret.append(min_q)
         
-        ret[current_node_id] = float('-inf')
+        ret[current_node_id] = min_q
+        # print(ret)
         
-        return ret
+        # return ret
+        return qs
     
     def rand_neighbor(self , current_node_id , current_state, path):
         neighbor_list = current_state[current_node_id]
@@ -425,11 +454,12 @@ class RoutingEnv(Env):
                 ret.append(i)
         if not len(ret):
             return np.random.randint(0, self.SIZE)
-        return random.choice(ret)
+        # return random.choice(ret)
+        return np.random.randint(0, self.SIZE)
     
     def max_future_q(self , current_state , qs):
         current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
 
-        return np.max(self.neighbor_qs(current_node_id , current_state , qs))
+        return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
 
 
