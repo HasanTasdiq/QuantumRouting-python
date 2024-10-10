@@ -381,7 +381,8 @@ class QuRA_DQRL(AlgorithmBase):
 
 
         extra_successReq , extra_totalEntanglement = 0 , 0
-        # extra_successReq , extra_totalEntanglement = self.extraRoute()
+        if 'greedy_only' in self.name:
+            extra_successReq , extra_totalEntanglement = self.extraRoute()
 
         totalEntanglement += extra_totalEntanglement
         successReq += extra_successReq
