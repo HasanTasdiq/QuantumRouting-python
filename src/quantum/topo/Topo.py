@@ -100,7 +100,7 @@ class Topo:
         self.preSwapFraction = 1/2
         self.tmpcount = 0
         self.entanglementLifetime = 10
-        self.requestTimeout = 5
+        self.requestTimeout = 1
         self.reward = {}
         self.reward_ent = {}
         self.reward_routing = {}
@@ -110,8 +110,8 @@ class Topo:
 
         self.positive_reward = 0.01
         self.negative_reward = -0.0025        
-        self.positive_reward = 1
-        self.negative_reward = -1
+        self.positive_reward = 2
+        self.negative_reward = -10
 
 
         # for pos in _positions:
@@ -1158,6 +1158,10 @@ class Topo:
         # for _ in range(numOfRequestPerRound):
         #     ret.append(self.requests[int(random.random()*30) + 50])
         # print('reqs ' , ret)
+        ret = [(2 , 25), (4,19) ,(1,22),(10,5),(7,29)]
+        # ret = [(2 , 25), (4,19) ,(1,22)]
+        ret = [(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25)]
+        # ret = [(4,19) ]
         return ret
 
     def linktoEdgeSorted(self , link):

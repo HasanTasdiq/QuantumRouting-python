@@ -52,17 +52,17 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 
-ttime = 50
-ttime2 = 50
+ttime = 50000
+ttime2 = 500
 step = 200
 times = 10
-nodeNo = 50
+nodeNo = 30
 alpha_ = 0.0002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [20,30,40]
+numOfRequestPerRound = [10]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -185,8 +185,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
     
 
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
@@ -222,8 +222,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
 
 
     algorithms[0].r = r
@@ -257,15 +257,17 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
         else:
             for i in range(ttime):
                 if i < rtime:
-                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    for _ in range(numOfRequestPerRound):
+                    ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    # for _ in range(numOfRequestPerRound):
 
-                        a = sample([i for i in range(numOfNode)], 2)
+                    #     a = sample([i for i in range(numOfNode)], 2)
 
-                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                        # print('req: ' , a)
-                        # for _ in range(int(random.random()*3+1)):
-                        ids[i].append((a[0], a[1]))
+                    #     # a = [2 , 25]
+
+                    #     # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                    #     # print('req: ' , a)
+                    #     # for _ in range(int(random.random()*3+1)):
+                    #     ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))
         
         for algoIndex in range(len(algorithms)):

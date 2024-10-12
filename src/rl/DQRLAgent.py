@@ -1,9 +1,10 @@
 import numpy as np
 
 from keras.models import Sequential, load_model
-from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatten
+from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatten, Conv1D, MaxPooling1D
 from keras.optimizers import Adam
 from keras import Input
+
 from collections import deque
 import time
 import random
@@ -21,9 +22,9 @@ GAMMA = 0.99
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 0.5  # not a constant, qoing to be decayed
+EPSILON_ = 0.9  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 250
+END_EPSILON_DECAYING = 20000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -31,7 +32,7 @@ DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 1  # Terminal states (end of episodes)
+UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -63,7 +64,8 @@ class DQRLAgent:
         print('++++++++++initiating DQRL agent for:' , algo.name)
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 + 3,self.env.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 + 3,self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3,self.env.SIZE,)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
 
         # Main model
@@ -105,12 +107,29 @@ class DQRLAgent:
         
         model = Sequential()
 
+        # model.add(Conv1D(256, (3, ), input_shape=self.OBSERVATION_SPACE_VALUES))  # OBSERVATION_SPACE_VALUES = (10, 10, 3) a 10x10 RGB image.
+        # model.add(Activation('relu'))
+        # model.add(MaxPooling1D(pool_size=(2, )))
+        # model.add(Dropout(0.2))
+
+        # model.add(Conv1D(256, (3)))
+        # model.add(Activation('relu'))
+        # model.add(MaxPooling1D(pool_size=(2, )))
+        # model.add(Dropout(0.2))
+
+        # model.add(Flatten())  # this converts our 3D feature maps to 1D feature vectors
+        # model.add(Dense(64))
+
 
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
-        model.add(Dense(self.env.SIZE * 20 , activation='relu'))
+        # model.add(Dense(self.env.SIZE * 20 , activation='relu'))
         model.add(Dense(self.env.SIZE * 10 , activation='relu'))
-        # model.add(Dense(self.env.SIZE * 5 , activation='relu'))
+        # model.add(Dense(72 , activation='relu'))
+        model.add(Dense(self.env.SIZE * 5 , activation='relu'))
+
+        # model.add(Conv2D(32, 3, activation="relu"))
+        # model.add(Flatten)
 
         model.add(Dense(self.env.SIZE, activation='linear')) 
         print(model.summary)
@@ -118,7 +137,7 @@ class DQRLAgent:
         # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.0002, clipvalue=1.0 ), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.0002, clipvalue=0.01 ), metrics=['accuracy'])
         # model._make_predict_function()
         return model
 
@@ -184,7 +203,7 @@ class DQRLAgent:
         # print('=============train start===========')
         t1 = time.time()
         # Fit on all samples as one batch, log only on terminal state
-        hist = self.model.fit(np.array(X)/100, np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=True, )
+        hist = self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=True, )
         print('=============train done===========' , time.time() - t1)
         # Update target network counter every episode
         # if terminal_state:
@@ -323,7 +342,8 @@ class DQRLAgent:
 
                 (action , timeSlot , current_state , next_state) = self.last_action_table[request][i]
                 # current_node_id = current_state[2*self.env.SIZE + 1].index(1)
-                current_node_id = np.where(current_state[2*self.env.SIZE + 1] == 1)[0][0]
+                # current_node_id = np.where(current_state[2*self.env.SIZE + 1] == 1)[0][0]
+                current_node_id = np.where(current_state[self.env.SIZE + 1] == 1)[0][0]
                 # print(current_state[2*self.env.SIZE + 1], current_node_id, str(current_node_id))
                 reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
                 if not reward:

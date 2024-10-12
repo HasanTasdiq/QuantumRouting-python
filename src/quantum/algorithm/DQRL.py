@@ -183,10 +183,15 @@ class QuRA_DQRL(AlgorithmBase):
         successReq = 0
         totalEntanglement = 0
         usedLinks = []
+        T = []
+        for request in  self.requests:
+            T.append(request)
         print(self.name , ('greedy_only' in  self.name))
+        print([(r[0].id , r[1].id) for r in self.srcDstPairs])
+        print([(r[0].id , r[1].id) for r in self.requests])
         # if not (self.param is not None and 'greedy_only' in self.param):
         if True:
-            for request in self.srcDstPairs:
+            for request in T:
                 if 'greedy_only' in  self.name:
                     continue
 
@@ -212,6 +217,8 @@ class QuRA_DQRL(AlgorithmBase):
                 failed_loop = False
                 failed_swap = False
                 fail_hopcount = False
+                targetPath = self.findPathForDQRL((src,dst))
+
                 while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                     
                     current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
@@ -248,13 +255,20 @@ class QuRA_DQRL(AlgorithmBase):
                         
                     
                     if good_to_search:
-                        dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] + 1
-                        # if not dist:
-                        #     dist = 1
-                        # try:
-                        #     self.topo.reward_routing[key] += self.topo.positive_reward / dist
-                        # except:
-                        #     self.topo.reward_routing[key] = self.topo.positive_reward / dist
+                        # dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] + 1
+                        dist = current_state[self.routingAgent.env.SIZE +2][next_node_id] + 1
+                        if not dist:
+                            dist = 1
+                        try:
+                            self.topo.reward_routing[key] += self.topo.positive_reward / dist
+                        except:
+                            self.topo.reward_routing[key] = self.topo.positive_reward / dist
+                    else:
+                        if failed_no_ent or failed_loop:
+                            try:
+                                self.topo.reward_routing[key] += self.topo.negative_reward
+                            except:
+                                self.topo.reward_routing[key] = self.topo.negative_reward
                         
                     if prev_node is not None:
                         if good_to_search:
@@ -297,8 +311,8 @@ class QuRA_DQRL(AlgorithmBase):
                 if success:
                     successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
 
-                    for path in successPath:
-                        for node, link in path:
+                    for path_ in successPath:
+                        for node, link in path_:
                             if link is not None:
                                 link.used = True
                                 edge = self.topo.linktoEdgeSorted(link)
@@ -315,12 +329,14 @@ class QuRA_DQRL(AlgorithmBase):
                         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
                         # print(key)
                         try:
-                            self.topo.reward_routing[key] += self.topo.positive_reward
+                            self.topo.reward_routing[key] += self.topo.positive_reward *2
                         except:
-                            self.topo.reward_routing[key] = self.topo.positive_reward
+                            self.topo.reward_routing[key] = self.topo.positive_reward *2
                         # print(key , '  ==  ' , self.topo.reward_routing[key])
                         
-                    # print("!!!!!!!success!!!!!!!")
+                    print("!!!!!!!success!!!!!!!" , src.id , dst.id , [n for n in path])
+                    print('shortest path ----- ' , [n.id for n in targetPath])
+                    
 
                     # print([(r[0].id, r[1].id) for r in self.requests])
 
@@ -331,10 +347,14 @@ class QuRA_DQRL(AlgorithmBase):
                         if (src, dst) == (request[0], request[1]):
                             # print('[REPS] finish time:', self.timeSlot - request[2])
                             self.requests.remove(req)
+                            break
 
                     successReq += 1
                     totalEntanglement += len(successPath)
                 else:
+                    print("!!!!!!!fail!!!!!!!" , src.id , dst.id , [n for n in path])
+                    print('shortest path ----- ' , [n.id for n in targetPath])
+                    print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
                     for link in usedLinks:
                             edge = self.topo.linktoEdgeSorted(link)
                             try:
@@ -354,13 +374,13 @@ class QuRA_DQRL(AlgorithmBase):
                     #     neg_weight = 10
                     
                     if failed_no_ent:
-                        neg_weight = 0.1
+                        neg_weight = 0.05
                     elif failed_loop:
-                        neg_weight = 0.1
+                        neg_weight = 0.05
                     elif failed_swap:
                         neg_weight = 0
                     elif fail_hopcount:
-                        neg_weight = 0.1
+                        neg_weight = 0.05
 
                     for (current_node, next_node) in selectedEdges:
                         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
@@ -539,7 +559,8 @@ class QuRA_DQRL(AlgorithmBase):
 
                 
                 if good_to_search:
-                    dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] +1
+                    # dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] +1
+                    dist = current_state[self.routingAgent.env.SIZE  +2][next_node_id] +1
                     if not dist:
                         dist = 1
 
@@ -622,6 +643,7 @@ class QuRA_DQRL(AlgorithmBase):
                     if (src, dst) == (request[0], request[1]):
                         # print('[REPS] finish time:', self.timeSlot - request[2])
                         self.requests.remove(req)
+                        break
 
                 successReq += 1
                 totalEntanglement += len(successPath)
