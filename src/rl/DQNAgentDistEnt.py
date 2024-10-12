@@ -85,14 +85,14 @@ class DQNAgentDistEnt:
 
 
     def create_model(self):
-        try:
-            model = load_model(self.model_name)
-            print('=====================================================model loaded from ',self.model_name,' =====================================')
-            # time.sleep(10)
-            return model
-        except:
-            print('=====================no model found========================')
-            # time.sleep(10)
+        # try:
+        #     model = load_model(self.model_name)
+        #     print('=====================================================model loaded from ',self.model_name,' =====================================')
+        #     # time.sleep(10)
+        #     return model
+        # except:
+        #     print('=====================no model found========================')
+        #     # time.sleep(10)
 
         print('after try')
         model = Sequential()
@@ -104,13 +104,14 @@ class DQNAgentDistEnt:
         # model.add(Input(shape = (self.OBSERVATION_SPACE_VALUES,)))  
         print('after input shape')
 
-        model.add(Dense(72 , activation='relu'))
+        # model.add(Dense(72 , activation='relu'))
         print('after input 72')
 
-        model.add(Dense(48 , activation='relu'))
+        model.add(Dense(self.env.SIZE *20 , activation='relu'))
+        # model.add(Dense(48 , activation='relu'))
         print('after input 48')
 
-        model.add(Dense(24 , activation='relu'))
+        # model.add(Dense(24 , activation='relu'))
         print('after input 24')
 
         model.add(Dense(7, activation='linear')) 
@@ -303,6 +304,7 @@ class DQNAgentDistEnt:
         # for pair in state:
         for link in self.link_qs:
             current_state , qs = self.link_qs[link]
+            print(qs)
             
             if np.random.random() > EPSILON_:
                 # Get action from Q net

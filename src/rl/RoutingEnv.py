@@ -224,7 +224,7 @@ class RoutingEnv(Env):
                 state_req[n2][n1] += 1
         # print(state_req)
         
-        state_graph.extend(state_req)
+        # state_graph.extend(state_req)
         
         state_cr[current_request[0].id] = 1
         state_cr[current_request[1].id] = 1
@@ -240,6 +240,8 @@ class RoutingEnv(Env):
         state_graph.append(state_cr)
         state_graph.append(state_cn)
         state_graph.append(dist)
+        # state_graph.extend(state_req)
+
         # state_graph.append(state_path)
 
 
@@ -462,7 +464,8 @@ class RoutingEnv(Env):
         # return np.random.randint(0, self.SIZE)
     
     def max_future_q(self , current_state , qs):
-        current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
+        # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
+        current_node_id = np.where(current_state[self.SIZE + 1] == 1)[0][0]
 
         return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
 
