@@ -112,6 +112,7 @@ class Topo:
         self.negative_reward = -0.0025        
         self.positive_reward = 2
         self.negative_reward = -10
+        self.pair_dict = {}
 
 
         # for pos in _positions:
