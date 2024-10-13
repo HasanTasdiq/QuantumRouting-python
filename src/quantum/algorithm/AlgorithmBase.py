@@ -759,6 +759,9 @@ class AlgorithmBase:
 
         res.totalRuntime += (end - start)
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
+        if time_ %100 == 0:
+            for k in self.topo.pair_dict:
+                print(k , self.topo.pair_dict[k])
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken: ' , time.time() - t1)
         self.postProcess()
         return res

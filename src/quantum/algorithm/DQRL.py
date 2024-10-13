@@ -307,7 +307,13 @@ class QuRA_DQRL(AlgorithmBase):
                     current_node = next_node
 
                     
-                
+                s = min(src.id , dst.id)
+                d = max(src.id , dst.id)
+                try:
+                    self.pair_dict[(s,d)] += 1
+                except:
+                    self.pair_dict[(s,d)] = 1
+
                 if success:
                     successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
 
@@ -351,6 +357,7 @@ class QuRA_DQRL(AlgorithmBase):
 
                     successReq += 1
                     totalEntanglement += len(successPath)
+                    
                 else:
                     print("!!!!!!!fail!!!!!!!" , src.id , dst.id , [n for n in path])
                     print('shortest path ----- ' , [n.id for n in targetPath])
