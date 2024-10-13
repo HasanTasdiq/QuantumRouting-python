@@ -310,9 +310,9 @@ class QuRA_DQRL(AlgorithmBase):
                 s = min(src.id , dst.id)
                 d = max(src.id , dst.id)
                 try:
-                    self.pair_dict[(s,d)] += 1
+                    self.topo..pair_dict[(s,d)] += 1
                 except:
-                    self.pair_dict[(s,d)] = 1
+                    self.topo..pair_dict[(s,d)] = 1
 
                 if success:
                     successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
