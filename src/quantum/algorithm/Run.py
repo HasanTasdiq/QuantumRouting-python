@@ -55,7 +55,7 @@ from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 ttime = 50000
 ttime2 = 500
 step = 200
-times = 1
+times = 10
 nodeNo = 30
 alpha_ = 0.0002
 degree = 6
