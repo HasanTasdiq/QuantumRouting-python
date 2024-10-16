@@ -315,7 +315,7 @@ class DQRLAgent:
         
         return current_state, next_node
     
-    def update_action(self , request ,  action  , current_state , path ):
+    def update_action(self , request ,  action  , current_state , path , done):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -325,9 +325,9 @@ class DQRLAgent:
         if next_state is None:
             next_state = current_state
         if not request in self.last_action_table:
-            self.last_action_table[request] = [(action , timeSlot , current_state , next_state)]
+            self.last_action_table[request] = [(action , timeSlot , current_state , next_state , done)]
         else:
-            self.last_action_table[request].append((action , timeSlot , current_state , next_state))
+            self.last_action_table[request].append((action , timeSlot , current_state , next_state , done))
 
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
@@ -340,7 +340,7 @@ class DQRLAgent:
             reward = 0
             for i in range(len(self.last_action_table[request])):
 
-                (action , timeSlot , current_state , next_state) = self.last_action_table[request][i]
+                (action , timeSlot , current_state , next_state , done) = self.last_action_table[request][i]
                 # current_node_id = current_state[2*self.env.SIZE + 1].index(1)
                 # current_node_id = np.where(current_state[2*self.env.SIZE + 1] == 1)[0][0]
                 current_node_id = np.where(current_state[self.env.SIZE + 1] == 1)[0][0]
@@ -349,7 +349,7 @@ class DQRLAgent:
                 if not reward:
                     continue
 
-                self.update_replay_memory((current_state, action, reward, next_state, False))
+                self.update_replay_memory((current_state, action, reward, next_state, done))
         self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)
 

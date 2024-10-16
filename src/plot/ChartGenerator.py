@@ -181,6 +181,7 @@ class ChartGenerator:
         # AlgoName = ["REPS","QuRA"]
         # AlgoName = ["REPS","QuRA-LS", "QuRA-EC", "QuRA-PES"]
         AlgoName = ["REPS" , "SP-par_swap" , "DQRL" , "SP-seq_swap"]
+        AlgoName = ["DQRL" , "SP-seq_swap"]
 
         leg = plt.legend(
             AlgoName,

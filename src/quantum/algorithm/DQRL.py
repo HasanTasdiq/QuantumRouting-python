@@ -295,12 +295,12 @@ class QuRA_DQRL(AlgorithmBase):
                     selectedNodes.append(next_node)
                     selectedEdges.append((current_node, next_node))
                     path.append(next_node.id)
-                    self.routingAgent.update_action( request ,  next_node_id  , current_state , path )
                     
                     if len(prev_links) and next_node == request[1] and good_to_search:
                         success = True
                         good_to_search = False
                     
+                    self.routingAgent.update_action( request ,  next_node_id  , current_state , path , success)
 
                         
                     prev_node = current_node
