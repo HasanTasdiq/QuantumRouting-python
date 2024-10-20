@@ -13,6 +13,9 @@ from topo.helper import request_timeout
 from numpy import log as ln
 from random import sample
 import numpy as np
+import multiprocessing
+import multiprocessing.context as ctx
+ctx._force_start_method('spawn')
 
 sys.path.insert(0, "../../rl")
 
@@ -76,9 +79,9 @@ class QuRA_DQRL(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
+            # self.PFT() # compute (self.ti, self.fi)
             # self.randPFT()
-            # self.entAgent.learn_and_predict()
+            self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
     def LP1(self):
         # print('[REPS] LP1 start')
@@ -179,13 +182,15 @@ class QuRA_DQRL(AlgorithmBase):
         # self.entAgent.update_reward()
         self.routingAgent.update_reward()
         return self.result
-    def route(self):
+
+
+    def route2(self, request):
         successReq = 0
         totalEntanglement = 0
         usedLinks = []
-        T = []
-        for request in  self.requests:
-            T.append(request)
+        T = [request]
+        # for request in  self.requests:
+        #     T.append(request)
         print(self.name , ('greedy_only' in  self.name))
         print([(r[0].id , r[1].id) for r in self.srcDstPairs])
         print([(r[0].id , r[1].id) for r in self.requests])
@@ -424,7 +429,19 @@ class QuRA_DQRL(AlgorithmBase):
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request  after  extra:', successReq)
                     
+    def route(self):
+        jobs = []
+        T = []
+        for request in requests:
+            T.append(request)
+        for request in T:
+            job = multiprocessing.Process(target = self.route2, args = (request))
 
+        for job in jobs:
+            job.start()
+
+        for job in jobs:
+            job.join()
     def findDQRLPath(self , request):
             src,dst = request[0] , request[1]
             current_node = request[0]
