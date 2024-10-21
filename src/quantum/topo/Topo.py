@@ -85,6 +85,7 @@ class Topo:
         self.edges = [] # (Node, Node)
         self.q = q
         self.alpha = a
+        self.numOfRequestPerRound = 0
         self.k = k
         self.sentinel = Node(-1, (-1.0, -1.0), -1, self)
         self.cacheTable = {}
@@ -1160,9 +1161,9 @@ class Topo:
         #     ret.append(self.requests[int(random.random()*30) + 50])
         # print('reqs ' , ret)
         ret = [(2 , 25), (4,19) ,(1,22),(10,5),(7,29)]
-        # ret = [(2 , 25), (4,19) ,(1,22)]
-        ret = [(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25)]
-        # ret = [(4,19) ]
+        ret = [(10,5) , (2,25)]
+        # ret = [(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25)]
+        # ret = [(2,25) ]
         return ret
 
     def linktoEdgeSorted(self , link):
@@ -1240,6 +1241,8 @@ class Topo:
         self.alpha = alpha
         self.updateLinks()
         self.updateNodes()
+    def setNumOfRequestPerRound(self,numOfRequestPerRound):
+        self.numOfRequestPerRound = numOfRequestPerRound
 
     def setQ(self, q):
         self.q = q

@@ -37,6 +37,8 @@ import time
 import os.path
 import multiprocessing.context as ctx
 ctx._force_start_method('spawn')
+import warnings
+warnings.filterwarnings("ignore")
 
 # sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
 sys.path.insert(0, "../../rl")
@@ -51,8 +53,9 @@ from DQNAgent import DQNAgent
 from DQNAgentDist import DQNAgentDist   
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
+from DQRLAgent import DQRLAgent
 
-ttime = 80
+ttime = 4000
 ttime2 = 80
 step = 200
 times = 1
@@ -62,7 +65,7 @@ degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [1]
+numOfRequestPerRound = [2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -93,6 +96,8 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         algo.entAgent = DQNAgentDistEnt(algo, pid)
     if '_2entdqrl' in algo.name:
         algo.entAgent = DQNAgentDistEnt_2(algo, pid)
+    algo.routingAgent = DQRLAgent(algo , 0)
+    
     timeSlot = ttime
     global ttime2
     if algo.name in toRunLessAlgos:
@@ -149,6 +154,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     topo.setQ(q)
     topo.setAlpha(alpha)
+    topo.setNumOfRequestPerRound(numOfRequestPerRound)
 
 
     # topo.setQ(1)
@@ -223,7 +229,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
 
 
     algorithms[0].r = r
@@ -257,17 +263,17 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
         else:
             for i in range(ttime):
                 if i < rtime:
-                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    for _ in range(numOfRequestPerRound):
+                    ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    # for _ in range(numOfRequestPerRound):
 
-                        a = sample([i for i in range(numOfNode)], 2)
+                    #     a = sample([i for i in range(numOfNode)], 2)
 
-                        # a = [2 , 25]
+                    #     # a = [2 , 25]
 
-                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                        # print('req: ' , a)
-                        # for _ in range(int(random.random()*3+1)):
-                        ids[i].append((a[0], a[1]))
+                    #     # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                    #     # print('req: ' , a)
+                    #     # for _ in range(int(random.random()*3+1)):
+                    #     ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))
         
         for algoIndex in range(len(algorithms)):

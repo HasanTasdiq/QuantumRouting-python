@@ -6,6 +6,10 @@ import sys
 sys.path.append("..")
 from quantum.topo.helper import needlink_timeslot
 import math
+import warnings
+warnings.filterwarnings("ignore")
+import logging
+logging.getLogger('tensorflow').disabled = True 
 ENTANGLEMENT_LIFETIME = 10
 	
 class RoutingEnv(Env):
@@ -190,6 +194,8 @@ class RoutingEnv(Env):
                       for row in range(self.SIZE)]
         graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
+        reqStates = [[0 for column in range(self.SIZE)]
+                      for row in range(self.algo.topo.numOfRequestPerRound)]
 
         # for _ in range(self.SIZE):
         #     state_req.append([[0]*self.SIZE])
@@ -226,10 +232,10 @@ class RoutingEnv(Env):
         
         # state_graph.extend(state_req)
         
-        state_cr[current_request[0].id] = 1
-        state_cr[current_request[1].id] = 1
+        state_cr[current_request[0].id] = 100
+        state_cr[current_request[1].id] = 100
 
-        state_cn[current_node_id] = 1
+        state_cn[current_node_id] = 20
 
         # for i in range(len(path)):
         #     state_path[path[i]] = i + 1
@@ -237,10 +243,28 @@ class RoutingEnv(Env):
         # print(state_cn)
         # print(dist)
 
+        r = 0 
+        for req in self.algo.requestState:
+            src_id = req[0].id
+            dst_id = req[1].id
+            curr_id = req[2].id
+
+            reqStates[r][src_id] = 10
+            reqStates[r][dst_id] = 10
+            reqStates[r][curr_id] = 20
+
+            r += 1
+
+
+
+
+
         state_graph.append(state_cr)
         state_graph.append(state_cn)
         state_graph.append(dist)
         # state_graph.extend(state_req)
+        state_graph.extend(reqStates)
+
 
         # state_graph.append(state_path)
 
@@ -465,7 +489,7 @@ class RoutingEnv(Env):
     
     def max_future_q(self , current_state , qs):
         # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
-        current_node_id = np.where(current_state[self.SIZE + 1] == 1)[0][0]
+        current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
 
         return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
 
