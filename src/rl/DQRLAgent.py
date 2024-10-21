@@ -13,6 +13,10 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 # from .RoutingEnv import RoutingEnv   #for mac
 import multiprocessing
 import math
+import warnings
+warnings.filterwarnings("ignore")
+import logging
+logging.getLogger('tensorflow').disabled = True 
 NUM_EPISODES = 2500
 LEARNING_RATE = 0.001
 
@@ -24,12 +28,12 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.9  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 50000
+END_EPSILON_DECAYING = 2000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
+REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
@@ -65,7 +69,7 @@ class DQRLAgent:
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 + 3,self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3,self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
 
         # Main model
@@ -86,7 +90,7 @@ class DQRLAgent:
         # Used to count when to update target network with main network's weights
         self.target_update_counter = 0
         self.last_action_table = {}
-        self.link_qs = {}
+        self.reqState_qs = {}
 
 
 
@@ -184,7 +188,7 @@ class DQRLAgent:
 
                 max_future_q = self.env.max_future_q(new_current_state , future_qs_list[index])
                 
-                print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
                 new_q = reward + DISCOUNT * max_future_q
             else:
@@ -226,7 +230,7 @@ class DQRLAgent:
         
         sts = list()
         c = 0
-        for link , state in states:
+        for reqState , state in states:
             # sts.append(np.array(state).reshape(-1, *state.shape))
             sts.append(state)
             # c+= 1
@@ -298,6 +302,63 @@ class DQRLAgent:
     #         assignable = self.learn_and_predict2()
     #         if 'no_repeat' in self.env.algo.name:
     #             break
+    def get_next_node_qs_batch(self , requestStates , timeSlot):
+        # print('in get p q')
+        if not len(requestStates):
+            return
+        states = []
+        for reqState in requestStates:
+            request = (reqState[0] , reqState[1])
+            current_node = reqState[2]
+            path = reqState[3]
+            current_state = self.env.routing_state(request , current_node.id ,path ,  timeSlot )
+
+            # print(current_state)
+            states.append((reqState , current_state))
+
+        # print('getting qs')
+        # print(states)
+        qs = self.get_qs_batch(states)
+        # print('getting qs done! '  , len(qs))
+        for i in range(len(states)):
+            reqState , current_state = states[i]
+            self.reqState_qs[reqState] = (current_state , qs[i]) #wip
+    def learn_and_predict_next_node_batch(self , requestStates):
+        global EPSILON_
+        timeSlot = self.env.algo.timeSlot
+        reqState_action_q = []
+
+        self.get_next_node_qs_batch(requestStates , timeSlot)
+
+        for reqState in self.reqState_qs:
+
+            current_state , qs = self.reqState_qs[reqState]
+            current_node = reqState[2]
+            path = reqState[3]
+            # print(qs)
+            
+            if np.random.random() > EPSILON_:
+                next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , self.get_qs(current_state)))
+
+                q = qs[next_node]
+                # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
+
+            else:
+                # Get random action
+                next_node = self.env.rand_neighbor(current_node.id , current_state,path)
+
+                q = qs[next_node]
+
+            reqState_action_q.append((reqState , next_node , q , current_state))
+        
+        # if np.random.random() > EPSILON_:
+        #     link_action_q.sort(key=lambda x: x[2], reverse=True)
+
+        reqState_action_q.sort(key=lambda x: x[2], reverse=True)
+        self.reqState_qs = {}
+
+        return reqState_action_q
+
     def learn_and_predict_next_node(self , request , current_node , path):
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
@@ -343,7 +404,9 @@ class DQRLAgent:
                 (action , timeSlot , current_state , next_state , done) = self.last_action_table[request][i]
                 # current_node_id = current_state[2*self.env.SIZE + 1].index(1)
                 # current_node_id = np.where(current_state[2*self.env.SIZE + 1] == 1)[0][0]
-                current_node_id = np.where(current_state[self.env.SIZE + 1] == 1)[0][0]
+                # print('update_reward for:: ', current_state[self.env.SIZE + 1])
+
+                current_node_id = np.where(current_state[self.env.SIZE + 1] >= 1)[0][0]
                 # print(current_state[2*self.env.SIZE + 1], current_node_id, str(current_node_id))
                 reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
                 if not reward:
