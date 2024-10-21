@@ -55,17 +55,17 @@ from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 from DQRLAgent import DQRLAgent
 
-ttime = 4000
+ttime = 40000
 ttime2 = 80
-step = 200
-times = 1
+step = 500
+times = 5
 nodeNo = 30
 alpha_ = 0.0002
 degree = 6
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [2]
+numOfRequestPerRound = [10]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -263,17 +263,17 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
         else:
             for i in range(ttime):
                 if i < rtime:
-                    ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    # for _ in range(numOfRequestPerRound):
+                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    for _ in range(numOfRequestPerRound):
 
-                    #     a = sample([i for i in range(numOfNode)], 2)
+                        a = sample([i for i in range(numOfNode)], 2)
 
-                    #     # a = [2 , 25]
+                        # a = [2 , 25]
 
-                    #     # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                    #     # print('req: ' , a)
-                    #     # for _ in range(int(random.random()*3+1)):
-                    #     ids[i].append((a[0], a[1]))
+                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                        # print('req: ' , a)
+                        # for _ in range(int(random.random()*3+1)):
+                        ids[i].append((a[0], a[1]))
                 # print('#############################  ', len(ids[i]))
         
         for algoIndex in range(len(algorithms)):
