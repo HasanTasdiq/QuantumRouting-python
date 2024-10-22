@@ -187,8 +187,8 @@ class QuRA_DQRL(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             # self.EPS()
             # self.ELS()
-            # self.route()
-            self.route_seq()
+            self.route()
+            # self.route_seq()
         # print('[REPS] p4 end') 
         self.printResult()
         # self.entAgent.update_reward()
