@@ -304,7 +304,7 @@ class DQNAgentDistEnt:
         # for pair in state:
         for link in self.link_qs:
             current_state , qs = self.link_qs[link]
-            print(qs)
+            # print(qs)
             
             if np.random.random() > EPSILON_:
                 # Get action from Q net

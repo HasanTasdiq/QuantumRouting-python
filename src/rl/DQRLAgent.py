@@ -13,6 +13,7 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 # from .RoutingEnv import RoutingEnv   #for mac
 import multiprocessing
 import math
+from objsize import get_deep_size
 NUM_EPISODES = 2500
 LEARNING_RATE = 0.001
 
@@ -29,8 +30,8 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 200  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -151,6 +152,7 @@ class DQRLAgent:
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
+        print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
@@ -184,7 +186,7 @@ class DQRLAgent:
 
                 max_future_q = self.env.max_future_q(new_current_state , future_qs_list[index])
                 
-                print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
                 new_q = reward + DISCOUNT * max_future_q
             else:
