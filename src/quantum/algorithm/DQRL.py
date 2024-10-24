@@ -199,8 +199,10 @@ class QuRA_DQRL(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             # self.EPS()
             # self.ELS()
-            self.route()
-            # self.route_seq()
+            if 'greedy_only' in  self.name:
+                self.route_seq()
+            else:
+                self.route()
         # print('[REPS] p4 end') 
         self.printResult()
         # self.entAgent.update_reward()
@@ -237,6 +239,9 @@ class QuRA_DQRL(AlgorithmBase):
 
 
         while len(self.requestState):
+            if 'greedy_only' in  self.name:
+                break
+
             # print('start while::: ' , [(src.id,dst.id,next_node.id,[p for p in list(path)]) for (src,dst,next_node,path) in self.requestState])
 
             reqState_action = self.routingAgent.learn_and_predict_next_node_batch(self.requestState)
