@@ -91,9 +91,21 @@ class QuRA_DQRL(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
             # self.PFT() # compute (self.ti, self.fi)
-            # self.randPFT()
-            self.entAgent.learn_and_predict()
+            self.randPFT()
+            # self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
+    
+    def randPFT(self):
+        assignable = True
+        while assignable:
+            assignable = False
+        for link in self.topo.links:
+            if link.assignable():
+                assignable = True
+                if np.random.random() > 0.5:
+                
+                    link.assignQubits()
+                    self.totalUsedQubits += 2
     def LP1(self):
         # print('[REPS] LP1 start')
         # initialize fi(u, v) ans ti
@@ -202,9 +214,9 @@ class QuRA_DQRL(AlgorithmBase):
         for request in  self.requests:
             T.append(request)
         print(self.name , ('greedy_only' in  self.name))
-        print('srcDstPairs',[(r[0].id , r[1].id) for r in self.srcDstPairs])
-        print('requests', [(r[0].id , r[1].id) for r in self.requests])
-        print('requestState::: ' , [(src.id,dst.id,next_node.id,[p for p in list(path)]) for (src,dst,next_node,path) in self.requestState])
+        # print('srcDstPairs',[(r[0].id , r[1].id) for r in self.srcDstPairs])
+        # print('requests', [(r[0].id , r[1].id) for r in self.requests])
+        # print('requestState::: ' , [(src.id,dst.id,next_node.id,[p for p in list(path)]) for (src,dst,next_node,path) in self.requestState])
 
 
         selectedNodesDict = {}
@@ -218,6 +230,8 @@ class QuRA_DQRL(AlgorithmBase):
             selectedEdgesDict[(src, dst)] = []
             usedLinksDict[(src, dst)] = []
             prevlinksDict[(src,dst)] = None
+            conflicts = []
+
 
 
 
@@ -226,7 +240,7 @@ class QuRA_DQRL(AlgorithmBase):
             # print('start while::: ' , [(src.id,dst.id,next_node.id,[p for p in list(path)]) for (src,dst,next_node,path) in self.requestState])
 
             reqState_action = self.routingAgent.learn_and_predict_next_node_batch(self.requestState)
-            print('in whileeeeee ' , len(reqState_action))
+            # print('in whileeeeee ' , len(reqState_action))
             for (reqState , next_node_id , q , current_state) in  reqState_action:
                 # print('start for:: ', current_state)
 
@@ -244,6 +258,7 @@ class QuRA_DQRL(AlgorithmBase):
                 failed_loop = False
                 failed_swap = False
                 fail_hopcount = False
+                failed_conflict = False
                 success = False
 
                 next_node = self.topo.nodes[next_node_id]
@@ -254,6 +269,10 @@ class QuRA_DQRL(AlgorithmBase):
                     good_to_search = False
                     failed_no_ent = True
                     # print((src.id,dst.id) , '=FAILED= no ent links')
+                    conflicts = self.getConflicts(current_node , next_node , selectedEdgesDict)
+                    if len(conflicts):
+                        failed_conflict = True
+
                 else:
                     ent_links = [ent_links[0]]
                 
@@ -437,6 +456,18 @@ class QuRA_DQRL(AlgorithmBase):
                         link.taken = False
 
                 #wip
+        
+        print('==================================================================conflicts========== ' , len(conflicts))
+        
+        for request , current_node , next_node in conflicts:
+            neg_weight = 0.05
+            key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+
+            try:
+                self.topo.reward_routing[key] += self.topo.negative_reward * neg_weight
+            except:
+                self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
+
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequestPerRound.append(successReq)
 
@@ -446,6 +477,18 @@ class QuRA_DQRL(AlgorithmBase):
         self.filterReqeuest()
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request  after  extra:', successReq)
+
+
+    def getConflicts(self, current_node , next_node , selectedEdgesDict):
+        conflicts = []
+        for req in selectedEdgesDict:
+            edges = selectedEdgesDict[req]
+            if (current_node, next_node) in edges:
+                conflicts.append((req , current_node, next_node))
+            elif (next_node, current_node) in edges:
+                conflicts.append((req , next_node, current_node))
+        
+        return conflicts
 
 
     def route_seq(self):
@@ -1197,7 +1240,7 @@ class QuRA_DQRL(AlgorithmBase):
                 selectedNodes.append(next_node)
                 selectedEdges.append((current_node, next_node))
                 path.append(next_node.id)
-                self.routingAgent.update_action( request ,  next_node_id  , current_state , path )
+                self.routingAgent.update_action( request ,  next_node_id  , current_state , path , False)
                 
                 if len(prev_links) and next_node == request[1] and good_to_search:
                     success = True
