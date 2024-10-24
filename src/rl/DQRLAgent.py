@@ -17,6 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import logging
 logging.getLogger('tensorflow').disabled = True 
+from objsize import get_deep_size
 NUM_EPISODES = 2500
 LEARNING_RATE = 0.001
 
@@ -28,12 +29,12 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.9  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 20000
+END_EPSILON_DECAYING = 50000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
+REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 10000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
@@ -155,6 +156,7 @@ class DQRLAgent:
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
+        print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
@@ -353,8 +355,9 @@ class DQRLAgent:
         
         # if np.random.random() > EPSILON_:
         #     link_action_q.sort(key=lambda x: x[2], reverse=True)
-
-        reqState_action_q.sort(key=lambda x: x[2], reverse=True)
+            
+        if np.random.random() > EPSILON_:
+            reqState_action_q.sort(key=lambda x: x[2], reverse=True)
         self.reqState_qs = {}
 
         return reqState_action_q

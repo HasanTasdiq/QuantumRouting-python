@@ -216,7 +216,7 @@ class RoutingEnv(Env):
                 
                 graph[n1][n2] = 1
                 graph[n2][n1] = 1
-        # print(count)
+        # print('neighbor count       =====        ===== =====' , count)
         # print(state_graph)
         self.graph = graph
         # print(self.graph)
@@ -484,8 +484,8 @@ class RoutingEnv(Env):
                 ret.append(i)
         if not len(ret):
             return np.random.randint(0, self.SIZE)
-        return random.choice(ret)
-        # return np.random.randint(0, self.SIZE)
+        # return random.choice(ret)
+        return np.random.randint(0, self.SIZE)
     
     def max_future_q(self , current_state , qs):
         # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
