@@ -462,8 +462,8 @@ class QuRA_DQRL(AlgorithmBase):
 
                 #wip
         
-        print('==================================================================conflicts========== ' , len(conflicts))
-        
+        print('[' , self.name, '] :' , self.timeSlot, '==================================================================conflicts========== ' , len(conflicts))
+        self.result.totalConflicts += len(conflicts)
         for request , current_node , next_node in conflicts:
             neg_weight = 0.05
             key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
@@ -480,6 +480,8 @@ class QuRA_DQRL(AlgorithmBase):
         
         entSum = sum(self.result.entanglementPerRound)
         self.filterReqeuest()
+        print('[' , self.name, '] :' , self.timeSlot, '==========================================================total=conflicts========== ' , self.result.totalConflicts)
+
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request  after  extra:', successReq)
 
@@ -1359,7 +1361,7 @@ class QuRA_DQRL(AlgorithmBase):
         visited = {node : False for node in self.topo.nodes}
         pq = PriorityQueue()
 
-        print(src.id)
+        # print(src.id)
         pq.put((self.weightOfNode[src], src.id))
         while not pq.empty():
             (dist, uid) = pq.get()

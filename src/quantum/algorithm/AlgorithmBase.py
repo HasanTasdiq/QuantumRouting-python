@@ -27,6 +27,7 @@ class AlgorithmResult:
         self.entanglementPerRound = []
         self.eps = 0
         self.successfulRequest = 0
+        self.totalConflicts = 0
         self.successfulRequestPerRound = []
         self.usedLinks = 0
 
