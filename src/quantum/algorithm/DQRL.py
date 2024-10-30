@@ -14,12 +14,7 @@ from numpy import log as ln
 from random import sample
 import numpy as np
 import multiprocessing
-import multiprocessing.context as ctx
-import warnings
-warnings.filterwarnings("ignore")
-import logging
-logging.getLogger('tensorflow').disabled = True 
-# ctx._force_start_method('spawn')
+
 
 sys.path.insert(0, "../../rl")
 
