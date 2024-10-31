@@ -56,12 +56,12 @@ from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 from DQRLAgent import DQRLAgent
 
 ttime = 75000
-ttime2 = 50000
+ttime2 = 5000
 step = 500
-times = 5
-nodeNo = 30
+times = 1
+nodeNo = 20
 alpha_ = 0.0002
-degree = 6
+degree = 3
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
@@ -228,7 +228,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
 
 
@@ -266,7 +266,11 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_
                     # ids[i] = topo.generateRequest(numOfRequestPerRound)
                     for _ in range(numOfRequestPerRound):
 
-                        a = sample([i for i in range(numOfNode)], 2)
+                        while True:
+                            a = sample([i for i in range(numOfNode)], 2)
+                            if (a[0], a[1]) not in ids[i]:
+                                break
+
 
                         # a = [2 , 25]
 
