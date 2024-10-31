@@ -337,6 +337,7 @@ class DQRLAgent:
             current_state , qs = self.reqState_qs[reqState]
             current_node = reqState[2]
             path = reqState[3]
+            index = reqState[4]
             # print(qs)
             
             if np.random.random() > EPSILON_:
@@ -426,6 +427,20 @@ class DQRLAgent:
         #     self.last_action_table[request] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
         self.last_action_table = {}
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
-    
+    def getOrderedRequests(self , paths):
+        req_q = {req: 0 for req in paths}
+        for req in paths:
+            p = paths[req]
+            for obj in p:
+                req_q[req] += obj['q_val']
+            req_q[req] = req_q[req] / (len(p) - 1)
+        
+
+        req_q = dict(sorted(req_q.items(), key=lambda item: item[1], reverse=True))
+
+        T = list(req_q.keys())
+        if np.random.random() > EPSILON_:
+            random.shuffle(T)
+        return T
     def save_model(self):
         self.model.save((self.model_name))
