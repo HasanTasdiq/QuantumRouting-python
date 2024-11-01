@@ -253,6 +253,7 @@ class QuRA_DQRL(AlgorithmBase):
             # print('start while::: ' , [(src.id,dst.id,next_node.id,[p for p in list(path)]) for (src,dst,next_node,path) in self.requestState])
 
             reqState_action = self.routingAgent.learn_and_predict_next_node_batch(self.requestState)
+            # reqState_action = self.routingAgent.learn_and_predict_next_node_batch_shortest(self.requestState)
             # print('in whileeeeee ' , len(reqState_action))
             for (reqState , next_node_id , q , current_state) in  reqState_action:
                 # print('start for:: ', current_state)
@@ -388,12 +389,19 @@ class QuRA_DQRL(AlgorithmBase):
                 
         
         
-
+        tp = 0
         for key in paths:
             print(key[0].id , key[1].id)
             print([n['current_node'].id for n in paths[key] ])
+            if len(paths[key]) > 0:
+                tp += 1
+        print('===== paths found =======================================' , tp)
 
             # print([n['current_state'] for n in paths[key] ])
+
+            # for n in paths[key]:
+            #     print('========= ' ,n['current_node'].id , '==============')
+            #     print(n['current_state'])
 
 
         return paths

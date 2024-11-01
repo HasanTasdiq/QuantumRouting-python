@@ -34,8 +34,8 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 10000  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -341,14 +341,19 @@ class DQRLAgent:
             # print(qs)
             
             if np.random.random() > EPSILON_:
-                next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , self.get_qs(current_state)))
+                # next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , self.get_qs(current_state)))
+                next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , qs))
 
                 q = qs[next_node]
                 # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
 
             else:
                 # Get random action
-                next_node = self.env.rand_neighbor(current_node.id , current_state,path)
+                if np.random.random() > 0.5 :
+                    next_node = self.env.rand_neighbor(current_node.id , current_state,path)
+                else:
+                    next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
+
 
                 q = qs[next_node]
 
@@ -362,6 +367,41 @@ class DQRLAgent:
         self.reqState_qs = {}
 
         return reqState_action_q
+    
+    def learn_and_predict_next_node_batch_shortest(self , requestStates):
+        global EPSILON_
+        timeSlot = self.env.algo.timeSlot
+        reqState_action_q = []
+
+        self.get_next_node_qs_batch(requestStates , timeSlot)
+
+        for reqState in self.reqState_qs:
+
+            current_state , qs = self.reqState_qs[reqState]
+            current_node = reqState[2]
+            path = reqState[3]
+            index = reqState[4]
+            # print(qs)
+            
+            next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
+            # next_node = np.argmin(current_state[self.env.SIZE + 2])
+            # print('========= ' , next_node)
+            # print(current_state)
+            q = qs[next_node]
+                # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
+
+
+            reqState_action_q.append((reqState , next_node , q , current_state))
+        
+        # if np.random.random() > EPSILON_:
+        #     link_action_q.sort(key=lambda x: x[2], reverse=True)
+            
+        if np.random.random() > EPSILON_:
+            reqState_action_q.sort(key=lambda x: x[2], reverse=True)
+        self.reqState_qs = {}
+
+        return reqState_action_q
+
 
     def learn_and_predict_next_node(self , request , current_node , path):
         global EPSILON_
