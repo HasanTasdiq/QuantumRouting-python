@@ -55,7 +55,7 @@ from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 from DQRLAgent import DQRLAgent
 
-ttime = 75000
+ttime = 150000
 ttime2 = 5000
 step = 500
 times = 10
