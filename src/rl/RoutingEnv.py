@@ -468,6 +468,24 @@ class RoutingEnv(Env):
         
         return ret
         # return qs
+    def next_node_from_shortest(self , current_node_id , current_state , path , qs):
+        r = random.random()
+
+
+        neighbor_list = current_state[current_node_id]
+        dist = current_state[self.SIZE + 2]
+        neighbor_dist = {}
+        for i in range(len(neighbor_list)):
+            if neighbor_list[i] > 0:
+                neighbor_dist[i] = dist[i]
+        # neighbor_dist = dict(sorted(neighbor_dist.items(), key=lambda item: item[1]))
+        if not len(neighbor_dist):
+            print('= = r a n d = =')
+            return np.random.randint(0, self.SIZE)
+        ret  = min(neighbor_dist, key=neighbor_dist.get)
+        
+        return ret
+
     
     def rand_neighbor(self , current_node_id , current_state, path):
         neighbor_list = current_state[current_node_id]
