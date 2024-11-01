@@ -480,7 +480,7 @@ class RoutingEnv(Env):
                 neighbor_dist[i] = dist[i]
         # neighbor_dist = dict(sorted(neighbor_dist.items(), key=lambda item: item[1]))
         if not len(neighbor_dist):
-            print('= = r a n d = =')
+            # print('= = r a n d = =')
             return np.random.randint(0, self.SIZE)
         ret  = min(neighbor_dist, key=neighbor_dist.get)
         
