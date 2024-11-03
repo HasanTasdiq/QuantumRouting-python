@@ -65,6 +65,8 @@ class QuRA_DQRL(AlgorithmBase):
 
         print('[REPS] idle time:', self.result.idleTime)
         print('[' , self.name, '] :' , self.timeSlot, ' total successful request::', self.result.successfulRequest)
+        print('[' , self.name, '] :' , self.timeSlot, ' average path len        ::', self.result.pathlen/(self.result.successfulRequest+ 1))
+        print('[' , self.name, '] :' , self.timeSlot, ' total path      ::', self.result.totalPath)
 
         print('[REPS] remainRequestPerRound:', self.result.remainRequestPerRound[-1])
         print('[REPS] avg usedQubits:', self.result.usedQubits)
@@ -390,11 +392,17 @@ class QuRA_DQRL(AlgorithmBase):
         
         
         tp = 0
+        pathlen = 0
         for key in paths:
             print(key[0].id , key[1].id)
             print([n['current_node'].id for n in paths[key] ])
+            pathlen += len(paths[key])
             if len(paths[key]) > 0:
                 tp += 1
+        # if tp > 0 :
+        #     self.result.pathlen += pathlen
+        self.result.totalPath += tp
+        
         print('===== paths found =======================================' , tp)
 
             # print([n['current_state'] for n in paths[key] ])
@@ -431,6 +439,7 @@ class QuRA_DQRL(AlgorithmBase):
         conflicts = []
         selectedEdgesDict = {}
         paths = self.get_all_paths()
+        pathlen = 0
 
         T = self.routingAgent.getOrderedRequests(paths)
         # T = []
@@ -582,6 +591,8 @@ class QuRA_DQRL(AlgorithmBase):
                     self.topo.pair_dict[(s,d)] = 1
 
                 if success:
+                    pathlen += len(path)
+
                     successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
 
                     for path_ in successPath:
@@ -678,11 +689,13 @@ class QuRA_DQRL(AlgorithmBase):
             except:
                 self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
 
+        self.result.pathlen += pathlen
+
         self.result.usedLinks += len(usedLinks)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request before extra:', successReq)
 
         self.result.conflicts += len(conflicts)
-        print('==========================================================total=conflicts========== ' , self.result.conflicts)
+        print('[' , self.name, '] :' , self.timeSlot,'========total=conflicts========== ' , self.result.conflicts)
 
 
         extra_successReq , extra_totalEntanglement = 0 , 0
@@ -1323,16 +1336,20 @@ class QuRA_DQRL(AlgorithmBase):
         successReq = 0
         totalEntanglement = 0
         usedLinks = []
+        pathlen = 0
 
         for request in  self.requests:
             T.append(request)
+        fp = 0
         for request in T:
             usedLinks = []
 
             (src,dst) = (request[0] , request[1])
             targetPath = self.findPathForDQRL((src,dst))
+
             if not len(targetPath):
                 continue
+            fp += 1
             # print('********* path for ' , (src.id,dst.id) , ':: ' , len(targetPath) , ':: ' , ': ' , [n.id for n in targetPath])
 
 
@@ -1434,6 +1451,8 @@ class QuRA_DQRL(AlgorithmBase):
 
             
             if success:
+                pathlen += len(targetPath)
+
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
 
                 for path in successPath:
@@ -1495,7 +1514,12 @@ class QuRA_DQRL(AlgorithmBase):
             for link in usedLinks:
                 link.clearPhase4Swap()
 
+        print('===== paths found =======================================' , fp)
 
+        if fp > 0:
+            self.result.pathlen += pathlen
+        self.result.totalPath += fp
+        
         self.result.usedLinks += len(usedLinks)
 
         return successReq , totalEntanglement
