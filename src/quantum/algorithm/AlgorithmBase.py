@@ -30,6 +30,8 @@ class AlgorithmResult:
         self.successfulRequestPerRound = []
         self.usedLinks = 0
         self.conflicts = 0
+        self.pathlen = 0
+        self.totalPath = 0
 
     def toDict(self):
         dic = {}
