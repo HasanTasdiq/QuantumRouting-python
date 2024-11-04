@@ -58,7 +58,7 @@ from DQRLAgent import DQRLAgent
 ttime = 70000
 ttime2 = 500
 step = 500
-times = 1
+times = 10
 nodeNo = 20
 alpha_ = 0.0002
 degree = 1
