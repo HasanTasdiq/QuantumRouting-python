@@ -543,6 +543,11 @@ class QuRA_DQRL(AlgorithmBase):
                                 self.topo.reward_routing[key] += self.topo.negative_reward
                             except:
                                 self.topo.reward_routing[key] = self.topo.negative_reward
+                        if failed_conflict:
+                            try:
+                                self.topo.reward_routing[key] += self.topo.negative_reward
+                            except:
+                                self.topo.reward_routing[key] = self.topo.negative_reward
                         
                     if prev_node is not None:
                         if good_to_search:
@@ -666,6 +671,9 @@ class QuRA_DQRL(AlgorithmBase):
                         neg_weight = 0
                     elif fail_hopcount:
                         neg_weight = 0.05
+                    
+                    if failed_conflict:
+                        neg_weight = 0.1
 
                     for (current_node, next_node) in selectedEdges:
                         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
