@@ -11,6 +11,10 @@ warnings.filterwarnings("ignore")
 import logging
 logging.getLogger('tensorflow').disabled = True 
 ENTANGLEMENT_LIFETIME = 10
+import networkx as nx
+from itertools import islice
+
+
 	
 class RoutingEnv(Env):
     def __init__(self , algo):
@@ -216,6 +220,38 @@ class RoutingEnv(Env):
                 
                 graph[n1][n2] = 1
                 graph[n2][n1] = 1
+        G = nx.from_numpy_array(np.array(state_graph))
+        for req in self.algo.requestState:
+                src_id = req[0].id
+                n2 = req[1].id
+                n1 = req[2].id
+
+                n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
+                if current_node_id == n1 and current_request[1].id == n2:
+                    continue
+                # if current_request[1].id == n1 and current_request[0].id == n2:
+                #     continue
+
+                counter = 0
+                try:
+                    paths = nx.shortest_simple_paths(G, n1, n2)
+                    for path in paths:
+
+                        for i in range(len(path)-1):
+                            p1 = path[i]
+                            p2 = path[i+1]
+                            state_req[p1][p2] += 1
+                            state_req[p2][p1] += 1
+                        counter += 1
+                        if counter >= 5:
+                            break
+                except:
+                    print()
+
+        # print(G.nodes())
+        # self.algo.topo.draw_graph(G)
+
+        # nx.draw(G, with_labels=False)
         # print('neighbor count       =====        ===== =====' , count)
         # print(state_graph)
         self.graph = graph
@@ -259,11 +295,11 @@ class RoutingEnv(Env):
 
             r += 1
         
-        for req in self.algo.requestState:
-            dst_id = req[1].id
-            curr_id = req[2].id
-            state_req[dst_id][curr_id] += 1
-            state_req[curr_id][dst_id] += 1
+        # for req in self.algo.requestState:
+        #     dst_id = req[1].id
+        #     curr_id = req[2].id
+        #     state_req[dst_id][curr_id] += 1
+        #     state_req[curr_id][dst_id] += 1
 
 
 
