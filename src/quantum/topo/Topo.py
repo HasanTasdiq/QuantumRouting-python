@@ -151,8 +151,8 @@ class Topo:
         #---------
         for _node in _nodes:
             # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
-            # self.nodes.append(Node(_node, _positions[_node], random.random()*11+15 , self))  # 20-40
-            self.nodes.append(Node(_node, _positions[_node], random.random()*6+4 , self)) 
+            self.nodes.append(Node(_node, _positions[_node], random.random()*11+15 , self))  # 20-40
+            # self.nodes.append(Node(_node, _positions[_node], random.random()*6+4 , self)) 
             # self.nodes.append(Node(_node, _positions[_node], 24 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
@@ -207,8 +207,8 @@ class Topo:
         linkId = 0
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
-            # rand = int(random.random()*5+3) # 3~7
-            rand = int(random.random()*3+1) # 1~3
+            rand = int(random.random()*5+3) # 3~7
+            # rand = int(random.random()*3+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
             # rand = 3
             self.link_capacity[(_edge[0], _edge[1])] = rand
@@ -286,8 +286,10 @@ class Topo:
             with open(reqFileName, 'w') as file:
                 for req in self.requests:
                     file.write(str(req) + '\n')
-        self.get_k_shortest_path_edge_dict(k=5)
-        
+        try:
+            self.get_k_shortest_path_edge_dict(k=5)
+        except:
+            print('error in k shortest path')    
         print('****** len seg' , len(self.segments))
         print('****** len links' , len(self.links))
         print('****** len edge' , len(self.edges))
@@ -445,14 +447,13 @@ class Topo:
         file = 'SurfnetCore.gml'
         name = 'waxman'
         while True:
-            # try:
-            #     G = G = pickle.load(open(graphFileName, 'rb'))
-            # except:
-            #     G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-            #     pickle.dump(G, open(graphFileName, 'wb'))
+            try:
+                G = pickle.load(open(graphFileName, 'rb'))
+            except:
+                G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             
 
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.001, domain=(0, 0, 1, 1))
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
@@ -464,9 +465,13 @@ class Topo:
             topo = Topo(G, q, k, a, degree , name)
             checker.setTopo(topo)
             if checker.checkConnected():
+                pickle.dump(G, open(graphFileName, 'wb'))
+
+                print('topo is connected')
                 break
             else:
                 print("topo is not connected", file = sys.stderr)
+        # quit()
         return topo
     def create_custom_graph():
 
