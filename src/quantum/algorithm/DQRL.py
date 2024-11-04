@@ -483,6 +483,7 @@ class QuRA_DQRL(AlgorithmBase):
                 failed_loop = False
                 failed_swap = False
                 fail_hopcount = False
+                failed_conflict = False
                 i = 1
                 # targetPath = self.findPathForDQRL((src,dst))
 
