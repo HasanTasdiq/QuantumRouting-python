@@ -263,7 +263,8 @@ class RoutingEnv(Env):
         state_graph.append(state_cn)
         state_graph.append(dist)
         # state_graph.extend(state_req)
-        state_graph.extend(reqStates)
+        
+        # state_graph.extend(reqStates)
 
 
         # state_graph.append(state_path)
