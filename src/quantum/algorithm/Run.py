@@ -55,10 +55,10 @@ from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 from DQRLAgent import DQRLAgent
 
-ttime = 100000
-ttime2 = 5000
+ttime = 70000
+ttime2 = 500
 step = 500
-times = 10
+times = 1
 nodeNo = 20
 alpha_ = 0.0002
 degree = 1
