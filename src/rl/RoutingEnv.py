@@ -223,11 +223,11 @@ class RoutingEnv(Env):
         dist = self.dijkstra(current_request[1].id)
 
         
-        if hasattr(self.algo , 'requests' ):
-            for req in self.algo.requests:
-                n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
-                state_req[n1][n2] += 1
-                state_req[n2][n1] += 1
+        # if hasattr(self.algo , 'requests' ):
+        #     for req in self.algo.requests:
+        #         n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
+        #         state_req[n1][n2] += 1
+        #         state_req[n2][n1] += 1
         # print(state_req)
         
         # state_graph.extend(state_req)
@@ -239,7 +239,7 @@ class RoutingEnv(Env):
         state_cr[current_request[0].id] = 1
         state_cr[current_request[1].id] = 1
 
-        state_cn[current_node_id] = 2
+        state_cn[current_node_id] = 10
 
         # for i in range(len(path)):
         #     state_path[path[i]] = i + 1
@@ -258,6 +258,12 @@ class RoutingEnv(Env):
             reqStates[r][curr_id] = 2
 
             r += 1
+        
+        for req in self.algo.requestState:
+            dst_id = req[1].id
+            curr_id = req[2].id
+            state_req[dst_id][curr_id] += 1
+            state_req[curr_id][dst_id] += 1
 
 
 
@@ -266,8 +272,8 @@ class RoutingEnv(Env):
         state_graph.append(state_cr)
         state_graph.append(state_cn)
         state_graph.append(dist)
-        # state_graph.extend(state_req)
-        state_graph.extend(reqStates)
+        state_graph.extend(state_req)
+        # state_graph.extend(reqStates)
 
 
         # state_graph.append(state_path)
