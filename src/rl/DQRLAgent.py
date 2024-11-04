@@ -69,8 +69,8 @@ class DQRLAgent:
         print('++++++++++initiating DQRL agent for:' , algo.name)
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
 
         # Main model
