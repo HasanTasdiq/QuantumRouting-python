@@ -207,8 +207,8 @@ class Topo:
         linkId = 0
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
-            rand = int(random.random()*5+3) # 3~7
-            # rand = int(random.random()*3+1) # 1~3
+            # rand = int(random.random()*5+3) # 3~7
+            rand = int(random.random()*3+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
             # rand = 3
             self.link_capacity[(_edge[0], _edge[1])] = rand
@@ -460,12 +460,12 @@ class Topo:
 
             # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
-            # Topo.draw_graph(G)
 
             topo = Topo(G, q, k, a, degree , name)
             checker.setTopo(topo)
             if checker.checkConnected():
                 pickle.dump(G, open(graphFileName, 'wb'))
+                Topo.draw_graph(G)
 
                 print('topo is connected')
                 break
@@ -531,7 +531,7 @@ class Topo:
         # Topo.draw_graph(G)
         return G
     
-    def draw_graph(G):
+    def draw_graph( G):
         pos = nx.get_node_attributes(G, 'pos')
         repeater_nodes = []
         end_nodes = []
