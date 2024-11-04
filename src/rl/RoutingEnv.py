@@ -232,10 +232,14 @@ class RoutingEnv(Env):
         
         # state_graph.extend(state_req)
         
-        state_cr[current_request[0].id] = 100
-        state_cr[current_request[1].id] = 100
+        # state_cr[current_request[0].id] = 100
+        # state_cr[current_request[1].id] = 100
 
-        state_cn[current_node_id] = 20
+        # state_cn[current_node_id] = 20
+        state_cr[current_request[0].id] = 1
+        state_cr[current_request[1].id] = 1
+
+        state_cn[current_node_id] = 2
 
         # for i in range(len(path)):
         #     state_path[path[i]] = i + 1
@@ -249,9 +253,9 @@ class RoutingEnv(Env):
             dst_id = req[1].id
             curr_id = req[2].id
 
-            reqStates[r][src_id] = 10
-            reqStates[r][dst_id] = 10
-            reqStates[r][curr_id] = 20
+            reqStates[r][src_id] = 1
+            reqStates[r][dst_id] = 1
+            reqStates[r][curr_id] = 2
 
             r += 1
 
