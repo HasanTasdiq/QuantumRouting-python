@@ -465,7 +465,7 @@ class Topo:
             checker.setTopo(topo)
             if checker.checkConnected():
                 pickle.dump(G, open(graphFileName, 'wb'))
-                Topo.draw_graph(G)
+                # Topo.draw_graph(G)
 
                 print('topo is connected')
                 break
