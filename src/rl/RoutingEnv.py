@@ -236,7 +236,7 @@ class RoutingEnv(Env):
                 try:
                     paths = nx.shortest_simple_paths(G, n1, n2)
                     for path in paths:
-                        print('!-!_!_!_!_!_!_!_!_!_!_!  path found')
+                        # print('!-!_!_!_!_!_!_!_!_!_!_!  path found')
 
                         for i in range(len(path)-1):
                             p1 = path[i]
