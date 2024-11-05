@@ -29,7 +29,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.9  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 80000
+END_EPSILON_DECAYING = 50000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -69,9 +69,9 @@ class DQRLAgent:
         print('++++++++++initiating DQRL agent for:' , algo.name)
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.SIZE,self.env.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.SIZE,self.env.SIZE,)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
 
         # Main model
