@@ -203,12 +203,12 @@ class QuRA_DQRL(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             # self.EPS()
             # self.ELS()
-            if 'greedy_only' in  self.name:
-                self.route_seq()
-            else:
-                # self.route()
-                self.route_all_seq()
-            # self.route_seq()
+            # if 'greedy_only' in  self.name:
+            #     self.route_seq()
+            # else:
+            #     # self.route()
+            #     self.route_all_seq()
+            self.route_seq()
             
         # print('[REPS] p4 end') 
         self.printResult()
@@ -1055,7 +1055,8 @@ class QuRA_DQRL(AlgorithmBase):
                 failed_loop = False
                 failed_swap = False
                 fail_hopcount = False
-                targetPath = self.findPathForDQRL((src,dst))
+                # targetPath = self.findPathForDQRL((src,dst))
+                targetPath = []
 
                 while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                     
