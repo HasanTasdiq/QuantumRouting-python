@@ -55,11 +55,11 @@ from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 from DQRLAgent import DQRLAgent
 
-ttime = 100
+ttime = 70000
 ttime2 = 5000
 step = 500
-times = 2
-nodeNo = 50
+times = 5
+nodeNo = 30
 alpha_ = 0.0002
 degree = 5
 # numOfRequestPerRound = [1, 2, 3]
