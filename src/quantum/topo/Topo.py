@@ -453,7 +453,7 @@ class Topo:
             #     G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             
 
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 20))
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
@@ -465,7 +465,7 @@ class Topo:
             checker.setTopo(topo)
             if checker.checkConnected():
                 pickle.dump(G, open(graphFileName, 'wb'))
-                # Topo.draw_graph(G)
+                Topo.draw_graph(G)
 
                 print('topo is connected')
                 break

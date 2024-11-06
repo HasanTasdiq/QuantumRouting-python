@@ -223,7 +223,7 @@ class QuRA_DQRL(AlgorithmBase):
         T = []
         for request in  self.requests:
             T.append(request)
-        print(self.name , ('greedy_only' in  self.name))
+        # print(self.name , ('greedy_only' in  self.name))
         # print('srcDstPairs',[(r[0].id , r[1].id) for r in self.srcDstPairs])
         # print('requests', [(r[0].id , r[1].id) for r in self.requests])
         # print('requestState::: ' , [(src.id,dst.id,next_node.id,[p for p in list(path)]) for (src,dst,next_node,path) in self.requestState])
@@ -447,10 +447,10 @@ class QuRA_DQRL(AlgorithmBase):
         # T = []
         # for request in  self.requests:
         #     T.append(request)
-        print(self.name , ('greedy_only' in  self.name))
-        print([(r[0].id , r[1].id) for r in self.srcDstPairs])
-        print([(r[0].id , r[1].id) for r in self.requests])
-        print([(r[0].id , r[1].id) for r in T])
+        # print(self.name , ('greedy_only' in  self.name))
+        # print([(r[0].id , r[1].id) for r in self.srcDstPairs])
+        # print([(r[0].id , r[1].id) for r in self.requests])
+        # print([(r[0].id , r[1].id) for r in T])
         # if not (self.param is not None and 'greedy_only' in self.param):
         if True:
             for request in T:
@@ -735,7 +735,7 @@ class QuRA_DQRL(AlgorithmBase):
         T = []
         for request in  self.requests:
             T.append(request)
-        print(self.name , ('greedy_only' in  self.name))
+        # print(self.name , ('greedy_only' in  self.name))
         # print('srcDstPairs',[(r[0].id , r[1].id) for r in self.srcDstPairs])
         # print('requests', [(r[0].id , r[1].id) for r in self.requests])
         # print('requestState::: ' , [(src.id,dst.id,next_node.id,[p for p in list(path)]) for (src,dst,next_node,path) in self.requestState])
@@ -1024,9 +1024,9 @@ class QuRA_DQRL(AlgorithmBase):
         T = []
         for request in  self.requests:
             T.append(request)
-        print(self.name , ('greedy_only' in  self.name))
-        print([(r[0].id , r[1].id) for r in self.srcDstPairs])
-        print([(r[0].id , r[1].id) for r in self.requests])
+        # print(self.name , ('greedy_only' in  self.name))
+        # print([(r[0].id , r[1].id) for r in self.srcDstPairs])
+        # print([(r[0].id , r[1].id) for r in self.requests])
         # if not (self.param is not None and 'greedy_only' in self.param):
         if True:
             for request in T:
@@ -1243,6 +1243,13 @@ class QuRA_DQRL(AlgorithmBase):
                 for link in usedLinks:
                     link.clearPhase4Swap()
 
+        for (current_node, next_node) in selectedEdges:
+            key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+
+            try:
+                self.topo.reward_routing[key] += successReq * 0.1
+            except:
+                self.topo.reward_routing[key] = successReq * 0.1
 
         self.result.usedLinks += len(usedLinks)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request before extra:', successReq)
@@ -1352,8 +1359,24 @@ class QuRA_DQRL(AlgorithmBase):
 
         for request in  self.requests:
             T.append(request)
+        # random.shuffle(T)
+        T2 = []
+        for req in T:
+            T2.append(req)
+        
         fp = 0
         for request in T:
+        # while len(T2):
+        #     tl = 999
+        #     request = None
+        #     for r in  T2:
+        #         targetPath = self.findPathForDQRL((r[0],r[1]))
+        #         if len(targetPath) < tl:
+        #             request = r
+        #             break
+        #     T2.remove(request)
+
+
             usedLinks = []
 
             (src,dst) = (request[0] , request[1])
