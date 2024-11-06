@@ -1022,6 +1022,8 @@ class QuRA_DQRL(AlgorithmBase):
         totalEntanglement = 0
         usedLinks = []
         conflicts = []
+        selectedEdgesDict = {}
+
         T = []
         for request in  self.requests:
             T.append(request)
@@ -1244,18 +1246,20 @@ class QuRA_DQRL(AlgorithmBase):
                             self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
                         
                         # print(key , '  ==  ' , self.topo.reward_routing[key])
+                selectedEdgesDict[(src,dst)] = selectedEdges
                 
                 for link in usedLinks:
                     link.clearPhase4Swap()
+        for req in selectedEdgesDict:
+            selectedEdges = selectedEdgesDict[req]
+            for (current_node, next_node) in selectedEdges:
+                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
-        for (current_node, next_node) in selectedEdges:
-            key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                try:
+                    self.topo.reward_routing[key] += successReq * 0.1
+                except:
+                    self.topo.reward_routing[key] = successReq * 0.1
 
-            try:
-                self.topo.reward_routing[key] += successReq * 0.1
-            except:
-                self.topo.reward_routing[key] = successReq * 0.1
-                
         for request , current_node , next_node in conflicts:
             neg_weight = 0.05
             key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
@@ -1267,6 +1271,7 @@ class QuRA_DQRL(AlgorithmBase):
 
         self.result.usedLinks += len(usedLinks)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request before extra:', successReq)
+        print('[' , self.name, '] :' , self.timeSlot, ' =================conflicts :', len(conflicts))
 
 
         extra_successReq , extra_totalEntanglement = 0 , 0

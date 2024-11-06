@@ -284,17 +284,17 @@ class RoutingEnv(Env):
         # print(state_cn)
         # print(dist)
 
-        r = 0 
-        for req in self.algo.requestState:
-            src_id = req[0].id
-            dst_id = req[1].id
-            curr_id = req[2].id
+        # r = 0 
+        # for req in self.algo.requestState:
+        #     src_id = req[0].id
+        #     dst_id = req[1].id
+        #     curr_id = req[2].id
 
-            reqStates[r][src_id] = 1
-            reqStates[r][dst_id] = 1
-            reqStates[r][curr_id] = 2
+        #     reqStates[r][src_id] = 1
+        #     reqStates[r][dst_id] = 1
+        #     reqStates[r][curr_id] = 2
 
-            r += 1
+        #     r += 1
         
         # for req in self.algo.requestState:
         #     dst_id = req[1].id
