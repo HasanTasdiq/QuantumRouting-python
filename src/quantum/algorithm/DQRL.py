@@ -1021,6 +1021,7 @@ class QuRA_DQRL(AlgorithmBase):
         successReq = 0
         totalEntanglement = 0
         usedLinks = []
+        conflicts = []
         T = []
         for request in  self.requests:
             T.append(request)
@@ -1070,6 +1071,10 @@ class QuRA_DQRL(AlgorithmBase):
                     if not len(ent_links):
                         good_to_search = False
                         failed_no_ent = True
+                        conflicts_ = self.getConflicts(current_node , next_node , selectedEdgesDict)
+                        if len(conflicts_):
+                            failed_conflict = True
+                        conflicts.extend(conflicts_)
                         # print((src.id,dst.id) , '=FAILED= no ent links')
                     else:
                         ent_links = [ent_links[0]]
@@ -1250,6 +1255,15 @@ class QuRA_DQRL(AlgorithmBase):
                 self.topo.reward_routing[key] += successReq * 0.1
             except:
                 self.topo.reward_routing[key] = successReq * 0.1
+                
+        for request , current_node , next_node in conflicts:
+            neg_weight = 0.05
+            key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+
+            try:
+                self.topo.reward_routing[key] += self.topo.negative_reward * neg_weight
+            except:
+                self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
 
         self.result.usedLinks += len(usedLinks)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request before extra:', successReq)
