@@ -247,7 +247,7 @@ class RoutingEnv(Env):
                         if counter >= 5:
                             break
                 except:
-                    print()
+                    c = 10
 
         # print(G.nodes())
         # self.algo.topo.draw_graph(G)
@@ -309,7 +309,7 @@ class RoutingEnv(Env):
         state_graph.append(state_cr)
         state_graph.append(state_cn)
         state_graph.append(dist)
-        # state_graph.extend(state_req)
+        state_graph.extend(state_req)
         # state_graph.extend(reqStates)
 
 
