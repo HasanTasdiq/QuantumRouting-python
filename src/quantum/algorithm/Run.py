@@ -9,6 +9,7 @@ from OnlineAlgorithm import OnlineAlgorithm
 from GreedyGeographicRouting import GreedyGeographicRouting
 from GreedyHopRouting import GreedyHopRouting
 from REPS import REPS
+from REPS_rep import REPSREP
 from REPS_cache import REPSCACHE
 from REPS_cache2 import REPSCACHE2
 from REPS_cache4 import REPSCACHE5
@@ -55,17 +56,17 @@ from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 from DQRLAgent import DQRLAgent
 
-ttime = 70000
+ttime = 100
 ttime2 = 5000
 step = 500
-times = 5
+times = 1
 nodeNo = 30
 alpha_ = 0.0002
 degree = 5
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [5]
+numOfRequestPerRound = [10]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -192,6 +193,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.7, alpha = alpha_
     
 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
+    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
@@ -228,7 +230,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 0.7, alpha = alpha_
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
 
 

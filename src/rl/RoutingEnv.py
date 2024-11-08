@@ -220,34 +220,34 @@ class RoutingEnv(Env):
                 
                 graph[n1][n2] = 1
                 graph[n2][n1] = 1
-        G = nx.from_numpy_array(np.array(state_graph))
-        for req in self.algo.requestState:
-                src_id = req[0].id
-                n2 = req[1].id
-                n1 = req[2].id
+        # G = nx.from_numpy_array(np.array(state_graph))
+        # for req in self.algo.requestState:
+        #         src_id = req[0].id
+        #         n2 = req[1].id
+        #         n1 = req[2].id
 
-                n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
-                if current_node_id == n1 and current_request[1].id == n2:
-                    continue
-                # if current_request[1].id == n1 and current_request[0].id == n2:
-                #     continue
+        #         n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
+        #         if current_node_id == n1 and current_request[1].id == n2:
+        #             continue
+        #         # if current_request[1].id == n1 and current_request[0].id == n2:
+        #         #     continue
 
-                counter = 0
-                try:
-                    paths = nx.shortest_simple_paths(G, n1, n2)
-                    for path in paths:
-                        # print('!-!_!_!_!_!_!_!_!_!_!_!  path found')
+        #         counter = 0
+        #         try:
+        #             paths = nx.shortest_simple_paths(G, n1, n2)
+        #             for path in paths:
+        #                 # print('!-!_!_!_!_!_!_!_!_!_!_!  path found')
 
-                        for i in range(len(path)-1):
-                            p1 = path[i]
-                            p2 = path[i+1]
-                            state_req[p1][p2] += 1
-                            state_req[p2][p1] += 1
-                        counter += 1
-                        if counter >= 5:
-                            break
-                except:
-                    c = 10
+        #                 for i in range(len(path)-1):
+        #                     p1 = path[i]
+        #                     p2 = path[i+1]
+        #                     state_req[p1][p2] += 1
+        #                     state_req[p2][p1] += 1
+        #                 counter += 1
+        #                 if counter >= 5:
+        #                     break
+        #         except:
+        #             c = 10
 
         # print(G.nodes())
         # self.algo.topo.draw_graph(G)
@@ -284,23 +284,23 @@ class RoutingEnv(Env):
         # print(state_cn)
         # print(dist)
 
-        # r = 0 
-        # for req in self.algo.requestState:
-        #     src_id = req[0].id
-        #     dst_id = req[1].id
-        #     curr_id = req[2].id
+        r = 0 
+        for req in self.algo.requestState:
+            src_id = req[0].id
+            dst_id = req[1].id
+            curr_id = req[2].id
 
-        #     reqStates[r][src_id] = 1
-        #     reqStates[r][dst_id] = 1
-        #     reqStates[r][curr_id] = 2
+            # reqStates[r][src_id] = 1
+            reqStates[r][dst_id] = 1
+            reqStates[r][curr_id] = 1
 
-        #     r += 1
+            r += 1
         
-        # for req in self.algo.requestState:
-        #     dst_id = req[1].id
-        #     curr_id = req[2].id
-        #     state_req[dst_id][curr_id] += 1
-        #     state_req[curr_id][dst_id] += 1
+        for req in self.algo.requestState:
+            dst_id = req[1].id
+            curr_id = req[2].id
+            state_req[dst_id][curr_id] += 1
+            state_req[curr_id][dst_id] += 1
 
 
 

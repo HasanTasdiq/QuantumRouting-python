@@ -29,7 +29,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.9  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 50000
+END_EPSILON_DECAYING = 80000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -350,7 +350,7 @@ class DQRLAgent:
 
             else:
                 # Get random action
-                if np.random.random() > 0.7 :
+                if np.random.random() > 0 :
                     next_node = self.env.rand_neighbor(current_node.id , current_state,path)
                 else:
                     next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
@@ -433,6 +433,7 @@ class DQRLAgent:
 
         if next_state is None:
             next_state = current_state
+        done = False
         if not request in self.last_action_table:
             self.last_action_table[request] = [(action , timeSlot , current_state , next_state , done)]
         else:
