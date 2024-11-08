@@ -1,10 +1,12 @@
 import itertools
-
 import sys
+sys.path.append("../")
+import networkx as nx
+from topo.Topo import Topo
 
-# max_ = 0
-# for i in range(10000):
-#     rand = int(random.random()*5+3) 
-#     print(rand)
-#     max_ = max(max_ , rand)
-print(sys.maxsize)
+nodeNo = 30
+r = 10
+degree = 6
+topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
+G = topo.updatedG()
+print(G.nodes())
