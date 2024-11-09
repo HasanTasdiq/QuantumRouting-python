@@ -256,33 +256,33 @@ class Topo:
         
         self.requests = []
         reqFileName = 'request' + str(len(self.nodes)) + '.txt'
-        try:
-            # print('in try req')
-            f = open(reqFileName, 'r')
-            for x in f.readlines():
-                x = x.replace('\n' , '').replace('(' , '').replace(')' , '').split(',')
-                x = [int(i) for i in x]
-                x = tuple(x)
-                self.requests.append(x)
-            f.close()
-            # print(self.requests)
-        except Exception as e:
-            # print('in except req' , e)
-            x_cut = int(1000 * (len(self.nodes) / 100))
-            y_cut = int(3000 * (len(self.nodes) / 100))
-            source_nodes = [node.id for node in self.nodes if node.loc[1] < x_cut]
-            dest_nodes = [node.id for node in self.nodes if node.loc[1] > y_cut]
-            print(len(source_nodes) , len(dest_nodes))
+        # try:
+        #     # print('in try req')
+        #     f = open(reqFileName, 'r')
+        #     for x in f.readlines():
+        #         x = x.replace('\n' , '').replace('(' , '').replace(')' , '').split(',')
+        #         x = [int(i) for i in x]
+        #         x = tuple(x)
+        #         self.requests.append(x)
+        #     f.close()
+        #     # print(self.requests)
+        # except Exception as e:
+        #     # print('in except req' , e)
+        #     x_cut = int(1000 * (len(self.nodes) / 100))
+        #     y_cut = int(3000 * (len(self.nodes) / 100))
+        #     source_nodes = [node.id for node in self.nodes if node.loc[1] < x_cut]
+        #     dest_nodes = [node.id for node in self.nodes if node.loc[1] > y_cut]
+        #     print(len(source_nodes) , len(dest_nodes))
 
-            for _ in range(200):
-                req = (source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))])
-                if req not in self.requests:
-                    self.requests.append(req)
+        #     for _ in range(200):
+        #         req = (source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))])
+        #         if req not in self.requests:
+        #             self.requests.append(req)
             
-            # Using "with open" syntax to automatically close the file
-            with open(reqFileName, 'w') as file:
-                for req in self.requests:
-                    file.write(str(req) + '\n')
+        #     # Using "with open" syntax to automatically close the file
+        #     with open(reqFileName, 'w') as file:
+        #         for req in self.requests:
+        #             file.write(str(req) + '\n')
         self.get_k_shortest_path_edge_dict(k=5)
         
         print('****** len seg' , len(self.segments))
@@ -442,11 +442,11 @@ class Topo:
         file = 'SurfnetCore.gml'
         name = 'waxman'
         while True:
-            try:
-                G = G = pickle.load(open(graphFileName, 'rb'))
-            except:
-                G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
-                pickle.dump(G, open(graphFileName, 'wb'))
+            # try:
+            #     G = G = pickle.load(open(graphFileName, 'rb'))
+            # except:
+            #     G = nx.waxman_graph(n, beta=0.9, alpha=0.01, domain=(0, 0, 1, 2))
+            #     pickle.dump(G, open(graphFileName, 'wb'))
             
 
             G = nx.waxman_graph(n, beta=0.9, alpha=0.001, domain=(0, 0, 1, 1))
