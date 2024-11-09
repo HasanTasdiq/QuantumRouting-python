@@ -8,24 +8,39 @@ import copy
 from itertools import islice
 import time
 
+nodeNo = 100
+degree = 6
+times = 50
+numOfRequestPerRound = 10
+topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
+# G = topo.updatedG()
+# print(G.nodes())
+# print(G.edges())
+ids = {i : [] for i in range(times)}
+total_succ = 0
+total_length = 0
+
+total_succ_shortest = 0
+total_length_shortest = 0
+
 
 def get_k_paths(G , source ,target):
-    print('in get k path' , source , target)
+    # print('in get k path' , source , target)
     retPath = []
     k = 2
     try:
-        print('trying for path')
+        # print('trying for path')
         # paths = list(nx.shortest_simple_paths(G, source, target))
         paths =  list(
             islice(nx.shortest_simple_paths(G, source, target), k)
         )
     except:
-        print('Exception')
+        # print('Exception')
         return []
     # print('in g p ::: ', [p for p in paths])
     i = 0
     for path in paths:
-        print(path)
+        # print(path)
         retPath.append(path)
         i += 1
         if i >= k:
@@ -46,7 +61,7 @@ def get_total_path(reqs , all_paths ):
         return
     req = reqs[0]
     reqs.pop(0)
-    new_all_paths = all_paths
+    new_all_paths = []
     new_path_found = True
     for comb in all_paths:
         G = comb[0]
@@ -57,11 +72,15 @@ def get_total_path(reqs , all_paths ):
         paths = get_k_paths(G , req[0] , req[1])
         if not len(paths):
             new_path_found = False
+            new_all_paths.append(copy.deepcopy(comb))
             continue
         # print(req)
         # print(paths)
+        # print(len(all_paths))
         
-        new_all_paths.remove(comb)
+        # new_all_paths.remove(comb)
+        # print('after remove ',len(all_paths))
+
 
         for path in paths:
             G2 = copy.deepcopy(G)
@@ -102,15 +121,7 @@ def shortest_approach(G , reqs):
     return paths
 
 
-nodeNo = 20
-degree = 6
-times = 1
-numOfRequestPerRound = 10
-topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
-G = topo.updatedG()
-print(G.nodes())
-print(G.edges())
-ids = {i : [] for i in range(times)}
+
 
 
 for t in range(times):
@@ -125,13 +136,13 @@ for t in range(times):
 for t in range(times):
     reqs = copy.deepcopy(ids[t])
     print(reqs)
-
+    G = topo.updatedG()
     req = reqs[0]
     reqs.pop(0)
     all_paths = []
     paths = get_k_paths(G , req[0] , req[1])
-    print('in main')
-    print([p for p in paths])
+    # print('in main')
+    # print([p for p in paths])
     for path in paths:
         # print('in main,  path:' , path)
         G2 = copy.deepcopy(G)
@@ -143,13 +154,13 @@ for t in range(times):
         comb = [G2 , path]
         all_paths.append(comb)
 
-    for comb in all_paths:
-        print([path for path in comb[1:]])
+    # for comb in all_paths:
+    #     print([path for path in comb[1:]])
 
-    print('before recursive\n')
+    # print('before recursive\n')
     get_total_path(reqs , all_paths)
 
-    print('--------------')
+    print('--------------' , t , '----------')
     lc = []
     pl = []
     opt_comb = []
@@ -161,15 +172,24 @@ for t in range(times):
         lc.append(len(comb)-1)
         if len(opt_comb) < len(comb)-1:
             opt_comb = comb[1:]
-        l = 0
-        for path in comb[1:]:
-            l+= len(path)
-        pl.append(l)
-    print(min(lc) , max(lc))
+        # l = 0
+        # for path in comb[1:]:
+        #     l+= len(path)
+        # pl.append(l)
+    for comb in gall_paths:
+        if len(comb) -1 == max(lc):
+            l = 0
+            for path in comb[1:]:
+                l+= len(path)
+            pl.append(l)
+    print(max(lc))
     print(min(pl) , max(pl))
     # print(gall_paths[0][1:])
-    print(ids[t])
-    print([path for path in opt_comb])
+    # print(ids[t])
+    # print([path for path in opt_comb])
+
+    total_succ += max(lc)
+    total_length += min(pl)
 
 
 
@@ -182,6 +202,14 @@ for t in range(times):
     for path in s_path:
             l+= len(path)
     print(l)
+
+    total_succ_shortest += len(s_path)
+    total_length_shortest += l
+
+
+print('=======FInal result =======')
+print(total_succ/ times , total_length/total_succ , '\n')
+print(total_succ_shortest/ times , total_length_shortest/total_succ_shortest)
 
 
 
