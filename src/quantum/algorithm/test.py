@@ -10,8 +10,8 @@ import time
 
 nodeNo = 100
 degree = 6
-times = 50
-numOfRequestPerRound = 10
+times = 1
+numOfRequestPerRound = 20
 topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
 # G = topo.updatedG()
 # print(G.nodes())
@@ -27,7 +27,7 @@ total_length_shortest = 0
 def get_k_paths(G , source ,target):
     # print('in get k path' , source , target)
     retPath = []
-    k = 2
+    k = 3
     try:
         # print('trying for path')
         # paths = list(nx.shortest_simple_paths(G, source, target))
@@ -52,7 +52,7 @@ def get_k_paths(G , source ,target):
 gall_paths = []
 
 def get_total_path(reqs , all_paths ):
-    # print('get_total_path' , reqs)
+    print('get_total_path' , reqs)
     # for comb in all_paths:
     #     print([path for path in comb[1:]])
 
@@ -135,7 +135,7 @@ for t in range(times):
 
 for t in range(times):
     reqs = copy.deepcopy(ids[t])
-    print(reqs)
+    # print(reqs)
     G = topo.updatedG()
     req = reqs[0]
     reqs.pop(0)
