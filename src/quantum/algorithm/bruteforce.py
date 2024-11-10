@@ -246,6 +246,8 @@ class BruteForce():
         self.reqs = []
         for req in reqs:
             self.reqs.append((req[0].id , req[1].id))
+        global k_path
+        # k_path = len(reqs)
     def get_paths(self):
         reqs = copy.deepcopy(self.reqs)
         G = self.topo.updatedG_ent()
