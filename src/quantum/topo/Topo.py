@@ -317,6 +317,25 @@ class Topo:
                 if link.isEntangled(timeSlot):
                     G.edges[link.n1.id , link.n2.id]['length'] = 0
         return G
+    def updatedG_ent(self , timeSlot = 0):
+        G = nx.MultiGraph()
+        for node in self.nodes:
+            G.add_node(node.id)
+        for link in self.links:
+            if not link.isEntangled(timeSlot):
+                continue
+            G.add_edge(link.n1.id , link.n2.id)
+
+        return G
+    def updatedG_all(self , timeSlot = 0):
+        G = nx.MultiGraph()
+        for node in self.nodes:
+            G.add_node(node.id)
+        for link in self.links:
+
+            G.add_edge(link.n1.id , link.n2.id)
+
+        return G
     def removeLink(self, link  , skipNodes = []):
 
         link.n1.links.remove(link)

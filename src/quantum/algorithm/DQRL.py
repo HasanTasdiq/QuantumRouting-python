@@ -6,6 +6,7 @@ from queue import PriorityQueue
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from AlgorithmBase import AlgorithmResult
+from bruteforce import BruteForce
 from topo.Topo import Topo 
 from topo.Node import Node 
 from topo.Link import Link
@@ -40,6 +41,7 @@ class QuRA_DQRL(AlgorithmBase):
         self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
         self.hopCountThreshold = 25
         self.requestState = []
+        self.optPaths = {}
         # self.pool = None
 
 
@@ -203,12 +205,12 @@ class QuRA_DQRL(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             # self.EPS()
             # self.ELS()
-            if 'greedy_only' in  self.name:
-                self.route_seq()
-            else:
-                # self.route()
-                self.route_all_seq()
-            # self.route_seq()
+            # if 'greedy_only' in  self.name:
+            #     self.route_seq()
+            # else:
+            #     # self.route()
+            #     self.route_all_seq()
+            self.route_seq()
             
         # print('[REPS] p4 end') 
         self.printResult()
@@ -441,6 +443,7 @@ class QuRA_DQRL(AlgorithmBase):
         conflicts = []
         selectedEdgesDict = {}
         paths = self.get_all_paths()
+
         pathlen = 0
 
         T = self.routingAgent.getOrderedRequests(paths)
@@ -464,7 +467,7 @@ class QuRA_DQRL(AlgorithmBase):
                 #     continue
 
                 src,dst = request[0] , request[1]
-                targetPath = paths[(src) , dst]
+                targetPath = paths[(src , dst)]
                 if not len(targetPath):
                     continue
 
@@ -1031,7 +1034,7 @@ class QuRA_DQRL(AlgorithmBase):
         # print([(r[0].id , r[1].id) for r in self.srcDstPairs])
         # print([(r[0].id , r[1].id) for r in self.requests])
         # if not (self.param is not None and 'greedy_only' in self.param):
-        if True:
+        if False:
             for request in T:
                 if 'greedy_only' in  self.name:
                     continue
@@ -1275,7 +1278,7 @@ class QuRA_DQRL(AlgorithmBase):
 
 
         extra_successReq , extra_totalEntanglement = 0 , 0
-        if 'greedy_only' in self.name:
+        if 'greedy_only' in self.name or 'bruteforce' in self.name:
             extra_successReq , extra_totalEntanglement = self.extraRoute()
 
         totalEntanglement += extra_totalEntanglement
@@ -1384,6 +1387,11 @@ class QuRA_DQRL(AlgorithmBase):
             T2.append(req)
         
         fp = 0
+        if 'bruteforce' in self.name:
+            # print('[=================== '+self.name+'===========######## ] total entangled link ' , len([l for l in self.topo.links if l.entangled]) , '   out of: ' , len([l for l in self.topo.links]))
+
+            bruteforce = BruteForce(self.topo, self.requests)
+            paths = bruteforce.get_paths()
         for request in T:
         # while len(T2):
         #     tl = 999
@@ -1399,7 +1407,10 @@ class QuRA_DQRL(AlgorithmBase):
             usedLinks = []
 
             (src,dst) = (request[0] , request[1])
-            targetPath = self.findPathForDQRL((src,dst))
+            if 'greedy_only' in self.name:
+                targetPath = self.findPathForDQRL((src,dst))
+            elif 'bruteforce' in self.name:
+                targetPath = [self.topo.nodes[nid] for nid in paths[(src,dst)]]
 
             if not len(targetPath):
                 continue
