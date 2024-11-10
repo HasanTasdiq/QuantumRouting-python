@@ -22,7 +22,7 @@ total_length = 0
 
 total_succ_shortest = 0
 total_length_shortest = 0
-k_path = 10
+k_path = 5
 
 
 # def get_k_paths(G , source ,target):
