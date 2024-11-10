@@ -59,7 +59,7 @@ from DQRLAgent import DQRLAgent
 ttime = 50
 ttime2 = 5000
 step = 500
-times = 5
+times = 3
 nodeNo = 50
 alpha_ = 0.0002
 degree = 3
@@ -81,7 +81,7 @@ entanglementLifetimes = [1]
 requestTimeouts = [100,200,300]
 preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
-runLabel = [4]
+runLabel = [0]
 Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity"]
 toRunLessAlgos = ['REPS' , 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only']
 
@@ -147,7 +147,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
 
 
-def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = 0.9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = 0.8, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
