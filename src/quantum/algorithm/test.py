@@ -7,11 +7,12 @@ from random import sample
 import copy
 from itertools import islice
 import time
+from sys import getsizeof
 
-nodeNo = 30
-degree = 1
-times = 100
-numOfRequestPerRound = 40
+nodeNo = 50
+degree = 3
+times = 20
+numOfRequestPerRound = 20
 topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
 # G = topo.updatedG()
 # print(G.nodes())
@@ -24,38 +25,38 @@ total_succ_shortest = 0
 total_length_shortest = 0
 
 
-def get_k_paths_(G , source ,target):
-    # print('in get k path' , source , target)
-    retPath = []
-    k = 2
-    try:
-        # print('trying for path')
-        # paths = list(nx.shortest_simple_paths(G, source, target))
-        # paths =  list(
-        #     islice(nx.shortest_simple_paths(nx.Graph(G), source, target), k)
-        # )
-        paths =  list(
-            islice(nx.all_simple_paths(G, source, target), k)
-        )
-    except:
-        # print('Exception')
-        return []
-    # print('in g p ::: ', [p for p in paths])
-    i = 0
-    for path in paths:
-        # print(path)
-        retPath.append(path)
-        i += 1
-        if i >= k:
-            break
-    # print('in g p ret  ::: ', [p for p in retPath])
+# def get_k_paths_(G , source ,target):
+#     # print('in get k path' , source , target)
+#     retPath = []
+#     k = 2
+#     try:
+#         # print('trying for path')
+#         # paths = list(nx.shortest_simple_paths(G, source, target))
+#         # paths =  list(
+#         #     islice(nx.shortest_simple_paths(nx.Graph(G), source, target), k)
+#         # )
+#         paths =  list(
+#             islice(nx.all_simple_paths(G, source, target), k)
+#         )
+#     except:
+#         # print('Exception')
+#         return []
+#     # print('in g p ::: ', [p for p in paths])
+#     i = 0
+#     for path in paths:
+#         # print(path)
+#         retPath.append(path)
+#         i += 1
+#         if i >= k:
+#             break
+#     # print('in g p ret  ::: ', [p for p in retPath])
     
-    return retPath
+#     return retPath
 
 def get_k_paths(G, source , target):
     G2 = copy.deepcopy(G)
     ret = []
-    k = 2
+    k = 10
     for _ in range(k):
         try:
             path = list(nx.shortest_path(G2 , source, target))
@@ -74,11 +75,14 @@ def get_k_paths(G, source , target):
 gall_paths = []
 
 def get_total_path(reqs , all_paths ):
+    global gall_paths
+
     print('get_total_path' , reqs)
+    print('size of all paths ' , getsizeof(gall_paths)/(1024*1024))
+    print('len of all paths ' , len(gall_paths))
     # for comb in all_paths:
     #     print([path for path in comb[1:]])
 
-    global gall_paths
     if not len(reqs):
         return
     req = reqs[0]
@@ -114,7 +118,9 @@ def get_total_path(reqs , all_paths ):
             comb2 = copy.deepcopy(comb)
             comb2[0] = G2
             # comb2.extend([path])
-            comb2.append(path)
+            # comb2.append(len(path))
+            comb2[1] += len(path)
+            comb2[2] += 1
             # print('comb2 ' , comb2[1:])
             new_all_paths.append(comb2)
     # if not new_path_found:
@@ -173,9 +179,10 @@ for t in range(times):
         for i in range(len(path) - 1):
             edge = (min((path[i] , path[i+1])) , max((path[i] , path[i+1])))
             G2.remove_edge(edge[0]  , edge[1])
-        comb = [G2 , path]
+        comb = [G2 , len(path) , 1]
         all_paths.append(comb)
-
+    if not len(paths):
+            all_paths.append([copy.deepcopy(G) , 0 , 0])
     # for comb in all_paths:
     #     print([path for path in comb[1:]])
 
@@ -185,25 +192,25 @@ for t in range(times):
     print('--------------' , t , '----------')
     lc = []
     pl = []
-    opt_comb = []
+    opt_comb = 0
     
     for comb in gall_paths:
         # print('-------path in comb-------')
 
         # print([path for path in comb[1:]])
-        lc.append(len(comb)-1)
-        if len(opt_comb) < len(comb)-1:
-            opt_comb = comb[1:]
+        lc.append(comb[2])
+        if opt_comb < comb[1]:
+            opt_comb = comb[1]
         # l = 0
         # for path in comb[1:]:
         #     l+= len(path)
         # pl.append(l)
     for comb in gall_paths:
-        if len(comb) -1 == max(lc):
-            l = 0
-            for path in comb[1:]:
-                l+= len(path)
-            pl.append(l)
+        if comb[2] == max(lc):
+            # l = 0
+            # for path_len in comb[1:]:
+            #     l+= path_len
+            pl.append(comb[1])
     print(max(lc))
     print(min(pl) , max(pl))
     # print(gall_paths[0][1:])

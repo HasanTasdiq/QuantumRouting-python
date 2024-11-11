@@ -332,8 +332,8 @@ class Topo:
         for node in self.nodes:
             G.add_node(node.id)
         for link in self.links:
-
-            G.add_edge(link.n1.id , link.n2.id)
+            if random.random() > 0.4:
+                G.add_edge(link.n1.id , link.n2.id)
 
         return G
     def removeLink(self, link  , skipNodes = []):
