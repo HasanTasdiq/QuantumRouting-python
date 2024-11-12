@@ -8,11 +8,15 @@ import copy
 from itertools import islice
 import time
 from sys import getsizeof
+import multiprocessing
 
-nodeNo = 50
-degree = 3
+
+# nodeNo = 5
+degree = 1
 times = 20
-numOfRequestPerRound = 20
+numOfRequestPerRound = 10
+nodeNo = numOfRequestPerRound
+g_k = numOfRequestPerRound
 topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
 # G = topo.updatedG()
 # print(G.nodes())
@@ -53,10 +57,11 @@ total_length_shortest = 0
     
 #     return retPath
 
-def get_k_paths(G, source , target):
+def get_k_paths(G, source , target , k ):
+    global g_k
     G2 = copy.deepcopy(G)
     ret = []
-    k = 10
+    # k = g_k
     for _ in range(k):
         try:
             path = list(nx.shortest_path(G2 , source, target))
@@ -74,7 +79,7 @@ def get_k_paths(G, source , target):
 
 gall_paths = []
 
-def get_total_path(reqs , all_paths ):
+def get_total_path(reqs , all_paths  , k):
     global gall_paths
 
     print('get_total_path' , reqs)
@@ -95,7 +100,7 @@ def get_total_path(reqs , all_paths ):
 
 
 
-        paths = get_k_paths(G , req[0] , req[1])
+        paths = get_k_paths(G , req[0] , req[1] , k)
         if not len(paths):
             new_path_found = False
             new_all_paths.append(copy.deepcopy(comb))
@@ -132,7 +137,7 @@ def get_total_path(reqs , all_paths ):
     # all_paths = new_all_paths
     gall_paths = new_all_paths
 
-    return get_total_path(reqs , gall_paths)
+    return get_total_path(reqs , gall_paths , k)
 
 def shortest_approach(G , reqs):
     paths = []
@@ -152,93 +157,137 @@ def shortest_approach(G , reqs):
 
 
 
+
 for t in range(times):
     for _ in range(numOfRequestPerRound):
 
         while True:
-            a = sample([i for i in range(nodeNo)], 2)
+            a = sample([i for i in range(nodeNo*nodeNo)], 2)
             if (not ((a[0], a[1]) in ids)) and (not ((a[1], a[0]) in ids)):
                 break
         ids[t].append((a[0], a[1]))
 
-for t in range(times):
-    reqs = copy.deepcopy(ids[t])
-    # print(reqs)
-    G = topo.updatedG_all()
-    req = reqs[0]
-    reqs.pop(0)
-    all_paths = []
-    paths = get_k_paths(G , req[0] , req[1])
-    # print('in main')
-    # print([p for p in paths])
-    for path in paths:
-        # print('in main,  path:' , path)
-        G2 = copy.deepcopy(G)
-        # print(G2.nodes())
-        # print(G2.edges())
-        for i in range(len(path) - 1):
-            edge = (min((path[i] , path[i+1])) , max((path[i] , path[i+1])))
-            G2.remove_edge(edge[0]  , edge[1])
-        comb = [G2 , len(path) , 1]
-        all_paths.append(comb)
-    if not len(paths):
-            all_paths.append([copy.deepcopy(G) , 0 , 0])
-    # for comb in all_paths:
-    #     print([path for path in comb[1:]])
+def run(G , k , result):
+    global total_succ
+    global total_length
+    global total_succ_shortest
+    global total_length_shortest
+    global topo
+    global ids
 
-    # print('before recursive\n')
-    get_total_path(reqs , all_paths)
+    t1 = time.time()
 
-    print('--------------' , t , '----------')
-    lc = []
-    pl = []
-    opt_comb = 0
-    
-    for comb in gall_paths:
-        # print('-------path in comb-------')
+    for t in range(times):
+        reqs = copy.deepcopy(ids[t])
+        # print(reqs)
+        req = reqs[0]
+        reqs.pop(0)
+        all_paths = []
+        paths = get_k_paths(G , req[0] , req[1] , k)
+        # print('in main')
+        # print([p for p in paths])
+        for path in paths:
+            # print('in main,  path:' , path)
+            G2 = copy.deepcopy(G)
+            # print(G2.nodes())
+            # print(G2.edges())
+            for i in range(len(path) - 1):
+                edge = (min((path[i] , path[i+1])) , max((path[i] , path[i+1])))
+                G2.remove_edge(edge[0]  , edge[1])
+            comb = [G2 , len(path) , 1]
+            all_paths.append(comb)
+        if not len(paths):
+                all_paths.append([copy.deepcopy(G) , 0 , 0])
+        # for comb in all_paths:
+        #     print([path for path in comb[1:]])
 
-        # print([path for path in comb[1:]])
-        lc.append(comb[2])
-        if opt_comb < comb[1]:
-            opt_comb = comb[1]
-        # l = 0
-        # for path in comb[1:]:
-        #     l+= len(path)
-        # pl.append(l)
-    for comb in gall_paths:
-        if comb[2] == max(lc):
+        # print('before recursive\n')
+        get_total_path(reqs , all_paths , k)
+
+        print('--------------' , t , '----------')
+        lc = []
+        pl = []
+        opt_comb = 0
+        
+        for comb in gall_paths:
+            # print('-------path in comb-------')
+
+            # print([path for path in comb[1:]])
+            lc.append(comb[2])
+            if opt_comb < comb[1]:
+                opt_comb = comb[1]
             # l = 0
-            # for path_len in comb[1:]:
-            #     l+= path_len
-            pl.append(comb[1])
-    print(max(lc))
-    print(min(pl) , max(pl))
-    # print(gall_paths[0][1:])
-    # print(ids[t])
-    # print([path for path in opt_comb])
+            # for path in comb[1:]:
+            #     l+= len(path)
+            # pl.append(l)
+        for comb in gall_paths:
+            if comb[2] == max(lc):
+                # l = 0
+                # for path_len in comb[1:]:
+                #     l+= path_len
+                pl.append(comb[1])
+        print(max(lc))
+        print(min(pl) , max(pl))
+        # print(gall_paths[0][1:])
+        # print(ids[t])
+        # print([path for path in opt_comb])
 
-    total_succ += max(lc)
-    total_length += min(pl)
-
-
-
-
-    s_path = shortest_approach(G , ids[t])
-
-    print('-------shortest -------')
-    print(len(s_path))
-    l = 0
-    for path in s_path:
-            l+= len(path)
-    print(l)
-
-    total_succ_shortest += len(s_path)
-    total_length_shortest += l
+        total_succ += max(lc)
+        total_length += min(pl)
 
 
-print('=======FInal result =======')
-print(total_succ/ times , total_length/total_succ , '\n')
-print(total_succ_shortest/ times , total_length_shortest/total_succ_shortest)
+
+
+        s_path = shortest_approach(copy.deepcopy(G) , ids[t])
+
+        print('-------shortest -------')
+        print(len(s_path))
+        l = 0
+        for path in s_path:
+                l+= len(path)
+        print(l)
+
+        total_succ_shortest += len(s_path)
+        total_length_shortest += l
+
+
+    print('=======FInal result ======= for #req ' , numOfRequestPerRound , 'k:' , k)
+    print(total_succ/ times , total_length/total_succ , '\n')
+    print(total_succ_shortest/ times , total_length_shortest/total_succ_shortest)
+
+    print('time taken ' , (time.time()-t1)/3600 , ' hours')
+
+    result['succ'] = total_succ/ times
+    result['len'] = total_length/total_succ
+    result['succ_shortest'] = total_succ_shortest/ times
+    result['len_shortest'] = total_length_shortest/total_succ
+
+
+if __name__ == '__main__':
+    ks = [numOfRequestPerRound , numOfRequestPerRound+5  ]
+
+    resultDicts = [multiprocessing.Manager().dict() for _ in range(len(ks))]
+
+    G = topo.updatedG_all()
+    jobs = []
+    
+    for k in range(len(ks)):
+        job = multiprocessing.Process(target = run, args = (copy.deepcopy(G) , ks[k], resultDicts[k] ))
+        jobs.append(job)
+
+    for job in jobs:
+        job.start()
+
+    for job in jobs:
+        job.join()
+
+    for i in range(len(ks)):
+        print('result for k:' ,ks[i] )
+        # print(resultDicts[i])
+        print(resultDicts[i]['succ'] , resultDicts[i]['len'])
+        print(resultDicts[i]['succ_shortest'] , resultDicts[i]['len_shortest'] , '\n')
+
+
 
 
 

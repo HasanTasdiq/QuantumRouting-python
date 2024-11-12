@@ -151,9 +151,9 @@ class Topo:
         #---------
         for _node in _nodes:
             # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
-            self.nodes.append(Node(_node, _positions[_node], random.random()*11+15 , self))  # 20-40
+            # self.nodes.append(Node(_node, _positions[_node], random.random()*11+15 , self))  # 20-40
             # self.nodes.append(Node(_node, _positions[_node], random.random()*6+4 , self)) 
-            # self.nodes.append(Node(_node, _positions[_node], 24 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], 4 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -210,7 +210,7 @@ class Topo:
             # rand = int(random.random()*5+3) # 3~7
             rand = int(random.random()*3+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
-            # rand = 3
+            rand = 2
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
@@ -259,33 +259,33 @@ class Topo:
         
         self.requests = []
         reqFileName = 'request' + str(len(self.nodes)) + '.txt'
-        try:
-            # print('in try req')
-            f = open(reqFileName, 'r')
-            for x in f.readlines():
-                x = x.replace('\n' , '').replace('(' , '').replace(')' , '').split(',')
-                x = [int(i) for i in x]
-                x = tuple(x)
-                self.requests.append(x)
-            f.close()
-            # print(self.requests)
-        except Exception as e:
-            # print('in except req' , e)
-            x_cut = int(1000 * (len(self.nodes) / 100))
-            y_cut = int(3000 * (len(self.nodes) / 100))
-            source_nodes = [node.id for node in self.nodes if node.loc[1] < x_cut]
-            dest_nodes = [node.id for node in self.nodes if node.loc[1] > y_cut]
-            print(len(source_nodes) , len(dest_nodes))
+        # try:
+        #     # print('in try req')
+        #     f = open(reqFileName, 'r')
+        #     for x in f.readlines():
+        #         x = x.replace('\n' , '').replace('(' , '').replace(')' , '').split(',')
+        #         x = [int(i) for i in x]
+        #         x = tuple(x)
+        #         self.requests.append(x)
+        #     f.close()
+        #     # print(self.requests)
+        # except Exception as e:
+        #     # print('in except req' , e)
+        #     x_cut = int(1000 * (len(self.nodes) / 100))
+        #     y_cut = int(3000 * (len(self.nodes) / 100))
+        #     source_nodes = [node.id for node in self.nodes if node.loc[1] < x_cut]
+        #     dest_nodes = [node.id for node in self.nodes if node.loc[1] > y_cut]
+        #     print(len(source_nodes) , len(dest_nodes))
 
-            for _ in range(200):
-                req = (source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))])
-                if req not in self.requests:
-                    self.requests.append(req)
+        #     for _ in range(200):
+        #         req = (source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))])
+        #         if req not in self.requests:
+        #             self.requests.append(req)
             
-            # Using "with open" syntax to automatically close the file
-            with open(reqFileName, 'w') as file:
-                for req in self.requests:
-                    file.write(str(req) + '\n')
+        #     # Using "with open" syntax to automatically close the file
+        #     with open(reqFileName, 'w') as file:
+        #         for req in self.requests:
+        #             file.write(str(req) + '\n')
         try:
             self.get_k_shortest_path_edge_dict(k=5)
         except:
@@ -327,13 +327,16 @@ class Topo:
             G.add_edge(link.n1.id , link.n2.id)
 
         return G
-    def updatedG_all(self , timeSlot = 0):
+    def updatedG_all(self , timeSlot = 0 ):
         G = nx.MultiGraph()
         for node in self.nodes:
             G.add_node(node.id)
         for link in self.links:
-            if random.random() > 0.4:
+            if random.random() > 0.1:
                 G.add_edge(link.n1.id , link.n2.id)
+
+        # G = nx.grid_graph(dim=(n,n))
+        
 
         return G
     def removeLink(self, link  , skipNodes = []):
@@ -472,7 +475,9 @@ class Topo:
             #     G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             
 
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 2))
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
+            # G = nx.grid_2d_graph(n , n)
+            G = Topo.gridTopo(n)
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
@@ -549,7 +554,21 @@ class Topo:
             G.nodes[node]['ycoord'] = G.nodes[node]['pos'][1]
         # Topo.draw_graph(G)
         return G
-    
+    def gridTopo(dim):
+        G = nx.grid_2d_graph(dim,dim)
+
+        mapping = {}
+        k = 0
+        for i in range(dim):
+            for j in range(dim):
+                mapping[(i , j)] = k
+                k+=1
+                G.nodes[(i , j)]["pos"] = (i,j)
+        # print(mapping)
+        pos = {(x, y): (x, y) for x, y in G.nodes()}
+        # G.pos = pos
+        G = nx.relabel_nodes(G, mapping)
+        return G
     def draw_graph( G):
         pos = nx.get_node_attributes(G, 'pos')
         repeater_nodes = []
