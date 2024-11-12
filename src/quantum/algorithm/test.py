@@ -287,6 +287,7 @@ if __name__ == '__main__':
     ks = [numOfRequestPerRound , numOfRequestPerRound+5  ]
     ks = [numOfRequestPerRound  ]
     numreqs = [10,15,20,25,30,35,40]
+    # numreqs = [5,6,7]
 
     resultDicts = [multiprocessing.Manager().dict() for _ in range(len(numreqs))]
 
@@ -317,11 +318,21 @@ if __name__ == '__main__':
     #     # print(resultDicts[i])
     #     print(resultDicts[i]['succ'] , resultDicts[i]['len'])
     #     print(resultDicts[i]['succ_shortest'] , resultDicts[i]['len_shortest'] , '\n')
+    targetFilePath = "../../plot/data/"
+    filename = 'testbrute.txt'
+    F = open(targetFilePath + filename, "w")
+    
     for i in range(len(numreqs)):
         print('result for #req:' ,numreqs[i] )
         # print(resultDicts[i])
         print(resultDicts[i]['succ'] , resultDicts[i]['len'])
         print(resultDicts[i]['succ_shortest'] , resultDicts[i]['len_shortest'] , '\n')
+
+        F.write('result for #req: ' + str(numreqs[i])+ '\n' )
+        # print(resultDicts[i])
+        F.write(str(resultDicts[i]['succ']) + ' ' + str(resultDicts[i]['len'])+ '\n')
+        F.write(str(resultDicts[i]['succ_shortest']) + ' ' + str(resultDicts[i]['len_shortest']) + '\n')
+    F.close()
 
 
 
