@@ -210,7 +210,7 @@ class Topo:
             # rand = int(random.random()*5+3) # 3~7
             rand = int(random.random()*3+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
-            rand = 2
+            rand = 1
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
