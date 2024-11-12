@@ -14,7 +14,7 @@ import multiprocessing
 # nodeNo = 5
 degree = 1
 times = 20
-numOfRequestPerRound = 10
+numOfRequestPerRound = 20
 nodeNo = numOfRequestPerRound
 g_k = numOfRequestPerRound
 topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
@@ -75,6 +75,7 @@ def get_k_paths(G, source , target , k ):
             G2.remove_edge(edge[0]  , edge[1])
             # print('after remove ' , len(G2.edges()))
 
+    print('len(ret):' , len(ret))
     return ret
 
 gall_paths = []
@@ -264,7 +265,9 @@ def run(G , k , result):
 
 
 if __name__ == '__main__':
+    
     ks = [numOfRequestPerRound , numOfRequestPerRound+5  ]
+    ks = [numOfRequestPerRound  ]
 
     resultDicts = [multiprocessing.Manager().dict() for _ in range(len(ks))]
 
@@ -277,6 +280,7 @@ if __name__ == '__main__':
 
     for job in jobs:
         job.start()
+        print('started job: ' , job.pid)
 
     for job in jobs:
         job.join()
