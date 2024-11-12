@@ -14,8 +14,8 @@ import multiprocessing
 # nodeNo = 5
 degree = 1
 times = 20
-numOfRequestPerRound = 16
-nodeNo = numOfRequestPerRound
+numOfRequestPerRound = 18
+nodeNo = 10
 g_k = numOfRequestPerRound
 topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
 # G = topo.updatedG()
@@ -168,13 +168,13 @@ for t in range(times):
                 break
         ids[t].append((a[0], a[1]))
 
-def run(G , k , result):
+def run(G , k ,ids, result):
     global total_succ
     global total_length
     global total_succ_shortest
     global total_length_shortest
     global topo
-    global ids
+    # global ids
 
     t1 = time.time()
 
@@ -263,20 +263,47 @@ def run(G , k , result):
     result['succ_shortest'] = total_succ_shortest/ times
     result['len_shortest'] = total_length_shortest/total_succ
 
+def generate_ids(numreqs):
+    idmap ={}
+    global times
+    global nodeNo
+    for numOfRequestPerRound in numreqs:
+        ids = {i : [] for i in range(times)}
+
+        for t in range(times):
+            for _ in range(numOfRequestPerRound):
+
+                while True:
+                    a = sample([i for i in range(nodeNo*nodeNo)], 2)
+                    if (not ((a[0], a[1]) in ids)) and (not ((a[1], a[0]) in ids)):
+                        break
+                ids[t].append((a[0], a[1]))
+        idmap[numOfRequestPerRound] = ids
+    return idmap
+
 
 if __name__ == '__main__':
     
     ks = [numOfRequestPerRound , numOfRequestPerRound+5  ]
     ks = [numOfRequestPerRound  ]
+    numreqs = [10,15,20,25,30,35,40]
 
-    resultDicts = [multiprocessing.Manager().dict() for _ in range(len(ks))]
+    resultDicts = [multiprocessing.Manager().dict() for _ in range(len(numreqs))]
+
+    idmap = generate_ids(numreqs)
 
     G = topo.updatedG_all()
     jobs = []
     
-    for k in range(len(ks)):
-        job = multiprocessing.Process(target = run, args = (copy.deepcopy(G) , ks[k], resultDicts[k] ))
+    # for k in range(len(ks)):
+    #     job = multiprocessing.Process(target = run, args = (copy.deepcopy(G) , ks[k], resultDicts[k] ))
+    #     jobs.append(job)
+    
+    k = 0
+    for numOfRequestPerRound in numreqs:
+        job = multiprocessing.Process(target = run, args = (copy.deepcopy(G) , numOfRequestPerRound, idmap[numOfRequestPerRound], resultDicts[k] ))
         jobs.append(job)
+        k +=1
 
     for job in jobs:
         job.start()
@@ -285,8 +312,13 @@ if __name__ == '__main__':
     for job in jobs:
         job.join()
 
-    for i in range(len(ks)):
-        print('result for k:' ,ks[i] )
+    # for i in range(len(ks)):
+    #     print('result for k:' ,ks[i] )
+    #     # print(resultDicts[i])
+    #     print(resultDicts[i]['succ'] , resultDicts[i]['len'])
+    #     print(resultDicts[i]['succ_shortest'] , resultDicts[i]['len_shortest'] , '\n')
+    for i in range(len(numreqs)):
+        print('result for #req:' ,numreqs[i] )
         # print(resultDicts[i])
         print(resultDicts[i]['succ'] , resultDicts[i]['len'])
         print(resultDicts[i]['succ_shortest'] , resultDicts[i]['len_shortest'] , '\n')

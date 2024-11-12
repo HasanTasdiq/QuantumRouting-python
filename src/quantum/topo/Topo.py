@@ -332,7 +332,7 @@ class Topo:
         for node in self.nodes:
             G.add_node(node.id)
         for link in self.links:
-            if random.random() > 0.1:
+            if random.random() > 0:
                 G.add_edge(link.n1.id , link.n2.id)
 
         # G = nx.grid_graph(dim=(n,n))
