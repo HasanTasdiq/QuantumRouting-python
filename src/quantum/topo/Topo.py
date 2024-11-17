@@ -143,7 +143,7 @@ class Topo:
 
             # _positions[_node] = (p1 * x_scale, p2 * y_scale)
             # _positions[_node] = (p1 * 500,  p2 * 500)
-            _positions[_node] = (p1 * 10000,  p2 * 10000)
+            _positions[_node] = (p1 * 1000,  p2 * 1000)
             _neighbors[_node] = list(nx.neighbors(G,_node))
             # print('neighbors of node ' , len(_neighbors[_node]))
           
@@ -477,7 +477,7 @@ class Topo:
 
             # G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             # G = nx.grid_2d_graph(n , n)
-            G = Topo.gridTopo(n)
+            G = Topo.gridTopo(10)
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
