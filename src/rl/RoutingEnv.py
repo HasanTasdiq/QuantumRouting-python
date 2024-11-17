@@ -13,6 +13,9 @@ logging.getLogger('tensorflow').disabled = True
 ENTANGLEMENT_LIFETIME = 10
 import networkx as nx
 from itertools import islice
+import tensorflow as tf
+from keras.layers import Embedding, Flatten, Attention
+import numpy
 
 
 	
@@ -28,6 +31,9 @@ class RoutingEnv(Env):
 
         self.graph = []
         self.V = self.SIZE
+        self.embedding_layer = Embedding(input_dim=100, output_dim=1)
+
+        
 
         print('=========in Routing env ===== ' , algo.name)
 
@@ -187,6 +193,87 @@ class RoutingEnv(Env):
 
         # self.printSolution(dist)
         return dist
+    def get_embedded_output(self , inp , formatted = False):
+
+        # Apply the Embedding layer
+        embedded_output = self.embedding_layer(inp)
+
+        # Flatten the output
+        flattened_output = Flatten()(embedded_output)
+
+
+        attention = Attention()
+
+
+        # Print the shape of the flattened output
+        # print(embedded_output)
+        # print(flattened_output)
+        out1 = Flatten()(tf.constant([numpy.array(flattened_output)]))[0]
+        if formatted:
+            return out1.numpy()
+        return out1
+    
+    def get_emb_attention(self , inp):
+        atten_input = self.get_embedded_output(inp)
+        input_vector = tf.constant(atten_input, dtype=tf.float32)
+
+        # Expand dimensions to simulate a sequence
+        # Shape: (batch_size=1, seq_length=1, embedding_dim=6)
+        input_vector = tf.expand_dims(tf.expand_dims(input_vector, axis=0), axis=0)
+
+        # Create query, key, and value as the same (self-attention)
+        query = key = value = input_vector  # Shape: (batch_size=1, seq_length=1, embedding_dim=6)
+
+        # Initialize the Attention layer
+        attention_layer = Attention()
+
+        # Compute attention
+        attention_output = attention_layer([query, key, value])
+
+        return attention_output.numpy()[0][0]
+        
+    def schedule_state(self , requests):
+        state_qubits = [0 for i in range(self.SIZE)]
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        U = []
+        for req in requests:
+            state_req = [0 for i in range(2*self.SIZE-1)]
+
+            if not req[2]:
+                state_req[req[0]] = 1
+                state_req[self.SIZE+req[1]] = 1
+            usd = self.get_embedded_output(formatted=True)
+            usd.extend(self.get_emb_attention(state_req))
+            U.append(usd)
+        
+
+        
+        for link in self.algo.topo.links:
+            if link.assignable():
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+        for u in U:
+            a = self.get_embedded_output(state_graph , formatted=True)
+            u.extend(a)
+        for node in self.algo.nodes:
+            state_qubits[node.id] = node.remainingQubits
+        
+        for u in U:
+            c = self.get_embedded_output(state_qubits , formatted=True)
+            u.extend(c)
+        
+        
+        return np.array(U)
+        
+        
+        
+
+            
+        # for self.
+
     def routing_state(self , current_request , current_node_id ,path, timeSlot = 0  ):
         state_cr = [0 for i in range(self.SIZE)]
         state_cn = [0 for i in range(self.SIZE)]
