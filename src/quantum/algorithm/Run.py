@@ -25,6 +25,7 @@ from SEER_ent_dqrl import SEER_ENT_DQRL
 from SEE import SEE
 from SEE2 import SEE2
 from DQRL import QuRA_DQRL
+from Schedule import SCHEDULEGREEDY
 from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 from topo.Node import Node
@@ -59,7 +60,7 @@ from DQRLAgent import DQRLAgent
 ttime = 70000
 ttime2 = 5000
 step = 500
-times = 5
+times = 1
 nodeNo = 100
 alpha_ = 0.0002
 degree = 2
@@ -230,8 +231,12 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
+   
+   
+   
+    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
 
 
     algorithms[0].r = r
