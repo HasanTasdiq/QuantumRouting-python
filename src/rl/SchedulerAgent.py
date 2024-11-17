@@ -247,163 +247,6 @@ class SchedulerAgent:
     def get_qs(self,state):
         return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
 
-    
-
-
-
-    # def learn_and_predict(self):
-    #     global EPSILON_
-    #     t1 = time.time()
-    #     edges = self.env.algo.topo.edges
-    #     timeSlot = self.env.algo.timeSlot
-    #     link_action_q = []
-
-
-    #     # -----sequntial prediction----
-
-       
-
-    #     # for pair in state:
-    #     for link in edges:
-    #         self.get_link_qs_batch([link] , timeSlot)
-    #         current_state , qs = self.link_qs[link]
-    #         if np.random.random() > EPSILON_:
-    #             # Get action from Q net
-    #             # print('------self.get_qs(current_state)-----')
-    #             # print(self.get_qs(current_state))
-    #             t2 = time.time()
-
-    #             action = np.argmax(qs)
-    #             q = qs[action]
-    #             # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
-
-    #         else:
-    #             # Get random action
-    #             action = np.random.randint(0, 2)
-    #             q = qs[action]
-
-    #         next_state  = self.env.assignQubitEdge(link , action , timeSlot)
-    #         if next_state is None:
-    #             next_state = current_state
-            
-    #         if not link in self.last_action_table:
-    #             self.last_action_table[link] = [(action , timeSlot , current_state , next_state)]
-    #         else:
-    #             self.last_action_table[link].append((action , timeSlot , current_state , next_state))
-        
-
-    #     if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
-    #         EPSILON_ -= EPSILON_DECAY_VALUE
-
-    #     self.link_qs = {}
-    #     print('**learn_and_predict multicore ent dqrl done in ' , time.time() - t1 , 'seconds')
-
-    # def learn_and_predict(self):
-    #     assignable = True
-    #     while assignable:
-    #         assignable = self.learn_and_predict2()
-    #         if 'no_repeat' in self.env.algo.name:
-    #             break
-    # def get_next_node_qs_batch(self , requestStates , timeSlot):
-    #     # print('in get p q')
-    #     if not len(requestStates):
-    #         return
-    #     states = []
-    #     for reqState in requestStates:
-    #         request = (reqState[0] , reqState[1])
-    #         current_node = reqState[2]
-    #         path = reqState[3]
-    #         current_state = self.env.routing_state(request , current_node.id ,path ,  timeSlot )
-
-    #         # print(current_state)
-    #         states.append((reqState , current_state))
-
-    #     # print('getting qs')
-    #     # print(states)
-    #     qs = self.get_qs_batch(states)
-    #     # print('getting qs done! '  , len(qs))
-    #     for i in range(len(states)):
-    #         reqState , current_state = states[i]
-    #         self.reqState_qs[reqState] = (current_state , qs[i]) #wip
-    # def learn_and_predict_next_node_batch(self , requestStates):
-    #     global EPSILON_
-    #     timeSlot = self.env.algo.timeSlot
-    #     reqState_action_q = []
-
-    #     self.get_next_node_qs_batch(requestStates , timeSlot)
-
-    #     for reqState in self.reqState_qs:
-
-    #         current_state , qs = self.reqState_qs[reqState]
-    #         current_node = reqState[2]
-    #         path = reqState[3]
-    #         index = reqState[4]
-    #         # print(qs)
-            
-    #         if np.random.random() > EPSILON_:
-    #             # next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , self.get_qs(current_state)))
-    #             next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , qs))
-
-    #             q = qs[next_node]
-    #             # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
-
-    #         else:
-    #             # Get random action
-    #             if np.random.random() > 0 :
-    #                 next_node = self.env.rand_neighbor(current_node.id , current_state,path)
-    #             else:
-    #                 next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
-
-
-    #             q = qs[next_node]
-    #         # next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
-    #         # q = qs[next_node]
-
-
-    #         reqState_action_q.append((reqState , next_node , q , current_state))
-        
-    #     # if np.random.random() > EPSILON_:
-    #     #     link_action_q.sort(key=lambda x: x[2], reverse=True)
-            
-    #     if np.random.random() > EPSILON_:
-    #         reqState_action_q.sort(key=lambda x: x[2], reverse=True)
-    #     self.reqState_qs = {}
-
-    #     return reqState_action_q
-    
-    # def learn_and_predict_next_node_batch_shortest(self , requestStates):
-    #     global EPSILON_
-    #     timeSlot = self.env.algo.timeSlot
-    #     reqState_action_q = []
-
-    #     self.get_next_node_qs_batch(requestStates , timeSlot)
-
-    #     for reqState in self.reqState_qs:
-
-    #         current_state , qs = self.reqState_qs[reqState]
-    #         current_node = reqState[2]
-    #         path = reqState[3]
-    #         index = reqState[4]
-    #         # print(qs)
-            
-    #         next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
-    #         # next_node = np.argmin(current_state[self.env.SIZE + 2])
-    #         # print('========= ' , next_node)
-    #         # print(current_state)
-    #         q = qs[next_node]
-    #             # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
-
-
-    #         reqState_action_q.append((reqState , next_node , q , current_state))
-        
-    #     # if np.random.random() > EPSILON_:
-    #     #     link_action_q.sort(key=lambda x: x[2], reverse=True)
-            
-    #     if np.random.random() > EPSILON_:
-    #         reqState_action_q.sort(key=lambda x: x[2], reverse=True)
-    #     self.reqState_qs = {}
-
-    #     return reqState_action_q
 
 
     def learn_and_predict_next_request(self , requests):
@@ -423,7 +266,7 @@ class SchedulerAgent:
         
         return current_state, next_node_index
     
-    def update_action(self , requests ,  action  , current_state, reward , done):
+    def update_action(self , requests ,  action  , current_state, reward , done = False):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -434,7 +277,7 @@ class SchedulerAgent:
             next_state = current_state
         done = False
 
-        self.last_action_reward.append((action , timeSlot , current_state , next_state , done))
+        self.last_action_reward.append((action , timeSlot , current_state , next_state , reward,  done))
 
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
@@ -444,7 +287,6 @@ class SchedulerAgent:
         t1 = time.time()
         for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
             self.update_replay_memory((current_state, action, reward, next_state, done))
-        self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)
 
 
@@ -452,22 +294,5 @@ class SchedulerAgent:
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
 
 
-
-
-    def getOrderedRequests(self , paths):
-        req_q = {req: 0 for req in paths}
-        for req in paths:
-            p = paths[req]
-            for obj in p:
-                req_q[req] += obj['q_val']
-            req_q[req] = req_q[req] / (len(p) - 1)
-        
-
-        req_q = dict(sorted(req_q.items(), key=lambda item: item[1], reverse=True))
-
-        T = list(req_q.keys())
-        if np.random.random() > EPSILON_:
-            random.shuffle(T)
-        return T
     def save_model(self):
         self.model.save((self.model_name))
