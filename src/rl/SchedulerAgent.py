@@ -71,7 +71,7 @@ class SchedulerAgent:
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 2*self.env.SIZE + self.env.SIZE*self.env.SIZE + self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE + self.env.SIZE,)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'ScheduleAgent.keras'
 
         # Main model
@@ -252,13 +252,14 @@ class SchedulerAgent:
     def learn_and_predict_next_request(self , requests):
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
-        current_state = self.env.schedule_state(requests ,  timeSlot )
+        current_state = self.env.schedule_state(requests  )
         if np.random.random() > EPSILON_:
 
             t2 = time.time()
 
             # next_node = np.argmax(self.get_qs(current_state))
-            next_node_index = np.argmax(self.env.schedule_qs(self.get_qs(current_state)))
+            # next_node_index = np.argmax(self.env.schedule_qs(self.get_qs(current_state)))
+            next_node_index = self.env.get_next_request_id(requests ,self.get_qs(current_state) )
             
         else:  
             # next_node = np.random.randint(0, self.env.SIZE)
@@ -266,12 +267,23 @@ class SchedulerAgent:
         
         return current_state, next_node_index
     
+    def learn_and_predict_next_random_request(self , requests):
+        global EPSILON_
+        timeSlot = self.env.algo.timeSlot
+        current_state = self.env.schedule_state(requests  )
+
+        next_node_index = self.env.rand_request(requests)
+        
+        return current_state, next_node_index
+    
+
+    
     def update_action(self , requests ,  action  , current_state, reward , done = False):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
 
-        next_state = self.env.schedule_state(requests , action ,  timeSlot)
+        next_state = self.env.schedule_state(requests)
 
         if next_state is None:
             next_state = current_state
@@ -283,14 +295,14 @@ class SchedulerAgent:
             EPSILON_ -= EPSILON_DECAY_VALUE
     
     def update_reward(self):
-        print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_table) )
+        print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_reward) )
         t1 = time.time()
         for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
             self.update_replay_memory((current_state, action, reward, next_state, done))
         self.train(False , self.env.algo.timeSlot)
 
 
-        self.last_action_table = []
+        self.last_action_reward = []
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
 
 

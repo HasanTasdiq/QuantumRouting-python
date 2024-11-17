@@ -56,8 +56,10 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 from DQRLAgent import DQRLAgent
+from SchedulerAgent import SchedulerAgent
 
-ttime = 70000
+
+ttime = 70
 ttime2 = 5000
 step = 500
 times = 1
@@ -99,6 +101,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     if '_2entdqrl' in algo.name:
         algo.entAgent = DQNAgentDistEnt_2(algo, pid)
     algo.routingAgent = DQRLAgent(algo , 0)
+    algo.schedulerAgent = SchedulerAgent(algo , pid)
     
     timeSlot = ttime
     global ttime2
@@ -237,6 +240,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
    
    
     algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
+    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
+    
 
 
     algorithms[0].r = r
