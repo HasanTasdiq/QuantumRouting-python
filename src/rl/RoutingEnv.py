@@ -4,7 +4,7 @@ from gym.spaces import Box, Discrete
 import random
 import sys
 sys.path.append("..")
-from quantum.topo.helper import needlink_timeslot
+# from quantum.topo.helper import needlink_timeslot
 import math
 import warnings
 warnings.filterwarnings("ignore")
@@ -196,7 +196,7 @@ class RoutingEnv(Env):
     def get_embedded_output(self , inp , formatted = False):
 
         # Apply the Embedding layer
-        embedded_output = self.embedding_layer(inp)
+        embedded_output = self.embedding_layer(tf.constant(inp))
 
         # Flatten the output
         flattened_output = Flatten()(embedded_output)
@@ -210,7 +210,7 @@ class RoutingEnv(Env):
         # print(flattened_output)
         out1 = Flatten()(tf.constant([numpy.array(flattened_output)]))[0]
         if formatted:
-            return out1.numpy()
+            return list(out1.numpy())
         return out1
     
     def get_emb_attention(self , inp):
@@ -237,14 +237,38 @@ class RoutingEnv(Env):
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
         U = []
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+        # print(len(requests))
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+
         for req in requests:
-            state_req = [0 for i in range(2*self.SIZE-1)]
+            state_req = [0 for i in range(2*self.SIZE)]
 
             if not req[2]:
-                state_req[req[0]] = 1
-                state_req[self.SIZE+req[1]] = 1
-            usd = self.get_embedded_output(formatted=True)
-            usd.extend(self.get_emb_attention(state_req))
+                state_req[req[0].id] = 1
+                state_req[self.SIZE+req[1].id] = 1
+            usd = self.get_embedded_output(state_req , formatted=True)
+            asd = self.get_emb_attention(state_req)
+            print('----------------------')
+            print('----------------------')
+            print('----------------------')
+            print(usd)
+            print('----------------------')
+            print('----------------------')
+            print('----------------------')
+            print('----------------------')
+            print('----------------------')
+            print('----------------------')
+            print(asd)
+            print('----------------------')
+            print('----------------------')
+            print('----------------------')
+            usd.extend(asd)
+
             U.append(usd)
         
 
@@ -257,12 +281,15 @@ class RoutingEnv(Env):
                 state_graph[n2][n1] = 1
         for u in U:
             a = self.get_embedded_output(state_graph , formatted=True)
+
+
             u.extend(a)
-        for node in self.algo.nodes:
+        for node in self.algo.topo.nodes:
             state_qubits[node.id] = node.remainingQubits
         
         for u in U:
             c = self.get_embedded_output(state_qubits , formatted=True)
+
             u.extend(c)
         
         
@@ -644,5 +671,22 @@ class RoutingEnv(Env):
         current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
 
         return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
+    def rand_request(self , requests):
+        ret = []
+        for request in requests:
+            if not request[2]:
+                ret.append(request[4])
+        return random.choice(ret)
+    def get_next_request_id(self , requests , qs):
+        ret = {}
+        for request in requests:
+            if not request[2]:
+                ret[request[4]] = qs[request[4]]
+        return max(ret, key=ret.get)
+        
+
+
+
+
 
 

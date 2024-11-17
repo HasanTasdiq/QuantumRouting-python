@@ -92,7 +92,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
             if (src, dst) not in self.srcDstPairs:
                 self.srcDstPairs.append((src, dst))
 
-            self.requestState.append((src,dst , False , tuple([src.id]) , index))
+            self.requestState.append([src,dst , False , [] , index])
             index += 1
 
     def p2(self):
@@ -101,8 +101,8 @@ class SCHEDULEGREEDY(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
-            self.randPFT()
+            self.scheduleAndAssign()
+            # self.randPFT()
             # self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
     
@@ -117,16 +117,25 @@ class SCHEDULEGREEDY(AlgorithmBase):
                     
                         link.assignQubits()
                         self.totalUsedQubits += 2
+    
+    def get_next_request_id(self):
+        if self.name == 'SCHEDULEGREEDY':
+            return self.schedulerAgent.learn_and_predict_next_request(self.requestState)
+        elif self.name == 'RANDSCHEDULEGREEDY':
+            return self.schedulerAgent.learn_and_predict_next_random_request(self.requestState)
+
+            
     def scheduleAndAssign(self):
         reqs = copy.deepcopy(self.requestState)
+        foundPath = 0
         while len(reqs):
             assign = False
-            current_state, next_req_id = self.schedulerAgent.learn_and_predict_next_request(self.requestState)
+            current_state, next_req_id = self.get_next_request_id()
             req = self.requestState[next_req_id]
             path = self.get_path(req)
+            print('lenpath ' , len(path))
             if len(path):
-                req[2] = True
-                req[3] = path
+
 
                 assign = self.assignQubitPath(path) 
                 
@@ -136,29 +145,35 @@ class SCHEDULEGREEDY(AlgorithmBase):
                     reqs.remove(r)
             for r in self.requestState:
                 if r[0].id == req[0].id and r[1].id == req[1].id:
-                    if assign:
-                        r[2] = True
-                        r[3] = path
+                    r[2] = True #checked
+                    r[3] = path
             if assign:
                 reward = 1
+                foundPath +=1
             else:
                  reward = -1
             self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state, reward , done = (len(reqs) == 0))
     
-            
+        print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath)
 
 
 
     def assignQubitPath(self , path):
+        
         for i in range(len(path) -1):
             n1 = self.topo.nodes[path[i]]
             n2 = self.topo.nodes[path[i+1]]
+            assigned = 0
             for link in n1.links:
                 if link.contains(n2):
                     if link.assignable():
                         link.assignQubits()
+                        assigned += 1
+                        break
                     else:   
                        return False
+            if not assigned:
+                return False
         return True
 
 
@@ -166,7 +181,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
     def p4(self):
 
 
-        self.ELS
+        self.ELS()
             
         # print('[REPS] p4 end') 
         self.printResult()
@@ -183,7 +198,10 @@ class SCHEDULEGREEDY(AlgorithmBase):
             if link.assignable():
                 G.add_edge(link.n1.id , link.n2.id , weight=1/min(link.n1.remainingQubits , link.n2.remainingQubits))
         
-        path = nx.shortest_path(G , req[0].id , req[1].id ,weight='weight')
+        try:
+            path = nx.shortest_path(G , req[0].id , req[1].id ,weight='weight')
+        except:
+            path = []
         return path
 
     def edgeCapacity(self, u, v):
@@ -215,6 +233,11 @@ class SCHEDULEGREEDY(AlgorithmBase):
 
 
     def ELS(self):
+
+        #work for len 2
+        #work for len 2
+        #work for len 2
+        #work for len 2
         
         
         # print('[REPS] ELS end')
@@ -222,20 +245,30 @@ class SCHEDULEGREEDY(AlgorithmBase):
         totalEntanglement = 0
         successReq = 0
         usedLinks = set()
+        assignedCount = 0
+        for SDpair in self.requestState:
+            src = SDpair[0]
+            dst = SDpair[1]
+            path = SDpair[3]
+            if len(path):
+                assignedCount += 1
+        # print('in ELSSSSSSSSSSSSSSSSSSSSSSs assignedCount ' , assignedCount)
 
         for SDpair in self.requestState:
             src = SDpair[0]
             dst = SDpair[1]
             assigned = SDpair[2]
-            if not assigned:
-                continue
+            # if not assigned:
+            #     continue
             path = SDpair[3]
+            if not len(path):
+                continue
             needLink = []
             
             for i in range(len(path) -2):
                 n1 = self.topo.nodes[path[i]]
                 n2 = self.topo.nodes[path[i+1]]
-                n3 = self.topo.nodes[path[i+3]]
+                n3 = self.topo.nodes[path[i+2]]
                 link1 = None
                 link2 = None
                 for link in n1.links:
@@ -247,7 +280,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
                         link2 = link
                         break
                 if link1 is not None and link2 is not None:
-                    needLink.append(n2 , link1 , link2)
+                    needLink.append((n2 , link1 , link2))
             for node , link1 , link2 in needLink:
                 usedLinks.add(link1)
                 usedLinks.add(link2)
@@ -307,11 +340,14 @@ class SCHEDULEGREEDY(AlgorithmBase):
     def filterReqeuest(self):
         self.requests = list(filter(lambda x: self.timeSlot -  x[2] < self.topo.requestTimeout -1 , self.requests))
 
+
     
 if __name__ == '__main__':
     
-    topo = Topo.generate(50, 0.9, 5, 0.0002, 6)
-    s = SCHEDULEGREEDY(topo)
+    numOfRequestPerRound = 50
+    topo = Topo.generate(100, 1, 5, 0.0002, 2)
+    topo.setNumOfRequestPerRound(numOfRequestPerRound)
+    s = SCHEDULEGREEDY(topo,name='SCHEDULEGREEDY')
     result = AlgorithmResult()
     samplesPerTime = 8 * 2
     ttime = 100
@@ -346,7 +382,7 @@ if __name__ == '__main__':
     for i in range(0, 100):
         requests = []
         if i < 100:
-            for j in range(20):
+            for j in range(numOfRequestPerRound):
                 a = sample(topo.nodes, 2)
                 requests.append((a[0], a[1]))
             
