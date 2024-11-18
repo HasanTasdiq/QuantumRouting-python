@@ -219,7 +219,7 @@ class RoutingEnv(Env):
 
         # Expand dimensions to simulate a sequence
         # Shape: (batch_size=1, seq_length=1, embedding_dim=6)
-        input_vector = tf.expand_dims(tf.expand_dims(input_vector, axis=0), axis=0)
+        # input_vector = tf.expand_dims(tf.expand_dims(input_vector, axis=0), axis=0)
 
         # Create query, key, and value as the same (self-attention)
         query = key = value = input_vector  # Shape: (batch_size=1, seq_length=1, embedding_dim=6)
@@ -230,7 +230,14 @@ class RoutingEnv(Env):
         # Compute attention
         attention_output = attention_layer([query, key, value])
 
-        return attention_output.numpy()[0][0]
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+        # print(attention_output)
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+        return attention_output.numpy()
         
     def schedule_state(self , requests):
         state_qubits = [0 for i in range(self.SIZE)]
@@ -261,7 +268,13 @@ class RoutingEnv(Env):
         Usd = self.get_embedded_output(U , formatted=True)
         Asd = self.get_emb_attention(U)
 
-
+        # print('----------------------')
+        # print('----------------------')
+        # print('---------asd---------')
+        # print(Asd)
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
         for usd in Usd:
             tmp = []
             for el in usd:
