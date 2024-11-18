@@ -29,7 +29,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.9  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 80000
+END_EPSILON_DECAYING = 2000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -250,6 +250,7 @@ class SchedulerAgent:
 
 
     def learn_and_predict_next_request(self , requests):
+
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
         current_state = self.env.schedule_state(requests  )
@@ -260,6 +261,7 @@ class SchedulerAgent:
             # next_node = np.argmax(self.get_qs(current_state))
             # next_node_index = np.argmax(self.env.schedule_qs(self.get_qs(current_state)))
             next_node_index = self.env.get_next_request_id(requests ,self.get_qs(current_state) )
+            print('+++++++++++++++ predict time ============ ' , (time.time()-t2) , 'sec')
             
         else:  
             # next_node = np.random.randint(0, self.env.SIZE)
