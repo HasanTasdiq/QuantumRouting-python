@@ -202,13 +202,13 @@ class RoutingEnv(Env):
         flattened_output = Flatten()(embedded_output)
 
 
-        attention = Attention()
 
 
         # Print the shape of the flattened output
         # print(embedded_output)
         # print(flattened_output)
         out1 = Flatten()(tf.constant([numpy.array(flattened_output)]))[0]
+        out1 = embedded_output
         if formatted:
             return list(out1.numpy())
         return out1
@@ -236,6 +236,7 @@ class RoutingEnv(Env):
         state_qubits = [0 for i in range(self.SIZE)]
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
+        S = []
         U = []
         # print('----------------------')
         # print('----------------------')
@@ -251,25 +252,33 @@ class RoutingEnv(Env):
             if not req[2]:
                 state_req[req[0].id] = 1
                 state_req[self.SIZE+req[1].id] = 1
-            usd = self.get_embedded_output(state_req , formatted=True)
-            asd = self.get_emb_attention(state_req)
-            print('----------------------')
-            print('----------------------')
-            print('----------------------')
-            print(usd)
-            print('----------------------')
-            print('----------------------')
-            print('----------------------')
-            print('----------------------')
-            print('----------------------')
-            print('----------------------')
-            print(asd)
-            print('----------------------')
-            print('----------------------')
-            print('----------------------')
-            usd.extend(asd)
+            # usd = self.get_embedded_output(state_req , formatted=True)
+            # asd = self.get_emb_attention(state_req)
 
-            U.append(usd)
+            # usd.extend(asd)
+
+            U.append(state_req)
+        Usd = self.get_embedded_output(U , formatted=True)
+        Asd = self.get_emb_attention(U)
+
+
+        for usd in Usd:
+            tmp = []
+            for el in usd:
+                tmp.append(el[0])
+            S.append(tmp)
+        for i in range(len(Asd)):
+            asd = Asd[i]
+            tmp = []
+            for el in asd:
+                tmp.append(el[0])
+            S[i].extend(tmp)
+        
+
+        # print(S)
+
+
+
         
 
         
@@ -279,21 +288,38 @@ class RoutingEnv(Env):
                 n2 = link.n2.id
                 state_graph[n1][n2] = 1
                 state_graph[n2][n1] = 1
-        for u in U:
-            a = self.get_embedded_output(state_graph , formatted=True)
+        for u in S:
+            a = self.get_embedded_output(state_graph )
+            a = Flatten()(tf.constant([numpy.array(a)]))[0]
+            a = list(a.numpy())
+            
+
+            # print('----------------------')
+            # print(Asd)
+            # print('----------------------')        
+            # print('----------------------')
+            # print('----------------------')
+            # print('----------------------')
 
 
             u.extend(a)
         for node in self.algo.topo.nodes:
             state_qubits[node.id] = node.remainingQubits
         
-        for u in U:
-            c = self.get_embedded_output(state_qubits , formatted=True)
+        for u in S:
+            c = self.get_embedded_output(state_qubits)
+            c = Flatten()(tf.constant([numpy.array(c)]))[0]
+            c = list(c.numpy())
 
             u.extend(c)
         
-        
-        return np.array(U)
+        # print('----------------------')
+        # print('----------------------')
+        # print('-----------S-----------')
+        # print(S)
+        # print('----------------------')
+        # print('----------------------')
+        return np.array(S)
         
         
         
@@ -676,6 +702,7 @@ class RoutingEnv(Env):
         for request in requests:
             if not request[2]:
                 ret.append(request[4])
+        # print(len(requests))
         return random.choice(ret)
     def get_next_request_id(self , requests , qs):
         ret = {}

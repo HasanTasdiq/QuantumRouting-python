@@ -56,20 +56,20 @@ from DQNAgentDist import DQNAgentDist
 from DQNAgentDistEnt import DQNAgentDistEnt
 from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 from DQRLAgent import DQRLAgent
-from SchedulerAgent import SchedulerAgent
+# from SchedulerAgent import SchedulerAgent
 
 
-ttime = 70
+ttime = 25000
 ttime2 = 5000
 step = 500
-times = 1
+times = 3
 nodeNo = 100
 alpha_ = 0.0002
 degree = 2
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [10]
+numOfRequestPerRound = [10,15,20]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -86,7 +86,7 @@ preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
 runLabel = [0]
 Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity"]
-toRunLessAlgos = ['REPS' , 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only']
+toRunLessAlgos = ['REPS' , 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only', 'RANDSCHEDULEGREEDY']
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
@@ -101,7 +101,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     if '_2entdqrl' in algo.name:
         algo.entAgent = DQNAgentDistEnt_2(algo, pid)
     algo.routingAgent = DQRLAgent(algo , 0)
-    algo.schedulerAgent = SchedulerAgent(algo , pid)
+    # algo.schedulerAgent = SchedulerAgent(algo , pid)
     
     timeSlot = ttime
     global ttime2
