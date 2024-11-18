@@ -32,7 +32,7 @@ input_vector = tf.constant(out1, dtype=tf.float32)
 
 # Expand dimensions to simulate a sequence
 # Shape: (batch_size=1, seq_length=1, embedding_dim=6)
-input_vector = tf.expand_dims(tf.expand_dims(input_vector, axis=0), axis=0)
+# input_vector = tf.expand_dims(tf.expand_dims(input_vector, axis=0), axis=0)
 
 # Create query, key, and value as the same (self-attention)
 query = key = value = input_vector  # Shape: (batch_size=1, seq_length=1, embedding_dim=6)

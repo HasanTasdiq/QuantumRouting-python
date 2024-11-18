@@ -348,7 +348,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
     
 if __name__ == '__main__':
     
-    numOfRequestPerRound = 20
+    numOfRequestPerRound = 2
     topo = Topo.generate(100, 1, 5, 0.0002, 2)
     topo.setNumOfRequestPerRound(numOfRequestPerRound)
     s = SCHEDULEGREEDY(topo,name='SCHEDULEGREEDY')
