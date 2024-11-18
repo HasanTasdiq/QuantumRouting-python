@@ -130,10 +130,12 @@ class SCHEDULEGREEDY(AlgorithmBase):
         foundPath = 0
         while len(reqs):
             assign = False
+            # print('------------------req len----------------' , len(reqs))
+            # print(self.requestState)
             current_state, next_req_id = self.get_next_request_id()
             req = self.requestState[next_req_id]
             path = self.get_path(req)
-            print('lenpath ' , len(path))
+            # print('lenpath ' , len(path))
             if len(path):
 
 
@@ -143,10 +145,12 @@ class SCHEDULEGREEDY(AlgorithmBase):
             for r in reqs:
                 if r[0].id == req[0].id and r[1].id == req[1].id:
                     reqs.remove(r)
+                    break
             for r in self.requestState:
                 if r[0].id == req[0].id and r[1].id == req[1].id:
                     r[2] = True #checked
                     r[3] = path
+                    break
             if assign:
                 reward = 1
                 foundPath +=1
@@ -344,7 +348,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
     
 if __name__ == '__main__':
     
-    numOfRequestPerRound = 50
+    numOfRequestPerRound = 20
     topo = Topo.generate(100, 1, 5, 0.0002, 2)
     topo.setNumOfRequestPerRound(numOfRequestPerRound)
     s = SCHEDULEGREEDY(topo,name='SCHEDULEGREEDY')
