@@ -16,7 +16,7 @@ import numpy as np
 
 sys.path.insert(0, "../../rl")
 
-from DQNAgentDistEnt import DQNAgentDistEnt  
+# from DQNAgentDistEnt import DQNAgentDistEnt  
 
 EPS = 1e-6
 class REPS_ENT_DQRL(AlgorithmBase):

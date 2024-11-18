@@ -47,15 +47,15 @@ sys.path.insert(0, "../../rl")
 
 # sys.path.insert(0, "/Users/tasdiqulislam/Documents/Quantum Network/Routing/QuantumRouting-python/src/rl") #for my mac
 # sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
-from agent import Agent    #for ubuntu
-# from agent import Agent   #for mac
+# from agent import Agent    #for ubuntu
+# # from agent import Agent   #for mac
 
 
-from DQNAgent import DQNAgent   
-from DQNAgentDist import DQNAgentDist   
-from DQNAgentDistEnt import DQNAgentDistEnt
-from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
-from DQRLAgent import DQRLAgent
+# from DQNAgent import DQNAgent   
+# from DQNAgentDist import DQNAgentDist   
+# from DQNAgentDistEnt import DQNAgentDistEnt
+# from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
+# from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
 
@@ -90,17 +90,17 @@ toRunLessAlgos = ['REPS' , 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl'
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
-    if '_qrl' in algo.name:
-        agent = Agent(algo , pid)
-    if '_dqrl' in algo.name:
-        agent = DQNAgent(algo , pid)
-    if '_distdqrl' in algo.name:
-        agent = DQNAgentDist(algo , pid)
-    if '_entdqrl' in algo.name:
-        algo.entAgent = DQNAgentDistEnt(algo, pid)
-    if '_2entdqrl' in algo.name:
-        algo.entAgent = DQNAgentDistEnt_2(algo, pid)
-    algo.routingAgent = DQRLAgent(algo , 0)
+    # if '_qrl' in algo.name:
+    #     agent = Agent(algo , pid)
+    # if '_dqrl' in algo.name:
+    #     agent = DQNAgent(algo , pid)
+    # if '_distdqrl' in algo.name:
+    #     agent = DQNAgentDist(algo , pid)
+    # if '_entdqrl' in algo.name:
+    #     algo.entAgent = DQNAgentDistEnt(algo, pid)
+    # if '_2entdqrl' in algo.name:
+    #     algo.entAgent = DQNAgentDistEnt_2(algo, pid)
+    # algo.routingAgent = DQRLAgent(algo , 0)
     # algo.schedulerAgent = SchedulerAgent(algo , pid)
     
     timeSlot = ttime
@@ -109,15 +109,15 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         timeSlot = min(ttime2,ttime)
 
     for i in range(timeSlot):
-        if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
-            agent.learn_and_predict()
+        # if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
+        #     agent.learn_and_predict()
 
         # print([(r[0].id, r[1].id) for r in requests[i]])
         
         result = algo.work(requests[i], i)
 
-        if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
-            agent.update_reward()
+        # if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
+        #     agent.update_reward()
 
     if algo.name == "My" or 'SEER' in algo.name:
         print('============ in runThread', algo.name)
@@ -129,25 +129,25 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
     success_req = 0
     
-    for i in range(timeSlot):
-        success_req += result.successfulRequestPerRound[i]
-    max_success = algo.name + str(len(algo.topo.nodes))+str(algo.topo.alpha)+str(algo.topo.q)+ 'max_success'
+    # for i in range(timeSlot):
+    #     success_req += result.successfulRequestPerRound[i]
+    # max_success = algo.name + str(len(algo.topo.nodes))+str(algo.topo.alpha)+str(algo.topo.q)+ 'max_success'
 
-    print('====================================================')
-    print('====================================================')
-    print('pid: ' , pid , 'success_req: ' , success_req)
-    print('pid: ' , pid , 'max_success rate : ' , shared_data[max_success] / timeSlot)
-    print('====================================================')
-    print('====================================================')
+    # print('====================================================')
+    # print('====================================================')
+    # print('pid: ' , pid , 'success_req: ' , success_req)
+    # print('pid: ' , pid , 'max_success rate : ' , shared_data[max_success] / timeSlot)
+    # print('====================================================')
+    # print('====================================================')
     
-    if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
-        print('going to save the ent model ' , success_req)
-        algo.entAgent.save_model()
-        if hasattr(algo , 'routingAgent' ):
-            algo.routingAgent.save_model()
-            print('going to save the ent model ' , success_req)
+    # if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
+    #     print('going to save the ent model ' , success_req)
+    #     algo.entAgent.save_model()
+    #     if hasattr(algo , 'routingAgent' ):
+    #         algo.routingAgent.save_model()
+    #         print('going to save the ent model ' , success_req)
 
-        shared_data[max_success] = success_req
+    #     shared_data[max_success] = success_req
 
 
 
