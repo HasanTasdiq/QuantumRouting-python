@@ -1,17 +1,19 @@
-import networkx as nx
+import psutil
+import os
 
-# Create a MultiGraph
-from networkx import grid_graph
-G = nx.Graph()
+# Get the process ID of the current Python process
+pid = os.getpid()
 
+# Create a Process object using the process ID
+process = psutil.Process(pid)
 
+# Get the memory information for the process
+memory_info = process.memory_info()
 
-G = nx.Graph()
-G.add_node(1)
-G.add_node(2)
-G.add_edge(1, 2)
-G.add_edge(1 ,2)
+# Get the resident set size (RSS) in bytes, which represents the actual physical memory used
+rss = memory_info.rss
 
-print(G.nodes())
-# print(len(G))
-print(G.edges())
+# Convert the RSS to megabytes (MB)
+rss_mb = rss / (1024 * 1024)
+
+print(f"Memory usage: {rss_mb:.2f} MB")

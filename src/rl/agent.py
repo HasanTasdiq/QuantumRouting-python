@@ -8,6 +8,8 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 from itertools import combinations
 import random
 import pickle 
+import os
+import psutil
 
 
 
@@ -57,6 +59,23 @@ class Agent():
         # print(self.q_table)
 
 
+    def print_memory_usage(self):
+        pid = os.getpid()
+
+        # Create a Process object using the process ID
+        process = psutil.Process(pid)
+
+        # Get the memory information for the process
+        memory_info = process.memory_info()
+
+        # Get the resident set size (RSS) in bytes, which represents the actual physical memory used
+        rss = memory_info.rss
+
+        # Convert the RSS to megabytes (MB)
+        rss_mb = rss / (1024 * 1024)
+
+        print(f"Memory usage: {rss_mb:.2f} MB")
+        return rss_mb
    
     def learn_and_predict(self):
         global EPSILON_

@@ -10,12 +10,7 @@ import random
 import os
 from RoutingEnv import RoutingEnv      #for ubuntu
 # from .RoutingEnv import RoutingEnv   #for mac
-import multiprocessing
-import math
-import warnings
-warnings.filterwarnings("ignore")
-import logging
-logging.getLogger('tensorflow').disabled = True 
+
 NUM_EPISODES = 2500
 LEARNING_RATE = 0.1
 

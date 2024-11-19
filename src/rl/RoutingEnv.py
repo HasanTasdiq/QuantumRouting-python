@@ -6,16 +6,13 @@ import sys
 sys.path.append("..")
 # from quantum.topo.helper import needlink_timeslot
 import math
-import warnings
-warnings.filterwarnings("ignore")
-import logging
-logging.getLogger('tensorflow').disabled = True 
+
 ENTANGLEMENT_LIFETIME = 10
-import networkx as nx
-from itertools import islice
+
 import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention
 import numpy
+from objsize import get_deep_size
 
 
 	
@@ -35,7 +32,7 @@ class RoutingEnv(Env):
 
         
 
-        print('=========in Routing env ===== ' , algo.name)
+        print('=========in Routing env ===== ' , algo.name , 'self size ' , get_deep_size(self)/1000000)
 
     def step(self, pair ,  action , timeSlot):
         reward = 0

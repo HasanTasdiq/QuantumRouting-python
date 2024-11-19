@@ -16,6 +16,10 @@ import matplotlib.pyplot as plt
 from .helper import entanglement_lifetimeslot
 from random import sample
 import pickle
+import traceback
+import psutil
+import os
+
 
 
 
@@ -210,7 +214,7 @@ class Topo:
             # rand = int(random.random()*5+3) # 3~7
             rand = int(random.random()*3+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
-            rand = 1
+            rand = 2
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
@@ -302,6 +306,23 @@ class Topo:
         # p = self.shortestPath(self.nodes[3], self.nodes[99], 'Hop')[1]
         # print('Hop path:', [x.id for x in p])
         # print('width:', self.widthPhase2(p))
+    def print_memory_usage():
+        pid = os.getpid()
+
+        # Create a Process object using the process ID
+        process = psutil.Process(pid)
+
+        # Get the memory information for the process
+        memory_info = process.memory_info()
+
+        # Get the resident set size (RSS) in bytes, which represents the actual physical memory used
+        rss = memory_info.rss
+
+        # Convert the RSS to megabytes (MB)
+        rss_mb = rss / (1024 * 1024)
+
+        print(f"Memory usage: {rss_mb:.2f} MB")
+        return rss_mb
     def updatedG(self , timeSlot = 0):
         G = nx.Graph()
         for node in self.nodes:
@@ -460,7 +481,7 @@ class Topo:
         )
         self.k_alternate_paths_dict[(source,target)] = paths
         return paths
-    def generate( n, q, k, a, degree):
+    def generate( n, q, k, a, degree, gridSize = 10):
         # dist = lambda x, y: distance(x, y)
         # dist = lambda x, y: sum((a-b)**2 for a, b in zip(x, y))**0.5
         
@@ -477,21 +498,29 @@ class Topo:
 
             # G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             # G = nx.grid_2d_graph(n , n)
-            G = Topo.gridTopo(8)
+            G = Topo.gridTopo(gridSize)
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
 
             # G = Topo.create_custom_graph()
             print('leeeen ' , len(G.edges))
+            # traceback.print_exc()
+            traceback.print_stack()
+            # try:
+            #     a =1/0
+            # except:
+            #     traceback.print_exc()
+
 
             topo = Topo(G, q, k, a, degree , name)
             checker.setTopo(topo)
             if checker.checkConnected():
-                pickle.dump(G, open(graphFileName, 'wb'))
+                # pickle.dump(G, open(graphFileName, 'wb'))
                 # Topo.draw_graph(G)
 
                 print('topo is connected')
+                return topo
                 break
             else:
                 print("topo is not connected", file = sys.stderr)
