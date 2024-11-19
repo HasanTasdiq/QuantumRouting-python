@@ -4,19 +4,17 @@ from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatten, Conv1D, MaxPooling1D
 from keras.optimizers import Adam
 from keras import Input
+import gc
+
 
 from collections import deque
 import time
 import random
 import os
+import psutil
 from RoutingEnv import RoutingEnv      #for ubuntu
 # from .RoutingEnv import RoutingEnv   #for mac
-import multiprocessing
-import math
-import warnings
-warnings.filterwarnings("ignore")
-import logging
-logging.getLogger('tensorflow').disabled = True 
+
 from objsize import get_deep_size
 NUM_EPISODES = 2500
 LEARNING_RATE = 0.001
@@ -34,8 +32,8 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -67,6 +65,7 @@ if not os.path.isdir('models'):
 class SchedulerAgent:
     def __init__(self ,algo , pid):
         print('++++++++++initiating DQRL agent for:' , algo.name)
+        self.print_memory_usage()
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
@@ -81,8 +80,13 @@ class SchedulerAgent:
         self.target_model = self.create_model()
         self.target_model.set_weights(self.model.get_weights())
 
+        print('----------size(target_model)----------------', get_deep_size(self.target_model)/1000000)
+        print('----------size(self Scheduler Agent)----------------', get_deep_size(self)/1000000)
+        self.print_memory_usage()
+
+
         # print(self.model.get_weights())
-        self.print_weight(self.model)
+        # self.print_weight(self.model)
 
         # print(self.target_model.get_weights())
 
@@ -96,7 +100,23 @@ class SchedulerAgent:
 
 
 
+    def print_memory_usage(self):
+        pid = os.getpid()
 
+        # Create a Process object using the process ID
+        process = psutil.Process(pid)
+
+        # Get the memory information for the process
+        memory_info = process.memory_info()
+
+        # Get the resident set size (RSS) in bytes, which represents the actual physical memory used
+        rss = memory_info.rss
+
+        # Convert the RSS to megabytes (MB)
+        rss_mb = rss / (1024 * 1024)
+
+        print(f"Memory usage: {rss_mb:.2f} MB")
+        return rss_mb
     def print_weight(self , model):
         for r in model.get_weights():
             print(r)
@@ -129,10 +149,28 @@ class SchedulerAgent:
 
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
+        print('~~~~~~~~after model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES)) ',get_deep_size(model)/1000000)
+        self.print_memory_usage()
+        gc.collect()
+        # time.sleep(10)
+
+
         # model.add(Dense(self.env.SIZE * 20 , activation='relu'))
-        model.add(Dense(self.env.SIZE * 10 , activation='relu'))
+        model.add(Dense(256 , activation='relu'))
+        print('~~~~~~~~after Dense(self.env.SIZE * 10 ',get_deep_size(model)/1000000)
+        self.print_memory_usage()
+        gc.collect()
+        # time.sleep(10)
+
+
         # model.add(Dense(72 , activation='relu'))
-        model.add(Dense(self.env.SIZE * 5 , activation='relu'))
+        model.add(Dense(128 , activation='relu'))
+        print('~~~~~~~~after Dense(self.env.SIZE * 5',get_deep_size(model)/1000000)
+        gc.collect()
+        # time.sleep(10)
+
+
+
 
         # model.add(Conv2D(32, 3, activation="relu"))
         # model.add(Flatten)
@@ -145,6 +183,8 @@ class SchedulerAgent:
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
         model.compile(loss="mse", optimizer=Adam(learning_rate = 0.0002, clipvalue=0.01 ), metrics=['accuracy'])
         # model._make_predict_function()
+        self.print_memory_usage()
+
         return model
 
     # Adds step's data to a memory replay array

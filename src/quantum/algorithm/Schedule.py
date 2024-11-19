@@ -1,32 +1,19 @@
 import sys
 import copy
-import math
-import random
-import gurobipy as gp
-from queue import PriorityQueue
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from AlgorithmBase import AlgorithmResult
-from bruteforce import BruteForce
 from topo.Topo import Topo 
-from topo.Node import Node 
-from topo.Link import Link
-from topo.helper import request_timeout
+
 from numpy import log as ln
 from random import sample
 import numpy as np
-import multiprocessing
-import multiprocessing.context as ctx
-import warnings
-warnings.filterwarnings("ignore")
-import logging
-logging.getLogger('tensorflow').disabled = True 
+
 import networkx as nx
 # ctx._force_start_method('spawn')
 
 sys.path.insert(0, "../../rl")
 
-from DQRLAgent import DQRLAgent
 from SchedulerAgent import SchedulerAgent
 
 EPS = 1e-6
@@ -349,6 +336,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
 if __name__ == '__main__':
     
     numOfRequestPerRound = 20
+    print('----------------calling generate() from main------------')
     topo = Topo.generate(100, 1, 5, 0.0002, 2)
     topo.setNumOfRequestPerRound(numOfRequestPerRound)
     s = SCHEDULEGREEDY(topo,name='SCHEDULEGREEDY')

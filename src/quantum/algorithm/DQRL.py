@@ -6,20 +6,13 @@ from queue import PriorityQueue
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from AlgorithmBase import AlgorithmResult
-from bruteforce import BruteForce
 from topo.Topo import Topo 
-from topo.Node import Node 
-from topo.Link import Link
-from topo.helper import request_timeout
+
 from numpy import log as ln
 from random import sample
 import numpy as np
-import multiprocessing
-import multiprocessing.context as ctx
-import warnings
-warnings.filterwarnings("ignore")
-import logging
-logging.getLogger('tensorflow').disabled = True 
+
+
 # ctx._force_start_method('spawn')
 
 sys.path.insert(0, "../../rl")
@@ -1387,11 +1380,7 @@ class QuRA_DQRL(AlgorithmBase):
             T2.append(req)
         
         fp = 0
-        if 'bruteforce' in self.name:
-            # print('[=================== '+self.name+'===========######## ] total entangled link ' , len([l for l in self.topo.links if l.entangled]) , '   out of: ' , len([l for l in self.topo.links]))
 
-            bruteforce = BruteForce(self.topo, self.requests)
-            paths = bruteforce.get_paths()
         for request in T:
         # while len(T2):
         #     tl = 999
@@ -1409,8 +1398,7 @@ class QuRA_DQRL(AlgorithmBase):
             (src,dst) = (request[0] , request[1])
             if 'greedy_only' in self.name:
                 targetPath = self.findPathForDQRL((src,dst))
-            elif 'bruteforce' in self.name:
-                targetPath = [self.topo.nodes[nid] for nid in paths[(src,dst)]]
+
 
             if not len(targetPath):
                 continue

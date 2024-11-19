@@ -1,46 +1,43 @@
 import multiprocessing
+from objsize import get_deep_size
+import gc
 import sys
 import copy
 sys.path.append("../..")
-from AlgorithmBase import AlgorithmBase
+# from AlgorithmBase import AlgorithmBase
 from AlgorithmBase import AlgorithmResult
-from MyAlgorithm import MyAlgorithm
-from OnlineAlgorithm import OnlineAlgorithm
-from GreedyGeographicRouting import GreedyGeographicRouting
-from GreedyHopRouting import GreedyHopRouting
-from REPS import REPS
-from REPS_rep import REPSREP
-from REPS_cache import REPSCACHE
-from REPS_cache2 import REPSCACHE2
-from REPS_cache4 import REPSCACHE5
-from REPS_cache4_3 import REPSCACHE5_3
-from REPS_ent_dqrl import REPS_ENT_DQRL
-from REPS_cache_ent_dqrl import REPSCACHEENT_DQRL
-from REPS_cache_ent_dqrl_proswap import REPSCACHEENT_DQRL_PSWAP
-from SEER_cache import SEERCACHE
-from SEER_cache2 import SEERCACHE2
-from SEER_cache3 import SEERCACHE3
-from SEER_cache3_3 import SEERCACHE3_3
-from SEER_ent_dqrl import SEER_ENT_DQRL
-from SEE import SEE
-from SEE2 import SEE2
-from DQRL import QuRA_DQRL
+# from MyAlgorithm import MyAlgorithm
+# from OnlineAlgorithm import OnlineAlgorithm
+# from GreedyGeographicRouting import GreedyGeographicRouting
+# from GreedyHopRouting import GreedyHopRouting
+# from REPS import REPS
+# from REPS_rep import REPSREP
+# from REPS_cache import REPSCACHE
+# from REPS_cache2 import REPSCACHE2
+# from REPS_cache4 import REPSCACHE5
+# from REPS_cache4_3 import REPSCACHE5_3
+# from REPS_ent_dqrl import REPS_ENT_DQRL
+# from REPS_cache_ent_dqrl import REPSCACHEENT_DQRL
+# from REPS_cache_ent_dqrl_proswap import REPSCACHEENT_DQRL_PSWAP
+# from SEER_cache import SEERCACHE
+# from SEER_cache2 import SEERCACHE2
+# from SEER_cache3 import SEERCACHE3
+# from SEER_cache3_3 import SEERCACHE3_3
+# from SEER_ent_dqrl import SEER_ENT_DQRL
+# from SEE import SEE
+# from SEE2 import SEE2
+# from DQRL import QuRA_DQRL
 from Schedule import SCHEDULEGREEDY
-from CachedEntanglement import CachedEntanglement
+# from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
-from topo.Node import Node
-from topo.Link import Link
+
 
 from random import sample
-from numpy import log as ln
 import numpy as np
-import random
 import time
 import os.path
 import multiprocessing.context as ctx
 ctx._force_start_method('spawn')
-import warnings
-warnings.filterwarnings("ignore")
 
 # sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
 sys.path.insert(0, "../../rl")
@@ -62,14 +59,15 @@ sys.path.insert(0, "../../rl")
 ttime = 25000
 ttime2 = 5000
 step = 500
-times = 3
-nodeNo = 64
+times = 1
+nodeNo = 400
+gridSize = 10
 alpha_ = 0.0002
 degree = 2
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [15,20]
+numOfRequestPerRound = [20]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -238,9 +236,12 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
    
+    print('======================before append', Topo.print_memory_usage())
    
     algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
     algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
+    gc.collect()
+    print('======================after append', Topo.print_memory_usage())
     
 
 
@@ -290,7 +291,10 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
                         # print('req: ' , a)
                         # for _ in range(int(random.random()*3+1)):
                         ids[i].append((a[0], a[1]))
-                # print('#############################  ', len(ids[i]))
+        print('##############going to append jobs ###############  ')
+        print('----------size(ids)----------------', get_deep_size(ids)/1000000)
+        print('----------size(algorithms)----------------', get_deep_size(algorithms)/1000000)
+
         
         for algoIndex in range(len(algorithms)):
             algo = copy.deepcopy(algorithms[algoIndex])
@@ -362,7 +366,8 @@ if __name__ == '__main__':
 
     Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes , requestTimeouts , preSwapCapacity]
 
-    topo = Topo.generate(nodeNo, 0.9, 5,alpha_, degree)
+    print('--------calling topo.generate() ---------------')
+    topo = Topo.generate(nodeNo, 0.9, 5,alpha_, degree, gridSize=gridSize)
     jobs = []
 
     tmp_ids = {i : [] for i in range(200)}
