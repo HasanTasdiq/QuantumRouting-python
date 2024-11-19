@@ -707,6 +707,12 @@ class RoutingEnv(Env):
         current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
 
         return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
+    # def max_future_q(self , qs):
+    #     # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
+    #     current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
+
+    #     return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
+    
     def rand_request(self , requests):
         ret = []
         for request in requests:
