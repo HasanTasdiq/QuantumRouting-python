@@ -36,7 +36,6 @@ class SCHEDULEGREEDY(AlgorithmBase):
         self.schedulerAgent = SchedulerAgent(self , 0)
 
 
-
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
     def genNameByBbracket(self, varName: str, parName: list):
@@ -115,6 +114,8 @@ class SCHEDULEGREEDY(AlgorithmBase):
     def scheduleAndAssign(self):
         reqs = copy.deepcopy(self.requestState)
         foundPath = 0
+        t = 0
+        successReq = 0
         while len(reqs):
             assign = False
             # print('------------------req len----------------' , len(reqs))
@@ -143,7 +144,8 @@ class SCHEDULEGREEDY(AlgorithmBase):
                 foundPath +=1
             else:
                  reward = -1
-            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state, reward , done = (len(reqs) == 0))
+            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath)
+            t+= 1
     
         print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath)
 
