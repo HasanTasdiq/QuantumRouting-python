@@ -228,16 +228,16 @@ class SchedulerAgent:
             # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
-            if not done:
-                max_future_q = np.max(future_qs_list[index])
+            # if not done:
+            #     max_future_q = np.max(future_qs_list[index])
 
-                # max_future_q = self.env.max_future_q_schedule(new_current_state , future_qs_list[index])
+            #     # max_future_q = self.env.max_future_q_schedule(new_current_state , future_qs_list[index])
                 
-                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
-                new_q = reward + DISCOUNT * max_future_q
-            else:
-                new_q = reward
+            #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+            #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
+            #     new_q = reward + DISCOUNT * max_future_q
+            # else:
+            new_q = reward
             # print(new_q)
             # print(current_state)
 
@@ -352,6 +352,7 @@ class SchedulerAgent:
             reward = successReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - successReq)* BETA * f + GAMMA * R[t+1] * (1-f)
             R[t] = reward
             self.update_replay_memory((current_state, action, reward, next_state, done))
+            # print('in update reward:' , timeSlot , '  t:' ,t , 'reward:',reward, 'R', R )
 
 
         # for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
