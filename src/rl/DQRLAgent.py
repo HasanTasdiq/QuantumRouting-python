@@ -130,9 +130,12 @@ class DQRLAgent:
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
         # model.add(Dense(self.env.SIZE * 20 , activation='relu'))
-        model.add(Dense(self.env.SIZE * 10 , activation='relu'))
-        # model.add(Dense(72 , activation='relu'))
-        model.add(Dense(self.env.SIZE * 5 , activation='relu'))
+        # model.add(Dense(self.env.SIZE * 10 , activation='relu'))
+        # # model.add(Dense(72 , activation='relu'))
+        # model.add(Dense(self.env.SIZE * 5 , activation='relu'))
+        model.add(Dense(600 , activation='relu'))
+        model.add(Dense(600 , activation='relu'))
+        model.add(Dense(600 , activation='relu'))
 
         # model.add(Conv2D(32, 3, activation="relu"))
         # model.add(Flatten)
@@ -143,7 +146,7 @@ class DQRLAgent:
         # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.0002, clipvalue=0.01 ), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.1, clipvalue=0.01 ), metrics=['accuracy'])
         # model._make_predict_function()
         return model
 

@@ -20,12 +20,14 @@ NUM_EPISODES = 2500
 LEARNING_RATE = 0.001
 
 
-GAMMA = 0.99
+GAMMA = 0.9
+ALPHA = .2
+BETA = -1
 
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 0.9  # not a constant, qoing to be decayed
+EPSILON_ = 0.5  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
 END_EPSILON_DECAYING = 2000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
@@ -34,7 +36,7 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
+MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
@@ -320,7 +322,7 @@ class SchedulerAgent:
     
 
     
-    def update_action(self , requests ,  action  , current_state, reward , done = False):
+    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -331,7 +333,7 @@ class SchedulerAgent:
             next_state = current_state
         done = False
 
-        self.last_action_reward.append((action , timeSlot , current_state , next_state , reward,  done))
+        self.last_action_reward.append((action , timeSlot , current_state , next_state ,  done , t , successReq))
 
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
@@ -339,8 +341,21 @@ class SchedulerAgent:
     def update_reward(self):
         print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_reward) )
         t1 = time.time()
-        for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
+        l = len(self.last_action_reward)
+        R = [0 for _ in range(l+1)]
+        for i in range(l-1 , 0 , -1):
+            action , timeSlot , current_state , next_state ,  done , t , successReq = self.last_action_reward[i]
+            f = 0
+            if done:
+                f = 1
+
+            reward = successReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - successReq)* BETA * f + GAMMA * R[t+1] * (1-f)
+            R[t] = reward
             self.update_replay_memory((current_state, action, reward, next_state, done))
+
+
+        # for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
+        #     self.update_replay_memory((current_state, action, reward, next_state, done))
         self.train(False , self.env.algo.timeSlot)
 
 
