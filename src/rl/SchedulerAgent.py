@@ -331,7 +331,7 @@ class SchedulerAgent:
 
         if next_state is None:
             next_state = current_state
-        done = False
+        # done = False
 
         self.last_action_reward.append((action , timeSlot , current_state , next_state ,  done , t , successReq))
 
