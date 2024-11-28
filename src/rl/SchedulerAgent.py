@@ -183,7 +183,7 @@ class SchedulerAgent:
         # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.0002, clipvalue=0.01 ), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.1, clipvalue=0.01 ), metrics=['accuracy'])
         # model._make_predict_function()
         self.print_memory_usage()
 

@@ -721,6 +721,7 @@ class RoutingEnv(Env):
         # print(len(requests))
         return random.choice(ret)
     def get_next_request_id(self , requests , qs):
+        print('average q val at: ' , self.algo.timeSlot , sum(qs) / len(qs))
         ret = {}
         for request in requests:
             if not request[2]:
