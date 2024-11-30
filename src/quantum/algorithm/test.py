@@ -286,7 +286,7 @@ if __name__ == '__main__':
     
     ks = [numOfRequestPerRound , numOfRequestPerRound+5  ]
     ks = [numOfRequestPerRound  ]
-    numreqs = [10]
+    numreqs = [8,9,10,12,15,20]
     # numreqs = [5,6,7]
 
     resultDicts = [multiprocessing.Manager().dict() for _ in range(len(numreqs))]
