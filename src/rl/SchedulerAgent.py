@@ -158,7 +158,7 @@ class SchedulerAgent:
 
 
         # model.add(Dense(self.env.SIZE * 20 , activation='relu'))
-        model.add(Dense(256 , activation='relu'))
+        model.add(Dense(600 , activation='relu'))
         print('~~~~~~~~after Dense(self.env.SIZE * 10 ',get_deep_size(model)/1000000)
         self.print_memory_usage()
         gc.collect()
@@ -166,12 +166,14 @@ class SchedulerAgent:
 
 
         # model.add(Dense(72 , activation='relu'))
-        model.add(Dense(128 , activation='relu'))
+        model.add(Dense(600 , activation='relu'))
         print('~~~~~~~~after Dense(self.env.SIZE * 5',get_deep_size(model)/1000000)
         gc.collect()
         # time.sleep(10)
 
-
+        model.add(Dense(600 , activation='relu'))
+        print('~~~~~~~~after Dense(self.env.SIZE * 3',get_deep_size(model)/1000000)
+        gc.collect()
 
 
         # model.add(Conv2D(32, 3, activation="relu"))
@@ -183,7 +185,7 @@ class SchedulerAgent:
         # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.1, clipvalue=0.01 ), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.001, clipvalue=0.01 ), metrics=['accuracy'])
         # model._make_predict_function()
         self.print_memory_usage()
 
@@ -202,7 +204,9 @@ class SchedulerAgent:
         print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
-            return
+            return        
+        # if len(self.replay_memory) < MINIBATCH_SIZE:
+        #     return
 
         # Get a minibatch of random samples from memory replay table
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
@@ -224,20 +228,21 @@ class SchedulerAgent:
         # print(len(minibatch))
 
         # Now we need to enumerate our batches
-        for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
+        for index, (current_state, action, reward, new_current_state, done,qval) in enumerate(minibatch):
             # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
-            # if not done:
-            #     max_future_q = np.max(future_qs_list[index])
+            if True:
+                max_future_q = np.max(future_qs_list[index])
 
-            #     # max_future_q = self.env.max_future_q_schedule(new_current_state , future_qs_list[index])
+                # max_future_q = self.env.max_future_q_schedule(new_current_state , future_qs_list[index])
                 
-            #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-            #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
-            #     new_q = reward + DISCOUNT * max_future_q
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
+                new_q = (1-LEARNING_RATE)*qval+ LEARNING_RATE * (reward + DISCOUNT * max_future_q)
+                print('===========================in train reward: ' , reward , 'newq:' , new_q)
             # else:
-            new_q = reward
+            #     new_q = reward
             # print(new_q)
             # print(current_state)
 
@@ -296,20 +301,21 @@ class SchedulerAgent:
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
         current_state = self.env.schedule_state(requests  )
+        qs = self.get_qs(current_state)
         if np.random.random() > EPSILON_:
 
             t2 = time.time()
 
             # next_node = np.argmax(self.get_qs(current_state))
             # next_node_index = np.argmax(self.env.schedule_qs(self.get_qs(current_state)))
-            next_node_index = self.env.get_next_request_id(requests ,self.get_qs(current_state) )
+            next_node_index = self.env.get_next_request_id(requests ,qs )
             print('+++++++++++++++ predict time ============ ' , (time.time()-t2) , 'sec')
             
         else:  
             # next_node = np.random.randint(0, self.env.SIZE)
             next_node_index = self.env.rand_request(requests)
         
-        return current_state, next_node_index
+        return current_state, next_node_index , qs[next_node_index]
     
     def learn_and_predict_next_random_request(self , requests):
         global EPSILON_
@@ -318,11 +324,11 @@ class SchedulerAgent:
 
         next_node_index = self.env.rand_request(requests)
         
-        return current_state, next_node_index
+        return current_state, next_node_index , 0
     
 
     
-    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0):
+    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0, qval = 0):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -333,7 +339,7 @@ class SchedulerAgent:
             next_state = current_state
         # done = False
 
-        self.last_action_reward.append((action , timeSlot , current_state , next_state ,  done , t , successReq))
+        self.last_action_reward.append((action , timeSlot , current_state , next_state ,  done , t , successReq , qval))
 
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
@@ -344,14 +350,14 @@ class SchedulerAgent:
         l = len(self.last_action_reward)
         R = [0 for _ in range(l+1)]
         for i in range(l-1 , 0 , -1):
-            action , timeSlot , current_state , next_state ,  done , t , successReq = self.last_action_reward[i]
+            action , timeSlot , current_state , next_state ,  done , t , successReq , qval = self.last_action_reward[i]
             f = 0
             if done:
                 f = 1
 
             reward = successReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - successReq)* BETA * f + GAMMA * R[t+1] * (1-f)
             R[t] = reward
-            self.update_replay_memory((current_state, action, reward, next_state, done))
+            self.update_replay_memory((current_state, action, reward, next_state, done,qval))
             # print('in update reward:' , timeSlot , '  t:' ,t , 'reward:',reward, 'R', R )
 
 
