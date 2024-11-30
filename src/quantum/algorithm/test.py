@@ -14,10 +14,10 @@ import multiprocessing
 # nodeNo = 5
 degree = 1
 times = 20
-numOfRequestPerRound = 18
-nodeNo = 10
+numOfRequestPerRound = 10
+nodeNo = 100
 g_k = numOfRequestPerRound
-topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree)
+topo = Topo.generate(nodeNo, 0.9, 5,0.002, degree , gridSize=10)
 # G = topo.updatedG()
 # print(G.nodes())
 # print(G.edges())
@@ -274,7 +274,7 @@ def generate_ids(numreqs):
             for _ in range(numOfRequestPerRound):
 
                 while True:
-                    a = sample([i for i in range(nodeNo*nodeNo)], 2)
+                    a = sample([i for i in range(nodeNo)], 2)
                     if (not ((a[0], a[1]) in ids)) and (not ((a[1], a[0]) in ids)):
                         break
                 ids[t].append((a[0], a[1]))
@@ -286,7 +286,7 @@ if __name__ == '__main__':
     
     ks = [numOfRequestPerRound , numOfRequestPerRound+5  ]
     ks = [numOfRequestPerRound  ]
-    numreqs = [10,15,20,25,30,35,40]
+    numreqs = [10]
     # numreqs = [5,6,7]
 
     resultDicts = [multiprocessing.Manager().dict() for _ in range(len(numreqs))]
