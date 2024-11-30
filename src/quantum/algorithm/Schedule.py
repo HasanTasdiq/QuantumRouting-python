@@ -120,7 +120,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
             assign = False
             # print('------------------req len----------------' , len(reqs))
             # print(self.requestState)
-            current_state, next_req_id = self.get_next_request_id()
+            current_state, next_req_id , qval = self.get_next_request_id()
             req = self.requestState[next_req_id]
             path = self.get_path(req)
             # print('lenpath ' , len(path))
@@ -144,7 +144,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
                 foundPath +=1
             else:
                  reward = -1
-            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath)
+            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval)
             t+= 1
     
         print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath)
