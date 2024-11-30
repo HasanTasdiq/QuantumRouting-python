@@ -240,7 +240,7 @@ class SchedulerAgent:
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
                 new_q = (1-LEARNING_RATE)*qval+ LEARNING_RATE * (reward + DISCOUNT * max_future_q)
-                print('===========================in train reward: ' , reward , 'newq:' , new_q)
+                # print('===========================in train reward: ' , reward , 'newq:' , new_q)
             # else:
             #     new_q = reward
             # print(new_q)
