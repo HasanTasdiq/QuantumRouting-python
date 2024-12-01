@@ -28,6 +28,7 @@ from AlgorithmBase import AlgorithmResult
 # from SEE2 import SEE2
 # from DQRL import QuRA_DQRL
 from Schedule import SCHEDULEGREEDY
+from ScheduleRoute import SCHEDULEROUTEGREEDY
 # from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 
@@ -56,7 +57,7 @@ sys.path.insert(0, "../../rl")
 # from SchedulerAgent import SchedulerAgent
 
 
-ttime = 12000
+ttime = 1000
 ttime2 = 5000
 step = 500
 times = 1
@@ -240,6 +241,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
    
     algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
     algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
+
+    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
     gc.collect()
     print('======================after append', Topo.print_memory_usage())
     

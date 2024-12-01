@@ -330,6 +330,100 @@ class RoutingEnv(Env):
         # print('----------------------')
         # print('----------------------')
         return np.array(S)
+    def schedule_route_state(self , requests):
+        state_q = [0 for i in range(self.SIZE)]
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        S = []
+        U = []
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+        # print(len(requests))
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+
+        for req in requests:
+            state_req = [0 for i in range(2*self.SIZE)]
+
+            if not req[2]:
+                state_req[req[0].id] = 1
+                state_req[self.SIZE+req[1].id] = 1
+            # usd = self.get_embedded_output(state_req , formatted=True)
+            # asd = self.get_emb_attention(state_req)
+
+            # usd.extend(asd)
+
+            U.append(state_req)
+        Usd = self.get_embedded_output(U , formatted=True)
+        Asd = self.get_emb_attention(U)
+
+        # print('----------------------')
+        # print('----------------------')
+        # print('---------asd---------')
+        # print(Asd)
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+        for usd in Usd:
+            tmp = []
+            for el in usd:
+                tmp.append(el[0])
+            S.append(tmp)
+        for i in range(len(Asd)):
+            asd = Asd[i]
+            tmp = []
+            for el in asd:
+                tmp.append(el[0])
+            S[i].extend(tmp)
+        
+
+        # print(S)
+
+
+
+        
+
+        
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+        for u in S:
+            a = self.get_embedded_output(state_graph )
+            a = Flatten()(tf.constant([numpy.array(a)]))[0]
+            a = list(a.numpy())
+            
+
+            # print('----------------------')
+            # print(Asd)
+            # print('----------------------')        
+            # print('----------------------')
+            # print('----------------------')
+            # print('----------------------')
+
+
+            u.extend(a)
+        for node in self.algo.topo.nodes:
+            state_q[node.id] = node.q
+        
+        for u in S:
+            c = self.get_embedded_output(state_q)
+            c = Flatten()(tf.constant([numpy.array(c)]))[0]
+            c = list(c.numpy())
+
+            u.extend(c)
+        
+        # print('----------------------')
+        # print('----------------------')
+        # print('-----------S-----------')
+        # print(S)
+        # print('----------------------')
+        # print('----------------------')
+        return np.array(S)
         
         
         
