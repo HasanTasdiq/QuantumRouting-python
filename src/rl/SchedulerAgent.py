@@ -35,7 +35,7 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
+MIN_REPLAY_MEMORY_SIZE = 600  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -295,6 +295,26 @@ class SchedulerAgent:
         return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
 
 
+    def learn_and_predict_next_request_route(self,requests):
+
+        global EPSILON_
+        timeSlot = self.env.algo.timeSlot
+        current_state = self.env.schedule_route_state(requests  )
+        qs = self.get_qs(current_state)
+        if np.random.random() > EPSILON_:
+
+            t2 = time.time()
+
+            # next_node = np.argmax(self.get_qs(current_state))
+            # next_node_index = np.argmax(self.env.schedule_qs(self.get_qs(current_state)))
+            next_node_index = self.env.get_next_request_id(requests ,qs )
+            print('+++++++++++++++ predict time ============ ' , (time.time()-t2) , 'sec')
+            
+        else:  
+            # next_node = np.random.randint(0, self.env.SIZE)
+            next_node_index = self.env.rand_request(requests)
+        
+        return current_state, next_node_index , qs[next_node_index]
 
     def learn_and_predict_next_request(self , requests):
 

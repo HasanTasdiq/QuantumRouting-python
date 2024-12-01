@@ -22,8 +22,9 @@ class Link:
         self.taken = False
         # print(self.n1.id, self.n2.id, self.p)
     def p(self):
-        # print('rnt prob ' , self.alpha , self.l , math.exp(-self.alpha * self.l))
-        return 1
+        # print('ent prob ' , self.alpha , self.l , math.exp(-self.alpha * self.l))
+        # return 1
+        # print('ent prob ')
         return math.exp(-self.alpha * self.l)
     def theOtherEndOf(self, n: Node): 
         if (self.n1 == n): 
@@ -41,7 +42,7 @@ class Link:
         return self.s1 or self.s2
     def notSwapped(self):  
         return not self.swapped()
-    def isEntangled(self , timeSlot):
+    def isEntangled(self , timeSlot = 0):
         return self.entangled and (timeSlot - self.entangledTimeSlot) < self.topo.entanglementLifetime
 
 
@@ -129,6 +130,7 @@ class Link:
         self.s1 = False
         self.s2 = False
         self.entangled = False
+        self.taken = False
 
         for internalLink in self.n1.internalLinks:
             if self in internalLink:
