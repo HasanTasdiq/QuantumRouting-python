@@ -61,6 +61,7 @@ class Link:
         self.assigned = False
         self.entangled = False
         self.used = False
+        self.taken = False
 
 
         for internalLink in self.n1.internalLinks:

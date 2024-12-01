@@ -705,6 +705,7 @@ class AlgorithmBase:
         totalqbit = 0
         ent = 0
         qubits = set()
+        taken = 0
         for node in self.topo.nodes:
             rem = node.remainingQubits
             # for link in node.links:
@@ -715,9 +716,12 @@ class AlgorithmBase:
         for link in self.topo.links:
             if link.isEntangled(self.timeSlot):
                 ent += 1
+            if link.taken:
+                taken += 1
         print('=============================================================')
         print('[ ' , self.name ,' ] remaining qubit at ' , self.timeSlot , totalqbit + ent*2 , 'ent: ' , ent)
         print('[ ' , self.name ,' ] qubit set  ' , self.timeSlot , qubits)
+        print('[ ' , self.name ,' ] #taken links: ' , self.timeSlot , taken)
         print('=============================================================')
     
 
