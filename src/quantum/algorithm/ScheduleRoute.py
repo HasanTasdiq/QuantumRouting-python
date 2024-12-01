@@ -104,7 +104,11 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
                         self.totalUsedQubits += 2
     
     def get_next_request_id(self):
-        return self.schedulerAgent.learn_and_predict_next_request_route(self.requestState)
+        
+        if self.name == 'SCHEDULEROUTEGREEDY':
+            return self.schedulerAgent.learn_and_predict_next_request_route(self.requestState)
+        elif self.name == 'RANDSCHEDULEROUTEGREEDY':
+            return self.schedulerAgent.learn_and_predict_next_random_request(self.requestState)
 
 
             
