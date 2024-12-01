@@ -90,6 +90,7 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
+            self.PFT()
             self.randPFT()
             # self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
@@ -265,6 +266,20 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
                             assignCount += 1
                             if assignCount == need:
                                 break
+    def edgeCapacity(self, u, v):
+        capacity = 0
+        for link in u.links:
+            if link.contains(v):
+                capacity += 1
+        used = 0
+        for SDpair in self.srcDstPairs:
+            used += self.fi[SDpair][(u, v)]
+            used += self.fi[SDpair][(v, u)]
+        return capacity - used
+
+    def widthForSort(self, path):
+        # path[-1] is the path of weight
+        return -path[-1]
     def LP1(self):
         # print('[REPS] LP1 start')
         # initialize fi(u, v) ans ti
