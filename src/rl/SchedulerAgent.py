@@ -237,6 +237,8 @@ class SchedulerAgent:
             # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
+
+            current_qs_list[index] = qs
             if True:
                 max_future_q = np.max(future_qs_list[index])
 
