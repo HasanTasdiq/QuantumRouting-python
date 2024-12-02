@@ -27,17 +27,17 @@ BETA = -1
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 0.5  # not a constant, qoing to be decayed
+EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
 END_EPSILON_DECAYING = 2000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 64  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 500  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -237,8 +237,8 @@ class SchedulerAgent:
             # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
-
-            current_qs_list[index] = qs
+            if len(qs) > 0:
+                current_qs_list[index] = qs
             if True:
                 max_future_q = np.max(future_qs_list[index])
 
@@ -252,7 +252,7 @@ class SchedulerAgent:
                 else:
                     qval = 0
                 qval = current_qs_list[index][action]
-                print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action] , qval)
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action] , qval)
 
                 new_q = (1-LEARNING_RATE)*qval+ LEARNING_RATE * (reward + DISCOUNT * max_future_q)
                 # print('===========================in train reward: ' , reward , 'newq:' , new_q)
@@ -265,13 +265,13 @@ class SchedulerAgent:
             current_qs = current_qs_list[index]
             current_qs[action] = new_q
 
-            current_qs2 = self.get_qs(current_state)
-            print(current_qs)
-            print('--------- ')
-            print(qs)
-            print('--------- ')
+            # current_qs2 = self.get_qs(current_state)
+            # print(current_qs)
+            # print('--------- ')
+            # print(qs)
+            # print('--------- ')
 
-            print(current_qs2)
+            # print(current_qs2)
 
             # And append to our training data
             X.append(current_state)
@@ -386,6 +386,9 @@ class SchedulerAgent:
 
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
+
+        self.train(False , self.env.algo.timeSlot)
+
     
     def update_reward(self):
         print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_reward) )
@@ -406,7 +409,6 @@ class SchedulerAgent:
 
         # for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
         #     self.update_replay_memory((current_state, action, reward, next_state, done))
-        self.train(False , self.env.algo.timeSlot)
 
 
         self.last_action_reward = []

@@ -10,7 +10,7 @@ from AlgorithmBase import AlgorithmResult
 # from OnlineAlgorithm import OnlineAlgorithm
 # from GreedyGeographicRouting import GreedyGeographicRouting
 # from GreedyHopRouting import GreedyHopRouting
-# from REPS import REPS
+from REPS import REPS
 # from REPS_rep import REPSREP
 # from REPS_cache import REPSCACHE
 # from REPS_cache2 import REPSCACHE2
@@ -57,7 +57,7 @@ sys.path.insert(0, "../../rl")
 # from SchedulerAgent import SchedulerAgent
 
 
-ttime = 12000
+ttime = 15000
 ttime2 = 5000
 step = 500
 times = 1
@@ -243,7 +243,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
 
     algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
-    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
+    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
     
     gc.collect()
     print('======================after append', Topo.print_memory_usage())

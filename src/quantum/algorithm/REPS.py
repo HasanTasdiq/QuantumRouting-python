@@ -395,7 +395,8 @@ class REPS(AlgorithmBase):
     def EPS(self):
         self.LP2()
         # initialize fki(u, v), tki
-        numOfFlow = {SDpair : self.ti[SDpair] for SDpair in self.srcDstPairs}
+        # numOfFlow = {SDpair : self.ti[SDpair] for SDpair in self.srcDstPairs}
+        numOfFlow = {SDpair : 1 for SDpair in self.srcDstPairs}
         self.fki = {SDpair : [{} for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.tki = {SDpair : [0 for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.pathForELS = {SDpair : [] for SDpair in self.srcDstPairs}
