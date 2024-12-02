@@ -35,8 +35,8 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+MIN_REPLAY_MEMORY_SIZE = 64  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
@@ -222,13 +222,18 @@ class SchedulerAgent:
         # When using target network, query it, otherwise main network should be queried
         new_current_states = np.array([transition[3] for transition in minibatch])
         future_qs_list = self.target_model.predict(new_current_states , verbose=0, batch_size=64)
+        # print('---------future qs --------- ')
+        # print(future_qs_list)
+        # future_qs_list = self.target_model.predict(new_current_states , verbose=0, batch_size=64)
+        # print('---------future qs 2...  --------- ')
+        # print(future_qs_list)
 
         X = []
         y = []
         # print(len(minibatch))
 
         # Now we need to enumerate our batches
-        for index, (current_state, action, reward, new_current_state, done,qval) in enumerate(minibatch):
+        for index, (current_state, action, reward, new_current_state, done,qs) in enumerate(minibatch):
             # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
@@ -238,7 +243,15 @@ class SchedulerAgent:
                 # max_future_q = self.env.max_future_q_schedule(new_current_state , future_qs_list[index])
                 
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
+                # print(qs)
+                
+                if len(qs):
+                    qval = qs[action]
+                else:
+                    qval = 0
+                qval = current_qs_list[index][action]
+                print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action] , qval)
+
                 new_q = (1-LEARNING_RATE)*qval+ LEARNING_RATE * (reward + DISCOUNT * max_future_q)
                 # print('===========================in train reward: ' , reward , 'newq:' , new_q)
             # else:
@@ -250,6 +263,14 @@ class SchedulerAgent:
             current_qs = current_qs_list[index]
             current_qs[action] = new_q
 
+            current_qs2 = self.get_qs(current_state)
+            print(current_qs)
+            print('--------- ')
+            print(qs)
+            print('--------- ')
+
+            print(current_qs2)
+
             # And append to our training data
             X.append(current_state)
             y.append(current_qs)
@@ -257,7 +278,7 @@ class SchedulerAgent:
         # print('=============train start===========')
         t1 = time.time()
         # Fit on all samples as one batch, log only on terminal state
-        hist = self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=True, )
+        # hist = self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=True, )
         print('=============train done===========' , time.time() - t1)
         # Update target network counter every episode
         # if terminal_state:
@@ -314,7 +335,7 @@ class SchedulerAgent:
             # next_node = np.random.randint(0, self.env.SIZE)
             next_node_index = self.env.rand_request(requests)
         
-        return current_state, next_node_index , qs[next_node_index]
+        return current_state, next_node_index , qs
 
     def learn_and_predict_next_request(self , requests):
 
@@ -335,7 +356,7 @@ class SchedulerAgent:
             # next_node = np.random.randint(0, self.env.SIZE)
             next_node_index = self.env.rand_request(requests)
         
-        return current_state, next_node_index , qs[next_node_index]
+        return current_state, next_node_index , qs
     
     def learn_and_predict_next_random_request(self , requests):
         global EPSILON_
@@ -344,11 +365,11 @@ class SchedulerAgent:
 
         next_node_index = self.env.rand_request(requests)
         
-        return current_state, next_node_index , 0
+        return current_state, next_node_index , []
     
 
     
-    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0, qval = 0):
+    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0, qval = []):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -369,7 +390,7 @@ class SchedulerAgent:
         t1 = time.time()
         l = len(self.last_action_reward)
         R = [0 for _ in range(l+1)]
-        for i in range(l-1 , 0 , -1):
+        for i in range(l-1 , -1 , -1):
             action , timeSlot , current_state , next_state ,  done , t , successReq , qval = self.last_action_reward[i]
             f = 0
             if done:
