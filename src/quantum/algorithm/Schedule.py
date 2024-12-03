@@ -113,6 +113,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
             
     def scheduleAndAssign(self):
         reqs = copy.deepcopy(self.requestState)
+        reqmask = [0 for _ in reqs]
         foundPath = 0
         t = 0
         successReq = 0
@@ -144,7 +145,9 @@ class SCHEDULEGREEDY(AlgorithmBase):
                 foundPath +=1
             else:
                  reward = -1
-            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval)
+            reqmask[next_req_id] = 1
+            # print('reqmask' , reqmask)
+            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask))
             t+= 1
     
         print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath)

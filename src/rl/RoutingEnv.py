@@ -806,7 +806,15 @@ class RoutingEnv(Env):
     #     current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
 
     #     return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
-    
+    def max_future_q_schedule(self,reqmask , qs):
+        # print('in max_future_q_schedule ' , reqmask)
+        ret = []
+        for i in range(len(reqmask)):
+            if not reqmask[i]:
+                ret.append(qs[i])
+        if not len(ret):
+            return 0
+        return max(ret)
     def rand_request(self , requests):
         ret = []
         for request in requests:

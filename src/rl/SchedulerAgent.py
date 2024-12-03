@@ -34,9 +34,9 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+REPLAY_MEMORY_SIZE = 2000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 500  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
@@ -233,18 +233,18 @@ class SchedulerAgent:
         # print(len(minibatch))
 
         # Now we need to enumerate our batches
-        for index, (current_state, action, reward, new_current_state, done,qs) in enumerate(minibatch):
+        for index, (current_state, action, reward, new_current_state, done,qs,reqmask) in enumerate(minibatch):
             # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
             # if len(qs) > 0:
             #     current_qs_list[index] = qs
             if True:
-                max_future_q = np.max(future_qs_list[index])
+                # max_future_q = np.max(future_qs_list[index])
 
-                # max_future_q = self.env.max_future_q_schedule(new_current_state , future_qs_list[index])
+                max_future_q = self.env.max_future_q_schedule(reqmask , future_qs_list[index])
                 
-                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+                print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
                 # print(qs)
                 
                 # if len(qs):
@@ -371,7 +371,7 @@ class SchedulerAgent:
     
 
     
-    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0, qval = []):
+    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0, qval = [],reqmask = []):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -382,7 +382,11 @@ class SchedulerAgent:
             next_state = current_state
         # done = False
 
-        self.last_action_reward.append((action , timeSlot , current_state , next_state ,  done , t , successReq , qval))
+        self.last_action_reward.append((action , timeSlot , current_state , next_state ,  done , t , successReq , qval,reqmask))
+        # for a in self.last_action_reward:
+        #     print(a[0] , a[1],a[7] , a[8])
+        # print('-------')
+            # print('last_action_reward ' , timeSlot , reqmask , qval)
 
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
@@ -396,14 +400,15 @@ class SchedulerAgent:
         l = len(self.last_action_reward)
         R = [0 for _ in range(l+1)]
         for i in range(l-1 , -1 , -1):
-            action , timeSlot , current_state , next_state ,  done , t , successReq , qval = self.last_action_reward[i]
+            action , timeSlot , current_state , next_state ,  done , t , successReq , qval, reqmask = self.last_action_reward[i]
+            # print('reqmask ' , i , action  ,  reqmask)
             f = 0
             if done:
                 f = 1
 
             reward = successReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - successReq)* BETA * f + GAMMA * R[t+1] * (1-f)
             R[t] = reward
-            self.update_replay_memory((current_state, action, reward, next_state, done,qval))
+            self.update_replay_memory((current_state, action, reward, next_state, done,qval,reqmask))
             # print('in update reward:' , timeSlot , '  t:' ,t , 'reward:',reward, 'R', R )
 
 
