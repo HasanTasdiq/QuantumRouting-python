@@ -113,7 +113,11 @@ class SCHEDULEGREEDY(AlgorithmBase):
             
     def scheduleAndAssign(self):
         reqs = copy.deepcopy(self.requestState)
+        print('reqss: ' ,[(r[0].id , r[1].id) for r in reqs])
+
         reqmask = [0 for _ in reqs]
+        # schedule = [4, 3, 0, 5, 1, 7, 6, 8, 9, 2]
+        schedule = []
         foundPath = 0
         t = 0
         successReq = 0
@@ -122,6 +126,8 @@ class SCHEDULEGREEDY(AlgorithmBase):
             # print('------------------req len----------------' , len(reqs))
             # print(self.requestState)
             current_state, next_req_id , qval = self.get_next_request_id()
+            schedule.append(next_req_id)
+            # next_req_id = schedule[t]
             req = self.requestState[next_req_id]
             path = self.get_path(req)
             # print('lenpath ' , len(path))
@@ -150,7 +156,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
             self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask))
             t+= 1
     
-        print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath)
+        print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath , 'schedule:' , schedule)
 
 
 

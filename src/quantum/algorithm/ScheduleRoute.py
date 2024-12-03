@@ -119,6 +119,9 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
     def scheduleAndAssign(self):
         reqs = copy.deepcopy(self.requestState)
         foundPath = 0
+        reqmask = [0 for _ in reqs]
+        schedule = []
+
         t = 0
         successReq = 0
         while len(reqs):
@@ -126,6 +129,8 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
             # print('------------------req len----------------' , len(reqs))
             # print(self.requestState)
             current_state, next_req_id , qval = self.get_next_request_id()
+            schedule.append(next_req_id)
+
             req = self.requestState[next_req_id]
             path = self.get_path(req)
             # print('lenpath ' , len(path))
@@ -149,10 +154,11 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
                 foundPath +=1
             else:
                  reward = -1
-            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval)
+            reqmask[next_req_id] = 1
+            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask))
             t+= 1
     
-        print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath)
+        print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath, 'schedule:' , schedule)
 
 
 
