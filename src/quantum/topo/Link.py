@@ -23,7 +23,7 @@ class Link:
         # print(self.n1.id, self.n2.id, self.p)
     def p(self):
         # print('ent prob ' , self.alpha , self.l , math.exp(-self.alpha * self.l))
-        # return 1
+        return 1
         # print('ent prob ')
         return math.exp(-self.alpha * self.l)
     def theOtherEndOf(self, n: Node): 

@@ -1230,12 +1230,13 @@ class Topo:
         # print(len(source_nodes) , len(dest_nodes))
         # for _ in range(100):
         #     ids.append((source_nodes[int(random.random()*(len(source_nodes) - 1))] , dest_nodes[int(random.random()*(len(dest_nodes) - 1))]))
-        ret = sample(self.requests , numOfRequestPerRound)
+        # ret = sample(self.requests , numOfRequestPerRound)
         # for _ in range(numOfRequestPerRound):
         #     ret.append(self.requests[int(random.random()*30) + 50])
         # print('reqs ' , ret)
         ret = [(2 , 25), (4,19) ,(1,22),(10,5),(7,29)]
         ret = [(10,5) , (2,25)]
+        ret = [(10,5) , (2,25) , (1,80), (30,90), (24,64), (12,98), (33,76), (55, 6), (44,86), (19,91)]
         # ret = [(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25)]
         # ret = [(2,25) ]
         return ret
