@@ -36,8 +36,8 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 DISCOUNT = 0.95
 REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 500  # Terminal states (end of episodes)
+MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -387,7 +387,7 @@ class SchedulerAgent:
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
 
-        self.train(False , self.env.algo.timeSlot)
+        # self.train(False , self.env.algo.timeSlot)
 
     
     def update_reward(self):
@@ -410,6 +410,7 @@ class SchedulerAgent:
         # for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
         #     self.update_replay_memory((current_state, action, reward, next_state, done))
 
+        self.train(False , self.env.algo.timeSlot)
 
         self.last_action_reward = []
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
