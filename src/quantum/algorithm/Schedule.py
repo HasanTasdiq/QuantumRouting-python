@@ -117,7 +117,8 @@ class SCHEDULEGREEDY(AlgorithmBase):
 
         reqmask = [0 for _ in reqs]
         # schedule = [4, 3, 0, 5, 1, 7, 6, 8, 9, 2]
-        schedule = []
+        schedule = [7, 1, 5, 3, 4, 6, 2, 0]
+        # schedule = []
         foundPath = 0
         t = 0
         successReq = 0
@@ -126,8 +127,8 @@ class SCHEDULEGREEDY(AlgorithmBase):
             # print('------------------req len----------------' , len(reqs))
             # print(self.requestState)
             current_state, next_req_id , qval = self.get_next_request_id()
-            schedule.append(next_req_id)
-            # next_req_id = schedule[t]
+            # schedule.append(next_req_id)
+            next_req_id = schedule[t]
             req = self.requestState[next_req_id]
             path = self.get_path(req)
             # print('lenpath ' , len(path))
