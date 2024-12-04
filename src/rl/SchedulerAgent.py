@@ -17,7 +17,7 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.1
 
 
 GAMMA = 0.9
@@ -29,7 +29,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 40000
+END_EPSILON_DECAYING = 5000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
