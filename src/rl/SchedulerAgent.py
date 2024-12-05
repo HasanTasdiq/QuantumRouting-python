@@ -17,7 +17,7 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.01
 
 
 GAMMA = 0.9
@@ -399,6 +399,7 @@ class SchedulerAgent:
         t1 = time.time()
         l = len(self.last_action_reward)
         R = [0 for _ in range(l+1)]
+        succ = []
         for i in range(l-1 , -1 , -1):
             action , timeSlot , current_state , next_state ,  done , t , successReq , qval, reqmask = self.last_action_reward[i]
             # print('reqmask ' , i , action  ,  reqmask)
@@ -409,7 +410,9 @@ class SchedulerAgent:
             reward = successReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - successReq)* BETA * f + GAMMA * R[t+1] * (1-f)
             R[t] = reward
             self.update_replay_memory((current_state, action, reward, next_state, done,qval,reqmask))
-            # print('in update reward:' , timeSlot , '  t:' ,t , 'reward:',reward, 'R', R )
+            succ.append(successReq)
+        print('in update reward:' , timeSlot , 'R', R )
+        print('in update reward:' , timeSlot , 'success ', succ )
 
 
         # for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
