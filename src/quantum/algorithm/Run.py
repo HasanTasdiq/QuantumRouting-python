@@ -57,11 +57,11 @@ sys.path.insert(0, "../../rl")
 # from SchedulerAgent import SchedulerAgent
 
 
-ttime = 300
+ttime = 60000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 8
+gridSize = 3
 nodeNo = gridSize *gridSize
 
 alpha_ = 0.000
@@ -69,7 +69,7 @@ degree = 2
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [8]
+numOfRequestPerRound = [3]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]

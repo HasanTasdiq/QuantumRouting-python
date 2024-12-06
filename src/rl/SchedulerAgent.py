@@ -17,7 +17,7 @@ from RoutingEnv import RoutingEnv      #for ubuntu
 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.1
 
 
 GAMMA = 0.9
@@ -29,13 +29,13 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 20000
+END_EPSILON_DECAYING = 4000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
-DISCOUNT = 0.95
-REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+DISCOUNT = 0.9
+REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -254,7 +254,8 @@ class SchedulerAgent:
                 qval = current_qs_list[index][action]
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action] , qval)
 
-                new_q = (1-LEARNING_RATE)*qval+ LEARNING_RATE * (reward + DISCOUNT * max_future_q)
+                # new_q = (1-LEARNING_RATE)*qval+ LEARNING_RATE * (reward + DISCOUNT * max_future_q)
+                new_q = reward + DISCOUNT * max_future_q
                 # print('===========================in train reward: ' , reward , 'newq:' , new_q)
             # else:
             #     new_q = reward
@@ -280,7 +281,7 @@ class SchedulerAgent:
         # print('=============train start===========')
         t1 = time.time()
         # Fit on all samples as one batch, log only on terminal state
-        # hist = self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=True, )
+        hist = self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=True, )
         print('=============train done===========' , time.time() - t1)
         # Update target network counter every episode
         # if terminal_state:
