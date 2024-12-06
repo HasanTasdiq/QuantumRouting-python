@@ -828,6 +828,7 @@ class RoutingEnv(Env):
         for request in requests:
             if not request[2]:
                 ret[request[4]] = qs[request[4]]
+        # print(ret)
         return max(ret, key=ret.get)
         
 
