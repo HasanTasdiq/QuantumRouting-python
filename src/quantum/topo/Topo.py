@@ -214,7 +214,7 @@ class Topo:
             # rand = int(random.random()*5+3) # 3~7
             rand = int(random.random()*3+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
-            rand = 2
+            rand = 1
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
@@ -496,9 +496,9 @@ class Topo:
             #     G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             
 
-            # G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
+            G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             # G = nx.grid_2d_graph(n , n)
-            G = Topo.gridTopo(gridSize)
+            # G = Topo.gridTopo(gridSize)
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
@@ -1240,6 +1240,7 @@ class Topo:
         # ret = [(10,5) , (2,25) , (1,50), (30,17), (24,63), (12,48), (33,7), (55, 13)]
         # ret = [(3, 7), (5, 7), (4, 7), (3, 8)]
         # ret = [(7, 3), (5, 0), (6, 8)]
+        ret = [(5, 22), (2, 12), (20, 22), (8, 19), (9, 6)]
 
         # ret = [(38, 37), (48, 53), (59, 9), (25, 52), (29, 5), (30, 28), (31, 50), (48, 26)]
         # ret = [(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25)]
