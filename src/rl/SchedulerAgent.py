@@ -29,14 +29,14 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 40000
+END_EPSILON_DECAYING = 2000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.9
-REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 10000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
