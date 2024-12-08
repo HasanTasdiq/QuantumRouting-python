@@ -58,10 +58,10 @@ sys.path.insert(0, "../../rl")
 
 
 ttime = 13000
-ttime2 = 500
+ttime2 = 1300
 step = 500
 times = 1
-gridSize = 5
+gridSize = 10
 nodeNo = gridSize *gridSize
 
 alpha_ = 0.0004
@@ -69,7 +69,7 @@ degree = 2
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [5]
+numOfRequestPerRound = [5,10,15,20]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -243,8 +243,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
     algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
 
-    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
-    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
+    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
+    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
     
     gc.collect()
     print('======================after append', Topo.print_memory_usage())
@@ -282,21 +282,21 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
         else:
             for i in range(ttime):
                 if i < rtime:
-                    ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    # for _ in range(numOfRequestPerRound):
+                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    for _ in range(numOfRequestPerRound):
 
-                    #     while True:
-                    #         a = sample([i for i in range(numOfNode)], 2)
-                    #         if (a[0], a[1]) not in ids[i]:
-                    #             break
+                        while True:
+                            a = sample([i for i in range(numOfNode)], 2)
+                            if (a[0], a[1]) not in ids[i]:
+                                break
 
 
-                    #     # a = [2 , 25]
+                        # a = [2 , 25]
 
-                    #     # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                    #     # print('req: ' , a)
-                    #     # for _ in range(int(random.random()*3+1)):
-                    #     ids[i].append((a[0], a[1]))
+                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                        # print('req: ' , a)
+                        # for _ in range(int(random.random()*3+1)):
+                        ids[i].append((a[0], a[1]))
         print('##############going to append jobs ###############  ')
         print('----------size(ids)----------------', get_deep_size(ids)/1000000)
         print('----------size(algorithms)----------------', get_deep_size(algorithms)/1000000)
