@@ -105,10 +105,11 @@ class SCHEDULEGREEDY(AlgorithmBase):
                         self.totalUsedQubits += 2
     
     def get_next_request_id(self):
-        if self.name == 'SCHEDULEGREEDY':
-            return self.schedulerAgent.learn_and_predict_next_request(self.requestState)
-        elif self.name == 'RANDSCHEDULEGREEDY':
+        if 'RAND' in self.name :
             return self.schedulerAgent.learn_and_predict_next_random_request(self.requestState)
+        else:
+            return self.schedulerAgent.learn_and_predict_next_request(self.requestState)
+
 
             
     def scheduleAndAssign(self):
@@ -171,7 +172,13 @@ class SCHEDULEGREEDY(AlgorithmBase):
                 if link.contains(n2):
                     if link.assignable():
                         link.assignQubits()
-                        assigned += 1
+                        if 'prob' in  self.name:
+                            b = link.tryEntanglement()
+                            if b:
+                                assigned += 1
+                        else:
+                            assigned += 1
+
                         break
                     else:   
                        return False
@@ -284,6 +291,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
                         break
                 if link1 is not None and link2 is not None:
                     needLink.append((n2 , link1 , link2))
+            
             for node , link1 , link2 in needLink:
                 usedLinks.add(link1)
                 usedLinks.add(link2)
