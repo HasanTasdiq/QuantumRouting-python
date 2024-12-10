@@ -181,7 +181,7 @@ class ChartGenerator:
         # AlgoName = ["REPS","QuRA"]
         # AlgoName = ["REPS","QuRA-LS", "QuRA-EC", "QuRA-PES"]
         AlgoName = ["REPS" , "SP-par_swap" , "DQRL" , "SP-seq_swap"]
-        AlgoName = [ "rand_schedule","DQRA"]
+        AlgoName = [ "schedule ","schedlue_prob", "rand_schedule","schedule_route" , 'rand_schedule_route']
 
         leg = plt.legend(
             AlgoName,
@@ -213,7 +213,7 @@ class ChartGenerator:
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.27)
-        ax1.set_ylim(bottom=20)
+        # ax1.set_ylim(bottom=20)
 
         # plt.show()
         # plt.tight_layout()
