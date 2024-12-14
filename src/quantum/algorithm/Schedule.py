@@ -171,7 +171,25 @@ class SCHEDULEGREEDY(AlgorithmBase):
             for link in n1.links:
                 if link.contains(n2):
                     if link.assignable():
+                        # link.assignQubits()
+                        assigned += 1
+
+                        break
+                    else:   
+                       break
+            if not assigned:
+                return False
+        links = []
+        assigned = 0
+        for i in range(len(path) -1):
+            n1 = self.topo.nodes[path[i]]
+            n2 = self.topo.nodes[path[i+1]]
+            assigned = 0
+            for link in n1.links:
+                if link.contains(n2):
+                    if link.assignable():
                         link.assignQubits()
+                        links.append(link)
                         if 'prob' in  self.name:
                             b = link.tryEntanglement()
                             if b:
@@ -182,8 +200,12 @@ class SCHEDULEGREEDY(AlgorithmBase):
                         break
                     else:   
                        return False
-            if not assigned:
-                return False
+                if not assigned:
+                    break
+        if not assigned:
+            for link in links:
+                link.clearEntanglement()
+        
         return True
 
 

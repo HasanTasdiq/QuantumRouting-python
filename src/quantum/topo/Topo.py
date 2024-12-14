@@ -490,13 +490,13 @@ class Topo:
         file = 'SurfnetCore.gml'
         name = 'waxman'
         while True:
-            # try:
-            #     G = pickle.load(open(graphFileName, 'rb'))
-            # except:
-            #     G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
+            try:
+                G = pickle.load(open(graphFileName, 'rb'))
+            except:
+                G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             
 
-            G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.15, domain=(0, 0, 1, 1))
             # G = nx.grid_2d_graph(n , n)
             # G = Topo.gridTopo(gridSize)
 
@@ -516,7 +516,7 @@ class Topo:
             topo = Topo(G, q, k, a, degree , name)
             checker.setTopo(topo)
             if checker.checkConnected():
-                # pickle.dump(G, open(graphFileName, 'wb'))
+                pickle.dump(G, open(graphFileName, 'wb'))
                 # Topo.draw_graph(G)
 
                 print('topo is connected')
@@ -1240,7 +1240,8 @@ class Topo:
         # ret = [(10,5) , (2,25) , (1,50), (30,17), (24,63), (12,48), (33,7), (55, 13)]
         # ret = [(3, 7), (5, 7), (4, 7), (3, 8)]
         # ret = [(7, 3), (5, 0), (6, 8)]
-        ret = [(5, 22), (2, 12), (20, 22), (8, 19), (9, 6)]
+        # ret = [(5, 22), (2, 12), (20, 22), (8, 19), (9, 6)]
+        ret = [(18, 23), (4, 2), (9, 0), (20, 19), (14, 7)]
 
         # ret = [(38, 37), (48, 53), (59, 9), (25, 52), (29, 5), (30, 28), (31, 50), (48, 26)]
         # ret = [(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25)]
