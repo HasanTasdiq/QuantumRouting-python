@@ -132,6 +132,7 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
             schedule.append(next_req_id)
 
             req = self.requestState[next_req_id]
+            reqIndex = req[0]
             path = self.get_path(req)
             # print('lenpath ' , len(path))
             if len(path):
@@ -155,7 +156,7 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
             else:
                  reward = -1
             reqmask[next_req_id] = 1
-            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask))
+            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask) , reqIndex = reqIndex)
             t+= 1
     
         print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath, 'schedule:' , schedule)

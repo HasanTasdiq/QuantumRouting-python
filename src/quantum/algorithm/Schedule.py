@@ -78,7 +78,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
             if (src, dst) not in self.srcDstPairs:
                 self.srcDstPairs.append((src, dst))
 
-            self.requestState.append([src,dst , False , [] , index])
+            self.requestState.append([src,dst , False , [] , index , []])
             index += 1
 
     def p2(self):
@@ -131,6 +131,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
             schedule.append(next_req_id)
             # next_req_id = schedule[t]
             req = self.requestState[next_req_id]
+            reqIndex = req[4]
             path = self.get_path(req)
             # print('lenpath ' , len(path))
             if len(path):
@@ -155,7 +156,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
                  reward = -1
             reqmask[next_req_id] = 1
             # print('reqmask' , reqmask)
-            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask))
+            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask),reqIndex=reqIndex)
             t+= 1
     
         print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath , 'schedule:' , schedule)
@@ -192,16 +193,16 @@ class SCHEDULEGREEDY(AlgorithmBase):
                 if link.contains(n2):
                     if link.assignable():
                         link.assignQubits()
-                        if 'prob' in  self.name:
-                            b = link.tryEntanglement()
-                            if b:
-                                links.append(link)
+                        # if 'prob' in  self.name:
+                        #     b = link.tryEntanglement()
+                        #     if b:
+                        #         links.append(link)
 
-                                assigned += 1
-                            else:
-                                link.clearEntanglement()
-                        else:
-                            assigned += 1
+                        #         assigned += 1
+                        #     else:
+                        #         link.clearEntanglement()
+                        # else:
+                        assigned += 1
 
                         break
                     else:   
@@ -242,6 +243,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
         except:
             path = []
         return path
+    
 
     def edgeCapacity(self, u, v):
         capacity = 0
@@ -362,6 +364,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
                         self.topo.reward_ent[edge] = self.topo.negative_reward
                 link1.clearPhase4Swap()
                 link2.clearPhase4Swap()
+            self.schedulerAgent.updateAction2(SDpair , successReq)
                 
             totalEntanglement += len(successPath)
 
