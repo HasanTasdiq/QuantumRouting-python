@@ -178,7 +178,10 @@ class SCHEDULEGREEDY(AlgorithmBase):
                     else:   
                        break
             if not assigned:
+                print('assignQubitPath.............false...............')
+
                 return False
+        print('assignQubitPath............................')
         links = []
         assigned = 0
         for i in range(len(path) -1):
@@ -189,22 +192,26 @@ class SCHEDULEGREEDY(AlgorithmBase):
                 if link.contains(n2):
                     if link.assignable():
                         link.assignQubits()
-                        links.append(link)
                         if 'prob' in  self.name:
                             b = link.tryEntanglement()
                             if b:
+                                links.append(link)
+
                                 assigned += 1
+                            else:
+                                link.clearEntanglement()
                         else:
                             assigned += 1
 
                         break
                     else:   
-                       return False
-                if not assigned:
-                    break
+                       break
+            if not assigned:
+                break
         if not assigned:
             for link in links:
                 link.clearEntanglement()
+            return False
         
         return True
 
