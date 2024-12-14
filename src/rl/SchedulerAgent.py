@@ -371,8 +371,12 @@ class SchedulerAgent:
         return current_state, next_node_index , []
     
 
-    
-    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0, qval = [],reqmask = []):
+    def updateAction2(self , sdPair , successReq):
+        reqIndex = sdPair[4]
+        el = next((x for x in self.last_action_reward if x[9] == reqIndex), None)
+        el[6] = successReq
+
+    def update_action(self , requests ,  action  , current_state , done = False , t =0 , successReq = 0, qval = [],reqmask = [],reqIndex = 0):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -383,7 +387,7 @@ class SchedulerAgent:
             next_state = current_state
         # done = False
 
-        self.last_action_reward.append((action , timeSlot , current_state , next_state ,  done , t , successReq , qval,reqmask))
+        self.last_action_reward.append([action , timeSlot , current_state , next_state ,  done , t , successReq , qval,reqmask , reqIndex])
         # for a in self.last_action_reward:
         #     print(a[0] , a[1],a[7] , a[8])
         # print('-------')
@@ -402,7 +406,7 @@ class SchedulerAgent:
         R = [0 for _ in range(l+1)]
         succ = []
         for i in range(l-1 , -1 , -1):
-            action , timeSlot , current_state , next_state ,  done , t , successReq , qval, reqmask = self.last_action_reward[i]
+            action , timeSlot , current_state , next_state ,  done , t , successReq , qval, reqmask, reqIndex = self.last_action_reward[i]
             # print('reqmask ' , i , action  ,  reqmask)
             f = 0
             if done:
