@@ -228,7 +228,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
             G.add_node(node.id)
         for link in self.topo.links:
             if link.assignable():
-                G.add_edge(link.n1.id , link.n2.id , weight=1/min(link.n1.remainingQubits , link.n2.remainingQubits))
+                G.add_edge(link.n1.id , link.n2.id , weight=link.p()/min(link.n1.remainingQubits , link.n2.remainingQubits))
         
         try:
             path = nx.shortest_path(G , req[0].id , req[1].id ,weight='weight')
