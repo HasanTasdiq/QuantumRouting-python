@@ -236,11 +236,16 @@ class SCHEDULEGREEDY(AlgorithmBase):
    
     def get_path(self , req):
         G = nx.Graph()
+        w1 = 0
+        w2 = 1
+        if 'prob' in self.name:
+            w1 = 0.4
+            w2 = 0.6
         for node in self.topo.nodes:
             G.add_node(node.id)
         for link in self.topo.links:
             if link.assignable():
-                G.add_edge(link.n1.id , link.n2.id , weight=link.p()/min(link.n1.remainingQubits , link.n2.remainingQubits))
+                G.add_edge(link.n1.id , link.n2.id , weight=link.p() * w1+ w2/min(link.n1.remainingQubits , link.n2.remainingQubits))
         
         try:
             path = nx.shortest_path(G , req[0].id , req[1].id ,weight='weight')
@@ -368,7 +373,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
                         self.topo.reward_ent[edge] = self.topo.negative_reward
                 link1.clearPhase4Swap()
                 link2.clearPhase4Swap()
-            self.schedulerAgent.updateAction2(SDpair , successReq)
+            # self.schedulerAgent.updateAction2(SDpair , successReq)
                 
             totalEntanglement += len(successPath)
 

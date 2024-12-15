@@ -448,10 +448,18 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
         G = nx.Graph()
         for node in self.topo.nodes:
             G.add_node(node.id)
+        link_counter = {}
         for link in self.topo.links:
             if link.isEntangled() and not link.taken:
-                G.add_edge(link.n1.id , link.n2.id , weight=1)
+                G.add_edge(link.n1.id , link.n2.id )
+                try:
+                    link_counter[(link.n1.id , link.n2.id)] += link_counter[(link.n1.id , link.n2.id)]
+                except:
+                    link_counter[(link.n1.id , link.n2.id)] = 1
         
+        for edge in G.edges():
+            nx.set_edge_attributes(G, {edge: {"weight": 1/link_counter[(edge[0] , edge[1])]}})
+            
         try:
             path = nx.shortest_path(G , req[0].id , req[1].id ,weight='weight')
         except:
