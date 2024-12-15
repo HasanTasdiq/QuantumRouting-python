@@ -119,6 +119,7 @@ class SCHEDULEGREEDY(AlgorithmBase):
         reqmask = [0 for _ in reqs]
         # schedule = [4, 3, 0, 5, 1, 7, 6, 8, 9, 2]
         # schedule = [7, 1, 5, 3, 4, 6, 2, 0]
+        # schedule = [3, 0, 2, 4, 1]
         schedule = []
         foundPath = 0
         t = 0
@@ -161,6 +162,9 @@ class SCHEDULEGREEDY(AlgorithmBase):
     
         print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath , 'schedule:' , schedule)
 
+        self.requestState = [self.requestState[i] for i in schedule]
+        # print(schedule)
+        # print([r[4] for r in self.requestState])
 
 
     def assignQubitPath(self , path):
@@ -179,10 +183,10 @@ class SCHEDULEGREEDY(AlgorithmBase):
                     else:   
                        break
             if not assigned:
-                print('assignQubitPath.............false...............')
+                # print('assignQubitPath.............false...............')
 
                 return False
-        print('assignQubitPath............................')
+        # print('assignQubitPath............................')
         links = []
         assigned = 0
         for i in range(len(path) -1):

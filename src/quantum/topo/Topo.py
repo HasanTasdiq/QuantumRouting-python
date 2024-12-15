@@ -218,8 +218,11 @@ class Topo:
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
+            rand_length = random.randint(50, 400)
+
             for _ in range(0, rand):
-                link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
+                # link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
+                link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, rand_length) 
                 self.links.append(link)
                 self.nodes[_edge[0]].links.append(link)
                 self.nodes[_edge[1]].links.append(link)
@@ -490,15 +493,15 @@ class Topo:
         file = 'SurfnetCore.gml'
         name = 'waxman'
         while True:
-            try:
-                G = pickle.load(open(graphFileName, 'rb'))
-            except:
-                G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
+            # try:
+            #     G = pickle.load(open(graphFileName, 'rb'))
+            # except:
+            #     G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
             
 
             # G = nx.waxman_graph(n, beta=0.9, alpha=0.15, domain=(0, 0, 1, 1))
             # G = nx.grid_2d_graph(n , n)
-            # G = Topo.gridTopo(gridSize)
+            G = Topo.gridTopo(gridSize)
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
@@ -593,6 +596,8 @@ class Topo:
                 mapping[(i , j)] = k
                 k+=1
                 G.nodes[(i , j)]["pos"] = (i,j)
+        for edge in G.edges():
+            nx.set_edge_attributes(G, {edge: {"length": random.randint(50, 200)}})
         # print(mapping)
         pos = {(x, y): (x, y) for x, y in G.nodes()}
         # G.pos = pos
@@ -1241,7 +1246,8 @@ class Topo:
         # ret = [(3, 7), (5, 7), (4, 7), (3, 8)]
         # ret = [(7, 3), (5, 0), (6, 8)]
         # ret = [(5, 22), (2, 12), (20, 22), (8, 19), (9, 6)]
-        ret = [(18, 23), (4, 2), (9, 0), (20, 19), (14, 7)]
+        # ret = [(18, 23), (4, 2), (9, 0), (20, 19), (14, 7)]
+        ret = [(4, 0), (17, 1), (18, 6), (18, 14), (5, 24)]
 
         # ret = [(38, 37), (48, 53), (59, 9), (25, 52), (29, 5), (30, 28), (31, 50), (48, 26)]
         # ret = [(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25)]

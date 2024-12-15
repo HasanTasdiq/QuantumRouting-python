@@ -273,6 +273,8 @@ class AlgorithmBase:
             # for end
             if not found:
                 break
+    def sort_by_indexes(self , lst, indexes, reverse=False):
+        return [val for (_, val) in sorted(zip(indexes, lst), key=lambda x: x[0], reverse=reverse)]
     def updateNeedLinksDict(self , path_):
         if not len(path_):
             return
