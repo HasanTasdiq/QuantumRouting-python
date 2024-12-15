@@ -65,7 +65,7 @@ gridSize = 5
 nodeNo = gridSize *gridSize
 
 alpha_ = 0.0007
-degree = 4
+degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
@@ -240,9 +240,9 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
    
     print('======================before append', Topo.print_memory_usage())
    
-    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
+    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
     algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY_prob'))
-    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
+    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))

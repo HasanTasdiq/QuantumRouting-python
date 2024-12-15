@@ -20,6 +20,7 @@ class Link:
         self.topo = topo
         self.used = False
         self.taken = False
+        
         # print(self.n1.id, self.n2.id, self.p)
     def p(self):
         # print('ent prob ' , self.alpha , self.l , math.exp(-self.alpha * self.l))
