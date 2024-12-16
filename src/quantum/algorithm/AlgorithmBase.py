@@ -770,8 +770,9 @@ class AlgorithmBase:
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
         tot = 0
         if time_ %100 == 0:
+            print('[' , self.name , ']' , 'requests at time:' , time_)
             for k in self.topo.pair_dict:
-                print(k , self.topo.pair_dict[k])
+                print('[' , self.name , ']' , 'requests at time:' , time_ , ': ' , k , self.topo.pair_dict[k])
                 tot += self.topo.pair_dict[k]
             print(tot)
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken: ' , time.time() - t1)
