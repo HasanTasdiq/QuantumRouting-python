@@ -732,6 +732,14 @@ class AlgorithmBase:
         self.timeSlot = time_ # 紀錄目前回合
         self.srcDstPairs.extend(pairs) # 任務追加進去
 
+        for pair in pairs:
+            s = min(pair[0].id , pair[1].id)
+            d = max(pair[0].id , pair[1].id)
+            try:
+                self.topo.pair_dict[(s,d)] += 1
+            except:
+                self.topo.pair_dict[(s,d)] = 1
+
         if self.timeSlot == 0:
             self.prepare()
 
