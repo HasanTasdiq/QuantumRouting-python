@@ -102,7 +102,7 @@ class Topo:
         self.pair_edge_dict = {}
         self.needLinks = set()
         self.needLinksDict = {}
-        self.preSwapFraction = 1/2
+        self.preSwapFraction = 1/4
         self.tmpcount = 0
         self.entanglementLifetime = 10
         self.requestTimeout = 1

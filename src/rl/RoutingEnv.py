@@ -39,8 +39,8 @@ class RoutingEnv(Env):
         state = None
         if action:
             count = self.algo.tryPreSwapp_rl(pair)
-            # if count:
-            #     print("+++++++============+++++++++ count of pre swapped links " , count)
+            if count:
+                print("+++++++============+++++++++ count of pre swapped links " , count)
             state = self.pair_state(pair , timeSlot)
 
         # Setting the placeholder for info
