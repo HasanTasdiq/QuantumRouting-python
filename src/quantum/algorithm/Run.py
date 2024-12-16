@@ -57,7 +57,7 @@ sys.path.insert(0, "../../rl")
 # from SchedulerAgent import SchedulerAgent
 
 
-ttime = 3000
+ttime = 13000
 ttime2 = 50000
 step = 500
 times = 1
