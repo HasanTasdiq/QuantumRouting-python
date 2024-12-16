@@ -129,6 +129,9 @@ class AlgorithmBase:
             entangled = segment.tryEntanglement(self.timeSlot, self.param)
         
         print('[=================== '+self.name+'========================] total entangled link ' , len([l for l in self.topo.links if l.entangled]) , '   out of: ' , len([l for l in self.topo.links]))
+
+        print('[=================== '+self.name+'========================] virtuak entangled link ' , len([l for l in self.topo.links if l.isVirtualLink]) , '   out of: ' , len([l for l in self.topo.links]))
+            
     # def tryEntanglement(self):
     #     for segment in self.topo.segments:
     #         entangled = segment.tryEntanglement(self.timeSlot, self.param)
@@ -276,9 +279,10 @@ class AlgorithmBase:
     def sort_by_indexes(self , lst, indexes, reverse=False):
         return [val for (_, val) in sorted(zip(indexes, lst), key=lambda x: x[0], reverse=reverse)]
     def updateNeedLinksDict(self , path_):
+        print('_____________________-path_ ' , [p.id for p in path_])
+
         if not len(path_):
             return
-        # print('path_ ' , [p.id for p in path_])
 
         path = []
         for i in range(1 , len(path_)):
@@ -553,6 +557,7 @@ class AlgorithmBase:
 
         source , dest = pair[0], pair[1]
         timesUsed = len(self.topo.needLinksDict[(source , dest)])
+        # print('timeUsed ' , timesUsed)
         if timesUsed <= needlink_timeslot * self.topo.preSwapFraction:
             return 0
         hop_count = self.topo.hopsAway2(source , dest , 'Hop') - 1
@@ -708,6 +713,7 @@ class AlgorithmBase:
         ent = 0
         qubits = set()
         taken = 0
+        vlink = 0
         for node in self.topo.nodes:
             rem = node.remainingQubits
             # for link in node.links:
@@ -720,10 +726,13 @@ class AlgorithmBase:
                 ent += 1
             if link.taken:
                 taken += 1
+            if link.isVirtualLink:
+                vlink += 1
         print('=============================================================')
         print('[ ' , self.name ,' ] remaining qubit at ' , self.timeSlot , totalqbit + ent*2 , 'ent: ' , ent)
         print('[ ' , self.name ,' ] qubit set  ' , self.timeSlot , qubits)
         print('[ ' , self.name ,' ] #taken links: ' , self.timeSlot , taken)
+        print('[ ' , self.name ,' ] #virtual links: ' , self.timeSlot , vlink)
         print('=============================================================')
     
 

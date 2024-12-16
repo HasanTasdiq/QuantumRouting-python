@@ -29,6 +29,8 @@ from REPS import REPS
 # from DQRL import QuRA_DQRL
 from Schedule import SCHEDULEGREEDY
 from ScheduleRoute import SCHEDULEROUTEGREEDY
+from ScheduleRoute_cache import SCHEDULEROUTEGREEDY_CACHE
+from ScheduleRoute_cache_ps import SCHEDULEROUTEGREEDY_CACHE_PS
 # from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 
@@ -50,14 +52,14 @@ sys.path.insert(0, "../../rl")
 
 
 # from DQNAgent import DQNAgent   
-# from DQNAgentDist import DQNAgentDist   
+from DQNAgentDist import DQNAgentDist   
 # from DQNAgentDistEnt import DQNAgentDistEnt
 # from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
 
-ttime = 3000
+ttime = 70000
 ttime2 = 50000
 step = 500
 times = 1
@@ -94,8 +96,8 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     #     agent = Agent(algo , pid)
     # if '_dqrl' in algo.name:
     #     agent = DQNAgent(algo , pid)
-    # if '_distdqrl' in algo.name:
-    #     agent = DQNAgentDist(algo , pid)
+    if '_distdqrl' in algo.name:
+        agent = DQNAgentDist(algo , pid)
     # if '_entdqrl' in algo.name:
     #     algo.entAgent = DQNAgentDistEnt(algo, pid)
     # if '_2entdqrl' in algo.name:
@@ -109,15 +111,15 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         timeSlot = min(ttime2,ttime)
 
     for i in range(timeSlot):
-        # if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
-        #     agent.learn_and_predict()
+        if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
+            agent.learn_and_predict()
 
         # print([(r[0].id, r[1].id) for r in requests[i]])
         
         result = algo.work(requests[i], i)
 
-        # if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
-        #     agent.update_reward()
+        if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
+            agent.update_reward()
 
     if algo.name == "My" or 'SEER' in algo.name:
         print('============ in runThread', algo.name)
@@ -143,9 +145,9 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     # if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
     #     print('going to save the ent model ' , success_req)
     #     algo.entAgent.save_model()
-    #     if hasattr(algo , 'routingAgent' ):
-    #         algo.routingAgent.save_model()
-    #         print('going to save the ent model ' , success_req)
+    #     # if hasattr(algo , 'routingAgent' ):
+    #     #     algo.routingAgent.save_model()
+    #     #     print('going to save the ent model ' , success_req)
 
     #     shared_data[max_success] = success_req
 
@@ -211,7 +213,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
     # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
     # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_qrl'))
-    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl'))
+    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl')) #working
     
     
     # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl'))
@@ -240,12 +242,23 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
    
     print('======================before append', Topo.print_memory_usage())
    
-    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
-    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY_prob'))
-    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
+    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
+    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY_prob'))
+    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
 
-    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
-    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
+
+
+
+
+
+    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
+    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
+
+    algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
+    algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE' , param='ten'))
+    
+    algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
+    algorithms.append(SCHEDULEROUTEGREEDY_CACHE_PS(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE_preswap_multihop_distdqrl' , param='ten'))
     
     gc.collect()
     print('======================after append', Topo.print_memory_usage())
@@ -283,21 +296,21 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
         else:
             for i in range(ttime):
                 if i < rtime:
-                    ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    # for _ in range(numOfRequestPerRound):
+                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    for _ in range(numOfRequestPerRound):
 
-                    #     while True:
-                    #         a = sample([i for i in range(numOfNode)], 2)
-                    #         if (a[0], a[1]) not in ids[i]:
-                    #             break
+                        while True:
+                            a = sample([i for i in range(numOfNode)], 2)
+                            if (a[0], a[1]) not in ids[i]:
+                                break
 
 
-                    #     # a = [2 , 25]
+                        # a = [2 , 25]
 
-                    #     # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                    #     # print('req: ' , a)
-                    #     # for _ in range(int(random.random()*3+1)):
-                    #     ids[i].append((a[0], a[1]))
+                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                        # print('req: ' , a)
+                        # for _ in range(int(random.random()*3+1)):
+                        ids[i].append((a[0], a[1]))
         print('##############going to append jobs ###############  ')
         print('----------size(ids)----------------', get_deep_size(ids)/1000000)
         print('----------size(algorithms)----------------', get_deep_size(algorithms)/1000000)
