@@ -497,11 +497,15 @@ class Topo:
             #     G = pickle.load(open(graphFileName, 'rb'))
             # except:
             #     G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 1, 1))
+            try:
+                G = pickle.load(open(graphFileName, 'rb'))
+            except:
+                G = Topo.gridTopo(gridSize)
             
 
             # G = nx.waxman_graph(n, beta=0.9, alpha=0.15, domain=(0, 0, 1, 1))
             # G = nx.grid_2d_graph(n , n)
-            G = Topo.gridTopo(gridSize)
+            # G = Topo.gridTopo(gridSize)
 
             # name = 'surfnet'
             # G = nx.read_gml(file)
