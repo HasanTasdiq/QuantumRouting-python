@@ -587,12 +587,12 @@ class QuRA_DQRL(AlgorithmBase):
 
 
                     
-                s = min(src.id , dst.id)
-                d = max(src.id , dst.id)
-                try:
-                    self.topo.pair_dict[(s,d)] += 1
-                except:
-                    self.topo.pair_dict[(s,d)] = 1
+                # s = min(src.id , dst.id)
+                # d = max(src.id , dst.id)
+                # try:
+                #     self.topo.pair_dict[(s,d)] += 1
+                # except:
+                #     self.topo.pair_dict[(s,d)] = 1
 
                 if success:
                     pathlen += len(path)
@@ -1151,12 +1151,12 @@ class QuRA_DQRL(AlgorithmBase):
                     current_node = next_node
 
                     
-                s = min(src.id , dst.id)
-                d = max(src.id , dst.id)
-                try:
-                    self.topo.pair_dict[(s,d)] += 1
-                except:
-                    self.topo.pair_dict[(s,d)] = 1
+                # s = min(src.id , dst.id)
+                # d = max(src.id , dst.id)
+                # try:
+                #     self.topo.pair_dict[(s,d)] += 1
+                # except:
+                #     self.topo.pair_dict[(s,d)] = 1
 
                 if success:
                     successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
