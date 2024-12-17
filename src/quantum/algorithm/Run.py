@@ -59,7 +59,7 @@ from DQNAgentDist import DQNAgentDist
 # from SchedulerAgent import SchedulerAgent
 
 
-ttime = 70000
+ttime = 1000
 ttime2 = 50000
 step = 500
 times = 1
