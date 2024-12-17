@@ -165,6 +165,7 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
 
     def assignEntangledPath(self , path):
         selectedLinks = []
+        assigned = 0
         for i in range(len(path) -1):
             n1 = self.topo.nodes[path[i]]
             n2 = self.topo.nodes[path[i+1]]
@@ -176,7 +177,9 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
                         assigned += 1
                         break
             if not assigned:
-                return False
+                break
+        if not assigned:
+            return False
         for link in selectedLinks:
             link.taken = True
         return True

@@ -109,11 +109,32 @@ class Link:
 
 
 
+    # def keepEntanglementOnly(self):
+    #     preState = self.assigned
+    #     self.s1 = False
+    #     self.s2 = False
+    #     self.assigned = False
+    #     self.taken = False
+    #     # self.entangled = False
+
+    #     for internalLink in self.n1.internalLinks:
+    #         if self in internalLink:
+    #             self.n1.internalLinks.remove(internalLink)
+
+    #     for internalLink in self.n2.internalLinks:
+    #                 if self in internalLink:
+    #                     self.n2.internalLinks.remove(internalLink)
+
+    #     if preState and not self.isVirtualLink:
+    #         self.n1.remainingQubits += 1
+    #         self.n2.remainingQubits += 1
+             
     def keepEntanglementOnly(self):
         preState = self.assigned
         self.s1 = False
         self.s2 = False
-        self.assigned = False
+        # self.assigned = False
+        self.taken = False
         # self.entangled = False
 
         for internalLink in self.n1.internalLinks:
@@ -124,9 +145,9 @@ class Link:
                     if self in internalLink:
                         self.n2.internalLinks.remove(internalLink)
 
-        if preState and not self.isVirtualLink:
-            self.n1.remainingQubits += 1
-            self.n2.remainingQubits += 1
+        # if preState and not self.isVirtualLink:
+        #     self.n1.remainingQubits += 1
+        #     self.n2.remainingQubits += 1
     
     def clearPhase4Swap(self):
         self.s1 = False
