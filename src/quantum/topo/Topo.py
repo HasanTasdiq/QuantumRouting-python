@@ -158,7 +158,7 @@ class Topo:
             # self.nodes.append(Node(_node, _positions[_node], random.random()*11+15 , self))  # 20-40
             # self.nodes.append(Node(_node, _positions[_node], random.random()*6+4 , self)) 
             # self.nodes.append(Node(_node, _positions[_node], 4 , self))  # 10~14
-            self.nodes.append(Node(_node, _positions[_node], 10 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], 8 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             

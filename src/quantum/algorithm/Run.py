@@ -59,7 +59,7 @@ from DQNAgentDist import DQNAgentDist
 # from SchedulerAgent import SchedulerAgent
 
 
-ttime = 1000
+ttime = 13000
 ttime2 = 50000
 step = 500
 times = 1
@@ -296,21 +296,21 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
         else:
             for i in range(ttime):
                 if i < rtime:
-                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    for _ in range(numOfRequestPerRound):
+                    ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    # for _ in range(numOfRequestPerRound):
 
-                        while True:
-                            a = sample([i for i in range(numOfNode)], 2)
-                            if (a[0], a[1]) not in ids[i]:
-                                break
+                    #     while True:
+                    #         a = sample([i for i in range(numOfNode)], 2)
+                    #         if (a[0], a[1]) not in ids[i]:
+                    #             break
 
 
-                        # a = [2 , 25]
+                    #     # a = [2 , 25]
 
-                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                        # print('req: ' , a)
-                        # for _ in range(int(random.random()*3+1)):
-                        ids[i].append((a[0], a[1]))
+                    #     # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                    #     # print('req: ' , a)
+                    #     # for _ in range(int(random.random()*3+1)):
+                    #     ids[i].append((a[0], a[1]))
         print('##############going to append jobs ###############  ')
         print('----------size(ids)----------------', get_deep_size(ids)/1000000)
         print('----------size(algorithms)----------------', get_deep_size(algorithms)/1000000)
