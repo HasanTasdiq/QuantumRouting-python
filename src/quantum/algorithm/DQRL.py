@@ -30,7 +30,7 @@ class QuRA_DQRL(AlgorithmBase):
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
         # self.entAgent = DQNAgentDistEnt(self, 0)
-        # self.routingAgent = DQRLAgent(self , 0)
+        self.routingAgent = DQRLAgent(self , 0)
         self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
         self.hopCountThreshold = 25
         self.requestState = []
@@ -198,12 +198,12 @@ class QuRA_DQRL(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             # self.EPS()
             # self.ELS()
-            if 'greedy_only' in  self.name:
-                self.route_seq()
-            else:
-                # self.route()
-                self.route_all_seq()
-            # self.route_seq()
+            # if 'greedy_only' in  self.name:
+            #     self.route_seq()
+            # else:
+            #     # self.route()
+            #     self.route_all_seq()
+            self.route_seq()
             
         # print('[REPS] p4 end') 
         self.printResult()
@@ -1025,9 +1025,9 @@ class QuRA_DQRL(AlgorithmBase):
             T.append(request)
         # print(self.name , ('greedy_only' in  self.name))
         # print([(r[0].id , r[1].id) for r in self.srcDstPairs])
-        # print([(r[0].id , r[1].id) for r in self.requests])
+        print([(r[0].id , r[1].id) for r in self.requests])
         # if not (self.param is not None and 'greedy_only' in self.param):
-        if False:
+        if True:
             for request in T:
                 if 'greedy_only' in  self.name:
                     continue
@@ -1054,8 +1054,8 @@ class QuRA_DQRL(AlgorithmBase):
                 failed_loop = False
                 failed_swap = False
                 fail_hopcount = False
-                # targetPath = self.findPathForDQRL((src,dst))
-                targetPath = []
+                targetPath = self.findPathForDQRL((src,dst))
+                # targetPath = []
 
                 while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                     
@@ -1175,14 +1175,7 @@ class QuRA_DQRL(AlgorithmBase):
                             #         self.topo.reward_routing[(request , node)] = self.topo.positive_reward
                             #                     self.topo.reward_ent[edge] = self.topo.negative_reward
 
-                    for (current_node, next_node) in selectedEdges:
-                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
-                        # print(key)
-                        try:
-                            self.topo.reward_routing[key] += self.topo.positive_reward *2
-                        except:
-                            self.topo.reward_routing[key] = self.topo.positive_reward *2
-                        # print(key , '  ==  ' , self.topo.reward_routing[key])
+
                         
                     print("!!!!!!!success!!!!!!!" , src.id , dst.id , [n for n in path])
                     print('shortest path ----- ' , [n.id for n in targetPath])
@@ -1233,15 +1226,24 @@ class QuRA_DQRL(AlgorithmBase):
                     elif fail_hopcount:
                         neg_weight = 0.05
 
-                    for (current_node, next_node) in selectedEdges:
-                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                    # for (current_node, next_node) in selectedEdges:
+                    #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
-                        try:
-                            self.topo.reward_routing[key] += self.topo.negative_reward * neg_weight
-                        except:
-                            self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
+                    #     try:
+                    #         self.topo.reward_routing[key] += self.topo.negative_reward * neg_weight
+                    #     except:
+                    #         self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
                         
                         # print(key , '  ==  ' , self.topo.reward_routing[key])
+                for (current_node, next_node) in selectedEdges:
+                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                    # print(key)
+                    try:
+                        self.topo.reward_routing[key] += successReq
+                    except:
+                        self.topo.reward_routing[key] = successReq
+                        # print(key , '  ==  ' , self.topo.reward_routing[key])
+
                 selectedEdgesDict[(src,dst)] = selectedEdges
                 
                 for link in usedLinks:

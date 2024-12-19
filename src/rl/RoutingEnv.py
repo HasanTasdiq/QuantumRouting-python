@@ -6,6 +6,7 @@ import sys
 sys.path.append("..")
 # from quantum.topo.helper import needlink_timeslot
 import math
+import ast
 
 ENTANGLEMENT_LIFETIME = 10
 
@@ -562,6 +563,20 @@ class RoutingEnv(Env):
                 
                 graph[n1][n2] = 1
                 graph[n2][n1] = 1
+        # print(state_graph)
+        
+        state_graph = self.get_embedded_output(state_graph , formatted=True)
+        S = []
+        for r in state_graph:
+            tmp = []
+            for r2 in r:
+                tmp.append(r2[0])
+            S.append(tmp)
+        # state_graph = self.embedding_layer(state_graph)
+        state_graph = S
+        # print(state_graph)
+
+        # Asd = self.get_emb_attention(U)
         # G = nx.from_numpy_array(np.array(state_graph))
         # for req in self.algo.requestState:
         #         src_id = req[0].id
@@ -618,7 +633,31 @@ class RoutingEnv(Env):
         state_cr[current_request[0].id] = 1
         state_cr[current_request[1].id] = 1
 
+        # print(state_cr)
+        state_cr = self.get_emb_attention(state_cr)
+        S = []
+        for r in state_cr:
+            S.append(r[0])
+        state_cr = S
+        # print(state_cr)
+
+
+
+
+
+
+
+        # print('555555555555555')
         state_cn[current_node_id] = 1
+        # print(state_cn)
+
+        state_cn = self.get_emb_attention(state_cn)
+        S = []
+        for r in state_cn:
+            S.append(r[0])
+        state_cn = S
+        # print(state_cn)
+
 
         # for i in range(len(path)):
         #     state_path[path[i]] = i + 1
@@ -643,6 +682,18 @@ class RoutingEnv(Env):
             curr_id = req[2].id
             state_req[dst_id][curr_id] += 1
             state_req[curr_id][dst_id] += 1
+        
+        # state_req = self.get_embedded_output(state_req , formatted=True)
+        # print(reqStates)
+        reqStates = np.array(self.get_embedded_output(reqStates))
+        S = []
+        for r in reqStates:
+            tmp = []
+            for r2 in r:
+                tmp.append(r2[0])
+            S.append(tmp)
+        reqStates = S
+        # print(reqStates)
 
 
 
@@ -650,15 +701,22 @@ class RoutingEnv(Env):
 
         state_graph.append(state_cr)
         state_graph.append(state_cn)
-        state_graph.append(dist)
-        state_graph.extend(state_req)
-        # state_graph.extend(reqStates)
+        # state_graph.append(dist)
+        # state_graph.extend(state_req)
+        state_graph.extend(reqStates)
 
 
         # state_graph.append(state_path)
 
 
         # print(state_graph)
+        print('-----------------------------------')
+        print('-----------------------------------')
+        print('-------------YYYYYYYYYYYY-------------')
+        print('-----------------------------------')
+        print('-----------------------------------')
+        print('-----------------------------------')
+        print(np.array(state_graph))
         return np.array(state_graph)
 
         

@@ -22,7 +22,9 @@ NUM_EPISODES = 2500
 LEARNING_RATE = 0.001
 
 
-GAMMA = 0.99
+GAMMA = 0.9
+ALPHA = .2
+BETA = -1
 
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
@@ -70,8 +72,8 @@ class DQRLAgent:
         self.env = RoutingEnv(algo)
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.SIZE,self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.SIZE,self.env.SIZE,)  
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
 
         # Main model
@@ -448,10 +450,15 @@ class DQRLAgent:
     def update_reward(self):
         print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_table) )
         t1 = time.time()
-        for request in self.last_action_table:
+        R = []
+        requests = list(self.last_action_table.keys())
+        # print('rrrrrrrrrrrrrrrrrrrrrrrrrrr ' , [(r[0].id , r[1].id) for r in requests])
+
+        for r in range(len(requests)-1 , -1 , -1):
+            request = requests[r]
 
             reward = 0
-            for i in range(len(self.last_action_table[request])):
+            for i in range(len(self.last_action_table[request])-1 , -1 , -1):
 
                 (action , timeSlot , current_state , next_state , done) = self.last_action_table[request][i]
                 # current_node_id = current_state[2*self.env.SIZE + 1].index(1)
@@ -460,11 +467,24 @@ class DQRLAgent:
 
                 current_node_id = np.where(current_state[self.env.SIZE + 1] >= 1)[0][0]
                 # print(current_state[2*self.env.SIZE + 1], current_node_id, str(current_node_id))
-                reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
-                if not reward:
-                    continue
+                successReq = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
+
+                if len(R):
+                    f = 0
+                    # if done:
+                    #     f = 1
+
+                    reward = successReq * ALPHA + GAMMA * R[-1]
+                    R.append(reward)
+                
+                else:
+                    reward = successReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - successReq)* BETA
+                    R.append(reward)
+                # if not reward:
+                #     continue
 
                 self.update_replay_memory((current_state, action, reward, next_state, done))
+            # print(R)
         self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)
 
