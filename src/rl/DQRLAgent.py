@@ -31,15 +31,15 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.9  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 80000
+END_EPSILON_DECAYING = 15000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
-DISCOUNT = 0.95
+DISCOUNT = 0.9
 REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 32  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -174,12 +174,12 @@ class DQRLAgent:
         # print([(m[1] , m[2]) for m in minibatch])
 
         # Get current states from minibatch, then query NN model for Q values
-        current_states = np.array([transition[0] for transition in minibatch])
+        current_states = np.array([transition[1] for transition in minibatch])
         current_qs_list = self.model.predict(current_states , verbose=0, batch_size=64)
 
         # Get future states from minibatch, then query NN model for Q values
         # When using target network, query it, otherwise main network should be queried
-        new_current_states = np.array([transition[3] for transition in minibatch])
+        new_current_states = np.array([transition[4] for transition in minibatch])
         future_qs_list = self.target_model.predict(new_current_states , verbose=0, batch_size=64)
 
         X = []
@@ -187,14 +187,14 @@ class DQRLAgent:
         # print(len(minibatch))
 
         # Now we need to enumerate our batches
-        for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
+        for index, (current_node_id , current_state, action, reward, new_current_state, done) in enumerate(minibatch):
             # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
             if not done:
                 # max_future_q = np.max(future_qs_list[index])
 
-                max_future_q = self.env.max_future_q(new_current_state , future_qs_list[index])
+                max_future_q = self.env.max_future_q(current_node_id , new_current_state , future_qs_list[index])
                 
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
@@ -429,7 +429,7 @@ class DQRLAgent:
         
         return current_state, next_node
     
-    def update_action(self , request ,  action  , current_state , path , done):
+    def update_action(self , request ,current_node_id,  action  , current_state , path , done):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -440,14 +440,16 @@ class DQRLAgent:
             next_state = current_state
         done = False
         if not request in self.last_action_table:
-            self.last_action_table[request] = [(action , timeSlot , current_state , next_state , done)]
+            self.last_action_table[request] = [(action , timeSlot ,current_node_id, current_state , next_state , done)]
         else:
-            self.last_action_table[request].append((action , timeSlot , current_state , next_state , done))
+            self.last_action_table[request].append((action , timeSlot ,current_node_id,  current_state , next_state , done))
 
-        if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
-            EPSILON_ -= EPSILON_DECAY_VALUE
+
     
     def update_reward(self):
+        global EPSILON_
+
+        timeSlot = self.env.algo.timeSlot
         print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_table) )
         t1 = time.time()
         R = []
@@ -460,12 +462,12 @@ class DQRLAgent:
             reward = 0
             for i in range(len(self.last_action_table[request])-1 , -1 , -1):
 
-                (action , timeSlot , current_state , next_state , done) = self.last_action_table[request][i]
+                (action , timeSlot ,current_node_id, current_state , next_state , done) = self.last_action_table[request][i]
                 # current_node_id = current_state[2*self.env.SIZE + 1].index(1)
                 # current_node_id = np.where(current_state[2*self.env.SIZE + 1] == 1)[0][0]
                 # print('update_reward for:: ', current_state[self.env.SIZE + 1])
 
-                current_node_id = np.where(current_state[self.env.SIZE + 1] >= 1)[0][0]
+                # current_node_id = np.where(current_state[self.env.SIZE + 1] >= 1)[0][0]
                 # print(current_state[2*self.env.SIZE + 1], current_node_id, str(current_node_id))
                 successReq = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
 
@@ -483,7 +485,7 @@ class DQRLAgent:
                 # if not reward:
                 #     continue
 
-                self.update_replay_memory((current_state, action, reward, next_state, done))
+                self.update_replay_memory((current_node_id , current_state, action, reward, next_state, done))
             # print(R)
         self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)
@@ -494,6 +496,8 @@ class DQRLAgent:
         #     # print(self.last_action_table[pair])
         #     self.last_action_table[request] = list(filter(lambda x: self.env.algo.timeSlot -  x[1] < ENTANGLEMENT_LIFETIME , self.last_action_table[pair]))
         self.last_action_table = {}
+        if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
+            EPSILON_ -= EPSILON_DECAY_VALUE
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
     def getOrderedRequests(self , paths):
         req_q = {req: 0 for req in paths}

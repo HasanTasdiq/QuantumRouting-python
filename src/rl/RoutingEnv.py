@@ -710,13 +710,13 @@ class RoutingEnv(Env):
 
 
         # print(state_graph)
-        print('-----------------------------------')
-        print('-----------------------------------')
-        print('-------------YYYYYYYYYYYY-------------')
-        print('-----------------------------------')
-        print('-----------------------------------')
-        print('-----------------------------------')
-        print(np.array(state_graph))
+        # print('-----------------------------------')
+        # print('-----------------------------------')
+        # print('-------------YYYYYYYYYYYY-------------')
+        # print('-----------------------------------')
+        # print('-----------------------------------')
+        # print('-----------------------------------')
+        # print(np.array(state_graph))
         return np.array(state_graph)
 
         
@@ -877,14 +877,14 @@ class RoutingEnv(Env):
     
     def neighbor_qs(self , current_node_id , current_state , path , qs):
         r = random.random()
-        if  r < 0.01:
-            print('==================')
-            print('==================')
-            print(r)
-            print('==================')
-            print('==================')
+        # if  r < 0.01:
+        #     print('==================')
+        #     print('==================')
+        #     print(r)
+        #     print('==================')
+        #     print('==================')
             
-            print(qs)
+            # print(qs)
         for q in qs:
             if math.isnan(q):
                 print('naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaan')
@@ -894,7 +894,12 @@ class RoutingEnv(Env):
         # print('==================')
         # print('==================')
 
-        neighbor_list = current_state[current_node_id]
+        # neighbor_list = current_state[current_node_id]
+        neighbor_list = [0 for _ in range(len(qs))]
+        current_node = self.algo.topo.nodes[current_node_id]
+        neighbors = [link.theOtherEndOf(current_node).id for link in current_node.links if link.isEntangled() and not link.taken]
+        for n in neighbors:
+            neighbor_list[n] = 1
         # path = current_state[2*self.SIZE + 3]
         state_path = [0 for i in range(self.SIZE)]
         for i in range(len(path)):
@@ -919,7 +924,12 @@ class RoutingEnv(Env):
         r = random.random()
 
 
-        neighbor_list = current_state[current_node_id]
+        # neighbor_list = current_state[current_node_id]
+        neighbor_list = [0 for _ in range(len(qs))]
+        current_node = self.algo.topo.nodes[current_node_id]
+        neighbors = [link.theOtherEndOf(current_node).id for link in current_node.links if link.isEntangled() and not link.taken]
+        for n in neighbors:
+            neighbor_list[n] = 1
         dist = current_state[self.SIZE + 2]
         neighbor_dist = {}
         for i in range(len(neighbor_list)):
@@ -935,7 +945,12 @@ class RoutingEnv(Env):
 
     
     def rand_neighbor(self , current_node_id , current_state, path):
-        neighbor_list = current_state[current_node_id]
+        # neighbor_list = current_state[current_node_id]
+        neighbor_list = [0 for _ in range(self.SIZE)]
+        current_node = self.algo.topo.nodes[current_node_id]
+        neighbors = [link.theOtherEndOf(current_node).id for link in current_node.links if link.isEntangled() and not link.taken]
+        for n in neighbors:
+            neighbor_list[n] = 1
         # path = current_state[2*self.SIZE + 3]
         state_path = [0 for i in range(self.SIZE)]
         for i in range(len(path)):
@@ -952,9 +967,9 @@ class RoutingEnv(Env):
         return random.choice(ret)
         # return np.random.randint(0, self.SIZE)
     
-    def max_future_q(self , current_state , qs):
+    def max_future_q(self ,current_node_id ,  current_state , qs):
         # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
-        current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
+        # current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
 
         return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
     # def max_future_q(self , qs):

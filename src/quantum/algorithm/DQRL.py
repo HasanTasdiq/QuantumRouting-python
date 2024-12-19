@@ -487,6 +487,7 @@ class QuRA_DQRL(AlgorithmBase):
 
                 while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                     
+                    current_node_id = current_node.id
                     next_node = targetPath[i]['current_node']
                     next_state = targetPath[(i+1)%len(targetPath)]['current_state']
                     next_node_id = next_node.id
@@ -578,7 +579,7 @@ class QuRA_DQRL(AlgorithmBase):
                         success = True
                         good_to_search = False
                     
-                    self.routingAgent.update_action( request ,  next_node_id  , current_state , path , success)
+                    self.routingAgent.update_action( request ,current_node.id ,   next_node_id  , current_state , path , success)
 
                         
                     prev_node = current_node
@@ -875,7 +876,7 @@ class QuRA_DQRL(AlgorithmBase):
                     success = True
                     good_to_search = False
                     
-                self.routingAgent.update_action( request ,  next_node_id  , current_state , path , success)
+                self.routingAgent.update_action( request ,current_node.id,  next_node_id  , current_state , path , success)
 
                         
                 prev_node = current_node
@@ -1144,7 +1145,7 @@ class QuRA_DQRL(AlgorithmBase):
                         success = True
                         good_to_search = False
                     
-                    self.routingAgent.update_action( request ,  next_node_id  , current_state , path , success)
+                    self.routingAgent.update_action( request ,current_node.id,  next_node_id  , current_state , path , success)
 
                         
                     prev_node = current_node
@@ -1490,7 +1491,7 @@ class QuRA_DQRL(AlgorithmBase):
                 selectedNodes.append(next_node)
                 selectedEdges.append((current_node, next_node))
                 path.append(next_node.id)
-                self.routingAgent.update_action( request ,  next_node_id  , current_state , path , False)
+                self.routingAgent.update_action( request , current_node.id,  next_node_id  , current_state , path , False)
                 
                 if len(prev_links) and next_node == request[1] and good_to_search:
                     success = True

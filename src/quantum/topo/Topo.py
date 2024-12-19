@@ -157,8 +157,8 @@ class Topo:
             # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
             # self.nodes.append(Node(_node, _positions[_node], random.random()*11+15 , self))  # 20-40
             # self.nodes.append(Node(_node, _positions[_node], random.random()*6+4 , self)) 
-            # self.nodes.append(Node(_node, _positions[_node], 4 , self))  # 10~14
-            self.nodes.append(Node(_node, _positions[_node], 8 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], 4 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], 8 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -1256,7 +1256,7 @@ class Topo:
 
         ret = [(7, 0), (24, 6), (17, 7), (12, 16), (11, 18), (11, 14), (8, 21), (17, 19), (23, 0), (12, 23)]
 
-        ret = [(0,2) , (1,3)]
+        # ret = [(0,2) , (1,3)]
 
         # ret = [(38, 37), (48, 53), (59, 9), (25, 52), (29, 5), (30, 28), (31, 50), (48, 26)]
         # ret = [(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25),(2 , 25), (2,25)]
