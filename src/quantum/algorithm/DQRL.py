@@ -1241,13 +1241,13 @@ class QuRA_DQRL(AlgorithmBase):
                     # print(key)
                     pathlen = len(path)
                     try:
-                        self.topo.reward_routing[key] += successReq
+                        self.topo.reward_routing[key] += successReq/pathlen
                         print('=====self.topo.reward_routing[key] += successReq====' , key)
 
                     except:
                         # print('=====self.topo.reward_routing[key] = successReq====...' , key)
 
-                        self.topo.reward_routing[key] = successReq
+                        self.topo.reward_routing[key] = successReq/pathlen
                         # print(key , '  ==  ' , self.topo.reward_routing[key])
 
                 selectedEdgesDict[(src,dst)] = selectedEdges
