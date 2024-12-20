@@ -1099,21 +1099,21 @@ class QuRA_DQRL(AlgorithmBase):
                         # print((src.id,dst.id) , '=FAILED= hopcount exceeds')
                         
                     
-                    if good_to_search:
-                        # dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] + 1
-                        dist = current_state[self.routingAgent.env.SIZE +2][next_node_id] + 1
-                        if not dist:
-                            dist = 1
-                        try:
-                            self.topo.reward_routing[key] += self.topo.positive_reward / dist
-                        except:
-                            self.topo.reward_routing[key] = self.topo.positive_reward / dist
-                    else:
-                        if failed_no_ent or failed_loop:
-                            try:
-                                self.topo.reward_routing[key] += self.topo.negative_reward
-                            except:
-                                self.topo.reward_routing[key] = self.topo.negative_reward
+                    # if good_to_search:
+                    #     # dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] + 1
+                    #     dist = current_state[self.routingAgent.env.SIZE +2][next_node_id] + 1
+                    #     if not dist:
+                    #         dist = 1
+                    #     try:
+                    #         self.topo.reward_routing[key] += self.topo.positive_reward / dist
+                    #     except:
+                    #         self.topo.reward_routing[key] = self.topo.positive_reward / dist
+                    # else:
+                    #     if failed_no_ent or failed_loop:
+                    #         try:
+                    #             self.topo.reward_routing[key] += self.topo.negative_reward
+                    #         except:
+                    #             self.topo.reward_routing[key] = self.topo.negative_reward
                         
                     if prev_node is not None:
                         if good_to_search:
@@ -1239,9 +1239,14 @@ class QuRA_DQRL(AlgorithmBase):
                 for (current_node, next_node) in selectedEdges:
                     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
                     # print(key)
+                    pathlen = len(path)
                     try:
                         self.topo.reward_routing[key] += successReq
+                        print('=====self.topo.reward_routing[key] += successReq====' , key)
+
                     except:
+                        # print('=====self.topo.reward_routing[key] = successReq====...' , key)
+
                         self.topo.reward_routing[key] = successReq
                         # print(key , '  ==  ' , self.topo.reward_routing[key])
 
@@ -1249,24 +1254,24 @@ class QuRA_DQRL(AlgorithmBase):
                 
                 for link in usedLinks:
                     link.clearPhase4Swap()
-        for req in selectedEdgesDict:
-            selectedEdges = selectedEdgesDict[req]
-            for (current_node, next_node) in selectedEdges:
-                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+        # for req in selectedEdgesDict:
+        #     selectedEdges = selectedEdgesDict[req]
+        #     for (current_node, next_node) in selectedEdges:
+        #         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
-                try:
-                    self.topo.reward_routing[key] += successReq * 0.1
-                except:
-                    self.topo.reward_routing[key] = successReq * 0.1
+        #         try:
+        #             self.topo.reward_routing[key] += successReq
+        #         except:
+        #             self.topo.reward_routing[key] = successReq 
 
-        for request , current_node , next_node in conflicts:
-            neg_weight = 0.05
-            key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+        # for request , current_node , next_node in conflicts:
+        #     neg_weight = 0.05
+        #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
-            try:
-                self.topo.reward_routing[key] += self.topo.negative_reward * neg_weight
-            except:
-                self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
+        #     try:
+        #         self.topo.reward_routing[key] += self.topo.negative_reward * neg_weight
+        #     except:
+        #         self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
 
         self.result.usedLinks += len(usedLinks)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request before extra:', successReq)

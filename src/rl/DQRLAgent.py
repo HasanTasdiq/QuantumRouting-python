@@ -31,13 +31,13 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 0.9  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 15000
+END_EPSILON_DECAYING = 25000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.9
 REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -200,7 +200,13 @@ class DQRLAgent:
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
                 new_q = reward + DISCOUNT * max_future_q
             else:
-                new_q = reward
+                # new_q = reward
+
+                max_future_q = self.env.max_future_q(current_node_id , new_current_state , future_qs_list[index])
+                
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
+                new_q = reward + DISCOUNT * max_future_q
             # print(new_q)
             # print(current_state)
 
