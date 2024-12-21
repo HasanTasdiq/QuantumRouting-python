@@ -1268,7 +1268,7 @@ class QuRA_DQRL(AlgorithmBase):
                         print('=====self.topo.reward_routing[key] += successReq====' , key)
 
                     except:
-                        print('=====self.topo.reward_routing[key] = successReq====...' , key , reward)
+                        # print('=====self.topo.reward_routing[key] = successReq====...' , key , reward)
 
                         self.topo.reward_routing[key] = [reward , successReq]
                         # print(key , '  ==  ' , self.topo.reward_routing[key])
