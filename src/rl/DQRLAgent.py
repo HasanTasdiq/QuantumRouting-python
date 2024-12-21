@@ -211,7 +211,7 @@ class DQRLAgent:
             qval = current_qs_list[index][action]
                 
             # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-            print('+++++++++++++++lr+++++++++++++ ' , reward , max_future_q, qval)
+            # print('+++++++++++++++lr+++++++++++++ ' , reward , max_future_q, qval)
             new_q = (1-LEARNING_RATE)*qval + LEARNING_RATE *(reward + DISCOUNT * max_future_q)
             # new_q = reward + DISCOUNT * max_future_q
             # print(new_q)
