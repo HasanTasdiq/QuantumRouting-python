@@ -1050,12 +1050,15 @@ class QuRA_DQRL(AlgorithmBase):
                 usedLinks = []
                 selectedNodes = []
                 selectedEdges = []
+                selectedlinks = []
                 path = [current_node.id]
                 failed_no_ent = False
                 failed_loop = False
                 failed_swap = False
                 fail_hopcount = False
                 targetPath = self.findPathForDQRL((src,dst))
+                if not len(targetPath):
+                    continue
                 # targetPath = []
 
                 while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
@@ -1115,26 +1118,29 @@ class QuRA_DQRL(AlgorithmBase):
                     #         except:
                     #             self.topo.reward_routing[key] = self.topo.negative_reward
                         
-                    if prev_node is not None:
-                        if good_to_search:
-                            swapCount = 0
-                            swappedlinks = []
-                            for link1,link2 in zip(prev_links , ent_links):
-                                swapped = current_node.attemptSwapping(link1, link2)
-                                if swapped:
-                                    swappedlinks.append(link2)
-                                usedLinks.append(link2)
-                            if len(swappedlinks):
-                                prev_links = swappedlinks
-                            else:
-                                good_to_search = False
-                                failed_swap = True
-                                # print((src.id,dst.id) , '=FAILED= swap fails')
+                    # if prev_node is not None:
+                    #     if good_to_search:
+                    #         swapCount = 0
+                    #         swappedlinks = []
+                    #         for link1,link2 in zip(prev_links , ent_links):
+                    #             swapped = current_node.attemptSwapping(link1, link2)
+                    #             if swapped:
+                    #                 swappedlinks.append(link2)
+                    #             usedLinks.append(link2)
+                    #         if len(swappedlinks):
+                    #             prev_links = swappedlinks
+                    #         else:
+                    #             good_to_search = False
+                    #             failed_swap = True
+                    #             # print((src.id,dst.id) , '=FAILED= swap fails')
 
                                 
-                    else:
-                        prev_links = ent_links
-                        usedLinks.extend(prev_links)
+                    # else:
+                    #     prev_links = ent_links
+                    #     usedLinks.extend(prev_links)
+                    prev_links = ent_links
+                    if good_to_search:
+                        selectedlinks.append(ent_links[0])
                     
 
                     selectedNodes.append(next_node)
@@ -1158,9 +1164,24 @@ class QuRA_DQRL(AlgorithmBase):
                 #     self.topo.pair_dict[(s,d)] += 1
                 # except:
                 #     self.topo.pair_dict[(s,d)] = 1
-
                 if success:
-                    successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
+                    print('going to swap for ' , (src.id , dst.id ))
+                    for i in range(len(selectedlinks)-1):
+                        l1 = selectedlinks[i]
+                        l2 = selectedlinks[i+1]
+                        n1 = l1.n1
+                        n2 = l1.n2
+                        n = n1 if l2.contains(n1) else n2
+                        swapped = n.attemptSwapping(l1,l2)
+
+                        usedLinks.append(l1)
+                        usedLinks.append(l2)
+                        if not swapped:
+                            failed_swap = True
+                            break
+
+                successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
+                if success and len(successPath):
 
                     for path_ in successPath:
                         for node, link in path_:
@@ -1178,7 +1199,7 @@ class QuRA_DQRL(AlgorithmBase):
 
 
                         
-                    print("!!!!!!!success!!!!!!!" , src.id , dst.id , [n for n in path])
+                    print("====success====" , src.id , dst.id , [n for n in path])
                     print('shortest path ----- ' , [n.id for n in targetPath])
                     
 
@@ -1240,14 +1261,16 @@ class QuRA_DQRL(AlgorithmBase):
                     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
                     # print(key)
                     pathlen = len(path)
+                    # reward = successReq/pathlen
+                    reward = 1 if len(successPath) else 0
                     try:
-                        self.topo.reward_routing[key] += successReq/pathlen
+                        self.topo.reward_routing[key] += [reward , successReq]
                         print('=====self.topo.reward_routing[key] += successReq====' , key)
 
                     except:
-                        # print('=====self.topo.reward_routing[key] = successReq====...' , key)
+                        print('=====self.topo.reward_routing[key] = successReq====...' , key , reward)
 
-                        self.topo.reward_routing[key] = successReq/pathlen
+                        self.topo.reward_routing[key] = [reward , successReq]
                         # print(key , '  ==  ' , self.topo.reward_routing[key])
 
                 selectedEdgesDict[(src,dst)] = selectedEdges

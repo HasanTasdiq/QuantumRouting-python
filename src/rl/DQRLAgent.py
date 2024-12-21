@@ -19,25 +19,25 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.1
 
 
-GAMMA = 0.9
-ALPHA = .2
+GAMMA = 0.7
+ALPHA = .3
 BETA = -1
 
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 0.9  # not a constant, qoing to be decayed
+EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 25000
+END_EPSILON_DECAYING = 40000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.9
 REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+MIN_REPLAY_MEMORY_SIZE = 6000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 MODEL_NAME = '2x256'
@@ -187,26 +187,33 @@ class DQRLAgent:
         # print(len(minibatch))
 
         # Now we need to enumerate our batches
-        for index, (current_node_id , current_state, action, reward, new_current_state, done) in enumerate(minibatch):
+        for index, (current_node_id , current_state, action, reward, new_current_state,neighbor_list ,  done) in enumerate(minibatch):
             # print('---action-- ' , action)
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
-            if not done:
-                # max_future_q = np.max(future_qs_list[index])
+            # if not done:
+            #     # max_future_q = np.max(future_qs_list[index])
 
-                max_future_q = self.env.max_future_q(current_node_id , new_current_state , future_qs_list[index])
+            #     max_future_q = self.env.max_future_q(current_node_id , new_current_state , future_qs_list[index])
                 
-                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
-                new_q = reward + DISCOUNT * max_future_q
-            else:
-                # new_q = reward
+            #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+            #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
+            #     new_q = reward + DISCOUNT * max_future_q
+            # else:
+            #     # new_q = reward
 
-                max_future_q = self.env.max_future_q(current_node_id , new_current_state , future_qs_list[index])
+            #     max_future_q = self.env.max_future_q(current_node_id , new_current_state , future_qs_list[index])
                 
-                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
-                new_q = reward + DISCOUNT * max_future_q
+            #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+            #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
+            #     new_q = reward + DISCOUNT * max_future_q
+            max_future_q = self.env.max_future_q(current_node_id , new_current_state ,neighbor_list ,  future_qs_list[index])
+            qval = current_qs_list[index][action]
+                
+            # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+            print('+++++++++++++++lr+++++++++++++ ' , reward , max_future_q, qval)
+            new_q = (1-LEARNING_RATE)*qval + LEARNING_RATE *(reward + DISCOUNT * max_future_q)
+            # new_q = reward + DISCOUNT * max_future_q
             # print(new_q)
             # print(current_state)
 
@@ -445,10 +452,11 @@ class DQRLAgent:
         if next_state is None:
             next_state = current_state
         done = False
+        neighbor_list = self.env.get_neighbors(action) #action is the next node id
         if not request in self.last_action_table:
-            self.last_action_table[request] = [(action , timeSlot ,current_node_id, current_state , next_state , done)]
+            self.last_action_table[request] = [(action , timeSlot ,current_node_id, current_state , next_state , neighbor_list ,  done)]
         else:
-            self.last_action_table[request].append((action , timeSlot ,current_node_id,  current_state , next_state , done))
+            self.last_action_table[request].append((action , timeSlot ,current_node_id,  current_state , next_state ,neighbor_list ,  done))
 
 
     
@@ -468,30 +476,35 @@ class DQRLAgent:
             reward = 0
             for i in range(len(self.last_action_table[request])-1 , -1 , -1):
 
-                (action , timeSlot ,current_node_id, current_state , next_state , done) = self.last_action_table[request][i]
+                (action , timeSlot ,current_node_id, current_state , next_state ,neighbor_list ,  done) = self.last_action_table[request][i]
                 # current_node_id = current_state[2*self.env.SIZE + 1].index(1)
                 # current_node_id = np.where(current_state[2*self.env.SIZE + 1] == 1)[0][0]
                 # print('update_reward for:: ', current_state[self.env.SIZE + 1])
 
                 # current_node_id = np.where(current_state[self.env.SIZE + 1] >= 1)[0][0]
                 # print(current_state[2*self.env.SIZE + 1], current_node_id, str(current_node_id))
-                successReq = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
+                success , numsuccessReq = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
+                # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
 
-                if len(R):
-                    f = 0
-                    # if done:
-                    #     f = 1
-
-                    reward = successReq * ALPHA + GAMMA * R[-1]
-                    R.append(reward)
-                
+                if not success:
+                    reward = -0.1
                 else:
-                    reward = successReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - successReq)* BETA
-                    R.append(reward)
+                    if len(R):
+                        f = 0
+                        # if done:
+                        #     f = 1
+
+                        reward = numsuccessReq * ALPHA + GAMMA * R[-1]
+                        R.append(reward)
+                    
+                    else:
+                        print('numsuccessReq ' , numsuccessReq)
+                        reward = numsuccessReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - numsuccessReq)* BETA
+                        R.append(reward)
                 # if not reward:
                 #     continue
 
-                self.update_replay_memory((current_node_id , current_state, action, reward, next_state, done))
+                self.update_replay_memory((current_node_id , current_state, action, reward, next_state,neighbor_list,  done))
             # print(R)
         self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)

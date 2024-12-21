@@ -119,7 +119,7 @@ class RoutingEnv(Env):
         reward = 0
         # print('------------find_reward_routing---------' , current_node_id)
         key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node_id) + '_' + str(action)
-        reward = self.algo.topo.reward_routing[key]
+        reward  = self.algo.topo.reward_routing[key]
 
         # if (request,current_node_id , action) in self.algo.topo.reward_routing:
         #     print('------------find_reward_routing---------')
@@ -874,8 +874,15 @@ class RoutingEnv(Env):
     #             ret.append(0)
         
     #     return ret
+    def get_neighbors(self , current_node_id):
+        neighbor_list = [0 for _ in range(self.SIZE)]
+        current_node = self.algo.topo.nodes[current_node_id]
+        neighbors = [link.theOtherEndOf(current_node).id for link in current_node.links if link.isEntangled() and not link.taken]
+        for n in neighbors:
+            neighbor_list[n] = 1
+        return neighbor_list
     
-    def neighbor_qs(self , current_node_id , current_state , path , qs):
+    def neighbor_qs(self , current_node_id , current_state , path , qs , neighbor_list = []):
         r = random.random()
         # if  r < 0.01:
         #     print('==================')
@@ -895,11 +902,13 @@ class RoutingEnv(Env):
         # print('==================')
 
         # neighbor_list = current_state[current_node_id]
-        neighbor_list = [0 for _ in range(len(qs))]
-        current_node = self.algo.topo.nodes[current_node_id]
-        neighbors = [link.theOtherEndOf(current_node).id for link in current_node.links if link.isEntangled() and not link.taken]
-        for n in neighbors:
-            neighbor_list[n] = 1
+        if not len(neighbor_list):
+            neighbor_list = self.get_neighbors(current_node_id)
+            # neighbor_list = [0 for _ in range(len(qs))]
+            # current_node = self.algo.topo.nodes[current_node_id]
+            # neighbors = [link.theOtherEndOf(current_node).id for link in current_node.links if link.isEntangled() and not link.taken]
+            # for n in neighbors:
+            #     neighbor_list[n] = 1
         # path = current_state[2*self.SIZE + 3]
         state_path = [0 for i in range(self.SIZE)]
         for i in range(len(path)):
@@ -967,11 +976,11 @@ class RoutingEnv(Env):
         return random.choice(ret)
         # return np.random.randint(0, self.SIZE)
     
-    def max_future_q(self ,current_node_id ,  current_state , qs):
+    def max_future_q(self ,current_node_id ,  current_state ,neighbor_list, qs):
         # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
         # current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
 
-        return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
+        return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs , neighbor_list=neighbor_list))
     # def max_future_q(self , qs):
     #     # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
     #     current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
