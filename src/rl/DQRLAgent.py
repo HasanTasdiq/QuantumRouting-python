@@ -31,7 +31,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 40000
+END_EPSILON_DECAYING = 45000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -487,7 +487,7 @@ class DQRLAgent:
                 # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
 
                 if not success:
-                    reward = -0.1
+                    reward = -1
                 else:
                     if len(R):
                         f = 0
