@@ -31,7 +31,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 45000
+END_EPSILON_DECAYING = 1500
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -211,7 +211,7 @@ class DQRLAgent:
             qval = current_qs_list[index][action]
                 
             # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-            print('+++++++++++++++lr+++++++++++++ ' , reward , max_future_q, qval)
+            # print('+++++++++++++++lr+++++++++++++ ' , reward , max_future_q, qval)
             new_q = (1-LEARNING_RATE)*qval + LEARNING_RATE *(reward + DISCOUNT * max_future_q)
             # new_q = reward + DISCOUNT * max_future_q
             # print(new_q)
