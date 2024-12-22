@@ -19,11 +19,11 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.5
+LEARNING_RATE = 0.1
 
 
-GAMMA = 0.7
-ALPHA = .3
+GAMMA = 0.5
+ALPHA = .5
 BETA = -1
 
 ENTANGLEMENT_LIFETIME = 10
