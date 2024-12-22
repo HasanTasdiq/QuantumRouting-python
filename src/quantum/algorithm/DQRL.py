@@ -208,7 +208,8 @@ class QuRA_DQRL(AlgorithmBase):
         # print('[REPS] p4 end') 
         self.printResult()
         # self.entAgent.update_reward()
-        self.routingAgent.update_reward()
+        if not 'greedy_only' in self.name:
+            self.routingAgent.update_reward()
         return self.result
     
     def get_all_paths(self):
@@ -1553,13 +1554,13 @@ class QuRA_DQRL(AlgorithmBase):
                         #         self.topo.reward_routing[(request , node)] = self.topo.positive_reward
                         #                     self.topo.reward_ent[edge] = self.topo.negative_reward
 
-                for (current_node, next_node) in selectedEdges:
-                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
-                    # print(key)
-                    try:
-                        self.topo.reward_routing[key] += self.topo.positive_reward*2
-                    except:
-                        self.topo.reward_routing[key] = self.topo.positive_reward*2
+                # for (current_node, next_node) in selectedEdges:
+                #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                #     # print(key)
+                #     try:
+                #         self.topo.reward_routing[key] += self.topo.positive_reward*2
+                #     except:
+                #         self.topo.reward_routing[key] = self.topo.positive_reward*2
                 # print("!!!!!!!success!!!!!!!")
 
                 # print([(r[0].id, r[1].id) for r in self.requests])
@@ -1582,18 +1583,18 @@ class QuRA_DQRL(AlgorithmBase):
                             self.topo.reward_ent[edge] += self.topo.negative_reward
                         except:
                             self.topo.reward_ent[edge] = self.topo.negative_reward
-                for (current_node, next_node) in selectedEdges:
-                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                # for (current_node, next_node) in selectedEdges:
+                #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
-                    # try:
-                    #     self.topo.reward_routing[key] += self.topo.negative_reward*20
-                    # except:
-                    #     self.topo.reward_routing[key] = self.topo.negative_reward*20
+                #     # try:
+                #     #     self.topo.reward_routing[key] += self.topo.negative_reward*20
+                #     # except:
+                #     #     self.topo.reward_routing[key] = self.topo.negative_reward*20
 
-                    try:
-                        self.topo.reward_routing[key] += 0
-                    except:
-                        self.topo.reward_routing[key] = 0
+                #     try:
+                #         self.topo.reward_routing[key] += 0
+                #     except:
+                #         self.topo.reward_routing[key] = 0
             
             for link in usedLinks:
                 link.clearPhase4Swap()
