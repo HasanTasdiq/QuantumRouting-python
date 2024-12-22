@@ -488,7 +488,7 @@ class DQRLAgent:
                 # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
 
                 if not success:
-                    reward = -1
+                    reward = -2
                 else:
                     if len(R):
                         f = 0

@@ -479,6 +479,9 @@ if __name__ == '__main__':
         filename = "Timeslot" + "_" + "#successRequest" + ".txt"
         sampleRounds = [i for i in range(0 , ttime , step)]
         print(filename)
+        output += filename + '\n'
+
+
         F = open(targetFilePath + filename, "w")
         for roundIndex in sampleRounds:
             Xaxis = str(roundIndex)
@@ -495,6 +498,8 @@ if __name__ == '__main__':
             # print('Yaxis ' , roundIndex , Yaxis1)
             Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
             print(Xaxis + Yaxis)
+            output += Xaxis + Yaxis + '\n'
+
             F.write(Xaxis + Yaxis)
         F.close()
 
