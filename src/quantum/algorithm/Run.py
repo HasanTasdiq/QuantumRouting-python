@@ -58,8 +58,8 @@ from DQNAgentDist import DQNAgentDist
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-
-ttime = 3000
+run = "lr .5 new reward "
+ttime = 25000
 ttime2 = 500
 step = 500
 times = 1
@@ -237,7 +237,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
    
     print('======================before append', Topo.print_memory_usage())
@@ -519,6 +519,7 @@ if __name__ == '__main__':
             F.close()
 
     t2 = time.time()
+    output += run
     print(output)
     print('-----EXIT----- total time taken: ' , (t2-t1)/3600 , ' hours')
 

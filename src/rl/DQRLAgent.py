@@ -19,7 +19,7 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.5
 
 
 GAMMA = 0.7
@@ -31,7 +31,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 1500
+END_EPSILON_DECAYING = 20000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -474,6 +474,7 @@ class DQRLAgent:
             request = requests[r]
 
             reward = 0
+            success = 0
             for i in range(len(self.last_action_table[request])-1 , -1 , -1):
 
                 (action , timeSlot ,current_node_id, current_state , next_state ,neighbor_list ,  done) = self.last_action_table[request][i]
@@ -495,16 +496,19 @@ class DQRLAgent:
                         #     f = 1
 
                         reward = numsuccessReq * ALPHA + GAMMA * R[-1]
-                        R.append(reward)
+                        # R.append(reward)
                     
                     else:
                         print('numsuccessReq ' , numsuccessReq)
                         reward = numsuccessReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - numsuccessReq)* BETA
-                        R.append(reward)
+                        # R.append(reward)
                 # if not reward:
                 #     continue
 
                 self.update_replay_memory((current_node_id , current_state, action, reward, next_state,neighbor_list,  done))
+            if success:
+                R.append(reward)
+            
             # print(R)
         self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)
