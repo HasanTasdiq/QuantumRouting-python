@@ -22,8 +22,8 @@ NUM_EPISODES = 2500
 LEARNING_RATE = 0.1
 
 
-GAMMA = 0.5
-ALPHA = .5
+GAMMA = 0.7
+ALPHA = .3
 BETA = -1
 
 ENTANGLEMENT_LIFETIME = 10
@@ -487,7 +487,7 @@ class DQRLAgent:
                 # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
 
                 if not success:
-                    reward = -1
+                    reward = -2
                 else:
                     if len(R):
                         f = 0
