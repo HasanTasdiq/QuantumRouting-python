@@ -19,7 +19,7 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.5
 
 
 GAMMA = 0.7
