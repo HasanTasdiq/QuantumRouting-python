@@ -30,6 +30,10 @@ class RoutingEnv(Env):
         self.graph = []
         self.V = self.SIZE
         self.embedding_layer = Embedding(input_dim=100, output_dim=1)
+        self.attention_layer = Attention()
+
+        self.skip = False
+
 
         
 
@@ -223,10 +227,9 @@ class RoutingEnv(Env):
         query = key = value = input_vector  # Shape: (batch_size=1, seq_length=1, embedding_dim=6)
 
         # Initialize the Attention layer
-        attention_layer = Attention()
 
         # Compute attention
-        attention_output = attention_layer([query, key, value])
+        attention_output = self.attention_layer([query, key, value])
 
         # print('----------------------')
         # print('----------------------')
@@ -648,7 +651,11 @@ class RoutingEnv(Env):
 
 
         # print('555555555555555')
-        state_cn[current_node_id] = 1
+        try:
+            state_cn[current_node_id] = 1
+        except:
+            p = 0 #nothing
+
         # print(state_cn)
 
         state_cn = self.get_emb_attention(state_cn)
@@ -883,6 +890,8 @@ class RoutingEnv(Env):
         return neighbor_list
     
     def neighbor_qs(self , current_node_id , current_state , path , qs , neighbor_list = []):
+        if current_node_id == self.SIZE:
+            return qs
         r = random.random()
         # if  r < 0.01:
         #     print('==================')
@@ -925,6 +934,10 @@ class RoutingEnv(Env):
                 ret.append(min_q)
         
         ret[current_node_id] = min_q
+
+        if self.skip:
+            ret.append(qs[-1])
+
         # print(ret)
         
         return ret
@@ -934,7 +947,7 @@ class RoutingEnv(Env):
 
 
         # neighbor_list = current_state[current_node_id]
-        neighbor_list = [0 for _ in range(len(qs))]
+        neighbor_list = [0 for _ in range(self.SIZE)]
         current_node = self.algo.topo.nodes[current_node_id]
         neighbors = [link.theOtherEndOf(current_node).id for link in current_node.links if link.isEntangled() and not link.taken]
         for n in neighbors:
@@ -972,7 +985,11 @@ class RoutingEnv(Env):
             if n > 0 and state_path[i] == 0 :
                 ret.append(i)
         if not len(ret):
+            if self.skip:
+                return np.random.randint(0, self.SIZE+1)
             return np.random.randint(0, self.SIZE)
+        if len(path) == 1 and self.skip:
+            ret.append(self.SIZE)
         return random.choice(ret)
         # return np.random.randint(0, self.SIZE)
     

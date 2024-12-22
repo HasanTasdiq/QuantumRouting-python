@@ -19,7 +19,7 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.5
+LEARNING_RATE = 0.1
 
 
 GAMMA = 0.7
@@ -142,7 +142,8 @@ class DQRLAgent:
         # model.add(Conv2D(32, 3, activation="relu"))
         # model.add(Flatten)
 
-        model.add(Dense(self.env.SIZE, activation='linear')) 
+        # model.add(Dense(self.env.SIZE + 1, activation='linear')) 
+        model.add(Dense(self.env.SIZE , activation='linear')) 
         print(model.summary)
         # print('------------------self.model.get_weights()-------------------')
         # print(model.get_weights())
@@ -452,7 +453,10 @@ class DQRLAgent:
         if next_state is None:
             next_state = current_state
         done = False
-        neighbor_list = self.env.get_neighbors(action) #action is the next node id
+        if action == self.env.SIZE:
+            neighbor_list = []
+        else:
+            neighbor_list = self.env.get_neighbors(action) #action is the next node id
         if not request in self.last_action_table:
             self.last_action_table[request] = [(action , timeSlot ,current_node_id, current_state , next_state , neighbor_list ,  done)]
         else:
@@ -469,7 +473,7 @@ class DQRLAgent:
         R = []
         requests = list(self.last_action_table.keys())
         # print('rrrrrrrrrrrrrrrrrrrrrrrrrrr ' , [(r[0].id , r[1].id) for r in requests])
-
+        finalSuccess = 0
         for r in range(len(requests)-1 , -1 , -1):
             request = requests[r]
 
@@ -490,15 +494,24 @@ class DQRLAgent:
                 if not success:
                     reward = -2
                 else:
+
                     if len(R):
                         f = 0
                         # if done:
                         #     f = 1
 
                         reward = numsuccessReq * ALPHA + GAMMA * R[-1]
+
+                        if action == self.env.SIZE:
+                            reward = R[0]
+                            print('-------------------------skip--------------------------------')
+                            print('-------------------------skip--------------------------------')
+                            print('-------------------------skip--------------------------------')
+
                         # R.append(reward)
                     
                     else:
+                        finalSuccess = numsuccessReq
                         print('numsuccessReq ' , numsuccessReq)
                         reward = numsuccessReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - numsuccessReq)* BETA
                         # R.append(reward)

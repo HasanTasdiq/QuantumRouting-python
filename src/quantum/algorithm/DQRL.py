@@ -1058,6 +1058,7 @@ class QuRA_DQRL(AlgorithmBase):
                 failed_swap = False
                 fail_hopcount = False
                 targetPath = self.findPathForDQRL((src,dst))
+                skipRequest = False
                 if not len(targetPath):
                     continue
                 # targetPath = []
@@ -1066,6 +1067,11 @@ class QuRA_DQRL(AlgorithmBase):
                     
                     current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
                     # print('start for:: ', current_state)
+                    if next_node_id == len(self.topo.nodes):
+                        skipRequest = True
+                        self.routingAgent.update_action( request ,request[0].id,  next_node_id  , current_state , path , success)
+
+                        break
                     
                     next_node = self.topo.nodes[next_node_id]
                     ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
@@ -1258,6 +1264,14 @@ class QuRA_DQRL(AlgorithmBase):
                     #         self.topo.reward_routing[key] = self.topo.negative_reward * neg_weight
                         
                         # print(key , '  ==  ' , self.topo.reward_routing[key])
+                if skipRequest:
+                    key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(request[0].id) + '_' + str(len(self.topo.nodes))
+                    print(key)
+                    reward = 1
+                    self.topo.reward_routing[key] = [reward , successReq]
+
+
+
                 for (current_node, next_node) in selectedEdges:
                     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
                     # print(key)
