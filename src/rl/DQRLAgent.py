@@ -31,7 +31,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 20000
+END_EPSILON_DECAYING = 1500
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -208,15 +208,23 @@ class DQRLAgent:
             #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
             #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
             #     new_q = reward + DISCOUNT * max_future_q
-            max_future_q = self.env.max_future_q(current_node_id , new_current_state ,neighbor_list ,  future_qs_list[index])
-            qval = current_qs_list[index][action]
-                
-            # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
-            # print('+++++++++++++++lr+++++++++++++ ' , reward , max_future_q, qval)
-            new_q = (1-LEARNING_RATE)*qval + LEARNING_RATE *(reward + DISCOUNT * max_future_q)
-            # new_q = reward + DISCOUNT * max_future_q
-            # print(new_q)
-            # print(current_state)
+            if not done:
+                max_future_q = self.env.max_future_q(current_node_id , new_current_state ,neighbor_list ,  future_qs_list[index])
+                qval = current_qs_list[index][action]
+                    
+                # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
+                # print('+++++++++++++++lr+++++++++++++ ' , reward , max_future_q, qval)
+                new_q = (1-LEARNING_RATE)*qval + LEARNING_RATE *(reward + DISCOUNT * max_future_q)
+                # new_q = reward + DISCOUNT * max_future_q
+                # print(new_q)
+                # print(current_state)
+            else:
+                qval = current_qs_list[index][action]
+
+                new_q = (1-LEARNING_RATE)*qval + LEARNING_RATE *reward 
+                # new_q = reward
+
+
 
             # Update Q value for given state
             current_qs = current_qs_list[index]
@@ -447,12 +455,15 @@ class DQRLAgent:
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
-
-        next_state = self.env.routing_state(request , action , path ,  timeSlot)
+        # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
+        if not done:
+            next_state = self.env.routing_state(request , action , path ,  timeSlot)
+        else:
+            next_state = None
 
         if next_state is None:
             next_state = current_state
-        done = False
+        # done = False
         if action == self.env.SIZE:
             neighbor_list = []
         else:

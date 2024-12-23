@@ -80,7 +80,7 @@ class QuRA_DQRL(AlgorithmBase):
             dst = request[1]
             if (src, dst) not in self.srcDstPairs:
                 self.srcDstPairs.append((src, dst))
-            self.requestState.append((src,dst , src , tuple([src.id]) , index))
+            self.requestState.append([src,dst , src , tuple([src.id]) , index , False])
             index += 1
 
     def p2(self):
@@ -1031,6 +1031,10 @@ class QuRA_DQRL(AlgorithmBase):
         # if not (self.param is not None and 'greedy_only' in self.param):
         if True:
             for request in T:
+                for req in self.requestState:
+                    if req[0].id == request[0].id and req[1].id == request[1].id:
+                        req[5] = True
+                done_episode = not len([r for r in self.requestState if not r[5]])
                 if 'greedy_only' in  self.name:
                     continue
 
@@ -1069,7 +1073,7 @@ class QuRA_DQRL(AlgorithmBase):
                     # print('start for:: ', current_state)
                     if next_node_id == len(self.topo.nodes):
                         skipRequest = True
-                        self.routingAgent.update_action( request ,request[0].id,  next_node_id  , current_state , path , success)
+                        self.routingAgent.update_action( request ,request[0].id,  next_node_id  , current_state , path , done_episode)
 
                         break
                     
@@ -1158,7 +1162,7 @@ class QuRA_DQRL(AlgorithmBase):
                         success = True
                         good_to_search = False
                     
-                    self.routingAgent.update_action( request ,current_node.id,  next_node_id  , current_state , path , success)
+                    self.routingAgent.update_action( request ,current_node.id,  next_node_id  , current_state , path , ((next_node == request[1] )and done_episode))
 
                         
                     prev_node = current_node
