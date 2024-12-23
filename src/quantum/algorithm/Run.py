@@ -58,8 +58,8 @@ from DQNAgentDist import DQNAgentDist
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-run = "lr .1 attention"
-ttime = 25000
+run = "lr .1 attention, then done implemented"
+ttime = 2000
 ttime2 = 500
 step = 500
 times = 1
@@ -375,6 +375,7 @@ def mainThreadPreSwapCapacity(Xparam , topo , result):
 
 if __name__ == '__main__':
     print("start Run and Generate data.txt")
+    print("runrunrunrun " , run)
     t1 = time.time()
     targetFilePath = "../../plot/data/"
     temp = AlgorithmResult()

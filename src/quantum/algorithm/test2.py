@@ -3,12 +3,6 @@ import os
 from collections import OrderedDict
 
 # dict = OrderedDict()
-dict  ={}
-dict['three'] = 'a'
-dict['four'] = 'b'
-dict['one'] = 'c'
-dict['two'] = 'd'
-
-
-
-print(dict.keys())
+success = True
+done_episode = 0
+print(success and done_episode)

@@ -534,6 +534,18 @@ class RoutingEnv(Env):
         # for self.
 
     def routing_state(self , current_request , current_node_id ,path, timeSlot = 0  ):
+        if current_node_id == current_request[1].id:
+            # print('len req state ::: ' , len(self.algo.requestState) , current_node_id)
+            for  i , req in enumerate(self.algo.requestState):
+                if req[0].id == current_request[0].id and req[1].id == current_request[1].id:
+                    # print('iiiiiiiiiiiiiii ' , i , (current_request[0].id , current_request[1].id))
+                    current_request = (self.algo.requestState[i+1][0] , self.algo.requestState[i+1][1])
+                    current_node_id = current_request[0].id
+                    # print('state for next req', (current_request[0].id , current_request[1].id))
+                    break
+
+
+
         state_cr = [0 for i in range(self.SIZE)]
         state_cn = [0 for i in range(self.SIZE)]
         # state_path = [0 for i in range(self.SIZE)]
@@ -674,6 +686,8 @@ class RoutingEnv(Env):
 
         r = 0 
         for req in self.algo.requestState:
+            if req[5]:
+                continue
             src_id = req[0].id
             dst_id = req[1].id
             curr_id = req[2].id
