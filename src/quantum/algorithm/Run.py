@@ -58,9 +58,9 @@ from DQNAgentDist import DQNAgentDist
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-run = "lr .1 attention, then done implemented"
-ttime = 2000
-ttime2 = 500
+run = "ALPHA = .9 BETA = -.1 GAMMA = 0.9 lr 1 discount .9 attention reward = -2, then done implemented+ skip link taken fixed 10 req 4k"
+ttime = 4000
+ttime2 = 200
 step = 500
 times = 1
 gridSize = 5
@@ -237,7 +237,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
    
     print('======================before append', Topo.print_memory_usage())

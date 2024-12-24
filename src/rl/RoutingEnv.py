@@ -32,7 +32,7 @@ class RoutingEnv(Env):
         self.embedding_layer = Embedding(input_dim=100, output_dim=1)
         self.attention_layer = Attention()
 
-        self.skip = False
+        self.skip = True
 
 
         

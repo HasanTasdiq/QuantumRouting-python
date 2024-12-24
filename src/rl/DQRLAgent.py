@@ -19,19 +19,19 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 0.1
+LEARNING_RATE = 1
 
 
-GAMMA = 0.7
-ALPHA = .3
-BETA = -1
+GAMMA = 0.9
+ALPHA = .9
+BETA = -.1
 
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 1500
+END_EPSILON_DECAYING = 3000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -142,8 +142,8 @@ class DQRLAgent:
         # model.add(Conv2D(32, 3, activation="relu"))
         # model.add(Flatten)
 
-        # model.add(Dense(self.env.SIZE + 1, activation='linear')) 
-        model.add(Dense(self.env.SIZE , activation='linear')) 
+        model.add(Dense(self.env.SIZE + 1, activation='linear')) 
+        # model.add(Dense(self.env.SIZE , activation='linear')) 
         print(model.summary)
         # print('------------------self.model.get_weights()-------------------')
         # print(model.get_weights())
@@ -516,9 +516,7 @@ class DQRLAgent:
                         if action == self.env.SIZE:
                             reward = R[0]
                             print('-------------------------skip--------------------------------')
-                            print('-------------------------skip--------------------------------')
-                            print('-------------------------skip--------------------------------')
-
+               
                         # R.append(reward)
                     
                     else:
