@@ -89,7 +89,7 @@ class QuRA_DQRL(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
+            # self.PFT() # compute (self.ti, self.fi)
             self.randPFT()
             # self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
@@ -1091,6 +1091,8 @@ class QuRA_DQRL(AlgorithmBase):
                         # print((src.id,dst.id) , '=FAILED= no ent links')
                     else:
                         ent_links = [ent_links[0]]
+                        for link in ent_links:
+                            link.taken = True
 
                     # print(current_node.id , next_node_id , len(ent_links))
 
@@ -1190,6 +1192,9 @@ class QuRA_DQRL(AlgorithmBase):
                         if not swapped:
                             failed_swap = True
                             break
+                else:
+                    for link in selectedlinks:
+                        link.taken = False
 
                 successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
                 if success and len(successPath):
@@ -1538,7 +1543,7 @@ class QuRA_DQRL(AlgorithmBase):
                 selectedNodes.append(next_node)
                 selectedEdges.append((current_node, next_node))
                 path.append(next_node.id)
-                self.routingAgent.update_action( request , current_node.id,  next_node_id  , current_state , path , False)
+                # self.routingAgent.update_action( request , current_node.id,  next_node_id  , current_state , path , False)
                 
                 if len(prev_links) and next_node == request[1] and good_to_search:
                     success = True
