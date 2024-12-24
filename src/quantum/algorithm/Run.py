@@ -58,8 +58,8 @@ from DQNAgentDist import DQNAgentDist
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-run = "ALPHA = .9 BETA = -.1 GAMMA = 0.9 lr 1 discount .9 attention reward = -2, then done implemented+ skip link taken fixed 10 req 4k"
-ttime = 4000
+run = "ALPHA = .9 BETA = -.1 GAMMA = 0.9 lr 1 discount .9 attention reward = -2, then done implemented+ skip link taken fixed 10 req 20k"
+ttime = 20000
 ttime2 = 200
 step = 500
 times = 1
