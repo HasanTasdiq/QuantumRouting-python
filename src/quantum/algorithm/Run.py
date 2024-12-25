@@ -53,13 +53,13 @@ sys.path.insert(0, "../../rl")
 
 # from DQNAgent import DQNAgent   
 from DQNAgentDist import DQNAgentDist
-from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD, lr
+from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD, lr,START_EPSILON_DECAYING
 # from DQNAgentDistEnt import DQNAgentDistEnt
 # from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)+" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)+", then done implemented+ skip link taken fixed 10 req 4k ute "+str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr=" + str(lr)
+run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)+" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)+", then done implemented+ skip link taken fixed 10 req 4k ute "+str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr=" + str(lr) + "START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING)
 ttime = 70000
 ttime2 = 200
 step = 500
