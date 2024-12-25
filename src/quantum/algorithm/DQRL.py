@@ -1063,17 +1063,17 @@ class QuRA_DQRL(AlgorithmBase):
                 fail_hopcount = False
                 targetPath = self.findPathForDQRL((src,dst))
                 skipRequest = False
-                if not len(targetPath):
-                    continue
+                # if not len(targetPath):
+                #     continue
                 # targetPath = []
 
                 while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                     
                     current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
                     # print('start for:: ', current_state)
-                    if next_node_id == len(self.topo.nodes):
+                    if next_node_id == len(self.topo.nodes) or not len(targetPath):
                         skipRequest = True
-                        self.routingAgent.update_action( request ,request[0].id,  next_node_id  , current_state , path , done_episode)
+                        self.routingAgent.update_action( request ,request[0].id,  len(self.topo.nodes)  , current_state , path , done_episode)
 
                         break
                     

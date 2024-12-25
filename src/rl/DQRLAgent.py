@@ -20,10 +20,11 @@ logging.getLogger('tensorflow').disabled = True
 from objsize import get_deep_size
 NUM_EPISODES = 2500
 LEARNING_RATE = 1
+lr = .1
 
 
-GAMMA = 0.9
-ALPHA = .9
+GAMMA = 0.99
+ALPHA = .99
 BETA = -.1
 
 ENTANGLEMENT_LIFETIME = 10
@@ -31,15 +32,16 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 15000
+END_EPSILON_DECAYING = 50000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
-DISCOUNT = 0.9
+DISCOUNT = 0.99
 REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 6000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
+FAILURE_REWARD = -.1
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -47,7 +49,7 @@ MEMORY_FRACTION = 0.20
 
 
 #  Stats settings
-AGGREGATE_STATS_EVERY = 50  # episodes
+AGGREGATE_STATS_EVERY = 20  # episodes
 SHOW_PREVIEW = False
 
 
@@ -149,7 +151,7 @@ class DQRLAgent:
         # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(learning_rate = 0.1, clipvalue=0.01 ), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate = lr, clipvalue=0.01 ), metrics=['accuracy'])
         # model._make_predict_function()
         return model
 
@@ -503,7 +505,7 @@ class DQRLAgent:
                 # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
 
                 if not success:
-                    reward = -2
+                    reward = FAILURE_REWARD
                 else:
 
                     if len(R):
@@ -515,6 +517,7 @@ class DQRLAgent:
 
                         if action == self.env.SIZE:
                             reward = R[0]
+                            # reward = finalSuccess
                             print('-------------------------skip--------------------------------')
                
                         # R.append(reward)
