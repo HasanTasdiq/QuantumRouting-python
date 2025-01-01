@@ -23,25 +23,25 @@ LEARNING_RATE = 1
 lr = .1
 
 
-GAMMA = 0.99
-ALPHA = .99
+GAMMA = 0.9
+ALPHA = .9
 BETA = -.1
 
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 10000
-END_EPSILON_DECAYING = 50000
+START_EPSILON_DECAYING = 1
+END_EPSILON_DECAYING = 10
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
-DISCOUNT = 0.99
+DISCOUNT = 0.9
 REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 6000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
-FAILURE_REWARD = -2
+FAILURE_REWARD = -.2
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
 MEMORY_FRACTION = 0.20
@@ -105,14 +105,14 @@ class DQRLAgent:
         for r in model.get_weights():
             print(r)
     def create_model(self):
-        # try:
-        #     model = load_model(self.model_name)
-        #     print('=====================================================model loaded from ',self.model_name,' =====================================')
-        #     # time.sleep(10)
-        #     return model
-        # except:
-        #     print('=====================no model found========================')
-        #     # time.sleep(10)
+        try:
+            model = load_model(self.model_name)
+            print('=====================================================model loaded from ',self.model_name,' =====================================')
+            # time.sleep(10)
+            return model
+        except:
+            print('=====================no model found========================')
+            # time.sleep(10)
 
         
         model = Sequential()
