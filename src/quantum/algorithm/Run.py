@@ -59,9 +59,9 @@ from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVE
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)+" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)+", then done implemented+ skip link taken fixed 10 req 4k ute "+str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr=" + str(lr) + "START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING)
-ttime = 70000
-ttime2 = 200
+run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)+" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)+", then done implemented+ skip link taken fixed 10 req ute "+str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING)
+ttime = 6000
+ttime2 = 500
 step = 500
 times = 1
 gridSize = 5
@@ -132,25 +132,25 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
     success_req = 0
     
-    # for i in range(timeSlot):
-    #     success_req += result.successfulRequestPerRound[i]
-    # max_success = algo.name + str(len(algo.topo.nodes))+str(algo.topo.alpha)+str(algo.topo.q)+ 'max_success'
+    for i in range(timeSlot):
+        success_req += result.successfulRequestPerRound[i]
+    max_success = algo.name + str(len(algo.topo.nodes))+str(algo.topo.alpha)+str(algo.topo.q)+ 'max_success'
 
-    # print('====================================================')
-    # print('====================================================')
-    # print('pid: ' , pid , 'success_req: ' , success_req)
-    # print('pid: ' , pid , 'max_success rate : ' , shared_data[max_success] / timeSlot)
-    # print('====================================================')
-    # print('====================================================')
+    print('====================================================')
+    print('====================================================')
+    print('pid: ' , pid , 'success_req: ' , success_req)
+    print('pid: ' , pid , 'max_success rate : ' , shared_data[max_success] / timeSlot)
+    print('====================================================')
+    print('====================================================')
     
-    # if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
-    #     print('going to save the ent model ' , success_req)
-    #     algo.entAgent.save_model()
-    #     # if hasattr(algo , 'routingAgent' ):
-    #     #     algo.routingAgent.save_model()
-    #     #     print('going to save the ent model ' , success_req)
+    if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
+        print('going to save the ent model ' , success_req)
+        # algo.entAgent.save_model()
+        if hasattr(algo , 'routingAgent' ):
+            algo.routingAgent.save_model()
+            print('going to save the ent model ' , success_req)
 
-    #     shared_data[max_success] = success_req
+        shared_data[max_success] = success_req
 
 
 
