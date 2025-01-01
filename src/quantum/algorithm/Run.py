@@ -61,7 +61,7 @@ from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVE
 
 run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)+" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)+", then done implemented+ skip link taken fixed 10 req ute "+str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING)
 ttime = 6000
-ttime2 = 500
+ttime2 = 60
 step = 500
 times = 1
 gridSize = 5
@@ -237,7 +237,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
    
@@ -245,7 +245,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
    
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY_prob'))
-    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
+    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
 
 
 
