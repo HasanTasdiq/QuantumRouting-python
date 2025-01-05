@@ -53,15 +53,21 @@ sys.path.insert(0, "../../rl")
 
 # from DQNAgent import DQNAgent   
 from DQNAgentDist import DQNAgentDist
-from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD, lr,START_EPSILON_DECAYING
+from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD, lr,START_EPSILON_DECAYING,SKIP_REWAD,MINIBATCH_SIZE
 # from DQNAgentDistEnt import DQNAgentDistEnt
 # from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)+" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)+", then done implemented+ skip link taken fixed 10 req ute "+str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING)
-ttime = 6000
-ttime2 = 60
+run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)\
++" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)\
++", then done implemented+ skip link taken rand 10 req ute "\
++str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) \
++ " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
++ str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) + " reward as recursive skip state,neighbr loaded"
+
+ttime = 5000
+ttime2 = 300
 step = 500
 times = 1
 gridSize = 5
@@ -237,15 +243,15 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
    
     print('======================before append', Topo.print_memory_usage())
    
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY_prob'))
-    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
+    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
 
 
 
@@ -297,21 +303,21 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
         else:
             for i in range(ttime):
                 if i < rtime:
-                    ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    # for _ in range(numOfRequestPerRound):
+                    # ids[i] = topo.generateRequest(numOfRequestPerRound)
+                    for _ in range(numOfRequestPerRound):
 
-                    #     while True:
-                    #         a = sample([i for i in range(numOfNode)], 2)
-                    #         if (a[0], a[1]) not in ids[i]:
-                    #             break
+                        while True:
+                            a = sample([i for i in range(numOfNode)], 2)
+                            if (a[0], a[1]) not in ids[i]:
+                                break
 
 
-                    #     # a = [2 , 25]
+                        # a = [2 , 25]
 
-                    #     # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                    #     # print('req: ' , a)
-                    #     # for _ in range(int(random.random()*3+1)):
-                    #     ids[i].append((a[0], a[1]))
+                        # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
+                        # print('req: ' , a)
+                        # for _ in range(int(random.random()*3+1)):
+                        ids[i].append((a[0], a[1]))
         print('##############going to append jobs ###############  ')
         print('----------size(ids)----------------', get_deep_size(ids)/1000000)
         print('----------size(algorithms)----------------', get_deep_size(algorithms)/1000000)
