@@ -533,8 +533,19 @@ class RoutingEnv(Env):
             
         # for self.
 
+    def get_next_current_node_id(self ,current_request , current_node_id ):
+        if current_node_id == current_request[1].id or current_node_id == self.SIZE:
+            # print('len req state ::: ' , len(self.algo.requestState) , current_node_id)
+            for  i , req in enumerate(self.algo.requestState):
+                if req[0].id == current_request[0].id and req[1].id == current_request[1].id:
+                    # print('iiiiiiiiiiiiiii ' , i , (current_request[0].id , current_request[1].id))
+                    current_request = (self.algo.requestState[i+1][0] , self.algo.requestState[i+1][1])
+                    current_node_id = current_request[0].id
+                    # print('state for next req', (current_request[0].id , current_request[1].id))
+                    break
+        return current_node_id
     def routing_state(self , current_request , current_node_id ,path, timeSlot = 0  ):
-        if current_node_id == current_request[1].id:
+        if current_node_id == current_request[1].id or current_node_id == self.SIZE:
             # print('len req state ::: ' , len(self.algo.requestState) , current_node_id)
             for  i , req in enumerate(self.algo.requestState):
                 if req[0].id == current_request[0].id and req[1].id == current_request[1].id:
@@ -629,7 +640,8 @@ class RoutingEnv(Env):
         # print(state_graph)
         self.graph = graph
         # print(self.graph)
-        dist = self.dijkstra(current_request[1].id)
+
+        # dist = self.dijkstra(current_request[1].id)
 
         
         # if hasattr(self.algo , 'requests' ):

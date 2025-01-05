@@ -31,8 +31,8 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = 10
+START_EPSILON_DECAYING = 1000
+END_EPSILON_DECAYING = 3000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -41,10 +41,11 @@ REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 6000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
-FAILURE_REWARD = -.2
+FAILURE_REWARD = -2
+SKIP_REWAD = -2
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
-MEMORY_FRACTION = 0.20
+MEMORY_FRACTION = 0.20 
 
 
 
@@ -467,7 +468,11 @@ class DQRLAgent:
             next_state = current_state
         # done = False
         if action == self.env.SIZE:
-            neighbor_list = []
+            if not done:
+                next_current_node_id = self.env.get_next_current_node_id(request , action)
+                neighbor_list = self.env.get_neighbors(next_current_node_id) 
+            else:
+                neighbor_list = []
         else:
             neighbor_list = self.env.get_neighbors(action) #action is the next node id
         if not request in self.last_action_table:
@@ -514,25 +519,27 @@ class DQRLAgent:
                         #     f = 1
 
                         reward = numsuccessReq * ALPHA + GAMMA * R[-1]
+                        # reward = finalSuccess
 
                         if action == self.env.SIZE:
-                            reward = R[0]
-                            # reward = finalSuccess
+                            # reward = R[0]
+                            reward = SKIP_REWAD
                             print('-------------------------skip--------------------------------')
-               
-                        # R.append(reward)
+                        else:
+                            R.append(reward)
                     
                     else:
                         finalSuccess = numsuccessReq
                         print('numsuccessReq ' , numsuccessReq)
                         reward = numsuccessReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - numsuccessReq)* BETA
-                        # R.append(reward)
+                        # reward = finalSuccess
+                        R.append(reward)
                 # if not reward:
                 #     continue
 
                 self.update_replay_memory((current_node_id , current_state, action, reward, next_state,neighbor_list,  done))
-            if success:
-                R.append(reward)
+            # if success:
+            #     R.append(reward)
             
             # print(R)
         self.env.algo.topo.reward_routing = {}
