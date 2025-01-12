@@ -128,9 +128,9 @@ class QuRA_DQRL(AlgorithmBase):
 
         m = gp.Model('REPS for PFT')
         m.setParam("OutputFlag", 0)
-        f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "f")
-        t = m.addVars(numOfSDpairs, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "t")
-        x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "x")
+        f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.INTEGER, name = "f")
+        t = m.addVars(numOfSDpairs, lb = 0,ub = 1, vtype = gp.GRB.INTEGER, name = "t")
+        x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.INTEGER, name = "x")
         m.update()
         
         m.setObjective(gp.quicksum(t[i] for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
@@ -148,7 +148,8 @@ class QuRA_DQRL(AlgorithmBase):
 
         
         for (u, v) in edgeIndices:
-            dis = self.topo.distance(self.topo.nodes[u].loc, self.topo.nodes[v].loc)
+            # dis = self.topo.distance(self.topo.nodes[u].loc, self.topo.nodes[v].loc)
+            dis = self.topo.dist[(u , v)]
             probability = math.exp(-self.topo.alpha * dis)
             m.addConstr(gp.quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
 
@@ -1508,11 +1509,11 @@ class QuRA_DQRL(AlgorithmBase):
                     # print((src.id,dst.id) , '=FAILED extra route = loop')
 
                 
-                if good_to_search:
-                    # dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] +1
-                    dist = current_state[self.routingAgent.env.SIZE  +2][next_node_id] +1
-                    if not dist:
-                        dist = 1
+                # if good_to_search:
+                #     # dist = current_state[self.routingAgent.env.SIZE *2 +2][next_node_id] +1
+                #     dist = current_state[self.routingAgent.env.SIZE  +2][next_node_id] +1
+                    # if not dist:
+                    #     dist = 1
 
                     # try:
                     #     self.topo.reward_routing[key] += self.topo.positive_reward / dist

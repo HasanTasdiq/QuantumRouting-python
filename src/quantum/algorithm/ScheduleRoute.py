@@ -156,7 +156,8 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
             else:
                  reward = -1
             reqmask[next_req_id] = 1
-            self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask) , reqIndex = reqIndex)
+            if not 'RAND' in self.name:
+                self.schedulerAgent.update_action( self.requestState ,  next_req_id  , current_state , done = (len(reqs) == 0) , t = t , successReq = foundPath,qval = qval,reqmask=copy.deepcopy(reqmask) , reqIndex = reqIndex)
             t+= 1
     
         print('[' , self.name, '] :' , self.timeSlot, ' path found :', foundPath, 'schedule:' , schedule)
@@ -195,7 +196,8 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
         # print('[REPS] p4 end') 
         self.printResult()
         # self.entAgent.update_reward()
-        self.schedulerAgent.update_reward()
+        if not 'RAND' in self.name: 
+            self.schedulerAgent.update_reward()
         return self.result
     def PFT(self):
 

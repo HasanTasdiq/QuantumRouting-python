@@ -533,6 +533,139 @@ class RoutingEnv(Env):
             
         # for self.
 
+
+    def routing_state_(self , current_request , current_node_id,path, timeSlot = 0  ):
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        state_cr = [0 for i in range(self.SIZE)]
+        state_cn = [0 for i in range(self.SIZE)]
+
+
+
+        if current_node_id == current_request[1].id or current_node_id == self.SIZE:
+            # print('len req state ::: ' , len(self.algo.requestState) , current_node_id)
+            for  i , req in enumerate(self.algo.requestState):
+                if req[0].id == current_request[0].id and req[1].id == current_request[1].id:
+                    # print('iiiiiiiiiiiiiii ' , i , (current_request[0].id , current_request[1].id))
+                    current_request = (self.algo.requestState[i+1][0] , self.algo.requestState[i+1][1])
+                    current_node_id = current_request[0].id
+                    # print('state for next req', (current_request[0].id , current_request[1].id))
+                    break
+        
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] += 1
+                state_graph[n2][n1] += 1
+
+        state_cr[current_request[0].id] = 1
+        state_cr[current_request[1].id] = 1
+
+        # state_cn[current_node_id] = 1
+        state_cn = state_graph[current_node_id]
+
+        S = []
+        U = []
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+        # print(len(requests))
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+
+        RS = []
+        r = 0 
+        for req in self.algo.requestState:
+            state_req = [0 for i in range(self.SIZE)]
+
+            if not req[5]:
+                
+                src_id = req[0].id
+                dst_id = req[1].id
+                curr_id = req[2].id
+
+                # reqStates[r][src_id] = 1
+                state_req[dst_id] = 1
+                state_req[src_id] = 1
+            U.append(state_cn + state_cr )
+            # U.append(state_cn + state_cr + state_req)
+            RS.append(state_req)
+
+
+        
+        # Usd = self.get_embedded_output(U , formatted=True)
+        Asd = self.get_emb_attention(U)
+
+        Usd = self.get_embedded_output(RS , formatted=True)
+
+
+        # print('----------------------')
+        # print('----------------------')
+        # print('---------asd---------')
+        # print(Asd)
+        # print('----------------------')
+        # print('----------------------')
+        # print('----------------------')
+        for usd in Asd:
+            tmp = []
+            for el in usd:
+                tmp.append(el[0])
+            S.append(tmp)
+        
+        for i in range(len(Usd)):
+            usd = Usd[i]
+            tmp = []
+            for el in usd:
+                tmp.append(el[0])
+            S[i].extend(tmp)
+
+        # print('----------------------')
+        # print('----------------------')
+        # print('-----------S-----------')
+        # print(S)
+        # print('----------------------')
+        # print('----------------------')
+        # for i in range(len(Asd)):
+        #     asd = Asd[i]
+        #     tmp = []
+        #     for el in asd:
+        #         tmp.append(el[0])
+        #     S[i].extend(tmp)
+        
+
+        # print(S)
+
+
+
+        
+
+        
+
+        for u in S:
+            a = self.get_embedded_output(state_graph )
+            a = Flatten()(tf.constant([numpy.array(a)]))[0]
+            a = list(a.numpy())
+            
+
+            # print('----------------------')
+            # print(Asd)
+            # print('----------------------')        
+            # print('----------------------')
+            # print('----------------------')
+            # print('----------------------')
+
+
+            u.extend(a)
+        
+        # print('----------------------')
+        # print('----------------------')
+        # print('-----------S-----------')
+        # print(S)
+        # print('----------------------')
+        # print('----------------------')
+        return np.array(S)
     def get_next_current_node_id(self ,current_request , current_node_id ):
         if current_node_id == current_request[1].id or current_node_id == self.SIZE:
             # print('len req state ::: ' , len(self.algo.requestState) , current_node_id)
@@ -544,6 +677,151 @@ class RoutingEnv(Env):
                     # print('state for next req', (current_request[0].id , current_request[1].id))
                     break
         return current_node_id
+    
+    def routing_state2(self , current_request , current_node_id ,path, timeSlot = 0  ):
+        if current_node_id == current_request[1].id or current_node_id == self.SIZE:
+            # print('len req state ::: ' , len(self.algo.requestState) , current_node_id)
+            for  i , req in enumerate(self.algo.requestState):
+                if req[0].id == current_request[0].id and req[1].id == current_request[1].id:
+                    # print('iiiiiiiiiiiiiii ' , i , (current_request[0].id , current_request[1].id))
+                    current_request = (self.algo.requestState[i+1][0] , self.algo.requestState[i+1][1])
+                    current_node_id = current_request[0].id
+                    # print('state for next req', (current_request[0].id , current_request[1].id))
+                    break
+
+
+
+        state_cr = [0 for i in range(self.SIZE)]
+
+        state_cn = [0 for i in range(self.SIZE)]
+
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+
+        reqStates = [[0 for column in range(self.SIZE)]
+                      for row in range(self.algo.topo.numOfRequestPerRound)]
+
+
+
+        # print(len(self.algo.topo.links))
+        count =0
+        for link in self.algo.topo.links:
+            if link.isEntangled(timeSlot) and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] += 1
+                state_graph[n2][n1] += 1
+                count += 1
+
+        # print(state_graph)
+        
+        state_graph = self.get_embedded_output(state_graph , formatted=True)
+        state_graph = Flatten()(tf.constant([numpy.array(state_graph)]))[0]
+        state_graph = list(state_graph.numpy())
+        # print('--------')
+        # print('--------')
+        # print('--------')
+        # print('--------')
+        # print(state_graph)
+        # print('--------')
+        # print('--------')
+        # print('--------')
+
+        # S = []
+        # for r in state_graph:
+        #     tmp = []
+        #     for r2 in r:
+        #         tmp.append(r2[0])
+        #     S.append(tmp)
+        # # state_graph = self.embedding_layer(state_graph)
+        # state_graph = S
+        # print(state_graph)
+        
+        state_cr[current_request[0].id] = 1
+        state_cr[current_request[1].id] = 1
+
+        # print(state_cr)
+        state_cr = self.get_emb_attention(state_cr)
+        S = []
+        for r in state_cr:
+            S.append(r[0])
+        state_cr = S
+        # print(state_cr)
+
+        # print('555555555555555')
+        try:
+            state_cn[current_node_id] = 1
+        except:
+            p = 0 #nothing
+
+        # print(state_cn)
+
+        state_cn = self.get_emb_attention(state_cn)
+        S = []
+        for r in state_cn:
+            S.append(r[0])
+        state_cn = S
+
+
+        r = 0 
+        for req in self.algo.requestState:
+            if req[5]:
+                continue
+            src_id = req[0].id
+            dst_id = req[1].id
+            curr_id = req[2].id
+
+            # reqStates[r][src_id] = 1
+            reqStates[r][dst_id] = 1
+            reqStates[r][curr_id] = 1
+
+            r += 1
+        
+        # state_req = self.get_embedded_output(state_req , formatted=True)
+        # print(reqStates)
+        reqStates = np.array(self.get_embedded_output(reqStates))
+        S = []
+        for r in reqStates:
+            tmp = []
+            for r2 in r:
+                tmp.append(r2[0])
+            S.append(tmp)
+        reqStates = S
+        # print(reqStates)
+
+        ret = []
+
+        r= 0
+        for req in self.algo.requestState:
+            src_id = req[0].id
+            dst_id = req[1].id
+            curr_id = req[2].id
+            curr_node = [0 for _ in range(self.SIZE)]
+            if current_request[0].id == src_id and current_request[1].id == dst_id:
+                curr_node = state_cn
+            
+            req = reqStates[r]
+
+            curr_node.extend(state_cr)
+            curr_node.extend(req)
+            curr_node.extend(state_graph)
+            ret.append(curr_node)
+
+            r +=1
+
+
+
+
+
+
+
+
+        # state_graph.append(state_cr)
+        # state_graph.append(state_cn)
+        # state_graph.extend(reqStates)
+
+        return np.array(ret)
+
     def routing_state(self , current_request , current_node_id ,path, timeSlot = 0  ):
         if current_node_id == current_request[1].id or current_node_id == self.SIZE:
             # print('len req state ::: ' , len(self.algo.requestState) , current_node_id)
@@ -570,12 +848,6 @@ class RoutingEnv(Env):
         reqStates = [[0 for column in range(self.SIZE)]
                       for row in range(self.algo.topo.numOfRequestPerRound)]
 
-        # for _ in range(self.SIZE):
-        #     state_req.append([[0]*self.SIZE])
-        #     state_graph.append([[0]*self.SIZE])
-        #     graph.append([[0]*self.SIZE])
-
-        # print(len(self.algo.topo.links))
         count =0
         for link in self.algo.topo.links:
             if link.isEntangled(timeSlot) and not link.taken:
@@ -590,6 +862,14 @@ class RoutingEnv(Env):
                 graph[n1][n2] = 1
                 graph[n2][n1] = 1
         # print(state_graph)
+
+
+        # get from the graph
+        state_cn = state_graph[current_node_id]
+        # try:
+        #     state_cn[current_node_id] = 1
+        # except:
+        #     p = 0 #nothing
         
         state_graph = self.get_embedded_output(state_graph , formatted=True)
         S = []
@@ -600,63 +880,11 @@ class RoutingEnv(Env):
             S.append(tmp)
         # state_graph = self.embedding_layer(state_graph)
         state_graph = S
-        # print(state_graph)
-
-        # Asd = self.get_emb_attention(U)
-        # G = nx.from_numpy_array(np.array(state_graph))
-        # for req in self.algo.requestState:
-        #         src_id = req[0].id
-        #         n2 = req[1].id
-        #         n1 = req[2].id
-
-        #         n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
-        #         if current_node_id == n1 and current_request[1].id == n2:
-        #             continue
-        #         # if current_request[1].id == n1 and current_request[0].id == n2:
-        #         #     continue
-
-        #         counter = 0
-        #         try:
-        #             paths = nx.shortest_simple_paths(G, n1, n2)
-        #             for path in paths:
-        #                 # print('!-!_!_!_!_!_!_!_!_!_!_!  path found')
-
-        #                 for i in range(len(path)-1):
-        #                     p1 = path[i]
-        #                     p2 = path[i+1]
-        #                     state_req[p1][p2] += 1
-        #                     state_req[p2][p1] += 1
-        #                 counter += 1
-        #                 if counter >= 5:
-        #                     break
-        #         except:
-        #             c = 10
-
-        # print(G.nodes())
-        # self.algo.topo.draw_graph(G)
-
-        # nx.draw(G, with_labels=False)
-        # print('neighbor count       =====        ===== =====' , count)
-        # print(state_graph)
+        
         self.graph = graph
         # print(self.graph)
 
-        # dist = self.dijkstra(current_request[1].id)
-
-        
-        # if hasattr(self.algo , 'requests' ):
-        #     for req in self.algo.requests:
-        #         n1,n2 = min(req[0].id ,req[1].id ) , max(req[0].id ,req[1].id ) 
-        #         state_req[n1][n2] += 1
-        #         state_req[n2][n1] += 1
-        # print(state_req)
-        
-        # state_graph.extend(state_req)
-        
-        # state_cr[current_request[0].id] = 100
-        # state_cr[current_request[1].id] = 100
-
-        # state_cn[current_node_id] = 20
+      
         state_cr[current_request[0].id] = 1
         state_cr[current_request[1].id] = 1
 
@@ -666,19 +894,8 @@ class RoutingEnv(Env):
         for r in state_cr:
             S.append(r[0])
         state_cr = S
-        # print(state_cr)
 
 
-
-
-
-
-
-        # print('555555555555555')
-        try:
-            state_cn[current_node_id] = 1
-        except:
-            p = 0 #nothing
 
         # print(state_cn)
 
@@ -687,14 +904,7 @@ class RoutingEnv(Env):
         for r in state_cn:
             S.append(r[0])
         state_cn = S
-        # print(state_cn)
 
-
-        # for i in range(len(path)):
-        #     state_path[path[i]] = i + 1
-        # print(state_cr)
-        # print(state_cn)
-        # print(dist)
 
         r = 0 
         for req in self.algo.requestState:
@@ -740,19 +950,8 @@ class RoutingEnv(Env):
 
 
         # state_graph.append(state_path)
-
-
-        # print(state_graph)
-        # print('-----------------------------------')
-        # print('-----------------------------------')
-        # print('-------------YYYYYYYYYYYY-------------')
-        # print('-----------------------------------')
-        # print('-----------------------------------')
-        # print('-----------------------------------')
-        # print(np.array(state_graph))
         return np.array(state_graph)
 
-        
         
 
 

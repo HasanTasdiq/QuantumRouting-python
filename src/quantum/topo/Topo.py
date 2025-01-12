@@ -85,6 +85,7 @@ class Topo:
 
         self.nodes = []
         self.links = []
+        self.dist = {}
         self.segments = []
         self.edges = [] # (Node, Node)
         self.q = q
@@ -213,13 +214,15 @@ class Topo:
         for _edge in _edges:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             # rand = int(random.random()*5+3) # 3~7
-            rand = int(random.random()*3+1) # 1~3
+            # rand = int(random.random()*2+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
             rand = 2
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
             rand_length = random.randint(50, 400)
+            self.dist[(_edge[0] , _edge[1])] = rand_length
+            self.dist[(_edge[1] , _edge[0])] = rand_length
 
             for _ in range(0, rand):
                 # link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
@@ -1256,8 +1259,10 @@ class Topo:
 
         ret = [(7, 0), (24, 6), (17, 7), (12, 16), (11, 18), (11, 14), (8, 21), (17, 19), (23, 0), (12, 23)]
 
-        ret = [(10, 21), (20, 13), (1, 23), (9, 4), (6, 1), (9, 2), (2, 9), (9, 23), (5, 13), (18, 8)]   #52%
+        ret = [(10, 21), (20, 13), (1, 23), (9, 4), (6, 1), (9, 3), (2, 9), (9, 23), (5, 13), (18, 8)]   #52%
         
+
+        [(55, 87), (39, 91), (56, 93), (31, 62), (95, 49), (3, 64), (32, 15), (36, 33), (3, 72), (10, 41)] #10
         
         # ret = [(9, 3), (7, 21), (3, 6), (0, 6), (20, 4), (19, 21), (21, 0), (14, 23), (0, 17), (7, 15)]
         # ret = [(0,2) , (1,3)]
