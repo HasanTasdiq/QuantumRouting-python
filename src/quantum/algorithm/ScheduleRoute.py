@@ -464,6 +464,7 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
         
         for edge in G.edges():
             nx.set_edge_attributes(G, {edge: {"weight": 1/link_counter[(edge[0] , edge[1])]}})
+            # nx.set_edge_attributes(G, {edge: {"weight": 1}})
             
         try:
             path = nx.shortest_path(G , req[0].id , req[1].id ,weight='weight')

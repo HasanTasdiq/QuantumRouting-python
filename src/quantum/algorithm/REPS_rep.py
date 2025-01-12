@@ -70,7 +70,7 @@ class REPSREP(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
             self.PFT() # compute (self.ti, self.fi)
-            # self.randPFT()
+            self.randPFT()
         # print('[REPS] p2 end')
         
         
@@ -92,16 +92,20 @@ class REPSREP(AlgorithmBase):
         totalEntanglement = 0
         successReq = 0
         if len(self.srcDstPairs) > 0:
-            for i in range(1):
+            for i in range(4):
                 self.EPS()
                 t , s = self.ELS()
                 totalEntanglement += t
                 successReq += s
                 print('=====---=====----=====----===== ' , self.timeSlot , i , t, s)
+                if not s:
+                    break
         
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequestPerRound.append(successReq)
         # print('[REPS] p4 end') 
+        self.filterReqeuest()
+
         self.printResult()
         return self.result
 
@@ -555,59 +559,59 @@ class REPSREP(AlgorithmBase):
             T.remove(i)
         print('** before graph ' , len(output))
         print([(path[0].id , path[-1].id) for path in output])
-        T = [SDpair for SDpair in self.srcDstPairs]
-        while len(T) > 0:
-            for SDpair in self.srcDstPairs:
-                removePaths = []
-                for path in Ci[SDpair]:
-                    pathLen = len(path)
-                    noResource = False
-                    for nodeIndex in range(pathLen - 1):
-                        node = path[nodeIndex]
-                        next = path[nodeIndex + 1]
-                        if self.y[(node, next)] >= self.edgeSuccessfulEntangle(node, next):
-                            noResource = True
-                    if noResource:
-                        removePaths.append(path)
-                for path in removePaths:
-                    Ci[SDpair].remove(path)
+        # T = [SDpair for SDpair in self.srcDstPairs]
+        # while len(T) > 0:
+        #     for SDpair in self.srcDstPairs:
+        #         removePaths = []
+        #         for path in Ci[SDpair]:
+        #             pathLen = len(path)
+        #             noResource = False
+        #             for nodeIndex in range(pathLen - 1):
+        #                 node = path[nodeIndex]
+        #                 next = path[nodeIndex + 1]
+        #                 if self.y[(node, next)] >= self.edgeSuccessfulEntangle(node, next):
+        #                     noResource = True
+        #             if noResource:
+        #                 removePaths.append(path)
+        #         for path in removePaths:
+        #             Ci[SDpair].remove(path)
             
-            i = -1
-            minLength = math.inf
-            for SDpair in T:
-                for path in Ci[SDpair]:
-                    if len(path) - 1 < minLength:
-                        minLength = len(path) - 1
-                        i = SDpair
-                if len(Ci[SDpair]) == 0 and i == -1:
-                    i = SDpair
+        #     i = -1
+        #     minLength = math.inf
+        #     for SDpair in T:
+        #         for path in Ci[SDpair]:
+        #             if len(path) - 1 < minLength:
+        #                 minLength = len(path) - 1
+        #                 i = SDpair
+        #         if len(Ci[SDpair]) == 0 and i == -1:
+        #             i = SDpair
             
-            src = i[0]
-            dst = i[1]
+        #     src = i[0]
+        #     dst = i[1]
 
-            targetPath = self.findPathForELS(i)
-            pathIndex = len(Pi[i])
-            needLink[(i, pathIndex)] = []
-            Pi[i].append(targetPath)
-            output.append(targetPath)
-            for nodeIndex in range(1, len(targetPath) - 1):
-                prev = targetPath[nodeIndex - 1]
-                node = targetPath[nodeIndex]
-                next = targetPath[nodeIndex + 1]
-                for link in node.links:
-                    if link.contains(next) and link.entangled:
-                        targetLink1 = link
+        #     targetPath = self.findPathForELS(i)
+        #     pathIndex = len(Pi[i])
+        #     needLink[(i, pathIndex)] = []
+        #     Pi[i].append(targetPath)
+        #     output.append(targetPath)
+        #     for nodeIndex in range(1, len(targetPath) - 1):
+        #         prev = targetPath[nodeIndex - 1]
+        #         node = targetPath[nodeIndex]
+        #         next = targetPath[nodeIndex + 1]
+        #         for link in node.links:
+        #             if link.contains(next) and link.entangled:
+        #                 targetLink1 = link
                     
-                    if link.contains(prev) and link.entangled:
-                        targetLink2 = link
+        #             if link.contains(prev) and link.entangled:
+        #                 targetLink2 = link
                 
-                self.y[((node, next))] += 1
-                self.y[((next, node))] += 1
-                self.y[((node, prev))] += 1
-                self.y[((prev, node))] += 1
-                nextLink[node].append(targetLink1)
-                needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
-            T.remove(i)
+        #         self.y[((node, next))] += 1
+        #         self.y[((next, node))] += 1
+        #         self.y[((node, prev))] += 1
+        #         self.y[((prev, node))] += 1
+        #         nextLink[node].append(targetLink1)
+        #         needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
+        #     T.remove(i)
 
         print('** after graph ' , len(output))
         # print('[REPS] ELS end')
@@ -625,7 +629,7 @@ class REPSREP(AlgorithmBase):
 
             for pathIndex in range(len(Pi[SDpair])):
                 path = Pi[SDpair][pathIndex]
-                # print('[REPS] attempt:', [node.id for node in path] , len(needLink[(SDpair, pathIndex)]))
+                print('[REPS] attempt:', [node.id for node in path] , len(needLink[(SDpair, pathIndex)]))
                 for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
                     usedLinks.add(link1)
                     usedLinks.add(link2)
@@ -637,9 +641,11 @@ class REPSREP(AlgorithmBase):
                     for node, link in path:
                         if link is not None:
                             link.used = True
+                    break
                             # self.result.usedLinks += 1
-                # for x in successPath:
-                #     print('[REPS] success:', [z[0].id for z in x])
+                for x in successPath:
+                    print('[REPS] success:', [z[0].id for z in x])
+                print('len(successPath) ' , len(successPath))
 
                 if len(successPath):
                     for request in self.requests:
@@ -655,6 +661,10 @@ class REPSREP(AlgorithmBase):
                 
                 totalEntanglement += len(successPath)
         self.result.usedLinks += len(usedLinks)
+        print('len(self.requests) ' , len(self.requests))
+
+        print([(request[0].id, request[1].id) for request in self.requests])
+
         
         print('===== len sdpair ' , len(self.srcDstPairs) , len(toremovesd))
         for sd in toremovesd:
@@ -667,7 +677,6 @@ class REPSREP(AlgorithmBase):
         self.result.successfulRequest += successReq
         
         entSum = sum(self.result.entanglementPerRound)
-        self.filterReqeuest()
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
         print('[' , self.name, '] :' , self.timeSlot, ' total successful request:', self.result.successfulRequest)
