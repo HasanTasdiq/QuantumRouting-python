@@ -31,17 +31,18 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 1000
-END_EPSILON_DECAYING = 3000
+START_EPSILON_DECAYING = 6000
+END_EPSILON_DECAYING = 8000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
-DISCOUNT = 0.9
+DISCOUNT = 0.5
 REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 6000  # Minimum number of steps in a memory to start training
+MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
+# SKIP_REWAD = -2
 SKIP_REWAD = -2
 MODEL_NAME = '2x256'
 MIN_REWARD = -200  # For model save
@@ -77,6 +78,9 @@ class DQRLAgent:
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
         self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.SIZE,self.env.SIZE,)  
+        
+        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 3*self.env.SIZE + self.env.SIZE*self.env.SIZE ,)  
+       
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
 
         # Main model
@@ -106,14 +110,14 @@ class DQRLAgent:
         for r in model.get_weights():
             print(r)
     def create_model(self):
-        try:
-            model = load_model(self.model_name)
-            print('=====================================================model loaded from ',self.model_name,' =====================================')
-            # time.sleep(10)
-            return model
-        except:
-            print('=====================no model found========================')
-            # time.sleep(10)
+        # try:
+        #     model = load_model(self.model_name)
+        #     print('=====================================================model loaded from ',self.model_name,' =====================================')
+        #     # time.sleep(10)
+        #     return model
+        # except:
+        #     print('=====================no model found========================')
+        #     # time.sleep(10)
 
         
         model = Sequential()
@@ -497,6 +501,8 @@ class DQRLAgent:
 
             reward = 0
             success = 0
+            # pathlen = len(self.last_action_table[request])
+            pathlen = 1
             for i in range(len(self.last_action_table[request])-1 , -1 , -1):
 
                 (action , timeSlot ,current_node_id, current_state , next_state ,neighbor_list ,  done) = self.last_action_table[request][i]
@@ -519,27 +525,32 @@ class DQRLAgent:
                         #     f = 1
 
                         reward = numsuccessReq * ALPHA + GAMMA * R[-1]
+
+                        reward /= pathlen
                         # reward = finalSuccess
 
                         if action == self.env.SIZE:
                             # reward = R[0]
                             reward = SKIP_REWAD
                             print('-------------------------skip--------------------------------')
-                        else:
-                            R.append(reward)
+                        # else:
+                        #     R.append(reward)
                     
                     else:
                         finalSuccess = numsuccessReq
                         print('numsuccessReq ' , numsuccessReq)
                         reward = numsuccessReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - numsuccessReq)* BETA
+                        reward /= pathlen
+                        
                         # reward = finalSuccess
-                        R.append(reward)
+                        # R.append(reward)
                 # if not reward:
                 #     continue
 
                 self.update_replay_memory((current_node_id , current_state, action, reward, next_state,neighbor_list,  done))
-            # if success:
-            #     R.append(reward)
+            
+            if reward:
+                R.append(reward)
             
             # print(R)
         self.env.algo.topo.reward_routing = {}
