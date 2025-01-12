@@ -13,6 +13,7 @@ from topo.helper import request_timeout
 from numpy import log as ln
 from random import sample
 import numpy as np
+import networkx as nx
 
 
 EPS = 1e-6
@@ -310,6 +311,16 @@ class REPSREP(AlgorithmBase):
             if link.contains(v) and link.entangled:
                 capacity += 1
         return capacity
+    
+    def weightofLink(self , u , v):
+        if u == v:
+            return 0
+        capacity = 0
+        for link in u.links:
+            if link.contains(v) and link.entangled and not link.taken:
+                capacity += 1
+
+        return 1/capacity
 
     def LP2(self):
         # print('[REPS] LP2 start')
@@ -559,59 +570,60 @@ class REPSREP(AlgorithmBase):
             T.remove(i)
         print('** before graph ' , len(output))
         print([(path[0].id , path[-1].id) for path in output])
-        # T = [SDpair for SDpair in self.srcDstPairs]
-        # while len(T) > 0:
-        #     for SDpair in self.srcDstPairs:
-        #         removePaths = []
-        #         for path in Ci[SDpair]:
-        #             pathLen = len(path)
-        #             noResource = False
-        #             for nodeIndex in range(pathLen - 1):
-        #                 node = path[nodeIndex]
-        #                 next = path[nodeIndex + 1]
-        #                 if self.y[(node, next)] >= self.edgeSuccessfulEntangle(node, next):
-        #                     noResource = True
-        #             if noResource:
-        #                 removePaths.append(path)
-        #         for path in removePaths:
-        #             Ci[SDpair].remove(path)
+        T = [SDpair for SDpair in self.srcDstPairs]
+        while len(T) > 0 and self.name == 'REPS_shortest':
+            for SDpair in self.srcDstPairs:
+                removePaths = []
+                for path in Ci[SDpair]:
+                    pathLen = len(path)
+                    noResource = False
+                    for nodeIndex in range(pathLen - 1):
+                        node = path[nodeIndex]
+                        next = path[nodeIndex + 1]
+                        if self.y[(node, next)] >= self.edgeSuccessfulEntangle(node, next):
+                            noResource = True
+                    if noResource:
+                        removePaths.append(path)
+                for path in removePaths:
+                    Ci[SDpair].remove(path)
             
-        #     i = -1
-        #     minLength = math.inf
-        #     for SDpair in T:
-        #         for path in Ci[SDpair]:
-        #             if len(path) - 1 < minLength:
-        #                 minLength = len(path) - 1
-        #                 i = SDpair
-        #         if len(Ci[SDpair]) == 0 and i == -1:
-        #             i = SDpair
+            i = -1
+            minLength = math.inf
+            for SDpair in T:
+                for path in Ci[SDpair]:
+                    if len(path) - 1 < minLength:
+                        minLength = len(path) - 1
+                        i = SDpair
+                if len(Ci[SDpair]) == 0 and i == -1:
+                    i = SDpair
             
-        #     src = i[0]
-        #     dst = i[1]
+            src = i[0]
+            dst = i[1]
 
-        #     targetPath = self.findPathForELS(i)
-        #     pathIndex = len(Pi[i])
-        #     needLink[(i, pathIndex)] = []
-        #     Pi[i].append(targetPath)
-        #     output.append(targetPath)
-        #     for nodeIndex in range(1, len(targetPath) - 1):
-        #         prev = targetPath[nodeIndex - 1]
-        #         node = targetPath[nodeIndex]
-        #         next = targetPath[nodeIndex + 1]
-        #         for link in node.links:
-        #             if link.contains(next) and link.entangled:
-        #                 targetLink1 = link
+            targetPath = self.findPathForELS(i)
+            # targetPath = self.get_path(i)
+            pathIndex = len(Pi[i])
+            needLink[(i, pathIndex)] = []
+            Pi[i].append(targetPath)
+            output.append(targetPath)
+            for nodeIndex in range(1, len(targetPath) - 1):
+                prev = targetPath[nodeIndex - 1]
+                node = targetPath[nodeIndex]
+                next = targetPath[nodeIndex + 1]
+                for link in node.links:
+                    if link.contains(next) and link.entangled:
+                        targetLink1 = link
                     
-        #             if link.contains(prev) and link.entangled:
-        #                 targetLink2 = link
+                    if link.contains(prev) and link.entangled:
+                        targetLink2 = link
                 
-        #         self.y[((node, next))] += 1
-        #         self.y[((next, node))] += 1
-        #         self.y[((node, prev))] += 1
-        #         self.y[((prev, node))] += 1
-        #         nextLink[node].append(targetLink1)
-        #         needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
-        #     T.remove(i)
+                self.y[((node, next))] += 1
+                self.y[((next, node))] += 1
+                self.y[((node, prev))] += 1
+                self.y[((prev, node))] += 1
+                nextLink[node].append(targetLink1)
+                needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
+            T.remove(i)
 
         print('** after graph ' , len(output))
         # print('[REPS] ELS end')
@@ -823,7 +835,29 @@ class REPSREP(AlgorithmBase):
             width = min(width, self.fki_LP[SDpair][k][(currentNode, nextNode)])
 
         return width
-    
+    def get_path(self , req):
+        G = nx.Graph()
+        for node in self.topo.nodes:
+            G.add_node(node.id)
+        link_counter = {}
+        for link in self.topo.links:
+            if link.isEntangled() and not link.taken:
+            # if link.isEntangled():
+                G.add_edge(link.n1.id , link.n2.id )
+                try:
+                    link_counter[(link.n1.id , link.n2.id)] += link_counter[(link.n1.id , link.n2.id)]
+                except:
+                    link_counter[(link.n1.id , link.n2.id)] = 1
+        
+        for edge in G.edges():
+            nx.set_edge_attributes(G, {edge: {"weight": 1/link_counter[(edge[0] , edge[1])]}})
+            # nx.set_edge_attributes(G, {edge: {"weight": 1}})
+            
+        try:
+            path = nx.shortest_path(G , req[0].id , req[1].id ,weight='weight')
+        except:
+            path = []
+        return path
     def findPathForELS(self, SDpair):
         src = SDpair[0]
         dst = SDpair[1]
@@ -852,7 +886,8 @@ class REPSREP(AlgorithmBase):
         visited = {node : False for node in self.topo.nodes}
         pq = PriorityQueue()
 
-        pq.put((self.weightOfNode[src], src.id))
+        # pq.put((self.weightOfNode[src], src.id))
+        pq.put((0, src.id))
         while not pq.empty():
             (dist, uid) = pq.get()
             u = self.topo.nodes[uid]
@@ -865,7 +900,8 @@ class REPSREP(AlgorithmBase):
             visited[u] = True
             
             for next in adjcentList[u]:
-                newDistance = distance[u] + self.weightOfNode[next]
+                # newDistance = distance[u] + self.weightOfNode[next] + 1/self.edgeSuccessfulEntangle(u, next)
+                newDistance = distance[u] + self.weightofLink(u, next)
                 if distance[next] > newDistance:
                     distance[next] = newDistance
                     self.parent[next] = u

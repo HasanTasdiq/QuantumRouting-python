@@ -335,7 +335,9 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
 
         
         for (u, v) in edgeIndices:
-            dis = self.topo.distance(self.topo.nodes[u].loc, self.topo.nodes[v].loc)
+            # dis = self.topo.distance(self.topo.nodes[u].loc, self.topo.nodes[v].loc)
+            dis = self.topo.dist[(u , v)]
+
             probability = math.exp(-self.topo.alpha * dis)
             m.addConstr(gp.quicksum(f[i, u, v] + f[i, v, u] for i in range(numOfSDpairs)) <= probability * x[u, v])
 
@@ -456,6 +458,7 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
         link_counter = {}
         for link in self.topo.links:
             if link.isEntangled() and not link.taken:
+            # if link.isEntangled():
                 G.add_edge(link.n1.id , link.n2.id )
                 try:
                     link_counter[(link.n1.id , link.n2.id)] += link_counter[(link.n1.id , link.n2.id)]
