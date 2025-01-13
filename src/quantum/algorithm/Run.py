@@ -65,7 +65,7 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) \
 + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward as recursive, append last , skip state , old input attn, reward /= pathlen new cr more resource"
+    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward as recursive, append last , skip state , old input attn, reward /= pathlen new cr runtime compare"
  
 ttime = 60
 ttime2 = 60
