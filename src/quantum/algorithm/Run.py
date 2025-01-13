@@ -65,12 +65,12 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) \
 + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward as recursive, append last , skip state , old input attn, reward /= pathlen new cr wght 1"
+    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward as recursive, append last , skip state , old input attn, reward /= pathlen new cr more resource"
  
 ttime = 12000
 ttime2 = 60
 step = 500
-times = 1
+times = 3
 gridSize = 7
 nodeNo = gridSize *gridSize
 fixed = False
