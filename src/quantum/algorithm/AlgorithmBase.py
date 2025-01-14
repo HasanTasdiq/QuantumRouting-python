@@ -768,7 +768,7 @@ class AlgorithmBase:
         # if not ('preswap' in self.name):
         self.tryEntanglement()
 
-
+        t2 = time.time()
         res = self.p4()
         end = process_time()
 
@@ -783,7 +783,8 @@ class AlgorithmBase:
         self.resetNodeSwaps()
         self.resetNeedLinksDict()
 
-        res.totalRuntime += (end - start)
+        # res.totalRuntime += (end - start)
+        res.totalRuntime += time.time() - t2
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
         tot = 0
         if time_ %100 == 0:
