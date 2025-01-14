@@ -89,7 +89,7 @@ class QuRA_DQRL(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
+            # self.PFT() # compute (self.ti, self.fi)
             self.randPFT()
             # self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
@@ -128,9 +128,9 @@ class QuRA_DQRL(AlgorithmBase):
 
         m = gp.Model('REPS for PFT')
         m.setParam("OutputFlag", 0)
-        f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.INTEGER, name = "f")
-        t = m.addVars(numOfSDpairs, lb = 0,ub = 1, vtype = gp.GRB.INTEGER, name = "t")
-        x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.INTEGER, name = "x")
+        f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "f")
+        t = m.addVars(numOfSDpairs, lb = 0,ub = 1, vtype = gp.GRB.CONTINUOUS, name = "t")
+        x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "x")
         m.update()
         
         m.setObjective(gp.quicksum(t[i] for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
@@ -1213,7 +1213,7 @@ class QuRA_DQRL(AlgorithmBase):
                             #     except:
                             #         self.topo.reward_routing[(request , node)] = self.topo.positive_reward
                             #                     self.topo.reward_ent[edge] = self.topo.negative_reward
-
+                        break
 
                         
                     print("====success====" , src.id , dst.id , [n for n in path])
@@ -1346,80 +1346,80 @@ class QuRA_DQRL(AlgorithmBase):
 
 
         
-    def findDQRLPath(self , request):
-            src,dst = request[0] , request[1]
-            current_node = request[0]
-            prev_node = None
-            prev_links = []
-            hopCount = 0
-            success = False
-            good_to_search = True
-            width = 0
-            usedLinks = []
-            selectedNodes = [current_node]
-            selectedEdges = []
-            selectedLinks = []
-            path = [current_node.id]
-            while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
+    # def findDQRLPath(self , request):
+    #         src,dst = request[0] , request[1]
+    #         current_node = request[0]
+    #         prev_node = None
+    #         prev_links = []
+    #         hopCount = 0
+    #         success = False
+    #         good_to_search = True
+    #         width = 0
+    #         usedLinks = []
+    #         selectedNodes = [current_node]
+    #         selectedEdges = []
+    #         selectedLinks = []
+    #         path = [current_node.id]
+    #         while (not current_node == request[1]) and (hopCount < self.hopCountThreshold) and good_to_search:
                 
-                current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
-                next_node = self.topo.nodes[next_node_id]
-                ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
-                key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+    #             current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
+    #             next_node = self.topo.nodes[next_node_id]
+    #             ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped())]
+    #             key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
 
-                if not len(ent_links):
-                    good_to_search = False
-                    # print((src.id,dst.id) , '=FAILED findDQRLPath = not len(ent_links)')
+    #             if not len(ent_links):
+    #                 good_to_search = False
+    #                 # print((src.id,dst.id) , '=FAILED findDQRLPath = not len(ent_links)')
 
-                else:
-                    ent_links = [ent_links[0]]
-                    for link in ent_links:
-                        link.taken = True
-                    selectedLinks.extend(ent_links)
+    #             else:
+    #                 ent_links = [ent_links[0]]
+    #                 for link in ent_links:
+    #                     link.taken = True
+    #                 selectedLinks.extend(ent_links)
                     
 
-                # print(current_node.id , next_node_id , len(ent_links))
+    #             # print(current_node.id , next_node_id , len(ent_links))
 
 
-                if current_node == next_node:
-                    good_to_search = False
-                    # print((src.id,dst.id) , '=FAILED findDQRLPath = current_node == next_node')
+    #             if current_node == next_node:
+    #                 good_to_search = False
+    #                 # print((src.id,dst.id) , '=FAILED findDQRLPath = current_node == next_node')
 
                     
-                if next_node.id in path:
-                    good_to_search = False  
-                    # print((src.id,dst.id) , '=FAILED findDQRLPath = loop')
+    #             if next_node.id in path:
+    #                 good_to_search = False  
+    #                 # print((src.id,dst.id) , '=FAILED findDQRLPath = loop')
                                  
                     
-                if prev_node is None:
-                    prev_links = ent_links
-                    usedLinks.extend(prev_links)
+    #             if prev_node is None:
+    #                 prev_links = ent_links
+    #                 usedLinks.extend(prev_links)
                 
 
-                selectedNodes.append(next_node)
-                selectedEdges.append((current_node, next_node))
-                path.append(next_node.id)
+    #             selectedNodes.append(next_node)
+    #             selectedEdges.append((current_node, next_node))
+    #             path.append(next_node.id)
                 
-                if len(prev_links) and next_node == request[1] and good_to_search:
-                    success = True
-                    good_to_search = False
+    #             if len(prev_links) and next_node == request[1] and good_to_search:
+    #                 success = True
+    #                 good_to_search = False
                 
 
                     
-                prev_node = current_node
-                current_node = next_node
-                hopCount += 1
-                # if hopCount >= self.hopCountThreshold:
-                    # print((src.id,dst.id) , '=FAILED findDQRLPath = hopCount >= self.hopCountThreshold')
+    #             prev_node = current_node
+    #             current_node = next_node
+    #             hopCount += 1
+    #             # if hopCount >= self.hopCountThreshold:
+    #                 # print((src.id,dst.id) , '=FAILED findDQRLPath = hopCount >= self.hopCountThreshold')
 
-            for link in selectedLinks:
-                link.taken = False
-            # if success:
-            #     print('======@@@@===== findDQRLPath len ' , len(selectedNodes) , 'for ' , (src.id , dst.id))
+    #         for link in selectedLinks:
+    #             link.taken = False
+    #         # if success:
+    #         #     print('======@@@@===== findDQRLPath len ' , len(selectedNodes) , 'for ' , (src.id , dst.id))
 
-                return selectedNodes
-            else:
-                return []
+    #             return selectedNodes
+    #         else:
+    #             return []
 
     def extraRoute(self):
         T = []
@@ -1482,7 +1482,7 @@ class QuRA_DQRL(AlgorithmBase):
       
             while (not current_node == dst) and (hopCount < self.hopCountThreshold) and good_to_search:
                 
-                current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
+                # current_state, next_node_id = self.routingAgent.learn_and_predict_next_node(request, current_node , path)
                 next_node = targetPath[i]
                 i+=1
                 next_node_id = next_node.id
@@ -1577,6 +1577,7 @@ class QuRA_DQRL(AlgorithmBase):
                         #     except:
                         #         self.topo.reward_routing[(request , node)] = self.topo.positive_reward
                         #                     self.topo.reward_ent[edge] = self.topo.negative_reward
+                    break
 
                 # for (current_node, next_node) in selectedEdges:
                 #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
@@ -1679,13 +1680,22 @@ class QuRA_DQRL(AlgorithmBase):
             visited[u] = True
             
             for next in adjcentList[u]:
-                newDistance = distance[u] + self.weightOfNode[next]
+                newDistance = distance[u] + self.weightofLink(u,next)
                 if distance[next] > newDistance:
                     distance[next] = newDistance
                     self.parent[next] = u
                     pq.put((distance[next], next.id))
 
         return False
+    def weightofLink(self , u , v):
+        if u == v:
+            return 0
+        capacity = 0
+        for link in u.links:
+            if link.contains(v) and link.entangled and not link.taken:
+                capacity += 1
+
+        return 1/capacity
     def edgeCapacity(self, u, v):
         capacity = 0
         for link in u.links:
@@ -2335,7 +2345,8 @@ class QuRA_DQRL(AlgorithmBase):
             visited[u] = True
             
             for next in adjcentList[u]:
-                newDistance = distance[u] + self.weightOfNode[next]
+                # newDistance = distance[u] + self.weightOfNode[next]
+                newDistance = distance[u] + self.weightofLink(u,next)
                 if distance[next] > newDistance:
                     distance[next] = newDistance
                     self.parent[next] = u

@@ -316,7 +316,7 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
         m = gp.Model('REPS for PFT')
         m.setParam("OutputFlag", 0)
         f = m.addVars(numOfSDpairs, numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "f")
-        t = m.addVars(numOfSDpairs, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "t")
+        t = m.addVars(numOfSDpairs, lb = 0, ub =1, vtype = gp.GRB.CONTINUOUS, name = "t")
         x = m.addVars(numOfNodes, numOfNodes, lb = 0, vtype = gp.GRB.CONTINUOUS, name = "x")
         m.update()
         

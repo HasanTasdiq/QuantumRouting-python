@@ -70,7 +70,7 @@ class REPSREP(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
+            # self.PFT() # compute (self.ti, self.fi)
             self.randPFT()
         # print('[REPS] p2 end')
         
