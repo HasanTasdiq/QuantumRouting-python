@@ -183,6 +183,7 @@ class ChartGenerator:
         AlgoName = ["REPS" , "SP-par_swap" , "DQRL" , "SP-seq_swap"]
         AlgoName = [ "schedule ","schedlue_prob", "rand_schedule","schedule_route" , 'rand_schedule_route']
         AlgoName = ['rl' , 'greedy_only']
+        AlgoName = ['ILP' , 'shortest_par' , 'shortest_seq']
         leg = plt.legend(
             AlgoName,
             loc = 10,
