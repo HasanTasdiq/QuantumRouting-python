@@ -1796,7 +1796,7 @@ class QuRA_DQRL(AlgorithmBase):
             return 0
         capacity = 0
         for link in u.links:
-            if link.contains(v) and link.entangled:
+            if link.contains(v) and link.entangled and not link.taken:
                 capacity += 1
         # print(capacity)
         return capacity
