@@ -61,17 +61,17 @@ from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVE
 
 run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)\
 +" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)\
-+", then done implemented+ skip link  rand 15 req 5 gs ute "\
++", then done implemented+ skip link  rand 3 req 5 gs ute "\
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) \
 + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward as recursive, append last , skip state , old input attn, reward /= pathlen new cr run qura 20k"
+    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward as last 1 -1 -.1 input without q"
  
-ttime = 20000
+ttime = 25000
 ttime2 = 50
 step = 500
 times = 1
-gridSize = 5
+gridSize = 3
 nodeNo = gridSize *gridSize
 fixed = False
 
@@ -80,7 +80,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [15]
+numOfRequestPerRound = [3]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -209,7 +209,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
     algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
@@ -246,7 +246,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
    
     print('======================before append', Topo.print_memory_usage())

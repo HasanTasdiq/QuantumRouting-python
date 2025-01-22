@@ -534,6 +534,65 @@ class RoutingEnv(Env):
         # for self.
 
 
+    #with schedule and routing 
+    def schedule_routing_state(self , requests=None):
+        state_q = [0 for i in range(self.SIZE)]
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        S = []
+        U = []
+
+        if requests is None:
+            requests = self.algo.requestState
+
+        for req in requests:
+            state_req = [0 for i in range(2*self.SIZE)]
+
+            if not req[5]:
+                state_req[req[2].id] = 1 #current node
+                state_req[self.SIZE+req[1].id] = 1
+
+            U.append(state_req)
+        Usd = self.get_embedded_output(U , formatted=True)
+        Asd = self.get_emb_attention(U)
+
+        for usd in Usd:
+            tmp = []
+            for el in usd:
+                tmp.append(el[0])
+            S.append(tmp)
+        for i in range(len(Asd)):
+            asd = Asd[i]
+            tmp = []
+            for el in asd:
+                tmp.append(el[0])
+            S[i].extend(tmp)
+        
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+        for u in S:
+            a = self.get_embedded_output(state_graph )
+            a = Flatten()(tf.constant([numpy.array(a)]))[0]
+            a = list(a.numpy())
+            
+            u.extend(a)
+            
+        # for node in self.algo.topo.nodes:
+        #     state_q[node.id] = node.q
+        
+        # for u in S:
+        #     c = self.get_embedded_output(state_q)
+        #     c = Flatten()(tf.constant([numpy.array(c)]))[0]
+        #     c = list(c.numpy())
+
+        #     u.extend(c)
+        
+        return np.array(S)
+    
     def routing_state_(self , current_request , current_node_id,path, timeSlot = 0  ):
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
@@ -1113,7 +1172,80 @@ class RoutingEnv(Env):
         for n in neighbors:
             neighbor_list[n] = 1
         return neighbor_list
+    def get_mask_shcedule_route(self):
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+        
+
+        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
+        for reqState in self.algo.requestState:
+
+            src,dst,current_node , path , index , done = reqState
+            # print('in get mask +++==== ' , src.id,dst.id,current_node.id , path , index , done)
+
+            if done:
+                continue
+            neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
+            for n in neighbors:
+                if n not in path and n != current_node.id:
+                    mask[index*self.SIZE + n] = 1
+        # print('get mask ' , mask)
+        if not mask.count(1):
+            mask = self.get_mask__request_shcedule_route()
+        return mask
+    def get_mask__request_shcedule_route(self):
+        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
+        for reqState in self.algo.requestState:
+
+            src,dst,current_node , path , index , done = reqState
+            # print('in get req mask +++==== ' , src.id,dst.id,current_node.id , path , index , done)
+            if done:
+                continue
+            for n in range(self.SIZE):
+                    mask[index*self.SIZE + n] = 1
+        return mask
     
+    def neighbor_qs_schedule_route(self , qs , mask = None):
+        ret = []
+        if mask is None:
+            mask = self.get_mask_shcedule_route()
+        min_ = -sys. maxsize - 1
+        for i ,m in enumerate(mask):
+            # print('in neighbor qs m:', m  , i , qs[i])
+            if m is not None:
+                ret.append(qs[i])
+            else:
+                ret.append(min_)
+        return ret
+    def rand_neighbor_schedule_route(self):
+        ret = []
+        mask = self.get_mask_shcedule_route()
+        for i ,m in enumerate(mask):
+            if m is not None:
+                ret.append(i)
+        # print(len(ret) , mask)
+        if not len(ret):
+            # print('len ret is 0 ')
+            mask = self.get_mask__request_shcedule_route()
+            # print(mask)
+            for i ,m in enumerate(mask):
+                if m is not None:
+                    ret.append(i)
+
+        return random.choice(ret)
+
+
+
+
+
+
+
     def neighbor_qs(self , current_node_id , current_state , path , qs , neighbor_list = []):
         if current_node_id == self.SIZE:
             return qs
@@ -1218,11 +1350,11 @@ class RoutingEnv(Env):
         return random.choice(ret)
         # return np.random.randint(0, self.SIZE)
     
-    def max_future_q(self ,current_node_id ,  current_state ,neighbor_list, qs):
+    def max_future_q(self , qs, mask):
         # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
         # current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
 
-        return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs , neighbor_list=neighbor_list))
+        return np.max(self.neighbor_qs_schedule_route( qs , mask))
     # def max_future_q(self , qs):
     #     # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
     #     current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
