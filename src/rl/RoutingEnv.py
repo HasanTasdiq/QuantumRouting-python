@@ -29,7 +29,7 @@ class RoutingEnv(Env):
 
         self.graph = []
         self.V = self.SIZE
-        self.embedding_layer = Embedding(input_dim=100, output_dim=1)
+        self.embedding_layer = Embedding(input_dim=10, output_dim=1)
         self.attention_layer = Attention()
 
         self.skip = True
@@ -541,18 +541,34 @@ class RoutingEnv(Env):
                       for row in range(self.SIZE)]
         S = []
         U = []
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
 
         if requests is None:
             requests = self.algo.requestState
 
         for req in requests:
             state_req = [0 for i in range(2*self.SIZE)]
+            neighbors = [0 for i in range(self.SIZE)]
 
             if not req[5]:
                 state_req[req[2].id] = 1 #current node
                 state_req[self.SIZE+req[1].id] = 1
+            else:
+                state_req[req[1].id] = 1 #current node
+                state_req[self.SIZE+req[1].id] = 1
+                # neighbors = state_graph[req[2].id]
+            # state_req.extend(neighbors)
 
             U.append(state_req)
+        # if self.algo.timeSlot%100 == 0:
+        #     print('------------------state req ------------')
+        #     for req in U:
+        #         print(req)
         Usd = self.get_embedded_output(U , formatted=True)
         Asd = self.get_emb_attention(U)
 
@@ -568,17 +584,11 @@ class RoutingEnv(Env):
                 tmp.append(el[0])
             S[i].extend(tmp)
         
-        for link in self.algo.topo.links:
-            if link.isEntangled() and not link.taken:
-                n1 = link.n1.id
-                n2 = link.n2.id
-                state_graph[n1][n2] = 1
-                state_graph[n2][n1] = 1
+
+        a = self.get_embedded_output(state_graph )
+        a = Flatten()(tf.constant([numpy.array(a)]))[0]
+        a = list(a.numpy())
         for u in S:
-            a = self.get_embedded_output(state_graph )
-            a = Flatten()(tf.constant([numpy.array(a)]))[0]
-            a = list(a.numpy())
-            
             u.extend(a)
             
         # for node in self.algo.topo.nodes:
@@ -590,6 +600,9 @@ class RoutingEnv(Env):
         #     c = list(c.numpy())
 
         #     u.extend(c)
+        # if self.algo.timeSlot%100 == 0:
+        #     for u in S:
+        #         print(u)
         
         return np.array(S)
     
@@ -1212,9 +1225,15 @@ class RoutingEnv(Env):
         return mask
     
     def neighbor_qs_schedule_route(self , qs , mask = None):
+
+            
         ret = []
         if mask is None:
             mask = self.get_mask_shcedule_route()
+            if self.algo.timeSlot%100 == 0:
+                print(qs)
+                print('average q val at: ' , self.algo.timeSlot , sum(qs) / len(qs))
+                print(mask)
         min_ = -sys. maxsize - 1
         for i ,m in enumerate(mask):
             # print('in neighbor qs m:', m  , i , qs[i])
@@ -1222,6 +1241,8 @@ class RoutingEnv(Env):
                 ret.append(qs[i])
             else:
                 ret.append(min_)
+        # if self.algo.timeSlot%100 == 0:
+        #     print(ret)
         return ret
     def rand_neighbor_schedule_route(self):
         ret = []

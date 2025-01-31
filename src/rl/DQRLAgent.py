@@ -19,8 +19,9 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = 1
-lr = .1
+LEARNING_RATE = .5
+lr = .001
+clip_value = .1
 
 
 GAMMA = 0.9
@@ -32,16 +33,16 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 5000
-END_EPSILON_DECAYING = 15000
+START_EPSILON_DECAYING = 10000
+END_EPSILON_DECAYING = 2500
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
-REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
+REPLAY_MEMORY_SIZE = 70000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 30000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 1024  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 200  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
 # SKIP_REWAD = -2
 SKIP_REWAD = -2
@@ -101,6 +102,7 @@ class DQRLAgent:
 
         # An array with last n steps for training
         self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
+        self.priorities = deque(maxlen=REPLAY_MEMORY_SIZE)
 
         # Used to count when to update target network with main network's weights
         self.target_update_counter = 0
@@ -146,9 +148,9 @@ class DQRLAgent:
         # model.add(Dense(self.env.SIZE * 10 , activation='relu'))
         # # model.add(Dense(72 , activation='relu'))
         # model.add(Dense(self.env.SIZE * 5 , activation='relu'))
-        model.add(Dense(600 , activation='relu'))
-        model.add(Dense(600 , activation='relu'))
-        model.add(Dense(600 , activation='relu'))
+        model.add(Dense(400 , activation='relu'))
+        model.add(Dense(800 , activation='relu'))
+        model.add(Dense(400 , activation='relu'))
 
         # model.add(Conv2D(32, 3, activation="relu"))
         # model.add(Flatten)
@@ -160,14 +162,16 @@ class DQRLAgent:
         # print(model.get_weights())
 
         # model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-        model.compile(loss="mse", optimizer=Adam(learning_rate = lr, clipvalue=0.01 ), metrics=['accuracy'])
+        # model.compile(loss="mse", optimizer=Adam(learning_rate = lr, clipvalue=0.01 ), metrics=['accuracy'])
+        model.compile(loss="mse", optimizer=Adam(learning_rate = lr , clipvalue=clip_value), metrics=['accuracy'])
         # model._make_predict_function()
         return model
 
     # Adds step's data to a memory replay array
     # (observation space, action, reward, new observation space, done)
-    def update_replay_memory(self, transition):
+    def update_replay_memory(self, transition , priority):
         self.replay_memory.append(transition)
+        self.priorities.append(priority)
 
     # Trains main network every step during episode
     def train(self, terminal_state, step):
@@ -175,12 +179,23 @@ class DQRLAgent:
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
         print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
+        t1 = time.time()
+
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
 
         # Get a minibatch of random samples from memory replay table
+        # priorities = np.array(self.priorities)
+        # probabilities = priorities / priorities.sum()
+
+        # indices = np.random.choice(len(self.replay_memory), MINIBATCH_SIZE, p=probabilities)
+        # minibatch = [self.replay_memory[i] for i in indices]
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+        print('=============sample ===========' , time.time() - t1)
+
+        t11 = time.time()
+
 
         
         # print([(m[1] , m[2]) for m in minibatch])
@@ -189,12 +204,18 @@ class DQRLAgent:
         current_states = np.array([transition[0] for transition in minibatch])
         # print(current_states)
         current_qs_list = self.model.predict(current_states , verbose=0, batch_size=MINIBATCH_SIZE)
+        print('=============current_qs_list predict ===========' , time.time() - t11)
+
+        t2 = time.time()
 
         # Get future states from minibatch, then query NN model for Q values
         # When using target network, query it, otherwise main network should be queried
         new_current_states = np.array([transition[3] for transition in minibatch])
         future_qs_list = self.target_model.predict(new_current_states , verbose=0, batch_size=MINIBATCH_SIZE)
 
+        print('=============future_qs_list predict===========' , time.time() - t2)
+
+        t3 = time.time()
         X = []
         y = []
         # print(len(minibatch))
@@ -241,16 +262,18 @@ class DQRLAgent:
             # Update Q value for given state
             current_qs = current_qs_list[index]
             current_qs[action] = new_q
+            # print('------------------------------------------------------------------------ ' , action)
 
             # And append to our training data
             X.append(current_state)
             y.append(current_qs)
-
+        print('=============train prep done===========' , time.time() - t3)
+        t4 = time.time()
         # print('=============train start===========')
-        t1 = time.time()
         # Fit on all samples as one batch, log only on terminal state
         hist = self.model.fit(np.array(X), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=True, )
-        print('=============train done===========' , time.time() - t1)
+        print('============= total train done===========' , time.time() - t1)
+        print('=============only train done===========' , time.time() - t4)
         # Update target network counter every episode
         # if terminal_state:
         self.target_update_counter += 1
@@ -478,10 +501,11 @@ class DQRLAgent:
         else:  
             # next_node = np.random.randint(0, self.env.SIZE)
             action = self.env.rand_neighbor_schedule_route()
+        self.env.algo.action_count[action] += 1
         # print('aaaaccccttttiiioooonnn ' , action)
-        request_index , next_node_id = self.decode_schdeule_route_action(action)
+        # print(request_index , next_node_id)
         
-        return current_state, request_index , next_node_id
+        return current_state, action
     
     def decode_schdeule_route_action(self, action):
         request_index = math.floor(action / self.env.SIZE)
@@ -521,13 +545,15 @@ class DQRLAgent:
         # pathlen = len(self.last_action_table[request])
         pathlen = 1
         req = []
+        total_reward = 0
         for i in range(len(self.last_action_table)-1 , -1 , -1):
 
             (request , action , timeSlot ,current_node_id, current_state , next_state ,mask ,  done) = self.last_action_table[i]
+            req_id , next_node_id = self.decode_schdeule_route_action(action)
             req.append(request)
-            reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
+            reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
             # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
-            print((request[0].id , request[1].id) , reward)
+            # print((request[0].id , request[1].id) , reward)
 
 
             if len(R):
@@ -537,18 +563,18 @@ class DQRLAgent:
                 reward = reward * ALPHA + GAMMA * R[-1]
 
                 reward /= pathlen
-                print((request[0].id , request[1].id) , reward)
+                # print((request[0].id , request[1].id) , reward)
 
                 # R.append(reward)
                     
             else:
-                reward = numsuccessReq * ALPHA + (self.env.algo.topo.numOfRequestPerRound - numsuccessReq)* BETA
+                reward = reward*ALPHA + numsuccessReq * GAMMA
                 # reward = numsuccessReq
                 reward /= pathlen
                 R.append(reward)
-
-
-            self.update_replay_memory(( current_state, action, reward, next_state,mask,  done))
+            reward /=10
+            total_reward += reward
+            self.update_replay_memory(( current_state, action, reward, next_state,mask,  done), numsuccessReq)
             
             
             # print(R)
@@ -559,9 +585,11 @@ class DQRLAgent:
         self.last_action_table = []
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
-        print(R)
-        print([(r[0].id,r[1].id) for r in req])
+        # print(R)
+        # print([(r[0].id,r[1].id) for r in req])
         print('update_reward done in ' , time.time() - t1 , 'seconds\n')
+
+        return total_reward
 
     def getOrderedRequests(self , paths):
         req_q = {req: 0 for req in paths}

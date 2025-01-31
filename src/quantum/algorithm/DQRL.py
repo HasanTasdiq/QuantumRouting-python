@@ -195,7 +195,27 @@ class QuRA_DQRL(AlgorithmBase):
             
             varName = self.genNameByComma('t', [i])
             self.ti_LP[SDpair] = m.getVarByName(varName).x
+   
+    def prep4(self):
+        if len(self.srcDstPairs) > 0:
+            self.Pi = {SDpair : [] for SDpair in self.srcDstPairs}
+
+            for i in range(4):
+                self.EPS()
+                s = self.ELS(self.Pi)
+            
+                print('=====---=====prep4 ----=====----===== ' , self.timeSlot , i , s)
+                if not s:
+                    break
+
+            print('=====---=====prep4 final ----=====----===== ' , self.timeSlot , i , s)
+            for sd in self.Pi:
+                for path in self.Pi[sd]:
+                    print([n.id for n in path])
+            
     def p4(self):
+
+        # self.prep4()
 
         if len(self.srcDstPairs) > 0:
             # self.EPS()
@@ -211,10 +231,18 @@ class QuRA_DQRL(AlgorithmBase):
         # print('[REPS] p4 end') 
         self.printResult()
         # self.entAgent.update_reward()
+        reward = 0
         if not 'greedy_only' in self.name:
-            self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1])
+            reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1])
+        self.result.rewardPerRound.append(reward)
+
         return self.result
-    
+    def get_action_ILP(self):
+        req_index = [req[4] for req in self.requestState if not req[[5]]]
+        req = self.requestState[random.choice(req_index)]
+        next_node  = self.Pi[req][0][1]
+        self.Pi[req][0].pop(0)
+        
     def get_all_paths(self):
         successReq = 0
         totalEntanglement = 0
@@ -1383,9 +1411,11 @@ class QuRA_DQRL(AlgorithmBase):
         if True:
             while len(T):
                 
-                current_state , req_id , next_node_id = self.routingAgent.learn_and_predict_next_req_node()
+                current_state , action = self.routingAgent.learn_and_predict_next_req_node()
                 # print('req iddddd ' , req_id , next_node_id)
                 # print([(req[0].id , req[1].id , req[2].id, req[4]) for req in self.requestState])
+                req_id , next_node_id = self.routingAgent.decode_schdeule_route_action(action)
+
                 reqState = self.requestState[req_id]
 
                 (src , dst , current_node , path, index , checked) = reqState
@@ -1478,7 +1508,7 @@ class QuRA_DQRL(AlgorithmBase):
                 
                 done_episode = (not good_to_search or success) and (len(T)==1)
 
-                self.routingAgent.update_action( request ,current_node.id,  next_node_id  , current_state  , done_episode)
+                self.routingAgent.update_action( request ,current_node.id,  action  , current_state  , done_episode)
 
                         
                 prev_node = current_node
@@ -1546,8 +1576,10 @@ class QuRA_DQRL(AlgorithmBase):
                     
 
 
-
-
+                if ent_links_count:
+                    reward = -1/ent_links_count
+                else:
+                    reward = -1
                 if req_done:
                     for req in T:
                         # print('(src, dst) == (req[0], req[1])' , src.id , dst.id , req[0].id , req[1].id , (src, dst) == (req[0], req[1]) , len(T))
@@ -1558,28 +1590,28 @@ class QuRA_DQRL(AlgorithmBase):
                     if success:
                         print("====success====" , src.id , dst.id , [n for n in path])
                         print('shortest path ----- ' , [n.id for n in targetPath])
-                        reward = 1
+                        reward = 10
+                        # reward = 1
                     else:
                         for link in selectedlinks:
                             link.taken = False
                         print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path])
                         print('shortest path ----- ' , [n.id for n in targetPath])
                         print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
-                        reward = -1
-                    for (current_node, next_node) in selectedEdges:
-                        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
-                        try:
-                            self.topo.reward_routing[key] += reward
-                        except:
-                            self.topo.reward_routing[key] = reward
-
-
+                        reward = -5
+                        # reward = -1
+                    # for (current_node, next_node) in selectedEdges:
+                    #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                    #     try:
+                    #         self.topo.reward_routing[key] += reward
+                    #     except:
+                    #         self.topo.reward_routing[key] = reward
 
                 # print('lenT ' , len(T))
 
                 key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(prev_node.id) + '_' + str(next_node.id)
 
-                reward = -.1
+                # reward = -self.topo.numOfRequestPerRound
 
                 try:
                     self.topo.reward_routing[key] += reward
@@ -2071,6 +2103,15 @@ class QuRA_DQRL(AlgorithmBase):
                 capacity += 1
         # print(capacity)
         return capacity
+    def edgeSuccessfulEntangleForELS(self, u, v):
+        if u == v:
+            return 0
+        capacity = 0
+        for link in u.links:
+            if link.contains(v) and link.entangled and not link.taken and not link.considered:
+                capacity += 1
+        # print(capacity)
+        return capacity
 
     def LP2(self):
         # print('[REPS] LP2 start')
@@ -2078,11 +2119,12 @@ class QuRA_DQRL(AlgorithmBase):
 
         numOfNodes = len(self.topo.nodes)
         numOfSDpairs = len(self.srcDstPairs)
-        numOfFlow = [9 for i in range(numOfSDpairs)]
+        numOfFlow = [1 for i in range(numOfSDpairs)]
         if len(numOfFlow):
             maxK = max(numOfFlow)
         else:
             maxK = 0
+        # maxK = 1
         self.fki_LP = {SDpair : [{} for _ in range(maxK)] for SDpair in self.srcDstPairs}
         self.tki_LP = {SDpair : [0] * maxK for SDpair in self.srcDstPairs}
         
@@ -2108,7 +2150,7 @@ class QuRA_DQRL(AlgorithmBase):
                     f[i][k][u] = [0] * numOfNodes 
                     for v in range(numOfNodes):
                         if k < numOfFlow[i] and ((u, v) in edgeIndices or (v, u) in edgeIndices):
-                            f[i][k][u][v] = m.addVar(lb = 0, ub = 1, vtype = gp.GRB.CONTINUOUS, name = "f[%d][%d][%d][%d]" % (i, k, u, v))
+                            f[i][k][u][v] = m.addVar(lb = 0, vtype = gp.GRB.INTEGER, name = "f[%d][%d][%d][%d]" % (i, k, u, v))
 
 
         t = [0] * numOfSDpairs
@@ -2116,9 +2158,9 @@ class QuRA_DQRL(AlgorithmBase):
             t[i] = [0] * maxK
             for k in range(maxK):
                 if k < numOfFlow[i]:
-                    t[i][k] = m.addVar(lb = 0, ub = 1, vtype = gp.GRB.CONTINUOUS, name = "t[%d][%d]" % (i, k))
+                    t[i][k] = m.addVar(lb = 0, ub = 1, vtype = gp.GRB.INTEGER, name = "t[%d][%d]" % (i, k))
                 else:
-                    t[i][k] = m.addVar(lb = 0, ub = 0, vtype = gp.GRB.CONTINUOUS, name = "t[%d][%d]" % (i, k))
+                    t[i][k] = m.addVar(lb = 0, ub = 0, vtype = gp.GRB.INTEGER, name = "t[%d][%d]" % (i, k))
 
         m.update()
         
@@ -2149,13 +2191,16 @@ class QuRA_DQRL(AlgorithmBase):
                     if u not in [s, d]:
                         edgeUV = []
                         for v in range(numOfNodes):
-                            if v not in [s, d]:
+                            # if v not in [s, d] and (u,v) in edgeIndices:
+                            if (u,v) in edgeIndices or (v,u) in edgeIndices:
                                 edgeUV.append(v)
+                            # print('edgeUV ' , u , edgeUV)
                         m.addConstr(gp.quicksum(f[i][k][u][v] for v in edgeUV) - gp.quicksum(f[i][k][v][u] for v in edgeUV) == 0)
 
         
         for (u, v) in edgeIndices:
             capacity = self.edgeSuccessfulEntangle(self.topo.nodes[u], self.topo.nodes[v])
+            # print('capcity ' ,(u , v),  capacity)
             m.addConstr(gp.quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
 
         m.optimize()
@@ -2176,6 +2221,10 @@ class QuRA_DQRL(AlgorithmBase):
                     varName = self.genNameByBbracket('f', [i, k, u.id, v.id])
                     self.fki_LP[SDpair][k][(u, v)] = m.getVarByName(varName).x
 
+                    # print('self.fki_LP[SDpair][k][(u, v)]' , SDpair[0].id , SDpair[1].id , k , (u.id, v.id) ,  self.fki_LP[SDpair][k][(u, v)])
+                    # print('self.fki_LP[SDpair][k][(v, u)]' , SDpair[0].id , SDpair[1].id , k , (v.id, u.id) ,  self.fki_LP[SDpair][k][(v, u)])
+
+
                 # for (u, v) in notEdge:
                 #     u = self.topo.nodes[u]
                 #     v = self.topo.nodes[v]
@@ -2184,13 +2233,13 @@ class QuRA_DQRL(AlgorithmBase):
             
                 varName = self.genNameByBbracket('t', [i, k])
                 self.tki_LP[SDpair][k] = m.getVarByName(varName).x
+                # print('self.tki_LP[SDpair][k]' , SDpair[0].id , SDpair[1].id , k , self.tki_LP[SDpair][k])
         # print('[REPS] LP2 end')
 
     def EPS(self):
         self.LP2()
         # initialize fki(u, v), tki
-        numOfFlow = {SDpair : 9 for SDpair in self.srcDstPairs}
-
+        numOfFlow = {SDpair : 1 for SDpair in self.srcDstPairs}
         self.fki = {SDpair : [{} for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.tki = {SDpair : [0 for k in range(numOfFlow[SDpair])] for SDpair in self.srcDstPairs}
         self.pathForELS = {SDpair : [] for SDpair in self.srcDstPairs}
@@ -2203,7 +2252,8 @@ class QuRA_DQRL(AlgorithmBase):
 
         for SDpair in self.srcDstPairs:
             for k in range(numOfFlow[SDpair]):
-                self.tki[SDpair][k] = self.tki_LP[SDpair][k] >= random.random()
+                # print('self.tki_LP[SDpair][k]' , SDpair[0].id ,SDpair[1].id  , k , self.tki_LP[SDpair][k])
+                self.tki[SDpair][k] = self.tki_LP[SDpair][k]
 
                 if not self.tki[SDpair][k]:
                     continue
@@ -2215,7 +2265,8 @@ class QuRA_DQRL(AlgorithmBase):
                     
                 for path in paths:
                     width = path[-1]
-                    select = (width / self.tki_LP[SDpair][k]) >= random.random()
+                    # select = (width / self.tki_LP[SDpair][k]) >= random.random()
+                    select = 1
                     # print('*** path ', select , [p.id for p in path[0:-1]] , width)
 
                     if not select:
@@ -2230,16 +2281,18 @@ class QuRA_DQRL(AlgorithmBase):
                 
         print('[REPS] EPS end')
 
-    def ELS(self):
+    def ELS(self , Pi):
         Ci = self.pathForELS
         self.y = {(u, v) : 0 for u in self.topo.nodes for v in self.topo.nodes}
         self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
         needLink = {}
         nextLink = {node : [] for node in self.topo.nodes}
-        Pi = {SDpair : [] for SDpair in self.srcDstPairs}
         T = [SDpair for SDpair in self.srcDstPairs]
+        for sd in Pi:
+            if len(Pi[sd]) and sd in T:
+                T.remove(sd)
         output = []
-        while len(T) > 0:
+        while len(T) > 0 :
             for SDpair in self.srcDstPairs:
                 removePaths = []
                 for path in Ci[SDpair]:
@@ -2248,7 +2301,7 @@ class QuRA_DQRL(AlgorithmBase):
                     for nodeIndex in range(pathLen - 1):
                         node = path[nodeIndex]
                         next = path[nodeIndex + 1]
-                        if self.y[(node, next)] >= self.edgeSuccessfulEntangle(node, next):
+                        if self.y[(node, next)] >= self.edgeSuccessfulEntangleForELS(node, next):
                             noResource = True
                     if noResource:
                         removePaths.append(path)
@@ -2285,153 +2338,45 @@ class QuRA_DQRL(AlgorithmBase):
 
             Pi[i].append(targetPath)
             output.append(targetPath)
-            for nodeIndex in range(1, len(targetPath) - 2):
-                prev = targetPath[nodeIndex - 1]
-                node = targetPath[nodeIndex]
-                next = targetPath[nodeIndex + 1]
-                for link in node.links:
-                    if link.contains(next) and link.entangled and link.notSwapped():
+            if len(targetPath) ==2:
+                for link in targetPath[0].links:
+                    if link.contains(targetPath[1]) and link.entangled and link.notSwapped() and not link.taken and not link.considered:
                         targetLink1 = link
-                    
-                    if link.contains(prev) and link.entangled and link.notSwapped():
-                        targetLink2 = link
-                
-                self.y[((node, next))] += 1
-                self.y[((next, node))] += 1
-                self.y[((node, prev))] += 1
-                self.y[((prev, node))] += 1
-
-                nextLink[node].append(targetLink1)
-                needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
-
-            T.remove(i)
-        print('** before graph ' , len(output))
-        T = [SDpair for SDpair in self.srcDstPairs]
-        while len(T) > 0:
-            for SDpair in self.srcDstPairs:
-                removePaths = []
-                for path in Ci[SDpair]:
-                    pathLen = len(path)
-                    noResource = False
-                    for nodeIndex in range(pathLen - 1):
-                        node = path[nodeIndex]
-                        next = path[nodeIndex + 1]
-                        if self.y[(node, next)] >= self.edgeSuccessfulEntangle(node, next):
-                            noResource = True
-                    if noResource:
-                        removePaths.append(path)
-                for path in removePaths:
-                    Ci[SDpair].remove(path)
-            
-            i = -1
-            minLength = math.inf
-            for SDpair in T:
-                for path in Ci[SDpair]:
-                    if len(path) - 1 < minLength:
-                        minLength = len(path) - 1
-                        i = SDpair
-                if len(Ci[SDpair]) == 0 and i == -1:
-                    i = SDpair
-            
-            src = i[0]
-            dst = i[1]
-
-            targetPath = self.findPathForELS(i)
-            pathIndex = len(Pi[i])
-            needLink[(i, pathIndex)] = []
-            Pi[i].append(targetPath)
+                        break
+                targetLink1.considered = True
             for nodeIndex in range(1, len(targetPath) - 1):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
                 next = targetPath[nodeIndex + 1]
                 for link in node.links:
-                    if link.contains(next) and link.entangled:
+                    if link.contains(next) and link.entangled and link.notSwapped() and not link.taken and not link.considered:
                         targetLink1 = link
                     
-                    if link.contains(prev) and link.entangled:
+                    if link.contains(prev) and link.entangled and link.notSwapped() and not link.taken and not link.considered:
                         targetLink2 = link
                 
                 self.y[((node, next))] += 1
                 self.y[((next, node))] += 1
                 self.y[((node, prev))] += 1
                 self.y[((prev, node))] += 1
+
                 nextLink[node].append(targetLink1)
+                targetLink1.considered = True
+                if nodeIndex == 1:
+                    targetLink2.considered = True
                 needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
+
             T.remove(i)
-        
-        # print('[REPS] ELS end')
-        # print('[REPS]' + [(src.id, dst.id) for (src, dst) in self.srcDstPairs])
-        totalEntanglement = 0
-        successReq = 0
-        usedLinks = set()
+        print('** before graph ' , len(output))
+        print([(path[0].id , path[-1].id) for path in output])
 
-        for SDpair in self.srcDstPairs:
-            src = SDpair[0]
-            dst = SDpair[1]
+        print('** after graph ' , len(output))
 
-            if len(Pi[SDpair]):
-                self.result.idleTime -= 1
 
-            for pathIndex in range(len(Pi[SDpair])):
-                path = Pi[SDpair][pathIndex]
-                # print('[REPS] attempt:', [node.id for node in path])
-                for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
-                    usedLinks.add(link1)
-                    usedLinks.add(link2)
-                    node.attemptSwapping(link1, link2)
-                successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
 
-                for path in successPath:
-                    for node, link in path:
-                        if link is not None:
-                            link.used = True
-                            edge = self.topo.linktoEdgeSorted(link)
 
-                            self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
 
-                            # self.result.usedLinks += 1
-                # for x in successPath:
-                #     print('[REPS] success:', [z.id for z in x])
-
-                if len(successPath):
-                    for request in self.requests:
-                        if (src, dst) == (request[0], request[1]):
-                            # print('[REPS] finish time:', self.timeSlot - request[2])
-                            self.requests.remove(request)
-                            successReq += 1
-                            break
-                for (node, link1, link2) in needLink[(SDpair, pathIndex)]:
-                    if not link1 is None and not link1.used and link1.entangled:
-                        edge = self.topo.linktoEdgeSorted(link1)
-                        
-                        try:
-                            self.topo.reward_ent[edge] += self.topo.negative_reward
-                        except:
-                            self.topo.reward_ent[edge] = self.topo.negative_reward
-
-                    if not link2 is None and not link2.used and link2.entangled:
-
-                        edge = self.topo.linktoEdgeSorted(link2)
-                        
-                        try:
-                            self.topo.reward_ent[edge] += self.topo.negative_reward
-                        except:
-                            self.topo.reward_ent[edge] = self.topo.negative_reward
-                    link1.clearPhase4Swap()
-                    link2.clearPhase4Swap()
-                
-                totalEntanglement += len(successPath)
-        self.result.usedLinks += len(usedLinks)
-        
-        self.result.entanglementPerRound.append(totalEntanglement)
-        self.result.successfulRequestPerRound.append(successReq)
-
-        self.result.successfulRequest += successReq
-        
-        entSum = sum(self.result.entanglementPerRound)
-        self.filterReqeuest()
-        print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
-        print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
+        return len(output)
 
     def filterReqeuest(self):
         self.requests = list(filter(lambda x: self.timeSlot -  x[2] < self.topo.requestTimeout -1 , self.requests))

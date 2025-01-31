@@ -70,8 +70,8 @@ class REPSREP(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            # self.PFT() # compute (self.ti, self.fi)
-            self.randPFT()
+            self.PFT() # compute (self.ti, self.fi)
+            # self.randPFT()
         # print('[REPS] p2 end')
         
         
@@ -93,7 +93,7 @@ class REPSREP(AlgorithmBase):
         totalEntanglement = 0
         successReq = 0
         if len(self.srcDstPairs) > 0:
-            for i in range(4):
+            for i in range(1):
                 self.EPS()
                 t , s = self.ELS()
                 totalEntanglement += t
@@ -104,6 +104,9 @@ class REPSREP(AlgorithmBase):
         
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequestPerRound.append(successReq)
+        reward = 0
+        self.result.rewardPerRound.append(reward)
+
         # print('[REPS] p4 end') 
         self.filterReqeuest()
 
