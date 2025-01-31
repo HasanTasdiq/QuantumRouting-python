@@ -69,8 +69,19 @@ class REPS(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
             self.PFT() # compute (self.ti, self.fi)
+            self.randPFT()
         # print('[REPS] p2 end')
-    
+    def randPFT(self):
+        assignable = True
+        while assignable:
+            assignable = False
+            for link in self.topo.links:
+                if link.assignable():
+                    assignable = True
+                    if np.random.random() > 0.5:
+                    
+                        link.assignQubits()
+                        self.totalUsedQubits += 2
     def p4(self):
         # print([(r[0].id, r[0].id) for r in self.requests])
         # print([(r[0].id, r[0].id) for r in self.srcDstPairs])
