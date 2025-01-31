@@ -71,7 +71,7 @@ ttime = 30000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 3
+gridSize = 10
 nodeNo = gridSize *gridSize
 fixed = False
 
@@ -80,7 +80,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [5]
+numOfRequestPerRound = [10]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
