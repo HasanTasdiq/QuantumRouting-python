@@ -20,7 +20,7 @@ logging.getLogger('tensorflow').disabled = True
 from objsize import get_deep_size
 NUM_EPISODES = 2500
 LEARNING_RATE = .5
-lr = .001
+lr = .0001
 clip_value = .1
 
 
@@ -33,14 +33,14 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 10000
-END_EPSILON_DECAYING = 25000
+START_EPSILON_DECAYING = 20000
+END_EPSILON_DECAYING = 45000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
 REPLAY_MEMORY_SIZE = 70000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 30000  # Minimum number of steps in a memory to start training
+MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 1024  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 200  # Terminal states (end of episodes)
 FAILURE_REWARD = -2

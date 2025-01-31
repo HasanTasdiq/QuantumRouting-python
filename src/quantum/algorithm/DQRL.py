@@ -90,7 +90,7 @@ class QuRA_DQRL(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
+            # self.PFT() # compute (self.ti, self.fi)
             self.randPFT()
             # self.entAgent.learn_and_predict()
         # print('[REPS] p2 end')
@@ -1381,6 +1381,8 @@ class QuRA_DQRL(AlgorithmBase):
         totalEntanglement = 0
         usedLinks = []
         conflicts = []
+        t1 = time.time()
+        total_action = 0
   
 
         T = []
@@ -1410,6 +1412,7 @@ class QuRA_DQRL(AlgorithmBase):
 
         if True:
             while len(T):
+                total_action += 1
                 
                 current_state , action = self.routingAgent.learn_and_predict_next_req_node()
                 # print('req iddddd ' , req_id , next_node_id)
@@ -1439,9 +1442,9 @@ class QuRA_DQRL(AlgorithmBase):
                 failed_loop = False
                 failed_swap = False
                 fail_hopcount = False
-                targetPath = self.findPathForDQRL((current_node,dst))
-                if not len(targetPath):
-                    good_to_search = False
+                # targetPath = self.findPathForDQRL((current_node,dst))
+                # if not len(targetPath):
+                #     good_to_search = False
                 # targetPath = []
                 skipRequest = False
                 # if not len(targetPath):
@@ -1589,14 +1592,14 @@ class QuRA_DQRL(AlgorithmBase):
                             break
                     if success:
                         print("====success====" , src.id , dst.id , [n for n in path])
-                        print('shortest path ----- ' , [n.id for n in targetPath])
+                        # print('shortest path ----- ' , [n.id for n in targetPath])
                         reward = 10
                         # reward = 1
                     else:
                         for link in selectedlinks:
                             link.taken = False
                         print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path])
-                        print('shortest path ----- ' , [n.id for n in targetPath])
+                        # print('shortest path ----- ' , [n.id for n in targetPath])
                         print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
                         reward = -5
                         # reward = -1
@@ -1645,6 +1648,7 @@ class QuRA_DQRL(AlgorithmBase):
         self.filterReqeuest()
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request  after  extra:', successReq)
+        print('[' , self.name, '] :' , self.timeSlot, ' total time for route ' , (time.time()-t1) , ' action ' , total_action , 'average time ' , (time.time()-t1)/(total_action if total_action else 1))
     
 
 

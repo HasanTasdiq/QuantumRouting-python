@@ -93,7 +93,7 @@ class REPSREP(AlgorithmBase):
         totalEntanglement = 0
         successReq = 0
         if len(self.srcDstPairs) > 0:
-            for i in range(1):
+            for i in range(4):
                 self.EPS()
                 t , s = self.ELS()
                 totalEntanglement += t

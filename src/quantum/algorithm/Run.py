@@ -65,13 +65,13 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
 + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state  4 8 600"
+    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state  4 8 600 more resource"
  
-ttime = 30000
+ttime = 50000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 10
+gridSize = 5
 nodeNo = gridSize *gridSize
 fixed = False
 
@@ -80,7 +80,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [10]
+numOfRequestPerRound = [20]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -156,7 +156,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         # algo.entAgent.save_model()
         if hasattr(algo , 'routingAgent' ):
             algo.routingAgent.save_model()
-            print('going to save the ent model ' , success_req)
+            print('going to save the routing model ' , success_req)
 
         shared_data[max_success] = success_req
 
@@ -260,7 +260,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
 
 
-    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
+    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
