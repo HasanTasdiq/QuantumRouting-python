@@ -28,6 +28,7 @@ class AlgorithmResult:
         self.eps = 0
         self.successfulRequest = 0
         self.successfulRequestPerRound = []
+        self.rewardPerRound = []
         self.usedLinks = 0
         self.conflicts = 0
         self.pathlen = 0
@@ -53,6 +54,7 @@ class AlgorithmResult:
         AvgResult.remainRequestPerRound = [0 for _ in range(ttime)]
         AvgResult.entanglementPerRound = [0 for _ in range(ttime)]
         AvgResult.successfulRequestPerRound = [0 for _ in range(ttime)]
+        AvgResult.rewardPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
             AvgResult.waitingTime += result.waitingTime
@@ -69,6 +71,7 @@ class AlgorithmResult:
             for i in range(ttime):
                 AvgResult.remainRequestPerRound[i] += result.remainRequestPerRound[i]
                 AvgResult.successfulRequestPerRound[i] += result.successfulRequestPerRound[i]
+                AvgResult.rewardPerRound[i] += result.rewardPerRound[i]
                 # AvgResult.entanglementPerRound[i] += result.entanglementPerRound[i]
                 AvgResult.eps += result.entanglementPerRound[i]
 
@@ -88,6 +91,7 @@ class AlgorithmResult:
             AvgResult.remainRequestPerRound[i] /= len(results)
             AvgResult.entanglementPerRound[i] /= len(results)
             AvgResult.successfulRequestPerRound[i] /= len(results)
+            AvgResult.rewardPerRound[i] /= len(results)
         
         AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100
         AvgResult.usedLinks = (AvgResult.usedLinks /ttime) / len(topo.links) * 100
@@ -107,6 +111,7 @@ class AlgorithmBase:
         self.preEnt = preEnt
         self.param = param
         self.alternatePath = 1
+        self.action_count = {action:0 for action in range(len(self.topo.nodes)*self.topo.numOfRequestPerRound)}
 
 
     def prepare(self):
@@ -734,6 +739,9 @@ class AlgorithmBase:
         print('[ ' , self.name ,' ] #taken links: ' , self.timeSlot , taken)
         print('[ ' , self.name ,' ] #virtual links: ' , self.timeSlot , vlink)
         print('=============================================================')
+        if self.timeSlot %50 == 0:
+            for action in self.action_count:
+                print(action , ': ' , self.action_count[action])
     
 
     def work(self, pairs: list, time_): 

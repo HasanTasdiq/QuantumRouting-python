@@ -20,6 +20,7 @@ class Link:
         self.topo = topo
         self.used = False
         self.taken = False
+        self.considered = False
         
         # print(self.n1.id, self.n2.id, self.p)
     def p(self):
@@ -63,6 +64,7 @@ class Link:
         self.entangled = False
         self.used = False
         self.taken = False
+        self.considered = False
 
 
         for internalLink in self.n1.internalLinks:
@@ -154,6 +156,7 @@ class Link:
         self.s2 = False
         self.entangled = False
         self.taken = False
+        self.considered = False
 
         for internalLink in self.n1.internalLinks:
             if self in internalLink:

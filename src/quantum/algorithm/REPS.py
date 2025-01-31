@@ -79,6 +79,8 @@ class REPS(AlgorithmBase):
             self.EPS()
             self.ELS()
         # print('[REPS] p4 end') 
+        reward = 0
+        self.result.rewardPerRound.append(reward)
         self.printResult()
         return self.result
 
