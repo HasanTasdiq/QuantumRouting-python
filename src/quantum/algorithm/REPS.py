@@ -12,6 +12,7 @@ from topo.Link import Link
 from topo.helper import request_timeout
 from numpy import log as ln
 from random import sample
+import numpy as np
 
 
 EPS = 1e-6
@@ -68,7 +69,7 @@ class REPS(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            self.PFT() # compute (self.ti, self.fi)
+            # self.PFT() # compute (self.ti, self.fi)
             self.randPFT()
         # print('[REPS] p2 end')
     def randPFT(self):
@@ -297,7 +298,8 @@ class REPS(AlgorithmBase):
 
         numOfNodes = len(self.topo.nodes)
         numOfSDpairs = len(self.srcDstPairs)
-        numOfFlow = [self.ti[self.srcDstPairs[i]] for i in range(numOfSDpairs)]
+        # numOfFlow = [self.ti[self.srcDstPairs[i]] for i in range(numOfSDpairs)]
+        numOfFlow = [5 for i in range(numOfSDpairs)]
         if len(numOfFlow):
             maxK = max(numOfFlow)
         else:
