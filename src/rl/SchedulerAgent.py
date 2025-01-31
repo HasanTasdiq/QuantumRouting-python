@@ -265,7 +265,7 @@ class SchedulerAgent:
             # Update Q value for given state
             current_qs = current_qs_list[index]
             current_qs[action] = new_q
-            print(action)
+            # print(action)
 
             # current_qs2 = self.get_qs(current_state)
             # print(current_qs)
@@ -420,7 +420,8 @@ class SchedulerAgent:
         print('in update reward:' , timeSlot , 'R', R )
         print('in update reward:' , timeSlot , 'success ', succ )
 
-
+        
+        self.env.algo.result.rewardPerRound.append(sum(R))
         # for (action , timeSlot , current_state , next_state ,reward ,  done) in self.last_action_reward:
         #     self.update_replay_memory((current_state, action, reward, next_state, done))
 
