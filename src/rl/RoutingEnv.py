@@ -545,8 +545,8 @@ class RoutingEnv(Env):
             if link.isEntangled() and not link.taken:
                 n1 = link.n1.id
                 n2 = link.n2.id
-                state_graph[n1][n2] = 1
-                state_graph[n2][n1] = 1
+                state_graph[n1][n2] += 1
+                state_graph[n2][n1] += 1
 
         if requests is None:
             requests = self.algo.requestState

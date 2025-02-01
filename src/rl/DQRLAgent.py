@@ -19,7 +19,7 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 NUM_EPISODES = 2500
-LEARNING_RATE = .5
+LEARNING_RATE = 1
 lr = .0001
 clip_value = .1
 
@@ -33,8 +33,8 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 20000
-END_EPSILON_DECAYING = 45000
+START_EPSILON_DECAYING = 8000
+END_EPSILON_DECAYING = 15000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
