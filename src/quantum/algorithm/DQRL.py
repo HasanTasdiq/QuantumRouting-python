@@ -1417,10 +1417,10 @@ class QuRA_DQRL(AlgorithmBase):
                 if action < 0:
                     continue
 
-                
+
                 total_action += 1
                 
-                current_state , action = self.routingAgent.learn_and_predict_next_req_node()
+                # current_state , action = self.routingAgent.learn_and_predict_next_req_node()
                 # print('req iddddd ' , req_id , next_node_id)
                 # print([(req[0].id , req[1].id , req[2].id, req[4]) for req in self.requestState])
                 req_id , next_node_id = self.routingAgent.decode_schdeule_route_action(action)
