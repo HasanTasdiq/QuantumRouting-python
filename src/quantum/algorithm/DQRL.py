@@ -1414,9 +1414,11 @@ class QuRA_DQRL(AlgorithmBase):
         while len(T):
             reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
             for (current_state , action , q , mask) in reqState_actions:
-                total_action += 1
                 if action < 0:
                     continue
+
+                
+                total_action += 1
                 
                 current_state , action = self.routingAgent.learn_and_predict_next_req_node()
                 # print('req iddddd ' , req_id , next_node_id)
