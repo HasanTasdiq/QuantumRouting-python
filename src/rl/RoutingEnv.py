@@ -1185,6 +1185,56 @@ class RoutingEnv(Env):
         for n in neighbors:
             neighbor_list[n] = 1
         return neighbor_list
+    
+    def get_mask_shcedule_route_batch(self):
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+        
+
+        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
+        for reqState in self.algo.requestState:
+
+            src,dst,current_node , path , index , done = reqState
+            # print('in get mask +++==== ' , src.id,dst.id,current_node.id , path , index , done)
+
+            if done:
+                continue
+            neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
+            for n in neighbors:
+                if n not in path and n != current_node.id:
+                    mask[index*self.SIZE + n] = 1
+        # print('get mask ' , mask)
+        if not mask.count(1):
+            mask = self.get_mask__request_shcedule_route()
+        return mask
+    def get_mask_one_req_schedule_route(self , reqState):
+        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+        src,dst,current_node , path , index , done = reqState
+
+        neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
+        for n in neighbors:
+            if n not in path and n != current_node.id:
+                mask[index*self.SIZE + n] = 1
+        if not mask.count(1):
+            for n in range(self.SIZE):
+                mask[index*self.SIZE + n] = 1
+
+        return mask
+
     def get_mask_shcedule_route(self):
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
@@ -1244,9 +1294,10 @@ class RoutingEnv(Env):
         # if self.algo.timeSlot%100 == 0:
         #     print(ret)
         return ret
-    def rand_neighbor_schedule_route(self):
+    def rand_neighbor_schedule_route(self , mask = None):
         ret = []
-        mask = self.get_mask_shcedule_route()
+        if mask is None:
+            mask = self.get_mask_shcedule_route()
         for i ,m in enumerate(mask):
             if m is not None:
                 ret.append(i)

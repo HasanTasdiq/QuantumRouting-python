@@ -112,6 +112,7 @@ class AlgorithmBase:
         self.param = param
         self.alternatePath = 1
         self.action_count = {action:0 for action in range(len(self.topo.nodes)*self.topo.numOfRequestPerRound)}
+        self.action_count[-1] = 0
 
 
     def prepare(self):
