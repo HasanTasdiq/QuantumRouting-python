@@ -33,15 +33,15 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 8000
-END_EPSILON_DECAYING = 15000
+START_EPSILON_DECAYING = 20000
+END_EPSILON_DECAYING = 30000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
 REPLAY_MEMORY_SIZE = 70000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1024  # How many steps (samples) to use for training
+MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 200  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
 # SKIP_REWAD = -2
@@ -506,6 +506,37 @@ class DQRLAgent:
         # print(request_index , next_node_id)
         
         return current_state, action
+    def learn_and_predict_next_req_node_all(self):
+        global EPSILON_
+        timeSlot = self.env.algo.timeSlot
+        current_state = self.env.schedule_routing_state()
+        qs = self.get_qs(current_state)
+        if self.env.algo.timeSlot%100 == 0:
+            print(qs)
+            print('average q val at: ' , self.env.algo.timeSlot , sum(qs) / len(qs))
+        ret = []
+        for req in self.env.algo.requestState:
+            mask = self.env.get_mask_one_req_schedule_route(req)
+            # print(req[4] , req[5] , mask)
+            if np.random.random() > EPSILON_:
+
+                t2 = time.time()
+
+                # next_node = np.argmax(self.get_qs(current_state))
+                action = np.argmax(self.env.neighbor_qs_schedule_route(qs , mask))
+                
+            else:  
+                # next_node = np.random.randint(0, self.env.SIZE)
+                action = self.env.rand_neighbor_schedule_route(mask)
+            if req[5]:
+                action = -1
+            q = qs[action]
+            ret.append([current_state , action , q  , mask])
+            self.env.algo.action_count[action] += 1
+        # print('aaaaccccttttiiioooonnn ' , action)
+        # print(request_index , next_node_id)
+        # print([a[1] for a in ret])
+        return ret
     
     def decode_schdeule_route_action(self, action):
         request_index = math.floor(action / self.env.SIZE)
