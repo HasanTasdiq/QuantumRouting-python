@@ -67,11 +67,11 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 8 600 "
  
-ttime = 35000
+ttime = 75000
 ttime2 = 100
 step = 500
 times = 1
-gridSize = 25
+gridSize = 5
 nodeNo = gridSize *gridSize
 fixed = False
 
@@ -260,7 +260,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
 
 
-    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
+    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
