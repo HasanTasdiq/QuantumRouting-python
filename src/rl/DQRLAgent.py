@@ -20,8 +20,8 @@ logging.getLogger('tensorflow').disabled = True
 from objsize import get_deep_size
 import copy
 NUM_EPISODES = 2500
-LEARNING_RATE = .8
-lr = .00001
+LEARNING_RATE = 1
+lr = .0001
 clip_value = .1
 
 
@@ -34,16 +34,16 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 3000
-END_EPSILON_DECAYING = 4000
+START_EPSILON_DECAYING = 3
+END_EPSILON_DECAYING = 4
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
-REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 4024  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 20  # Terminal states (end of episodes)
+REPLAY_MEMORY_SIZE = 100000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 30000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 200  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
 # SKIP_REWAD = -2
 SKIP_REWAD = -2
@@ -625,9 +625,9 @@ class DQRLAgent:
             # print('update  replay memory time ' , time.time() -t3)
         t4 = time.time()
         self.update_replay_memory(trans, numsuccessReq)
-        # if timeSlot == 10:
-        #     for i in range(50000):
-        #         self.update_replay_memory(copy.deepcopy( (current_state, action, i, next_state,mask,  done)), numsuccessReq)
+        if timeSlot == 1:
+            for i in range(80000):
+                self.update_replay_memory(copy.deepcopy( (current_state, action, i, next_state,mask,  done)), numsuccessReq)
             
             
             # print(R)
