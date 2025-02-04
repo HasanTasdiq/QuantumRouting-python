@@ -1410,20 +1410,20 @@ class QuRA_DQRL(AlgorithmBase):
         print([(r[0].id , r[1].id) for r in self.requests])
         # if not (self.param is not None and 'greedy_only' in self.param):
 
-        if True:
-            while len(T):
-            # t = time.time()
-            # reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
-            # print('learn and predict time ' , time.time()-t)
+        # if True:
+        while len(T):
+            t = time.time()
+            reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
+            print('learn and predict time ' , time.time()-t)
 
-            # for (current_state , action , q , mask) in reqState_actions:
-            #     if action < 0:
-            #         continue
+            for (current_state , action , q , mask) in reqState_actions:
+                if action < 0:
+                    continue
 
 
                 total_action += 1
                 
-                current_state , action = self.routingAgent.learn_and_predict_next_req_node()
+                # current_state , action = self.routingAgent.learn_and_predict_next_req_node()
 
 
                 # print('req iddddd ' , req_id , next_node_id)
