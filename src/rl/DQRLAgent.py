@@ -179,11 +179,11 @@ class DQRLAgent:
 
     # Trains main network every step during episode
     def train(self, terminal_state, step):
+        t1 = time.time()
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
         print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
-        t1 = time.time()
 
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
@@ -627,8 +627,10 @@ class DQRLAgent:
             # print(R)
         print('time for update memory ' , time.time()-t4)
         self.env.algo.topo.reward_routing = {}
+        t5 = time.time()
+
         self.train(False , self.env.algo.timeSlot)
-        print('time train ' , time.time()-t1)
+        print('time train ' , time.time()-t5)
 
 
 
