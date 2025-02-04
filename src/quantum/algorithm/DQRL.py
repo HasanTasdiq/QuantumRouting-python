@@ -1410,17 +1410,19 @@ class QuRA_DQRL(AlgorithmBase):
         print([(r[0].id , r[1].id) for r in self.requests])
         # if not (self.param is not None and 'greedy_only' in self.param):
 
-        if True:
-            while len(T):
-            # reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
-            # for (current_state , action , q , mask) in reqState_actions:
-            #     if action < 0:
-            #         continue
+        # if True:
+        while len(T):
+            reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
+            for (current_state , action , q , mask) in reqState_actions:
+                if action < 0:
+                    continue
 
 
                 total_action += 1
                 
-                current_state , action = self.routingAgent.learn_and_predict_next_req_node()
+                # current_state , action = self.routingAgent.learn_and_predict_next_req_node()
+
+
                 # print('req iddddd ' , req_id , next_node_id)
                 # print([(req[0].id , req[1].id , req[2].id, req[4]) for req in self.requestState])
                 req_id , next_node_id = self.routingAgent.decode_schdeule_route_action(action)
@@ -1468,10 +1470,10 @@ class QuRA_DQRL(AlgorithmBase):
                 if not len(ent_links):
                     good_to_search = False
                     failed_no_ent = True
-                    conflicts_ = self.getConflicts(current_node , next_node , selectedEdgesDict)
-                    if len(conflicts_):
-                        failed_conflict = True
-                    conflicts.extend(conflicts_)
+                    # conflicts_ = self.getConflicts(current_node , next_node , selectedEdgesDict)
+                    # if len(conflicts_):
+                    #     failed_conflict = True
+                    # conflicts.extend(conflicts_)
                         # print((src.id,dst.id) , '=FAILED= no ent links')
                 else:
                     ent_links = [ent_links[0]]

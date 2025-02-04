@@ -33,8 +33,8 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 20000
-END_EPSILON_DECAYING = 50000
+START_EPSILON_DECAYING = 20
+END_EPSILON_DECAYING = 50
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -578,7 +578,7 @@ class DQRLAgent:
         req = []
         total_reward = 0
         for i in range(len(self.last_action_table)-1 , -1 , -1):
-
+            t2 = time.time()
             (request , action , timeSlot ,current_node_id, current_state , next_state ,mask ,  done) = self.last_action_table[i]
             req_id , next_node_id = self.decode_schdeule_route_action(action)
             req.append(request)
@@ -605,10 +605,18 @@ class DQRLAgent:
                 R.append(reward)
             reward /=10
             total_reward += reward
+            print('get reward time ' , time.time() -t2)
+            t3 = time.time()
             self.update_replay_memory(( current_state, action, reward, next_state,mask,  done), numsuccessReq)
+            if timeSlot == 10:
+                for i in range(50000):
+                    self.update_replay_memory(( current_state, action, reward, next_state,mask,  done), numsuccessReq)
+
+            print('update  replay memory time ' , time.time() -t3)
             
             
             # print(R)
+        print('time for update memory ' , time.time()-t1)
         self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)
 
