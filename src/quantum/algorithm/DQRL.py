@@ -1528,7 +1528,7 @@ class QuRA_DQRL(AlgorithmBase):
                 # print('good_to_search ' , good_to_search , 'req_done ' , req_done)
                 reqState = (src,dst,current_node,tuple(path),index,req_done)
                 self.requestState[index] = reqState
-
+                swappSuccess = True
                 if success:
                     print('going to swap for ' , (src.id , dst.id ))
                     for i in range(len(selectedlinks)-1):
@@ -1543,37 +1543,52 @@ class QuRA_DQRL(AlgorithmBase):
                         usedLinks.append(l2)
                         if not swapped:
                             failed_swap = True
+                            swappSuccess = False
                             print('================failed swap==================')
                             break
              
 
 
-                if success:
+                if success and swappSuccess:
                     print('going to find path for:', (src.id , dst.id ))
-                    successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
-                    print('len success ' , len(successPath))
-                    if len(successPath):
-
-                        for path_ in successPath:
-                            for node, link in path_:
-                                if link is not None:
-                                    link.used = True
-                                    edge = self.topo.linktoEdgeSorted(link)
-
-                                    self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
-                
+                    t2 = time.time()
+                    for req in self.requests:
+                        # src = req[0]
+                        # dst = req[1]
+                        if (src, dst) == (req[0], req[1]):
+                            # print('[REPS] finish time:', self.timeSlot - request[2])
+                            self.requests.remove(req)
                             break
 
-                        for req in self.requests:
-                            # src = req[0]
-                            # dst = req[1]
-                            if (src, dst) == (req[0], req[1]):
-                                # print('[REPS] finish time:', self.timeSlot - request[2])
-                                self.requests.remove(req)
-                                break
+                    successReq += 1
+                    totalEntanglement += 1
+                    # successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
+                    # print('len success ' , len(successPath))
+                    # print('time suxxes path ' , time.time()-t2)
+                    # if len(successPath):
 
-                        successReq += 1
-                        totalEntanglement += len(successPath)
+                    #     for path_ in successPath:
+                    #         for node, link in path_:
+                    #             if link is not None:
+                    #                 link.used = True
+                    #                 edge = self.topo.linktoEdgeSorted(link)
+
+                    #                 self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
+                
+                    #         break
+
+                    #     for req in self.requests:
+                    #         # src = req[0]
+                    #         # dst = req[1]
+                    #         if (src, dst) == (req[0], req[1]):
+                    #             # print('[REPS] finish time:', self.timeSlot - request[2])
+                    #             self.requests.remove(req)
+                    #             break
+
+                    #     successReq += 1
+                    #     totalEntanglement += len(successPath)
+
+
                     
                 # else:
 
