@@ -323,8 +323,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
                             # for _ in range(int(random.random()*3+1)):
                             ids[i].append((a[0], a[1]))
         print('##############going to append jobs ###############  ')
-        print('----------size(ids)----------------', get_deep_size(ids)/1000000)
-        print('----------size(algorithms)----------------', get_deep_size(algorithms)/1000000)
+        # print('----------size(ids)----------------', get_deep_size(ids)/1000000)
+        # print('----------size(algorithms)----------------', get_deep_size(algorithms)/1000000)
 
         
         for algoIndex in range(len(algorithms)):
