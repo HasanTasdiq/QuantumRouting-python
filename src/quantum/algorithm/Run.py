@@ -65,10 +65,10 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
 + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 8 600 seq"
+    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 8 600"
  
-ttime = 75000
-ttime2 = 100
+ttime = 65000
+ttime2 = 200
 step = 500
 times = 1
 gridSize = 5
@@ -208,8 +208,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
+    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
