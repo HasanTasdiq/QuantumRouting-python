@@ -18,6 +18,7 @@ warnings.filterwarnings("ignore")
 import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
+import copy
 NUM_EPISODES = 2500
 LEARNING_RATE = 1
 lr = .0001
@@ -608,9 +609,9 @@ class DQRLAgent:
             print('get reward time ' , time.time() -t2)
             t3 = time.time()
             self.update_replay_memory(( current_state, action, reward, next_state,mask,  done), numsuccessReq)
-            # if timeSlot == 10:
-            #     for i in range(50000):
-            #         self.update_replay_memory(( current_state, action, i, next_state,mask,  done), numsuccessReq)
+            if timeSlot == 10:
+                for i in range(50000):
+                    self.update_replay_memory(copy.deepcopy( current_state, action, i, next_state,mask,  done), numsuccessReq)
 
             print('update  replay memory time ' , time.time() -t3)
             
