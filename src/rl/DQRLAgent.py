@@ -628,6 +628,8 @@ class DQRLAgent:
         print('time for update memory ' , time.time()-t4)
         self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)
+        print('time train ' , time.time()-t1)
+
 
 
         self.last_action_table = []
