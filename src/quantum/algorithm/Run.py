@@ -67,13 +67,13 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 8 600"
  
-ttime = 65000
+ttime = 5000
 ttime2 = 200
 step = 500
 times = 1
 gridSize = 5
 nodeNo = gridSize *gridSize
-fixed = False
+fixed = True
 
 alpha_ = 0.0007
 degree = 1
@@ -208,8 +208,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
+    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
