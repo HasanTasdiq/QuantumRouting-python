@@ -171,7 +171,10 @@ class DQRLAgent:
     # Adds step's data to a memory replay array
     # (observation space, action, reward, new observation space, done)
     def update_replay_memory(self, transition , priority):
-        self.replay_memory.append(transition)
+        if type(transition) is list:
+            self.replay_memory.extend(transition)
+        else:
+            self.replay_memory.append(transition)
         self.priorities.append(priority)
 
     # Trains main network every step during episode
@@ -578,6 +581,7 @@ class DQRLAgent:
         pathlen = 1
         req = []
         total_reward = 0
+        trans = []
         for i in range(len(self.last_action_table)-1 , -1 , -1):
             t2 = time.time()
             (request , action , timeSlot ,current_node_id, current_state , next_state ,mask ,  done) = self.last_action_table[i]
@@ -608,16 +612,20 @@ class DQRLAgent:
             total_reward += reward
             print('get reward time ' , time.time() -t2)
             t3 = time.time()
-            self.update_replay_memory(( current_state, action, reward, next_state,mask,  done), numsuccessReq)
-            if timeSlot == 10:
-                for i in range(50000):
-                    self.update_replay_memory(copy.deepcopy( (current_state, action, i, next_state,mask,  done)), numsuccessReq)
+            transition = ( current_state, action, reward, next_state,mask,  done)
+            trans.append(transition)
+
 
             print('update  replay memory time ' , time.time() -t3)
+        t4 = time.time()
+        self.update_replay_memory(trans, numsuccessReq)
+        if timeSlot == 10:
+            for i in range(50000):
+                self.update_replay_memory(copy.deepcopy( (current_state, action, i, next_state,mask,  done)), numsuccessReq)
             
             
             # print(R)
-        print('time for update memory ' , time.time()-t1)
+        print('time for update memory ' , time.time()-t4)
         self.env.algo.topo.reward_routing = {}
         self.train(False , self.env.algo.timeSlot)
 
