@@ -197,6 +197,7 @@ class DQRLAgent:
         # indices = np.random.choice(len(self.replay_memory), MINIBATCH_SIZE, p=probabilities)
         # minibatch = [self.replay_memory[i] for i in indices]
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+        batch_size = 32
         print('=============sample ===========' , time.time() - t1)
 
         t11 = time.time()
@@ -208,7 +209,7 @@ class DQRLAgent:
         # Get current states from minibatch, then query NN model for Q values
         current_states = np.array([transition[0] for transition in minibatch])
         # print(current_states)
-        current_qs_list = self.model.predict(current_states , verbose=0, batch_size=64)
+        current_qs_list = self.model.predict(current_states , verbose=0, batch_size=batch_size)
         print('=============current_qs_list predict ===========' , time.time() - t11)
 
         t2 = time.time()
@@ -216,7 +217,7 @@ class DQRLAgent:
         # Get future states from minibatch, then query NN model for Q values
         # When using target network, query it, otherwise main network should be queried
         new_current_states = np.array([transition[3] for transition in minibatch])
-        future_qs_list = self.target_model.predict(new_current_states , verbose=0, batch_size=64)
+        future_qs_list = self.target_model.predict(new_current_states , verbose=0, batch_size=batch_size)
 
         print('=============future_qs_list predict===========' , time.time() - t2)
 
@@ -276,7 +277,7 @@ class DQRLAgent:
         t4 = time.time()
         # print('=============train start===========')
         # Fit on all samples as one batch, log only on terminal state
-        hist = self.model.fit(np.array(X), np.array(y), batch_size=64, verbose=0, shuffle=True, )
+        hist = self.model.fit(np.array(X), np.array(y), batch_size=batch_size, verbose=0, shuffle=True, )
         print('============= total train done===========' , time.time() - t1)
         print('=============only train done===========' , time.time() - t4)
         # Update target network counter every episode
