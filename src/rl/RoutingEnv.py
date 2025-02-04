@@ -7,6 +7,7 @@ sys.path.append("..")
 # from quantum.topo.helper import needlink_timeslot
 import math
 import ast
+import time
 
 ENTANGLEMENT_LIFETIME = 10
 
@@ -569,8 +570,14 @@ class RoutingEnv(Env):
         #     print('------------------state req ------------')
         #     for req in U:
         #         print(req)
+        t = time.time()
         Usd = self.get_embedded_output(U , formatted=True)
+        print('Usd = self.get_embedded_output ' , time.time()-t)
+        t = time.time()
+
         Asd = self.get_emb_attention(U)
+        print('asd = self.get_embedded_output ' , time.time()-t)
+
 
         for usd in Usd:
             tmp = []
@@ -584,8 +591,11 @@ class RoutingEnv(Env):
                 tmp.append(el[0])
             S[i].extend(tmp)
         
+        t = time.time()
 
         a = self.get_embedded_output(state_graph )
+        print('a = self.get_embedded_outpu ' , time.time()-t)
+        
         a = Flatten()(tf.constant([numpy.array(a)]))[0]
         a = list(a.numpy())
         for u in S:
