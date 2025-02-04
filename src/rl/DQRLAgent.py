@@ -184,6 +184,7 @@ class DQRLAgent:
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
         print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
+        print('get deep size time ' , time.time()-t1)
 
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
