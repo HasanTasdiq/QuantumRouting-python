@@ -1412,7 +1412,10 @@ class QuRA_DQRL(AlgorithmBase):
 
         # if True:
         while len(T):
+            t = time.time()
             reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
+            print('learn and predict time ' , time.time()-t)
+
             for (current_state , action , q , mask) in reqState_actions:
                 if action < 0:
                     continue
