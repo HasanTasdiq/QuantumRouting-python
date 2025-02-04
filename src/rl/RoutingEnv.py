@@ -201,24 +201,24 @@ class RoutingEnv(Env):
         # Apply the Embedding layer
         t = time.time()
         embedded_output = self.embedding_layer(tf.constant(inp))
-        print('self.embedding_layer(tf.constant(inp)) ' , time.time()-t)
+        # print('self.embedding_layer(tf.constant(inp)) ' , time.time()-t)
 
-        # Flatten the output
-        t = time.time()
+        # # Flatten the output
+        # t = time.time()
 
-        flattened_output = Flatten()(embedded_output)
-
-
-        print('Flatten()(embedded_output) ' , time.time()-t)
+        # flattened_output = Flatten()(embedded_output)
 
 
-        # Print the shape of the flattened output
-        # print(embedded_output)
-        # print(flattened_output)
-        t = time.time()
+        # print('Flatten()(embedded_output) ' , time.time()-t)
 
-        out1 = Flatten()(tf.constant([numpy.array(flattened_output)]))[0]
-        print('Flatten()(tf.constant([numpy.array(flattened_output)]) ' , time.time()-t)
+
+        # # Print the shape of the flattened output
+        # # print(embedded_output)
+        # # print(flattened_output)
+        # t = time.time()
+
+        # out1 = Flatten()(tf.constant([numpy.array(flattened_output)]))[0]
+        # print('Flatten()(tf.constant([numpy.array(flattened_output)]) ' , time.time()-t)
 
         out1 = embedded_output
         if formatted:

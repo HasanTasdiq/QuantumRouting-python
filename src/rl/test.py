@@ -3,9 +3,9 @@ from keras.layers import Embedding, Flatten, Attention
 import numpy
 
 # Create a sample 2D input
-input_array = tf.constant([[0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-[0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]])
+input_array = tf.constant([[0, 1, 1,0],
+[0, 1, 0, 1],
+[1, 0, 0, 1]])
 
 # Create an Embedding layer
 embedding_layer = Embedding(input_dim=10, output_dim=1)
@@ -52,21 +52,22 @@ attention_output = attention_layer([query, key, value])
 
 
 
-def get_embedded_output( inp , formatted = False):
+def get_embedded_output(inp , formatted = False):
 
         # Apply the Embedding layer
         embedded_output = embedding_layer(tf.constant(inp))
-
-        # Flatten the output
+        # print('------embedded_output-----' , tf.constant(embedded_output, dtype=tf.float32))
+        print('------embedded_output-----' , embedded_output)
         flattened_output = Flatten()(embedded_output)
-
-
-
+        print('------flattened_output-----' , flattened_output)
 
         # Print the shape of the flattened output
         # print(embedded_output)
         # print(flattened_output)
+
         out1 = Flatten()(tf.constant([numpy.array(flattened_output)]))[0]
+        print('------out1-----' , out1)
+
         out1 = embedded_output
         if formatted:
             return list(out1.numpy())
@@ -100,7 +101,7 @@ def get_emb_attention(  inp):
         return attention_output.numpy()
 
 print('----from funct')
-print(get_emb_attention(input_array))
+print(get_embedded_output(input_array))
 
 a = b = c = 10
 # print(a,b,c)
