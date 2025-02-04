@@ -610,13 +610,13 @@ class DQRLAgent:
                 R.append(reward)
             reward /=10
             total_reward += reward
-            print('get reward time ' , time.time() -t2)
+            # print('get reward time ' , time.time() -t2)
             t3 = time.time()
             transition = ( current_state, action, reward, next_state,mask,  done)
             trans.append(transition)
 
 
-            print('update  replay memory time ' , time.time() -t3)
+            # print('update  replay memory time ' , time.time() -t3)
         t4 = time.time()
         self.update_replay_memory(trans, numsuccessReq)
         if timeSlot == 10:
