@@ -1520,7 +1520,7 @@ class QuRA_DQRL(AlgorithmBase):
                 done_episode = (not good_to_search or success) and (len(T)==1)
                 t3 = time.time()
                 self.routingAgent.update_action( request ,current_node.id,  action  , current_state  , done_episode)
-                print('update action time ' , time.time()-t3)
+                # print('update action time ' , time.time()-t3)
                         
                 prev_node = current_node
                 current_node = next_node
