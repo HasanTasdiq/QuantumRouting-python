@@ -33,8 +33,8 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 20
-END_EPSILON_DECAYING = 50
+START_EPSILON_DECAYING = 500
+END_EPSILON_DECAYING = 600
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -608,9 +608,9 @@ class DQRLAgent:
             print('get reward time ' , time.time() -t2)
             t3 = time.time()
             self.update_replay_memory(( current_state, action, reward, next_state,mask,  done), numsuccessReq)
-            if timeSlot == 10:
-                for i in range(50000):
-                    self.update_replay_memory(( current_state, action, i, next_state,mask,  done), numsuccessReq)
+            # if timeSlot == 10:
+            #     for i in range(50000):
+            #         self.update_replay_memory(( current_state, action, i, next_state,mask,  done), numsuccessReq)
 
             print('update  replay memory time ' , time.time() -t3)
             
