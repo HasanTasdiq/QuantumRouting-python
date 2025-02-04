@@ -553,17 +553,21 @@ class DQRLAgent:
         timeSlot = self.env.algo.timeSlot
         # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
         if not done:
+            t = time.time()
             next_state = self.env.schedule_routing_state()
+            print('update action get state time ' , time.time()-t)
         else:
             next_state = None
 
         if next_state is None:
             next_state = current_state
         # done = False
-
+        t = time.time()
         mask = self.env.get_mask_shcedule_route() #action is the next node id
-
+        print('update action get get_mask_shcedule_route time ' , time.time()-t)
+        t = time.time()
         self.last_action_table.append((request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done))
+        print('update action  last_action_table.append( time ' , time.time()-t)
 
 
     
