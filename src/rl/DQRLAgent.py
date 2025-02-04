@@ -197,7 +197,7 @@ class DQRLAgent:
         # indices = np.random.choice(len(self.replay_memory), MINIBATCH_SIZE, p=probabilities)
         # minibatch = [self.replay_memory[i] for i in indices]
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
-        batch_size = 128
+        batch_size = 256
         print('=============sample ===========' , time.time() - t1)
 
         t11 = time.time()
