@@ -199,18 +199,27 @@ class RoutingEnv(Env):
     def get_embedded_output(self , inp , formatted = False):
 
         # Apply the Embedding layer
+        t = time.time()
         embedded_output = self.embedding_layer(tf.constant(inp))
+        print('self.embedding_layer(tf.constant(inp)) ' , time.time()-t)
 
         # Flatten the output
+        t = time.time()
+
         flattened_output = Flatten()(embedded_output)
 
 
+        print('Flatten()(embedded_output) ' , time.time()-t)
 
 
         # Print the shape of the flattened output
         # print(embedded_output)
         # print(flattened_output)
+        t = time.time()
+
         out1 = Flatten()(tf.constant([numpy.array(flattened_output)]))[0]
+        print('Flatten()(tf.constant([numpy.array(flattened_output)]) ' , time.time()-t)
+
         out1 = embedded_output
         if formatted:
             return list(out1.numpy())
@@ -572,11 +581,11 @@ class RoutingEnv(Env):
         #         print(req)
         t = time.time()
         Usd = self.get_embedded_output(U , formatted=True)
-        print('Usd = self.get_embedded_output ' , time.time()-t)
+        # print('Usd = self.get_embedded_output ' , time.time()-t)
         t = time.time()
 
         Asd = self.get_emb_attention(U)
-        print('asd = self.get_embedded_output ' , time.time()-t)
+        # print('asd = self.get_embedded_output ' , time.time()-t)
 
 
         for usd in Usd:
@@ -594,7 +603,7 @@ class RoutingEnv(Env):
         t = time.time()
 
         a = self.get_embedded_output(state_graph )
-        print('a = self.get_embedded_outpu ' , time.time()-t)
+        # print('a = self.get_embedded_outpu ' , time.time()-t)
         
         a = Flatten()(tf.constant([numpy.array(a)]))[0]
         a = list(a.numpy())
