@@ -40,8 +40,8 @@ EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
-REPLAY_MEMORY_SIZE = 200000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100000  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 40000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
