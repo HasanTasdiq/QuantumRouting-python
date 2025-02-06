@@ -66,7 +66,7 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
 + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 8 600"
+    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 8 600 more req"
  
 ttime = 50000
 ttime2 = 500
