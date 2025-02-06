@@ -149,9 +149,9 @@ class DQRLAgent:
         # model.add(Dense(self.env.SIZE * 10 , activation='relu'))
         # # model.add(Dense(72 , activation='relu'))
         # model.add(Dense(self.env.SIZE * 5 , activation='relu'))
-        model.add(Dense(400 , activation='relu'))
-        model.add(Dense(800 , activation='relu'))
-        model.add(Dense(400 , activation='relu'))
+        model.add(Dense(1000 , activation='relu'))
+        model.add(Dense(1500 , activation='relu'))
+        model.add(Dense(2000 , activation='relu'))
 
         # model.add(Conv2D(32, 3, activation="relu"))
         # model.add(Flatten)
