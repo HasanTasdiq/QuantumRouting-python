@@ -31,6 +31,7 @@ from Schedule import SCHEDULEGREEDY
 from ScheduleRoute import SCHEDULEROUTEGREEDY
 from ScheduleRoute_cache import SCHEDULEROUTEGREEDY_CACHE
 from ScheduleRoute_cache_ps import SCHEDULEROUTEGREEDY_CACHE_PS
+from Heuristic import QuRA_Heuristic
 # from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 
@@ -67,20 +68,20 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 8 600"
  
-ttime = 5000
-ttime2 = 200
+ttime = 50000
+ttime2 = 500
 step = 500
 times = 1
 gridSize = 10
 nodeNo = gridSize *gridSize
-fixed = False
+fixed = True
 
 alpha_ = 0.0007
 degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [30]
+numOfRequestPerRound = [20]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -97,7 +98,7 @@ preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
 runLabel = [0]
 Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity"]
-toRunLessAlgos = ['REPS','REPS_shortest' ,'REPS_rep', 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only', 'RANDSCHEDULEGREEDY','RANDSCHEDULEROUTEGREEDY']
+toRunLessAlgos = ['REPS','REPS_shortest','QuRA_Heuristic' ,'REPS_rep', 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only', 'RANDSCHEDULEGREEDY','RANDSCHEDULEROUTEGREEDY']
 
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
@@ -208,8 +209,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
+    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 
@@ -248,6 +249,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
     # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
+    # algorithms.append(QuRA_Heuristic(copy.deepcopy(topo) , name = 'QuRA_Heuristic'))
+
    
     print('======================before append', Topo.print_memory_usage())
    

@@ -1627,7 +1627,7 @@ class QuRA_DQRL(AlgorithmBase):
                         print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path])
                         # print('shortest path ----- ' , [n.id for n in targetPath])
                         print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
-                        reward = -5
+                        reward = -10
                         # reward = -1
                     # for (current_node, next_node) in selectedEdges:
                     #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
