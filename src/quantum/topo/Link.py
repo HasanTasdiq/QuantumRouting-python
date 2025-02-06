@@ -157,6 +157,7 @@ class Link:
         self.entangled = False
         self.taken = False
         self.considered = False
+        self.used = False
 
         for internalLink in self.n1.internalLinks:
             if self in internalLink:

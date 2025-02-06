@@ -56,7 +56,7 @@ class REPSREP(AlgorithmBase):
         for (src, dst) in self.srcDstPairs:
             self.totalRequest += 1
             self.requests.append((src, dst, self.timeSlot))
-
+        print([(src.id, dst.id) for (src, dst) in self.srcDstPairs])
         self.srcDstPairs = []
         for request in self.requests:
             src = request[0]
