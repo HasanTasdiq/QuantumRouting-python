@@ -34,14 +34,14 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 30000
-END_EPSILON_DECAYING = 45000
+START_EPSILON_DECAYING = 7000
+END_EPSILON_DECAYING = 4500
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
-REPLAY_MEMORY_SIZE = 200000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100000  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 100000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
@@ -97,7 +97,7 @@ class DQRLAgent:
         self.target_model.set_weights(self.model.get_weights())
 
         # print(self.model.get_weights())
-        self.print_weight(self.model)
+        # self.print_weight(self.model)
 
         # print(self.target_model.get_weights())
 
@@ -142,6 +142,26 @@ class DQRLAgent:
         # model.add(Flatten())  # this converts our 3D feature maps to 1D feature vectors
         # model.add(Dense(64))
 
+        numAction = self.env.SIZE * self.env.algo.topo.numOfRequestPerRound
+        numInput = self.OBSERVATION_SPACE_VALUES[0]*self.OBSERVATION_SPACE_VALUES[1]
+        layer1 = (math.sqrt(numInput) +2*numAction) //3
+        layer2 = (math.sqrt(numInput) +numAction) //4
+        layer3 = (math.sqrt(numInput) +2*numAction) //5
+
+        print('==============')
+        print('==============')
+        print('==============')
+        print('==============')
+        print(numInput)
+        print(numAction)
+        print(layer1)
+        print(layer2)
+        print(layer3)
+        print('==============')
+        print('==============')
+        print('==============')
+        print('==============')
+        # exit()
 
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
@@ -149,16 +169,16 @@ class DQRLAgent:
         # model.add(Dense(self.env.SIZE * 10 , activation='relu'))
         # # model.add(Dense(72 , activation='relu'))
         # model.add(Dense(self.env.SIZE * 5 , activation='relu'))
-        model.add(Dense(1000 , activation='relu'))
-        model.add(Dense(1500 , activation='relu'))
-        model.add(Dense(2000 , activation='relu'))
+        model.add(Dense(layer1, activation='relu'))
+        model.add(Dense(layer2 , activation='relu'))
+        model.add(Dense(layer3 , activation='relu'))
 
         # model.add(Conv2D(32, 3, activation="relu"))
         # model.add(Flatten)
 
         model.add(Dense(self.env.SIZE * self.env.algo.topo.numOfRequestPerRound, activation='linear')) 
         # model.add(Dense(self.env.SIZE , activation='linear')) 
-        print(model.summary)
+        # print(model.summary)
         # print('------------------self.model.get_weights()-------------------')
         # print(model.get_weights())
 
