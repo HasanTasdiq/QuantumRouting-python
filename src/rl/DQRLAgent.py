@@ -33,15 +33,15 @@ BETA = -.1
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 18000
-END_EPSILON_DECAYING = 25000
+EPSILON_ = 0  # not a constant, qoing to be decayed
+START_EPSILON_DECAYING = 2000
+END_EPSILON_DECAYING = 4000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
 REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 40000  # Minimum number of steps in a memory to start training
+MIN_REPLAY_MEMORY_SIZE = 10000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
@@ -75,8 +75,17 @@ if not os.path.isdir('models'):
 
 class DQRLAgent:
     def __init__(self ,algo , pid):
+        self.algo = algo
+
+
+
+
+    def initiate(self):
+        algo = self.algo
         print('++++++++++initiating DQRL agent for:' , algo.name)
+
         self.env = RoutingEnv(algo)
+
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
@@ -97,6 +106,8 @@ class DQRLAgent:
         self.target_model.set_weights(self.model.get_weights())
 
         # print(self.model.get_weights())
+        # print(self.model.weights)
+        # time.sleep(10)
         # self.print_weight(self.model)
 
         # print(self.target_model.get_weights())
@@ -109,10 +120,6 @@ class DQRLAgent:
         self.target_update_counter = 0
         self.last_action_table = []
         self.reqState_qs = {}
-
-
-
-
     def print_weight(self , model):
         for r in model.get_weights():
             print(r)
@@ -120,6 +127,8 @@ class DQRLAgent:
         # try:
         #     model = load_model(self.model_name)
         #     print('=====================================================model loaded from ',self.model_name,' =====================================')
+        #     print(model.weights)
+            
         #     # time.sleep(10)
         #     return model
         # except:
@@ -686,3 +695,5 @@ class DQRLAgent:
         return T
     def save_model(self):
         self.model.save((self.model_name))
+        print(self.model.weights)
+        del self.model
