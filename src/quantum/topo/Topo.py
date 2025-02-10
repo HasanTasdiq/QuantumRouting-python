@@ -1165,7 +1165,7 @@ class Topo:
                     elif inc.n2 == path[-1][0]:
                         prev = inc.n1
                     # print('prev ' , prev.id)
-                    time.sleep(.1)
+                    # time.sleep(.1)
                     #inc = prev.internalLinks.first { it.contains(inc) }.otherThan(inc)
                     for internalLinks in prev.internalSegments:
 

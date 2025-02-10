@@ -30,7 +30,7 @@ class RoutingEnv(Env):
 
         self.graph = []
         self.V = self.SIZE
-        self.embedding_layer = Embedding(input_dim=10, output_dim=1)
+        self.embedding_layer = Embedding(input_dim=20, output_dim=1)
         self.attention_layer = Attention()
 
         self.skip = True
@@ -545,7 +545,7 @@ class RoutingEnv(Env):
 
 
     #with schedule and routing 
-    def schedule_routing_state(self , requests=None):
+    def schedule_routing_state_long(self , requests=None):
         state_q = [0 for i in range(self.SIZE)]
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
@@ -609,6 +609,91 @@ class RoutingEnv(Env):
         a = list(a.numpy())
         for u in S:
             u.extend(a)
+            
+        # for node in self.algo.topo.nodes:
+        #     state_q[node.id] = node.q
+        
+        # for u in S:
+        #     c = self.get_embedded_output(state_q)
+        #     c = Flatten()(tf.constant([numpy.array(c)]))[0]
+        #     c = list(c.numpy())
+
+        #     u.extend(c)
+        # if self.algo.timeSlot%100 == 0:
+        #     for u in S:
+        #         print(u)
+        
+        return np.array(S)
+    def schedule_routing_state(self , requests=None):
+        state_q = [0 for i in range(self.SIZE)]
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        S = []
+        U = []
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] += 1
+                state_graph[n2][n1] += 1
+
+        if requests is None:
+            requests = self.algo.requestState
+
+        for req in requests:
+            state_req = [0 for i in range(self.SIZE)]
+            neighbors = [0 for i in range(self.SIZE)]
+
+            if not req[5]:
+                state_req[req[2].id] = 1 #current node
+                state_req[req[1].id] = 10
+                # neighbors = state_graph[req[2].id]
+            # state_req.extend(neighbors)
+
+            U.append(state_req)
+        # if self.algo.timeSlot%100 == 0:
+        #     print('------------------state req ------------')
+        #     for req in U:
+        #         print(req)
+        t = time.time()
+        Usd = self.get_embedded_output(U , formatted=True)
+        # print('Usd = self.get_embedded_output ' , time.time()-t)
+        t = time.time()
+
+        Asd = self.get_emb_attention(U)
+        # print('asd = self.get_embedded_output ' , time.time()-t)
+
+
+        for asd in Asd:
+            tmp = []
+            for el in asd:
+                tmp.append(el[0])
+            S.append(tmp)
+        # for i in range(len(Asd)):
+        #     asd = Asd[i]
+        #     tmp = []
+        #     for el in asd:
+        #         tmp.append(el[0])
+        #     S[i].extend(tmp)
+        
+        t = time.time()
+
+        a = self.get_embedded_output(state_graph )
+        for r in a:
+            tmp = []
+            for el in r:
+                tmp.append(el[0])
+            S.append(tmp)
+        # print('aaaaaa  ')
+        # print(S)
+        # S.extend(a)
+
+        # print('a = self.get_embedded_outpu ' , time.time()-t)
+        
+        # a = Flatten()(tf.constant([numpy.array(a)]))[0]
+        # a = list(a.numpy())
+        # for u in S:
+        #     u.extend(a)
             
         # for node in self.algo.topo.nodes:
         #     state_q[node.id] = node.q

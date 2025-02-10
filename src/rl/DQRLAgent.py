@@ -33,15 +33,15 @@ BETA = -.1
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 0  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 2000
-END_EPSILON_DECAYING = 4000
+EPSILON_ = 1  # not a constant, qoing to be decayed
+START_EPSILON_DECAYING = 8000
+END_EPSILON_DECAYING = 15000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
 REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 10000  # Minimum number of steps in a memory to start training
+MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
@@ -90,7 +90,8 @@ class DQRLAgent:
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE + self.env.SIZE,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE ,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE ,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.env.SIZE , self.env.SIZE,)  
 
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.SIZE,self.env.SIZE,)  
         
@@ -156,6 +157,10 @@ class DQRLAgent:
         layer1 = (math.sqrt(numInput) +2*numAction) //3
         layer2 = (math.sqrt(numInput) +numAction) //4
         layer3 = (math.sqrt(numInput) +2*numAction) //5
+
+        layer1 = 300
+        layer2 = 200
+        layer3 = 100
 
         print('==============')
         print('==============')
