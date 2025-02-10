@@ -14,6 +14,7 @@ import numpy as np
 import time
 import networkx as nx
 from itertools import islice
+from operator import itemgetter
 
 
 
@@ -222,8 +223,7 @@ class QuRA_Heuristic(AlgorithmBase):
         self.printResult()
         # self.entAgent.update_reward()
         reward = 0
-        if not 'greedy_only' in self.name:
-            reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1])
+      
         self.result.rewardPerRound.append(reward)
 
         return self.result
@@ -231,13 +231,13 @@ class QuRA_Heuristic(AlgorithmBase):
         
     def getConflicts(self):
         self.conflicts = {}
+        self.paths = {}
         G = nx.Graph()
         w1 = 0
         w2 = 1
-        k = 4
-        if 'prob' in self.name:
-            w1 = 0.4
-            w2 = 0.6
+        k = self.topo.numOfRequestPerRound
+        # k=4
+
         for node in self.topo.nodes:
             G.add_node(node.id)
         for link in self.topo.links:
@@ -248,7 +248,7 @@ class QuRA_Heuristic(AlgorithmBase):
                     n = G[n1][n2]['count']
                 except:
                     n = 0
-                G.add_edge( n1,n2, count=n+1)
+                G.add_edge( n1,n2, count=n+1 )
                 self.conflicts[(link.n1.id , link.n2.id)] = {(r[0].id, r[1].id):0 for r in self.requestState}
 
     
@@ -274,11 +274,7 @@ class QuRA_Heuristic(AlgorithmBase):
                     except:
                         self.conflicts[(n2 , n1)][(req[0].id, req[1].id)]+=1
               
-                
-                # try:
-                #     self.conflicts[(n2 , n1)][(req[0].id, req[1].id)]+=1
-                # except:
-                #     self.conflicts[(n2 , n1)] = {(r[0].id, r[1].id):0 for r in self.requestState}
+            self.paths[(req[0], req[1])] = paths
         # print(self.conflicts)
         for (n1 , n2) in self.conflicts:
             print((n1 , n2))
@@ -286,7 +282,29 @@ class QuRA_Heuristic(AlgorithmBase):
 
             total = sum(self.conflicts[(n1,n2)].values())
             for req in self.conflicts[(n1,n2)]:
-                G[n1][n2]['weight'+str(req)] = total - self.conflicts[(n1,n2)][req]
+                G[n1][n2]['weight'+str(req)] = (total - self.conflicts[(n1,n2)][req])
+                # weight = G[n1][n2]['weight'+str(req)]
+                # print('weight::: ' , weight)
+        
+        for req in self.paths:
+            paths = self.paths[req]
+            print('--------------')
+
+            for path in paths:
+                print(path)
+                total = 0
+                for i in range(len(path)-1):
+                    n1 = path[i]
+                    n2 = path[i+1]
+                    total += G[n1][n2]['weight'+str((req[0].id , req[1].id))]
+                path.append(total)
+        
+            paths = sorted(paths, key=lambda x: x[-1])
+            print('==========')
+            for path in paths:
+                print(path)
+            self.paths[req] = paths
+
         
         self.G = G
 
@@ -295,20 +313,40 @@ class QuRA_Heuristic(AlgorithmBase):
     def findPathForELS(self, SDpair):
         src = SDpair[0]
         dst = SDpair[1]
-        try:
-            path = nx.shortest_path(self.G , src.id , dst.id , weight = 'weight'+str((src.id , dst.id)))
-            # path = nx.shortest_path(self.G , src.id , dst.id )
-        except:
-            path = []
+        # try:
+        #     path = nx.shortest_path(self.G , src.id , dst.id , weight = 'weight'+str((src.id , dst.id)))
+        #     # path = nx.shortest_path(self.G , src.id , dst.id , weight = 'weight' )
+        # except:
+        #     path = []
+
+        path = []
+        for path_ in self.paths[(src , dst)]:
+            take = True
+            for i in range(len(path_)-2):
+                n1 = path_[i]
+                n2 = path_[i+1]
+                if not self.G.has_edge(n1 , n2):
+                    take = False
+                    break
+            if take:
+                path = path_[:-1]
+                break
+                
+
+
         for i in range(len(path)-1):
             n1 = path[i]
             n2 = path[i+1]
             n = self.G[n1][n2]['count']
+            weight = self.G[n1][n2]['weight'+str((src.id , dst.id))]
+            print('weight::: ' , weight)
+            print('count:::' , n)
             if n ==1:
+                print('to remove ' , (n1,n2))
+
                 self.G.remove_edge(n1,n2)
             else:
                 self.G[n1][n2]['count'] = n-1
-            print('to remove ' , (n1,n2))
         print(self.G.edges)
 
 
@@ -477,7 +515,7 @@ class QuRA_Heuristic(AlgorithmBase):
             return 0
         capacity = 0
         for link in u.links:
-            if link.contains(v) and link.entangled and not link.taken:
+            if link.contains(v) and link.entangled:
                 capacity += 1
         # print(capacity)
         return capacity
@@ -510,6 +548,7 @@ class QuRA_Heuristic(AlgorithmBase):
             dst = i[1]
 
             targetPath = self.findPathForELS(i)
+            # targetPath = [p.id for p in targetPath]
             pathIndex = 0
             needLink[(i, pathIndex)] = []
             Pi[i].append(targetPath)
@@ -531,7 +570,7 @@ class QuRA_Heuristic(AlgorithmBase):
                 self.y[((prev, node))] += 1
                 nextLink[node].append(targetLink1)
                 needLink[(i, pathIndex)].append((node, targetLink1, targetLink2))
-            T.remove(i)
+            # T.remove(i)
 
         print('** after graph ' , len(output))
         # print('[REPS] ELS end')
@@ -690,6 +729,53 @@ class QuRA_Heuristic(AlgorithmBase):
             pathList.append(path.copy())
 
         return pathList
+    def findPathForELS_(self, SDpair):
+        src = SDpair[0]
+        dst = SDpair[1]
+        if self.DijkstraForELS(SDpair):
+            path = []
+            currentNode = dst
+            while currentNode != self.topo.sentinel:
+                path.append(currentNode)
+                currentNode = self.parent[currentNode]
+            path = path[::-1]
+            return path
+        else:
+            return []
+    def DijkstraForELS(self, SDpair):
+        src = SDpair[0]
+        dst = SDpair[1]
+        self.parent = {node : self.topo.sentinel for node in self.topo.nodes}
+        adjcentList = {node : set() for node in self.topo.nodes}
+        for node1 in self.topo.nodes:
+            for node2 in self.topo.nodes:
+                if self.y[(node1, node2)] < self.edgeSuccessfulEntangle(node1, node2):
+                    adjcentList[node1].add(node2)
+        
+        distance = {node : math.inf for node in self.topo.nodes}
+        visited = {node : False for node in self.topo.nodes}
+        pq = PriorityQueue()
+
+        pq.put((self.weightOfNode[src], src.id))
+        while not pq.empty():
+            (dist, uid) = pq.get()
+            u = self.topo.nodes[uid]
+            if visited[u]:
+                continue
+
+            if u == dst:
+                return True
+            distance[u] = dist
+            visited[u] = True
+            
+            for next in adjcentList[u]:
+                newDistance = distance[u] + self.weightOfNode[next]
+                if distance[next] > newDistance:
+                    distance[next] = newDistance
+                    self.parent[next] = u
+                    pq.put((distance[next], next.id))
+
+        return False
     
     def DijkstraForEPS(self, SDpair, k):
         src = SDpair[0]
