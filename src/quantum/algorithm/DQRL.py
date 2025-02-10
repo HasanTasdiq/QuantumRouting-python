@@ -234,7 +234,7 @@ class QuRA_DQRL(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot <= 000:
+            if self.timeSlot <= 50000:
                 reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1])
             a = 10
         self.result.rewardPerRound.append(reward)
@@ -1428,7 +1428,7 @@ class QuRA_DQRL(AlgorithmBase):
                 
                 t1 = time.time()
                 current_state , action = self.routingAgent.learn_and_predict_next_req_node()
-                print('learn_and_predict_next_req_node time: ' , time.time() - t1)
+                # print('learn_and_predict_next_req_node time: ' , time.time() - t1)
 
 
                 # print('req iddddd ' , req_id , next_node_id)
@@ -1527,7 +1527,7 @@ class QuRA_DQRL(AlgorithmBase):
                 
                 done_episode = (not good_to_search or success) and (len(T)==1)
                 t3 = time.time()
-                # self.routingAgent.update_action( request ,current_node.id,  action  , current_state  , done_episode)
+                self.routingAgent.update_action( request ,current_node.id,  action  , current_state  , done_episode)
                 # print('update action time ' , time.time()-t3)
                         
                 prev_node = current_node

@@ -392,7 +392,7 @@ class SEE(AlgorithmBase):
                     sum += self.fki_LP[SDpair][n][(u, v)]
                 # print('########################################self.fki_LP[%d][n][(%d, %d)]'%(i , u.id , v.id) , sum)
 
-        time.sleep(5)
+        # time.sleep(5)
         
         for (u,v) in edgeIndices:
             # u = segment[0].id    
@@ -408,7 +408,7 @@ class SEE(AlgorithmBase):
                     # if self.x_LP[(u,v,k)] > 0:
                     #     print('self.x_LP[(u,v,k)]' , ((u,v,k)) , self.x_LP[(u,v,k)] )
         
-        time.sleep(5)
+        # time.sleep(5)
         print('[SEE] LP1 end')
 
     def EPI(self):
