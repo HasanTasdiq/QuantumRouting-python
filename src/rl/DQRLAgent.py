@@ -34,8 +34,8 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 8000
-END_EPSILON_DECAYING = 15000
+START_EPSILON_DECAYING = 3000
+END_EPSILON_DECAYING = 6000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -158,9 +158,9 @@ class DQRLAgent:
         layer2 = (math.sqrt(numInput) +numAction) //4
         layer3 = (math.sqrt(numInput) +2*numAction) //5
 
-        layer1 = 300
-        layer2 = 200
-        layer3 = 100
+        # layer1 = 300
+        # layer2 = 200
+        # layer3 = 100
 
         print('==============')
         print('==============')
