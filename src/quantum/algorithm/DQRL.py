@@ -227,15 +227,20 @@ class QuRA_DQRL(AlgorithmBase):
             #     # self.route()
             #     self.route_all_seq()
             # self.route_seq()
+            t = time.time()
             self.route_schedule_seq()
-            
+            print('time for route schedule ======== ' , time.time() - t)
         # print('[REPS] p4 end') 
         self.printResult()
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
             if self.timeSlot <= 50000:
+                t = time.time()
+                
                 reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1])
+                print('time for update_reward ======== ' , time.time() - t)
+
             a = 10
         self.result.rewardPerRound.append(reward)
 
@@ -1384,7 +1389,7 @@ class QuRA_DQRL(AlgorithmBase):
         totalEntanglement = 0
         usedLinks = []
         conflicts = []
-        t1 = time.time()
+        t_1 = time.time()
         total_action = 0
   
 
@@ -1428,7 +1433,7 @@ class QuRA_DQRL(AlgorithmBase):
                 
                 t1 = time.time()
                 current_state , action = self.routingAgent.learn_and_predict_next_req_node()
-                print('learn_and_predict_next_req_node time: ' , time.time() - t1)
+                # print('learn_and_predict_next_req_node time: ' , time.time() - t1)
 
 
                 # print('req iddddd ' , req_id , next_node_id)
@@ -1679,7 +1684,7 @@ class QuRA_DQRL(AlgorithmBase):
         self.filterReqeuest()
         print(self.name , '######+++++++========= total ent: '  , 'till time:' , self.timeSlot , ':=' , entSum)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request  after  extra:', successReq)
-        print('[' , self.name, '] :' , self.timeSlot, ' total time for route ' , (time.time()-t1) , ' action ' , total_action , 'average time ' , (time.time()-t1)/(total_action if total_action else 1))
+        print('[' , self.name, '] :' , self.timeSlot, ' total time for route ' , (time.time()-t_1) , ' action ' , total_action , 'average time ' , (time.time()-t_1)/(total_action if total_action else 1))
     
 
 

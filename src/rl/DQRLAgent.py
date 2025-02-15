@@ -25,6 +25,7 @@ lr = .0001
 clip_value = .1
 
 
+
 GAMMA = 0.9
 # GAMMA = 5
 ALPHA = .9
@@ -184,7 +185,7 @@ class DQRLAgent:
         # # model.add(Dense(72 , activation='relu'))
         # model.add(Dense(self.env.SIZE * 5 , activation='relu'))
         model.add(Dense(layer1, activation='relu'))
-        model.add(Dense(layer2 , activation='relu'))
+        # model.add(Dense(layer2 , activation='relu'))
         model.add(Dense(layer3 , activation='relu'))
 
         # model.add(Conv2D(32, 3, activation="relu"))
@@ -347,7 +348,10 @@ class DQRLAgent:
         return self.model.predict(np.array(sts), verbose=0, batch_size=50)
     
     def get_qs(self,state):
-        return self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0)[0]
+        t = time.time()
+        ret = self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0,use_multiprocessing=True)[0]
+        print('predict time&&&&&&&&  ' , time.time()-t)
+        return ret
 
     
     
@@ -532,7 +536,7 @@ class DQRLAgent:
         t1 = time.time()
 
         current_state = self.env.schedule_routing_state()
-        print('current_state = self.env.schedule_routing_state() time: ' , time.time() - t1)
+        # print('current_state = self.env.schedule_routing_state() time: ' , time.time() - t1)
         t2 = time.time()
 
         if np.random.random() > EPSILON_:
@@ -540,13 +544,13 @@ class DQRLAgent:
 
             # next_node = np.argmax(self.get_qs(current_state))
             action = np.argmax(self.env.neighbor_qs_schedule_route(self.get_qs(current_state)))
-            print('action = np.argmax(self.env.neighbor_qs_schedule_route time: ' , time.time() - t2)
+            # print('action = np.argmax(self.env.neighbor_qs_schedule_route time: ' , time.time() - t2)
 
             
         else:  
             # next_node = np.random.randint(0, self.env.SIZE)
             action = self.env.rand_neighbor_schedule_route()
-            print('action = np.argmax(self.env.neighbor_qs_schedule_route time: ' , time.time() - t2)
+            # print('action = rand_neighbor_schedule_routetime: ' , time.time() - t2)
 
         self.env.algo.action_count[action] += 1
         # print('aaaaccccttttiiioooonnn ' , action)
@@ -558,9 +562,9 @@ class DQRLAgent:
         timeSlot = self.env.algo.timeSlot
         current_state = self.env.schedule_routing_state()
         qs = self.get_qs(current_state)
-        if self.env.algo.timeSlot%100 == 0:
-            print(qs)
-            print('average q val at: ' , self.env.algo.timeSlot , sum(qs) / len(qs))
+        # if self.env.algo.timeSlot%100 == 0:
+        #     print(qs)
+        #     print('average q val at: ' , self.env.algo.timeSlot , sum(qs) / len(qs))
         ret = []
         for req in self.env.algo.requestState:
             mask = self.env.get_mask_one_req_schedule_route(req)
