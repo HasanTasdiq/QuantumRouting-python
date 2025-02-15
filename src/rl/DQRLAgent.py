@@ -19,6 +19,9 @@ import logging
 logging.getLogger('tensorflow').disabled = True 
 from objsize import get_deep_size
 import copy
+import tensorflow as tf
+tf.compat.v1.disable_eager_execution()
+
 NUM_EPISODES = 2500
 LEARNING_RATE = .8
 lr = .0001
