@@ -74,7 +74,7 @@ step = 500
 times = 1
 gridSize = 5
 nodeNo = gridSize *gridSize
-fixed = True
+fixed = False
 
 alpha_ = 0.0007
 degree = 1
@@ -209,8 +209,8 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
-    algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
+    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
 

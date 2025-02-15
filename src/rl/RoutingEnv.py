@@ -656,9 +656,11 @@ class RoutingEnv(Env):
         #     for req in U:
         #         print(req)
         t = time.time()
-        Usd = self.get_embedded_output(U , formatted=True)
+        # Usd = self.get_embedded_output(U , formatted=True)
         # print('Usd = self.get_embedded_output ' , time.time()-t)
         t = time.time()
+
+        U.extend(state_graph)
 
         Asd = self.get_emb_attention(U)
         # print('asd = self.get_embedded_output ' , time.time()-t)
@@ -678,12 +680,12 @@ class RoutingEnv(Env):
         
         t = time.time()
 
-        a = self.get_embedded_output(state_graph )
-        for r in a:
-            tmp = []
-            for el in r:
-                tmp.append(el[0])
-            S.append(tmp)
+        # a = self.get_embedded_output(state_graph )
+        # for r in a:
+        #     tmp = []
+        #     for el in r:
+        #         tmp.append(el[0])
+        #     S.append(tmp)
         # print('aaaaaa  ')
         # print(S)
         # S.extend(a)
@@ -1383,11 +1385,13 @@ class RoutingEnv(Env):
             
         ret = []
         if mask is None:
+            t = time.time()
             mask = self.get_mask_shcedule_route()
-            if self.algo.timeSlot%100 == 0:
-                print(qs)
-                print('average q val at: ' , self.algo.timeSlot , sum(qs) / len(qs))
-                print(mask)
+            # print('get mask time @@@@@@@@@  '  ,time.time()-t)
+            # if self.algo.timeSlot%100 == 0:
+            #     print(qs)
+            #     print('average q val at: ' , self.algo.timeSlot , sum(qs) / len(qs))
+            #     print(mask)
         min_ = -sys. maxsize - 1
         for i ,m in enumerate(mask):
             # print('in neighbor qs m:', m  , i , qs[i])
