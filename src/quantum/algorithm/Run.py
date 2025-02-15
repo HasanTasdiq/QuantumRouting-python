@@ -72,7 +72,7 @@ ttime = 20000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 5
+gridSize = 10
 nodeNo = gridSize *gridSize
 fixed = True
 
@@ -81,7 +81,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [15]
+numOfRequestPerRound = [50]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -246,7 +246,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
     # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
     # algorithms.append(QuRA_Heuristic(copy.deepcopy(topo) , name = 'QuRA_Heuristic'))
