@@ -33,7 +33,7 @@ BETA = -.1
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 1  # not a constant, qoing to be decayed
+EPSILON_ = .5  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 6000
 END_EPSILON_DECAYING = 16000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
@@ -529,18 +529,25 @@ class DQRLAgent:
     def learn_and_predict_next_req_node(self):
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
+        t1 = time.time()
+
         current_state = self.env.schedule_routing_state()
+        print('current_state = self.env.schedule_routing_state() time: ' , time.time() - t1)
+        t2 = time.time()
 
         if np.random.random() > EPSILON_:
 
-            t2 = time.time()
 
             # next_node = np.argmax(self.get_qs(current_state))
             action = np.argmax(self.env.neighbor_qs_schedule_route(self.get_qs(current_state)))
+            print('action = np.argmax(self.env.neighbor_qs_schedule_route time: ' , time.time() - t2)
+
             
         else:  
             # next_node = np.random.randint(0, self.env.SIZE)
             action = self.env.rand_neighbor_schedule_route()
+            print('action = np.argmax(self.env.neighbor_qs_schedule_route time: ' , time.time() - t2)
+
         self.env.algo.action_count[action] += 1
         # print('aaaaccccttttiiioooonnn ' , action)
         # print(request_index , next_node_id)
