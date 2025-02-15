@@ -1428,7 +1428,7 @@ class QuRA_DQRL(AlgorithmBase):
                 
                 t1 = time.time()
                 current_state , action = self.routingAgent.learn_and_predict_next_req_node()
-                # print('learn_and_predict_next_req_node time: ' , time.time() - t1)
+                print('learn_and_predict_next_req_node time: ' , time.time() - t1)
 
 
                 # print('req iddddd ' , req_id , next_node_id)
