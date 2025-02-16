@@ -121,7 +121,7 @@ class REPS(AlgorithmBase):
         # LP
         params = {
                     "WLSACCESSID": 'a06f5c02-c2c4-44db-906b-6155e9dd3b1e',
-                    "WLSSECRET": 'a06f5c02-c2c4-44db-906b-6155e9dd3b1e',
+                    "WLSSECRET": '7a267c90-d9bd-459a-aa4a-517b1754d164',
                     "LICENSEID": 2622498,
                     }
         env = gp.Env(params=params)
@@ -324,7 +324,7 @@ class REPS(AlgorithmBase):
                     notEdge.append((u, v))
         params = {
                     "WLSACCESSID": 'a06f5c02-c2c4-44db-906b-6155e9dd3b1e',
-                    "WLSSECRET": 'a06f5c02-c2c4-44db-906b-6155e9dd3b1e',
+                    "WLSSECRET": '7a267c90-d9bd-459a-aa4a-517b1754d164',
                     "LICENSEID": 2622498,
                     }
         env = gp.Env(params=params)
