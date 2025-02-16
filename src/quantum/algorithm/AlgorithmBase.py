@@ -794,8 +794,8 @@ class AlgorithmBase:
         self.resetNodeSwaps()
         self.resetNeedLinksDict()
 
-        # res.totalRuntime += (end - start)
-        res.totalRuntime += time.time() - t2
+        res.totalRuntime += (end - start)
+        # res.totalRuntime += time.time() - t2
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
         tot = 0
         if time_ %100 == 0:
