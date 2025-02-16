@@ -167,9 +167,9 @@ class DQRLAgent:
 
         numAction = self.env.SIZE * self.env.algo.topo.numOfRequestPerRound
         numInput = self.OBSERVATION_SPACE_VALUES[0]*self.OBSERVATION_SPACE_VALUES[1]
-        layer1 = (math.sqrt(numInput) +2*numAction) //3
-        layer2 = (math.sqrt(numInput) +numAction) //4
-        layer3 = (math.sqrt(numInput) +2*numAction) //5
+        layer1 = int((math.sqrt(numInput) +2*numAction) //3)
+        layer2 = int((math.sqrt(numInput) +numAction) //4)
+        layer3 = int((math.sqrt(numInput) +2*numAction) //5)
 
         # layer1 = 300
         # layer2 = 200
