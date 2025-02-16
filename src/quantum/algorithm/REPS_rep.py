@@ -26,12 +26,6 @@ class REPSREP(AlgorithmBase):
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
         self.param = param
-        params = {
-                    "WLSACCESSID": 'a06f5c02-c2c4-44db-906b-6155e9dd3b1e',
-                    "WLSSECRET": '7a267c90-d9bd-459a-aa4a-517b1754d164',
-                    "LICENSEID": 2622498,
-                    }
-        self.env = gp.Env(params=params)
 
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
@@ -355,8 +349,13 @@ class REPSREP(AlgorithmBase):
             for v in range(numOfNodes):
                 if (u, v) not in edgeIndices and (v, u) not in edgeIndices:
                     notEdge.append((u, v))
-
-        m = gp.Model('REPS for EPS',env = self.env)
+        params = {
+                    "WLSACCESSID": 'a06f5c02-c2c4-44db-906b-6155e9dd3b1e',
+                    "WLSSECRET": '7a267c90-d9bd-459a-aa4a-517b1754d164',
+                    "LICENSEID": 2622498,
+                    }
+        env = gp.Env(params=params)
+        m = gp.Model('REPS for EPS',env = env)
         m.setParam("OutputFlag", 0)
 
         f = [0] * numOfSDpairs
@@ -420,7 +419,7 @@ class REPSREP(AlgorithmBase):
             capacity = self.edgeSuccessfulEntangle(self.topo.nodes[u], self.topo.nodes[v])
             # print('capcity ' ,(u , v),  capacity)
             m.addConstr(gp.quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
-
+        print('goin to optimize')
         m.optimize()
 
         for i in range(numOfSDpairs):
