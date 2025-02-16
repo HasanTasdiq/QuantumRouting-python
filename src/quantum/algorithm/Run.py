@@ -68,20 +68,20 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  10 15 2000 more req"
  
-ttime = 10
-ttime2 = 10
+ttime = 20
+ttime2 = 20
 step = 500
-times = 1
+times = 3
 gridSize = 10
 nodeNo = gridSize *gridSize
-fixed = True
+fixed = False
 
 alpha_ = 0.0007
 degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [40]
+numOfRequestPerRound = [50]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
