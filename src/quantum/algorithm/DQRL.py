@@ -222,14 +222,15 @@ class QuRA_DQRL(AlgorithmBase):
         if len(self.srcDstPairs) > 0:
             # self.EPS()
             # self.ELS()
-            # if 'greedy_only' in  self.name:
-            #     self.route_seq()
-            # else:
-            #     # self.route()
-            #     self.route_all_seq()
-            # self.route_seq()
             t = time.time()
-            self.route_schedule_seq()
+
+            if 'greedy_only' in  self.name:
+                self.route_seq()
+            else:
+                # self.route()
+                self.route_schedule_seq()
+            # self.route_seq()
+            # self.route_schedule_seq()
             print('time for route schedule ======== ' , time.time() - t)
         # print('[REPS] p4 end') 
         self.printResult()
