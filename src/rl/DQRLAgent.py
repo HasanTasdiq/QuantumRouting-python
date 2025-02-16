@@ -21,6 +21,15 @@ from objsize import get_deep_size
 import copy
 # import tensorflow as tf
 # tf.compat.v1.disable_eager_execution()
+import tensorflow as tf
+
+# Check if a GPU is available
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    print(f"GPUs are available: {gpus}")
+else:
+    print("No GPUs detected. Running on CPU.")
+
 
 NUM_EPISODES = 2500
 LEARNING_RATE = .8
@@ -38,8 +47,8 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 10000
-END_EPSILON_DECAYING = 16000
+START_EPSILON_DECAYING = 14000
+END_EPSILON_DECAYING = 26000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
@@ -355,7 +364,7 @@ class DQRLAgent:
         ret = self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0,use_multiprocessing=True)[0]
         # ret = self.model.predict_on_batch(np.array(state).reshape(-1, *state.shape))[0]
 
-        # print('predict time&&&&&&&&  ' , time.time()-t)
+        print('predict time&&&&&&&&  ' , time.time()-t)
         return ret
 
     
