@@ -357,6 +357,7 @@ class REPSREP(AlgorithmBase):
         env = gp.Env(params=params)
         m = gp.Model('REPS for EPS',env = env)
         m.setParam("OutputFlag", 0)
+        print('--------')
 
         f = [0] * numOfSDpairs
         for i in range(numOfSDpairs):
