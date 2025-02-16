@@ -361,8 +361,8 @@ class DQRLAgent:
     
     def get_qs(self,state):
         t = time.time()
-        ret = self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0,use_multiprocessing=True)[0]
-        # ret = self.model.predict_on_batch(np.array(state).reshape(-1, *state.shape))[0]
+        # ret = self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0,use_multiprocessing=True)[0]
+        ret = self.model.predict_on_batch(np.array(state).reshape(-1, *state.shape))[0]
 
         print('predict time&&&&&&&&  ' , time.time()-t)
         return ret
