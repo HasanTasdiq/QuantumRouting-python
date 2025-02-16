@@ -246,7 +246,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
     # algorithms.append(QuRA_Heuristic(copy.deepcopy(topo) , name = 'QuRA_Heuristic'))
@@ -264,7 +264,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
 
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
-    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
+    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE' , param='ten'))
