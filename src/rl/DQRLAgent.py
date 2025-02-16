@@ -46,7 +46,7 @@ BETA = -.1
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
-EPSILON_ = 1  # not a constant, qoing to be decayed
+EPSILON_ = 0  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 14000
 END_EPSILON_DECAYING = 26000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
