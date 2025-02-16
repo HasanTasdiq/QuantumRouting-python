@@ -81,7 +81,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [50 , 60 , 70]
+numOfRequestPerRound = [25,50,75]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -155,9 +155,12 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
         print('going to save the ent model ' , success_req)
         # algo.entAgent.save_model()
-        if hasattr(algo , 'routingAgent' ):
-            algo.routingAgent.save_model()
-            print('going to save the routing model ' , success_req)
+        if hasattr(algo , 'routingAgent' ) and algo.routingAgent is not None:
+            try:
+                algo.routingAgent.save_model()
+                print('going to save the routing model ' , success_req)
+            except:
+                print('couldnt save model')
 
         shared_data[max_success] = success_req
 
