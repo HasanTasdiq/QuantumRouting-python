@@ -349,8 +349,13 @@ class REPSREP(AlgorithmBase):
             for v in range(numOfNodes):
                 if (u, v) not in edgeIndices and (v, u) not in edgeIndices:
                     notEdge.append((u, v))
-
-        m = gp.Model('REPS for EPS')
+        params = {
+                    "WLSACCESSID": 'a06f5c02-c2c4-44db-906b-6155e9dd3b1e',
+                    "WLSSECRET": 'a06f5c02-c2c4-44db-906b-6155e9dd3b1e',
+                    "LICENSEID": 2622498,
+                    }
+        env = gp.Env(params=params)
+        m = gp.Model('REPS for EPS',env = env)
         m.setParam("OutputFlag", 0)
 
         f = [0] * numOfSDpairs
