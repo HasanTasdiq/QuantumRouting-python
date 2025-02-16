@@ -36,7 +36,8 @@ class QuRA_DQRL(AlgorithmBase):
         self.hopCountThreshold = 25
         self.requestState = []
         self.optPaths = {}
-        self.routingAgent.initiate()
+        if 'greedy_only' not in self.name:
+            self.routingAgent.initiate()
         # self.pool = None
 
 
