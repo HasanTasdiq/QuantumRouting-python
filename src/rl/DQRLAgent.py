@@ -560,8 +560,8 @@ class DQRLAgent:
 
             # next_node = np.argmax(self.get_qs(current_state))
             qs = self.get_qs(current_state)
-            p_time += time.time()-t2
-            t2 = time.time() /5
+            p_time += (time.time()-t2)/5
+            t2 = time.time() 
             action = np.argmax(self.env.neighbor_qs_schedule_route(qs))
             p_time += (time.time()-t2)
             # print('action = np.argmax(self.env.neighbor_qs_schedule_route time: ' , time.time() - t2)
