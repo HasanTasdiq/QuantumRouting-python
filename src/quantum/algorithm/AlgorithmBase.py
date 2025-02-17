@@ -797,8 +797,8 @@ class AlgorithmBase:
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time calculate : ' , time.time() - t2 , 'p_time: ' , res.p_time)
 
         if self.name == 'QuRA_DQRL_entdqrl':
-            # res.totalRuntime += res.p_time
-            res.totalRuntime += time.time() - t2
+            res.totalRuntime += res.p_time
+            # res.totalRuntime += time.time() - t2
 
         else:
             # res.totalRuntime += (end - start)
