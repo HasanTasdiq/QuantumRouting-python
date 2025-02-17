@@ -72,7 +72,7 @@ ttime = 20
 ttime2 = 20
 step = 500
 times = 2
-gridSize = 100
+gridSize = 10
 nodeNo = gridSize *gridSize
 fixed = False
 
