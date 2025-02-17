@@ -216,6 +216,7 @@ class QuRA_DQRL(AlgorithmBase):
                     print([n.id for n in path])
             
     def p4(self):
+        p_time = 0
 
         # self.prep4()
 
@@ -226,12 +227,14 @@ class QuRA_DQRL(AlgorithmBase):
 
             if 'greedy_only' in  self.name:
                 self.route_seq()
+                p_time += time.time()-t
             else:
                 # self.route()
-                self.route_schedule_seq()
+                p_time += self.route_schedule_seq()
             # self.route_seq()
             # self.route_schedule_seq()
             print('time for route schedule ======== ' , time.time() - t)
+        t = time.time()
         # print('[REPS] p4 end') 
         self.printResult()
         # self.entAgent.update_reward()
@@ -245,6 +248,8 @@ class QuRA_DQRL(AlgorithmBase):
 
             a = 10
         self.result.rewardPerRound.append(reward)
+        p_time += time.time()-t
+        self.result.p_time = p_time
 
         return self.result
     def get_action_ILP(self):
@@ -1391,6 +1396,7 @@ class QuRA_DQRL(AlgorithmBase):
         totalEntanglement = 0
         usedLinks = []
         conflicts = []
+        p_time = 0
         t_1 = time.time()
         total_action = 0
   
@@ -1434,8 +1440,10 @@ class QuRA_DQRL(AlgorithmBase):
                 total_action += 1
                 
                 t1 = time.time()
-                current_state , action = self.routingAgent.learn_and_predict_next_req_node()
+                current_state , action , p_time2 = self.routingAgent.learn_and_predict_next_req_node()
                 # print('learn_and_predict_next_req_node time: ' , time.time() - t1)
+                p_time+= p_time2
+                t2 = time.time()
 
 
                 # print('req iddddd ' , req_id , next_node_id)
@@ -1663,8 +1671,9 @@ class QuRA_DQRL(AlgorithmBase):
                     link.clearPhase4Swap()
                 # break
                 # time.sleep(.1)
+                p_time += time.time()-t2
 
-
+        t2 = time.time()
         self.result.usedLinks += len(usedLinks)
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request before extra:', successReq)
         print('[' , self.name, '] :' , self.timeSlot, ' =================conflicts :', len(conflicts))
@@ -1688,7 +1697,8 @@ class QuRA_DQRL(AlgorithmBase):
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request  after  extra:', successReq)
         print('[' , self.name, '] :' , self.timeSlot, ' total time for route ' , (time.time()-t_1) , ' action ' , total_action , 'average time ' , (time.time()-t_1)/(total_action if total_action else 1))
     
-
+        p_time += time.time()-t2
+        return p_time
 
         
     # def findDQRLPath(self , request):
