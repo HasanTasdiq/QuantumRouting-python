@@ -71,7 +71,7 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 ttime = 20
 ttime2 = 20
 step = 500
-times = 1
+times = 2
 gridSize = 10
 nodeNo = gridSize *gridSize
 fixed = True
@@ -81,7 +81,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [30]
+numOfRequestPerRound = [15, 25,50,75,100]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
