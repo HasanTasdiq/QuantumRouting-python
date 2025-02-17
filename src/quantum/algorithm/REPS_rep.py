@@ -27,6 +27,7 @@ class REPSREP(AlgorithmBase):
         self.totalWaitingTime = 0
         self.param = param
 
+
     def genNameByComma(self, varName, parName):
         return (varName + str(parName)).replace(' ', '')
     def genNameByBbracket(self, varName: str, parName: list):
@@ -92,6 +93,7 @@ class REPSREP(AlgorithmBase):
         # print([(r[0].id, r[0].id) for r in self.srcDstPairs])
         totalEntanglement = 0
         successReq = 0
+
         if len(self.srcDstPairs) > 0:
             for i in range(4):
                 self.EPS()
@@ -502,6 +504,7 @@ class REPSREP(AlgorithmBase):
     def ELS(self):
         Ci = self.pathForELS
         self.y = {(u, v) : 0 for u in self.topo.nodes for v in self.topo.nodes}
+
         self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
         needLink = {}
         nextLink = {node : [] for node in self.topo.nodes}
