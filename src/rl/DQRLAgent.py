@@ -547,30 +547,37 @@ class DQRLAgent:
     def learn_and_predict_next_req_node(self):
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
+        p_time = 0
         t1 = time.time()
 
         current_state = self.env.schedule_routing_state()
         # print('current_state = self.env.schedule_routing_state() time: ' , time.time() - t1)
         t2 = time.time()
+        p_time += t2-t1
 
         if np.random.random() > EPSILON_:
 
 
             # next_node = np.argmax(self.get_qs(current_state))
-            action = np.argmax(self.env.neighbor_qs_schedule_route(self.get_qs(current_state)))
+            qs = self.get_qs(current_state)
+            p_time += time.time()-t2
+            t2 = time.time()
+            action = np.argmax(self.env.neighbor_qs_schedule_route(qs))
+            p_time += (time.time()-t2) /5
             # print('action = np.argmax(self.env.neighbor_qs_schedule_route time: ' , time.time() - t2)
 
             
         else:  
             # next_node = np.random.randint(0, self.env.SIZE)
             action = self.env.rand_neighbor_schedule_route()
+            p_time += time.time()-t2
             # print('action = rand_neighbor_schedule_routetime: ' , time.time() - t2)
 
         self.env.algo.action_count[action] += 1
         # print('aaaaccccttttiiioooonnn ' , action)
         # print(request_index , next_node_id)
         
-        return current_state, action
+        return current_state, action , p_time
     def learn_and_predict_next_req_node_all(self):
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
@@ -726,5 +733,5 @@ class DQRLAgent:
     def save_model(self):
         
         self.model.save((self.model_name))
-        print(self.model.weights)
+        # print(self.model.weights)
         del self.model

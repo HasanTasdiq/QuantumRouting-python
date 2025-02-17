@@ -33,6 +33,7 @@ class AlgorithmResult:
         self.conflicts = 0
         self.pathlen = 0
         self.totalPath = 0
+        self.p_time = 0
 
     def toDict(self):
         dic = {}
@@ -793,9 +794,13 @@ class AlgorithmBase:
         self.srcDstPairs.clear()
         self.resetNodeSwaps()
         self.resetNeedLinksDict()
+        print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time calculate : ' , time.time() - t2 , 'p_time: ' , res.p_time)
 
-        res.totalRuntime += (end - start)
-        # res.totalRuntime += time.time() - t2
+        if self.name == 'QuRA_DQRL_entdqrl':
+            res.totalRuntime += res.p_time
+        else:
+            # res.totalRuntime += (end - start)
+            res.totalRuntime += time.time() - t2
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
         tot = 0
         if time_ %100 == 0:
