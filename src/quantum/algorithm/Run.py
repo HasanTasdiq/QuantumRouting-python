@@ -2,6 +2,7 @@ import multiprocessing
 from objsize import get_deep_size
 import gc
 import sys
+sys.setrecursionlimit(2000) # Increase limit to 2000
 import copy
 sys.path.append("../..")
 # from AlgorithmBase import AlgorithmBase
@@ -72,7 +73,7 @@ ttime = 20000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 5
+gridSize = 15
 nodeNo = gridSize *gridSize
 fixed = True
 
@@ -81,7 +82,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [15]
+numOfRequestPerRound = [100]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -266,7 +267,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
 
 
-    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
+    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))

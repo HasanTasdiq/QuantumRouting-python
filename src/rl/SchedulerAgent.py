@@ -151,29 +151,29 @@ class SchedulerAgent:
 
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
-        print('~~~~~~~~after model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES)) ',get_deep_size(model)/1000000)
-        self.print_memory_usage()
-        gc.collect()
+        # print('~~~~~~~~after model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES)) ',get_deep_size(model)/1000000)
+        # self.print_memory_usage()
+        # gc.collect()
         # time.sleep(10)
 
 
         # model.add(Dense(self.env.SIZE * 20 , activation='relu'))
         model.add(Dense(600 , activation='relu'))
-        print('~~~~~~~~after Dense(self.env.SIZE * 10 ',get_deep_size(model)/1000000)
-        self.print_memory_usage()
-        gc.collect()
+        # print('~~~~~~~~after Dense(self.env.SIZE * 10 ',get_deep_size(model)/1000000)
+        # self.print_memory_usage()
+        # gc.collect()
         # time.sleep(10)
 
 
         # model.add(Dense(72 , activation='relu'))
         model.add(Dense(600 , activation='relu'))
-        print('~~~~~~~~after Dense(self.env.SIZE * 5',get_deep_size(model)/1000000)
-        gc.collect()
+        # print('~~~~~~~~after Dense(self.env.SIZE * 5',get_deep_size(model)/1000000)
+        # gc.collect()
         # time.sleep(10)
 
         model.add(Dense(600 , activation='relu'))
-        print('~~~~~~~~after Dense(self.env.SIZE * 3',get_deep_size(model)/1000000)
-        gc.collect()
+        # print('~~~~~~~~after Dense(self.env.SIZE * 3',get_deep_size(model)/1000000)
+        # gc.collect()
 
 
         # model.add(Conv2D(32, 3, activation="relu"))
@@ -201,7 +201,7 @@ class SchedulerAgent:
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
-        print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
+        # print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return        
