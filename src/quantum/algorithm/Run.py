@@ -74,7 +74,7 @@ step = 500
 times = 1
 gridSize = 5
 nodeNo = gridSize *gridSize
-fixed = False
+fixed = True
 
 alpha_ = 0.0007
 degree = 1
