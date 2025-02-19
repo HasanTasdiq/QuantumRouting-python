@@ -240,7 +240,7 @@ class QuRA_DQRL(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot <= 0000:
+            if self.timeSlot <= 50000:
                 t = time.time()
                 
                 reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1])
@@ -1542,7 +1542,7 @@ class QuRA_DQRL(AlgorithmBase):
                 
                 done_episode = (not good_to_search or success) and (len(T)==1)
                 t3 = time.time()
-                # self.routingAgent.update_action( request ,current_node.id,  action  , current_state  , done_episode)
+                self.routingAgent.update_action( request ,current_node.id,  action  , current_state  , done_episode)
                 # print('update action time ' , time.time()-t3)
                         
                 prev_node = current_node
@@ -1639,7 +1639,7 @@ class QuRA_DQRL(AlgorithmBase):
                     if success:
                         print("====success====" , src.id , dst.id , [n for n in path])
                         # print('shortest path ----- ' , [n.id for n in targetPath])
-                        reward = 10
+                        reward = 20
                         # reward = 1
                     else:
                         for link in selectedlinks:
