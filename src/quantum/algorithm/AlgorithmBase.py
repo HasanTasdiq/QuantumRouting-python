@@ -34,6 +34,8 @@ class AlgorithmResult:
         self.pathlen = 0
         self.totalPath = 0
         self.p_time = 0
+        self.fidelity = 0
+        self.fidelityPerRound = []
 
     def toDict(self):
         dic = {}
@@ -45,6 +47,7 @@ class AlgorithmResult:
         dic[self.Ylabels[5]] = self.eps
         dic[self.Ylabels[6]] = self.successfulRequest
         dic[self.Ylabels[7]] = self.usedLinks
+        # dic[self.Ylabels[8]] = self.fidelity
 
         return dic
     
@@ -56,6 +59,7 @@ class AlgorithmResult:
         AvgResult.entanglementPerRound = [0 for _ in range(ttime)]
         AvgResult.successfulRequestPerRound = [0 for _ in range(ttime)]
         AvgResult.rewardPerRound = [0 for _ in range(ttime)]
+        AvgResult.fidelityPerRound = [0 for _ in range(ttime)]
         for result in results:
             AvgResult.algorithmRuntime += result.algorithmRuntime
             AvgResult.waitingTime += result.waitingTime
@@ -64,6 +68,7 @@ class AlgorithmResult:
             AvgResult.temporaryRatio += result.temporaryRatio
             AvgResult.successfulRequest += result.successfulRequest
             AvgResult.usedLinks += result.usedLinks
+            # AvgResult.fidelity += result.fidelity
 
             Len = len(result.remainRequestPerRound)
             if ttime != Len:
@@ -75,6 +80,7 @@ class AlgorithmResult:
                 AvgResult.rewardPerRound[i] += result.rewardPerRound[i]
                 # AvgResult.entanglementPerRound[i] += result.entanglementPerRound[i]
                 AvgResult.eps += result.entanglementPerRound[i]
+                AvgResult.fidelityPerRound[i] += result.fidelityPerRound[i]
 
 
         AvgResult.algorithmRuntime /= len(results)
@@ -86,6 +92,7 @@ class AlgorithmResult:
         AvgResult.usedLinks /= len(results)
         AvgResult.eps /= len(results)
         AvgResult.eps /= ttime
+        # AvgResult.fidelity /= len(results)
 
 
         for i in range(ttime):
@@ -93,6 +100,8 @@ class AlgorithmResult:
             AvgResult.entanglementPerRound[i] /= len(results)
             AvgResult.successfulRequestPerRound[i] /= len(results)
             AvgResult.rewardPerRound[i] /= len(results)
+            AvgResult.fidelityPerRound[i] /= len(results)
+
         
         AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100
         AvgResult.usedLinks = (AvgResult.usedLinks /ttime) / len(topo.links) * 100
@@ -745,7 +754,11 @@ class AlgorithmBase:
             for action in self.action_count:
                 print(action , ': ' , self.action_count[action])
     
+    def fidelityAfterSwap(self, f1 , f2):
+        fid = f1*f2+(1-f1)*(1-f2)
+        # print('fid::::::: ' , f1,f2,fid)
 
+        return fid
     def work(self, pairs: list, time_): 
         t1 = time.time()
         self.timeSlot = time_ # 紀錄目前回合

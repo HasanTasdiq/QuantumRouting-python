@@ -11,6 +11,7 @@ class Link:
         self.assigned = False
         self.entangled = False
         self.entangledTimeSlot = 0
+        F0 = .9
         # self.p = math.exp(-self.alpha * l)
         # print('rnt prob ' , self.p, self.alpha , l)
         self.l = l
@@ -21,6 +22,9 @@ class Link:
         self.used = False
         self.taken = False
         self.considered = False
+
+        self.fidelity = F0*math.exp(-self.alpha * self.l)
+        
         
         # print(self.n1.id, self.n2.id, self.p)
     def p(self):
