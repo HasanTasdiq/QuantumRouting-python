@@ -38,7 +38,7 @@ class RoutingEnv(Env):
 
         
 
-        print('=========in Routing env ===== ' , algo.name , 'self size ' , get_deep_size(self)/1000000)
+        # print('=========in Routing env ===== ' , algo.name , 'self size ' , get_deep_size(self)/1000000)
 
     def step(self, pair ,  action , timeSlot):
         reward = 0
@@ -628,6 +628,8 @@ class RoutingEnv(Env):
         state_q = [0 for i in range(self.SIZE)]
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
+        state_dist = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
         S = []
         U = []
         for link in self.algo.topo.links:
@@ -636,6 +638,13 @@ class RoutingEnv(Env):
                 n2 = link.n2.id
                 state_graph[n1][n2] += 1
                 state_graph[n2][n1] += 1
+
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_dist[n1][n2] = link.l / 200
+                state_dist[n2][n1] = link.l / 200
 
         if requests is None:
             requests = self.algo.requestState
@@ -661,6 +670,7 @@ class RoutingEnv(Env):
         t = time.time()
 
         U.extend(state_graph)
+        U.extend(state_dist)
 
         Asd = self.get_emb_attention(U)
         # print('asd = self.get_embedded_output ' , time.time()-t)

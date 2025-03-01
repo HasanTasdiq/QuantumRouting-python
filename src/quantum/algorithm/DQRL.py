@@ -20,8 +20,6 @@ sys.path.insert(0, "../../rl")
 
 from DQRLAgent import DQRLAgent
 
-EPS = 1e-6
-pool = None
 class QuRA_DQRL(AlgorithmBase):
     def __init__(self, topo,param=None, name=''):
         super().__init__(topo)
@@ -39,6 +37,8 @@ class QuRA_DQRL(AlgorithmBase):
         if 'greedy_only' not in self.name:
             self.routingAgent.initiate()
         # self.pool = None
+        self.w1 = .5
+        self.w2 = 1 - self.w1
 
 
 
@@ -243,13 +243,14 @@ class QuRA_DQRL(AlgorithmBase):
             if self.timeSlot <= 50000:
                 t = time.time()
                 
-                reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1])
+                reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.result.fidelityPerRound[-1])
                 print('time for update_reward ======== ' , time.time() - t)
 
             a = 10
         self.result.rewardPerRound.append(reward)
         p_time += time.time()-t
         self.result.p_time = p_time
+        print('self.w1 w2 ' , self.w1 , self.w2)
 
         return self.result
     def get_action_ILP(self):
@@ -1373,13 +1374,14 @@ class QuRA_DQRL(AlgorithmBase):
 
         extra_successReq , extra_totalEntanglement = 0 , 0
         if 'greedy_only' in self.name or 'bruteforce' in self.name:
-            extra_successReq , extra_totalEntanglement = self.extraRoute()
+            extra_successReq , extra_totalEntanglement, avgFidelity = self.extraRoute()
 
         totalEntanglement += extra_totalEntanglement
         successReq += extra_successReq
         
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequestPerRound.append(successReq)
+        self.result.fidelityPerRound.append(avgFidelity)
 
         self.result.successfulRequest += successReq
         
@@ -1399,6 +1401,7 @@ class QuRA_DQRL(AlgorithmBase):
         p_time = 0
         t_1 = time.time()
         total_action = 0
+        total_fidelity = 0
   
 
         T = []
@@ -1639,8 +1642,12 @@ class QuRA_DQRL(AlgorithmBase):
                     if success:
                         print("====success====" , src.id , dst.id , [n for n in path])
                         # print('shortest path ----- ' , [n.id for n in targetPath])
-                        reward = 20
+                        reward = 10
                         # reward = 1
+                        fidelity = selectedlinks[0].fidelity
+                        for link in selectedlinks[1:]:
+                            fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+                        total_fidelity += fidelity
                     else:
                         for link in selectedlinks:
                             link.taken = False
@@ -1685,11 +1692,16 @@ class QuRA_DQRL(AlgorithmBase):
 
         totalEntanglement += extra_totalEntanglement
         successReq += extra_successReq
-        
+        try:
+            avgFidelity = total_fidelity/successReq
+        except:
+            avgFidelity = 0    
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequestPerRound.append(successReq)
+        self.result.fidelityPerRound.append(avgFidelity)
 
         self.result.successfulRequest += successReq
+        # self.result.fidelity += avgFidelity
         
         entSum = sum(self.result.entanglementPerRound)
         self.filterReqeuest()
@@ -1708,6 +1720,7 @@ class QuRA_DQRL(AlgorithmBase):
         totalEntanglement = 0
         usedLinks = []
         pathlen = 0
+        total_fidelity = 0
 
         for request in  self.requests:
             T.append(request)
@@ -1882,6 +1895,11 @@ class QuRA_DQRL(AlgorithmBase):
 
                 successReq += 1
                 totalEntanglement += len(successPath)
+                fidelity = usedLinks[0].fidelity
+                for link in usedLinks[1:]:
+                    fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+                total_fidelity += fidelity
+            
             else:
                 for link in usedLinks:
                         edge = self.topo.linktoEdgeSorted(link)
@@ -1906,6 +1924,10 @@ class QuRA_DQRL(AlgorithmBase):
                 link.clearPhase4Swap()
 
         print('===== paths found =======================================' , fp)
+        try:
+            avgFidelity = total_fidelity/successReq
+        except:
+            avgFidelity = 0   
 
         if fp > 0:
             self.result.pathlen += pathlen
@@ -1913,7 +1935,7 @@ class QuRA_DQRL(AlgorithmBase):
         
         self.result.usedLinks += len(usedLinks)
 
-        return successReq , totalEntanglement
+        return successReq , totalEntanglement , avgFidelity
 
 
     def findPathForDQRL(self, SDpair):
@@ -1969,14 +1991,21 @@ class QuRA_DQRL(AlgorithmBase):
 
         return False
     def weightofLink(self , u , v):
+        # w1 = .5
+        # w2 = .5
+
+        w1 = self.w1
+        w2 = self.w2
         if u == v:
             return 0
         capacity = 0
+        fidelity = 0
         for link in u.links:
             if link.contains(v) and link.entangled and not link.taken:
                 capacity += 1
+                fidelity = max(fidelity , link.fidelity)
 
-        return 1/capacity
+        return w1/capacity + w2 * (-math.log(fidelity))
     def edgeCapacity(self, u, v):
         capacity = 0
         for link in u.links:

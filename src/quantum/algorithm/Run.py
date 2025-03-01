@@ -55,13 +55,14 @@ sys.path.insert(0, "../../rl")
 
 # from DQNAgent import DQNAgent   
 from DQNAgentDist import DQNAgentDist
-from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD,clip_value, lr,START_EPSILON_DECAYING,SKIP_REWAD,MINIBATCH_SIZE,REPLAY_MEMORY_SIZE
+from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD,clip_value
+from DQRLAgent import lr,START_EPSILON_DECAYING,SKIP_REWAD,MINIBATCH_SIZE,REPLAY_MEMORY_SIZE,DELTA
 # from DQNAgentDistEnt import DQNAgentDistEnt
 # from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+" lr "+str(LEARNING_RATE)\
+run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) + " DELTA = "+ str(DELTA) + " lr "+str(LEARNING_RATE)\
 +" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)\
 +", then done implemented+ skip link  rand 3 req 5 gs ute "\
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
@@ -69,11 +70,11 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA)+"
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 12 more req"
  
-ttime = 20000
+ttime = 30000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 15
+gridSize = 7
 nodeNo = gridSize *gridSize
 fixed = True
 
@@ -82,7 +83,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [100]
+numOfRequestPerRound = [50]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
@@ -213,7 +214,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
@@ -536,6 +537,31 @@ if __name__ == '__main__':
             for result in Ydata[0]:
                 try:
                     Yaxis.append(sum(result.rewardPerRound[roundIndex:roundIndex+step])/step)
+                except:
+                    Yaxis.append(0)
+            # print('Yaxis ' , roundIndex , Yaxis1)
+            Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+            print(Xaxis + Yaxis)
+            output += Xaxis + Yaxis + '\n'
+
+            F.write(Xaxis + Yaxis)
+        F.close()
+
+        filename = "Timeslot" + "_" + "fidelity" + ".txt"
+        sampleRounds = [i for i in range(0 , ttime , step)]
+        print(filename)
+        output += filename + '\n'
+        F = open(targetFilePath + filename, "w")
+        for roundIndex in sampleRounds:
+            Xaxis = str(roundIndex)
+            # Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
+            Yaxis = []
+            # try:
+            #     Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
+            # except:
+            for result in Ydata[0]:
+                try:
+                    Yaxis.append(sum(result.fidelityPerRound[roundIndex:roundIndex+step])/step)
                 except:
                     Yaxis.append(0)
             # print('Yaxis ' , roundIndex , Yaxis1)

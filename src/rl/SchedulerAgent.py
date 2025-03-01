@@ -82,8 +82,8 @@ class SchedulerAgent:
         self.target_model = self.create_model()
         self.target_model.set_weights(self.model.get_weights())
 
-        print('----------size(target_model)----------------', get_deep_size(self.target_model)/1000000)
-        print('----------size(self Scheduler Agent)----------------', get_deep_size(self)/1000000)
+        # print('----------size(target_model)----------------', get_deep_size(self.target_model)/1000000)
+        # print('----------size(self Scheduler Agent)----------------', get_deep_size(self)/1000000)
         self.print_memory_usage()
 
 

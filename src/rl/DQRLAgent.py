@@ -42,19 +42,20 @@ GAMMA = 0.9
 # GAMMA = 5
 ALPHA = .9
 BETA = -.1
+DELTA = 10
 
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 0  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 10000
-END_EPSILON_DECAYING = 15000
+START_EPSILON_DECAYING = 15000
+END_EPSILON_DECAYING = 25000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
-REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+REPLAY_MEMORY_SIZE = 120000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 50000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 FAILURE_REWARD = -2
@@ -104,7 +105,7 @@ class DQRLAgent:
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE + self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE ,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.env.SIZE , self.env.SIZE,)  
+        self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.env.SIZE + self.env.SIZE , self.env.SIZE,)  
 
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.SIZE,self.env.SIZE,)  
         
@@ -638,7 +639,7 @@ class DQRLAgent:
 
 
     
-    def update_reward(self, numsuccessReq):
+    def update_reward(self, numsuccessReq , avgFidelity):
         global EPSILON_
 
         timeSlot = self.env.algo.timeSlot
@@ -676,7 +677,7 @@ class DQRLAgent:
                 # R.append(reward)
                     
             else:
-                reward = reward*ALPHA + numsuccessReq * GAMMA
+                reward = reward*ALPHA + numsuccessReq * GAMMA + avgFidelity* DELTA
                 # reward = numsuccessReq
                 reward /= pathlen
                 R.append(reward)

@@ -93,19 +93,26 @@ class REPSREP(AlgorithmBase):
         # print([(r[0].id, r[0].id) for r in self.srcDstPairs])
         totalEntanglement = 0
         successReq = 0
+        total_fidelity = 0
 
         if len(self.srcDstPairs) > 0:
             for i in range(4):
                 self.EPS()
-                t , s = self.ELS()
+                t , s ,f  = self.ELS()
                 totalEntanglement += t
                 successReq += s
+                total_fidelity += f
                 print('=====---=====----=====----===== ' , self.timeSlot , i , t, s)
                 if not s:
                     break
+        try:
+            avgFidelity = total_fidelity/successReq
+        except:
+            avgFidelity = 0  
         
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequestPerRound.append(successReq)
+        self.result.fidelityPerRound.append(avgFidelity)
         reward = 0
         self.result.rewardPerRound.append(reward)
 
@@ -644,6 +651,7 @@ class REPSREP(AlgorithmBase):
         successReq = 0
         usedLinks = set()
         toremovesd = []
+        total_fidelity = 0
         for SDpair in self.srcDstPairs:
             src = SDpair[0]
             dst = SDpair[1]
@@ -672,6 +680,12 @@ class REPSREP(AlgorithmBase):
                 print('len(successPath) ' , len(successPath))
 
                 if len(successPath):
+                    fidelity = path[0][1].fidelity
+                    for node, link in path[1:]:
+                        if link is not None:
+                            fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+                    total_fidelity += fidelity
+
                     for request in self.requests:
                         if (src, dst) == (request[0], request[1]):
                             # print('[REPS] finish time:', self.timeSlot - request[2])
@@ -705,7 +719,7 @@ class REPSREP(AlgorithmBase):
         print('[' , self.name, '] :' , self.timeSlot, ' current successful request:', successReq)
         print('[' , self.name, '] :' , self.timeSlot, ' total successful request:', self.result.successfulRequest)
 
-        return totalEntanglement, successReq
+        return totalEntanglement, successReq , total_fidelity
     def filterReqeuest(self):
         self.requests = list(filter(lambda x: self.timeSlot -  x[2] < self.topo.requestTimeout -1 , self.requests))
 
