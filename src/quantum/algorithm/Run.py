@@ -70,26 +70,27 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) +
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  4 12 more req"
  
-ttime = 30000
-ttime2 = 500
-step = 500
-times = 1
-gridSize = 7
+ttime = 50
+ttime2 = 50
+step = 50
+times = 2
+gridSize = 10
 nodeNo = gridSize *gridSize
-fixed = True
+fixed = False
 
 alpha_ = 0.0007
 degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [50]
+numOfRequestPerRound = [100]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
 r = [0, 2, 4, 6, 8, 10]
 q = [0.7, 0.8, 0.9]
 alpha = [0.001 , 0.002 , 0.003]
+fidelity = [.5 , .6,  .7]
 # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
 SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 preSwapFraction = [0.4,  0.6,  0.8 ,  1]
@@ -98,8 +99,8 @@ entanglementLifetimes = [1]
 requestTimeouts = [100,200,300]
 preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
-runLabel = [0]
-Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity"]
+runLabel = [11]
+Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity" , 'fidelityThreshold']
 toRunLessAlgos = ['REPS','REPS_shortest','QuRA_Heuristic' ,'REPS_rep', 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only', 'RANDSCHEDULEGREEDY','RANDSCHEDULEROUTEGREEDY']
 
 
@@ -168,7 +169,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
 
 
-def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 100, numOfNode = 0, r = 7, q = 1, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -214,7 +215,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_shortest'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
     # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
@@ -251,7 +252,7 @@ def Run(numOfRequestPerRound = 30, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
     algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
     # algorithms.append(QuRA_Heuristic(copy.deepcopy(topo) , name = 'QuRA_Heuristic'))
@@ -387,6 +388,9 @@ def mainThreadRequestTimeout(Xparam , topo , result):
 def mainThreadPreSwapCapacity(Xparam , topo , result):
     topo.preswap_capacity = Xparam
     result.extend(Run(topo = copy.deepcopy(topo)))
+def mainThreadFidelityThreshold(Xparam , topo , result):
+    topo.fidelity_threshold = Xparam
+    result.extend(Run(topo = copy.deepcopy(topo)))
 
 
 
@@ -404,7 +408,7 @@ if __name__ == '__main__':
 
     # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
 
-    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes , requestTimeouts , preSwapCapacity]
+    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes , requestTimeouts , preSwapCapacity , fidelity]
 
     print('--------calling topo.generate() ---------------')
     topo = Topo.generate(nodeNo, 0.9, 5,alpha_, degree, gridSize=gridSize)
@@ -475,6 +479,9 @@ if __name__ == '__main__':
                 jobs.append(job)
             if XlabelIndex == 10: # pre swap capacity
                 job = multiprocessing.Process(target = mainThreadPreSwapCapacity, args = (Xparam , topo , results[Xparam] ))
+                jobs.append(job)
+            if XlabelIndex == 11: # pre swap capacity
+                job = multiprocessing.Process(target = mainThreadFidelityThreshold, args = (Xparam , topo , results[Xparam] ))
                 jobs.append(job)
 
             # if XlabelIndex == 7:

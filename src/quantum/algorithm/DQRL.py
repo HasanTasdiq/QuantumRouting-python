@@ -240,7 +240,7 @@ class QuRA_DQRL(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot <= 50000:
+            if self.timeSlot <= 500000:
                 t = time.time()
                 
                 reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.result.fidelityPerRound[-1])
@@ -1852,6 +1852,13 @@ class QuRA_DQRL(AlgorithmBase):
                 # if hopCount >= self.hopCountThreshold:
                     # print((src.id,dst.id) , '=FAILED extra route = hopCount >= self.hopCountThreshold')
 
+            if success:
+                fidelity = usedLinks[0].fidelity
+                for link in usedLinks[1:]:
+                    fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+                # print('fidelity...... ' ,(src.id,dst.id) , fidelity )
+                if fidelity < self.topo.fidelity_threshold:
+                    success = False
             
             if success:
                 pathlen += len(targetPath)
@@ -1895,9 +1902,7 @@ class QuRA_DQRL(AlgorithmBase):
 
                 successReq += 1
                 totalEntanglement += len(successPath)
-                fidelity = usedLinks[0].fidelity
-                for link in usedLinks[1:]:
-                    fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+
                 total_fidelity += fidelity
             
             else:
@@ -2006,6 +2011,7 @@ class QuRA_DQRL(AlgorithmBase):
                 fidelity = max(fidelity , link.fidelity)
 
         return w1/capacity + w2 * (-math.log(fidelity))
+        # return w1/capacity + w2/fidelity
     def edgeCapacity(self, u, v):
         capacity = 0
         for link in u.links:

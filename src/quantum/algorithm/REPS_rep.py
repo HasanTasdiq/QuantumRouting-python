@@ -96,7 +96,7 @@ class REPSREP(AlgorithmBase):
         total_fidelity = 0
 
         if len(self.srcDstPairs) > 0:
-            for i in range(4):
+            for i in range(1):
                 self.EPS()
                 t , s ,f  = self.ELS()
                 totalEntanglement += t
@@ -341,6 +341,12 @@ class REPSREP(AlgorithmBase):
         numOfNodes = len(self.topo.nodes)
         numOfSDpairs = len(self.srcDstPairs)
         numOfFlow = [1 for i in range(numOfSDpairs)]
+        F0 = 0.9  # Initial fidelity
+        alpha = self.topo.alpha  # Attenuation coefficient
+        w1 = .5
+        w2 = 1-w1
+        F_th = 0.2  # Fidelity threshold
+
         if len(numOfFlow):
             maxK = max(numOfFlow)
         else:
@@ -353,7 +359,7 @@ class REPSREP(AlgorithmBase):
         notEdge = []
         for edge in self.topo.edges:
             edgeIndices.append((edge[0].id, edge[1].id))
-        
+
         for u in range(numOfNodes):
             for v in range(numOfNodes):
                 if (u, v) not in edgeIndices and (v, u) not in edgeIndices:
@@ -367,6 +373,20 @@ class REPSREP(AlgorithmBase):
         m = gp.Model('REPS for EPS',env = env)
         m.setParam("OutputFlag", 0)
         print('--------')
+        # Fidelity variables for each link (u,v)
+        F = {}  # Fidelity before swapping
+
+        for (u, v) in edgeIndices:
+            distance = self.topo.dist[(u,v)]
+            # print(distance)
+            # F[(u, v)] = -5*math.log(F0*math.exp(-alpha*distance))  # Function to get fidelity for each link
+            # F[(v, u)] = -5*math.log(F0*math.exp(-alpha*distance))  # Function to get fidelity for each link
+            F[(u, v)] = 5*(F0*math.exp(-alpha*distance))  # Function to get fidelity for each link
+            F[(v, u)] = 5*(F0*math.exp(-alpha*distance))
+        # for (u,v) in F:
+        #     print(F[(u, v)])
+
+       
 
         f = [0] * numOfSDpairs
         for i in range(numOfSDpairs):
@@ -378,6 +398,18 @@ class REPSREP(AlgorithmBase):
                     for v in range(numOfNodes):
                         if k < numOfFlow[i] and ((u, v) in edgeIndices or (v, u) in edgeIndices):
                             f[i][k][u][v] = m.addVar(lb = 0, vtype = gp.GRB.INTEGER, name = "f[%d][%d][%d][%d]" % (i, k, u, v))
+
+        Fid = [0] * numOfSDpairs
+        for i in range(numOfSDpairs):
+            Fid[i] = [0] * maxK
+            for k in range(maxK):
+                Fid[i][k] = [0] * numOfNodes
+                for u in range(numOfNodes):
+                    Fid[i][k][u] = [0] * numOfNodes 
+                    for v in range(numOfNodes):
+                        if k < numOfFlow[i] and ((u, v) in edgeIndices or (v, u) in edgeIndices):
+                            
+                            Fid[i][k][u][v] = m.addVar(lb = 0, ub = F[(u,v)], vtype = gp.GRB.CONTINUOUS, name = "Fid[%d][%d][%d][%d]" % (i, k, u, v))
 
 
         t = [0] * numOfSDpairs
@@ -391,7 +423,8 @@ class REPSREP(AlgorithmBase):
 
         m.update()
         
-        m.setObjective(gp.quicksum(t[i][k] for k in range(maxK) for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
+        m.setObjective(w1*gp.quicksum(t[i][k] for k in range(maxK) for i in range(numOfSDpairs)) + w2*gp.quicksum(Fid[i][k][u][v] for k in range(maxK) for i in range(numOfSDpairs) for (u,v) in edgeIndices), gp.GRB.MAXIMIZE)
+        # m.setObjective(gp.quicksum(t[i][k] for k in range(maxK) for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
 
         for i in range(numOfSDpairs):
             s = self.srcDstPairs[i][0].id
@@ -424,11 +457,18 @@ class REPSREP(AlgorithmBase):
                             # print('edgeUV ' , u , edgeUV)
                         m.addConstr(gp.quicksum(f[i][k][u][v] for v in edgeUV) - gp.quicksum(f[i][k][v][u] for v in edgeUV) == 0)
 
+                for (u, v) in edgeIndices:
+                    m.addConstr(Fid[i][k][u][v] == F[(u, v)]*t[i][k])
         
-        for (u, v) in edgeIndices:
-            capacity = self.edgeSuccessfulEntangle(self.topo.nodes[u], self.topo.nodes[v])
-            # print('capcity ' ,(u , v),  capacity)
-            m.addConstr(gp.quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
+                # for (u, v) in edgeIndices:
+                #     m.addConstr(Fid[i][k][u][v] == F[u, v])
+
+                #neeeed tooo check
+                for (u, v) in edgeIndices:
+                    capacity = self.edgeSuccessfulEntangle(self.topo.nodes[u], self.topo.nodes[v])
+                    # print('capcity ' ,(u , v),  capacity)
+                    m.addConstr(gp.quicksum((f[i][k][u][v] + f[i][k][v][u]) for k in range(maxK) for i in range(numOfSDpairs)) <= capacity)
+
         print('goin to optimize')
         m.optimize()
 
@@ -567,6 +607,7 @@ class REPSREP(AlgorithmBase):
 
             Pi[i].append(targetPath)
             output.append(targetPath)
+
             for nodeIndex in range(1, len(targetPath) - 1):
                 prev = targetPath[nodeIndex - 1]
                 node = targetPath[nodeIndex]
@@ -812,11 +853,27 @@ class REPSREP(AlgorithmBase):
                 next = path[i + 1]
                 self.fki_LP[SDpair][k][(node, next)] -= width
 
-            path.append(width)
-            pathList.append(path.copy())
+            if self.pathFidelity(path) >= self.topo.fidelity_threshold:
+                path.append(width)
+                pathList.append(path.copy())
 
         return pathList
     
+    def pathFidelity(self , path):
+        links = []
+        for i in range(1 , len(path)):
+            n1 = path[i-1]
+            n2 = path[i]
+            for link in n1.links:
+                if link.contains(n2) and link.entangled and link.notSwapped():
+                    links.append(link)
+                    break
+        fidelity = links[0].fidelity
+        for link in links[1:]:
+            fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+        # print('fidelity....... ' , fidelity)
+        return fidelity
+
     def DijkstraForEPS(self, SDpair, k):
         src = SDpair[0]
         dst = SDpair[1]
