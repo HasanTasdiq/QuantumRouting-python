@@ -1632,6 +1632,12 @@ class QuRA_DQRL(AlgorithmBase):
                     reward = -1/ent_links_count
                 else:
                     reward = -1
+                if success:
+                    fidelity = selectedlinks[0].fidelity
+                    for link in selectedlinks[1:]:
+                        fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+                    if fidelity < self.topo.fidelity_threshold:
+                        success = False
                 if req_done:
                     for req in T:
                         # print('(src, dst) == (req[0], req[1])' , src.id , dst.id , req[0].id , req[1].id , (src, dst) == (req[0], req[1]) , len(T))
@@ -1644,9 +1650,7 @@ class QuRA_DQRL(AlgorithmBase):
                         # print('shortest path ----- ' , [n.id for n in targetPath])
                         reward = 10
                         # reward = 1
-                        fidelity = selectedlinks[0].fidelity
-                        for link in selectedlinks[1:]:
-                            fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+
                         total_fidelity += fidelity
                     else:
                         for link in selectedlinks:
