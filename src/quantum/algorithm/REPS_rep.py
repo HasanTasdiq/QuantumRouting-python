@@ -380,8 +380,8 @@ class REPSREP(AlgorithmBase):
         for (u, v) in edgeIndices:
             distance = self.topo.dist[(u,v)]
             # print(distance)
-            # F[(u, v)] = -5*math.log(F0*math.exp(-alpha*distance))  # Function to get fidelity for each link
-            # F[(v, u)] = -5*math.log(F0*math.exp(-alpha*distance))  # Function to get fidelity for each link
+            # F[(u, v)] = 5*math.log(F0*math.exp(-alpha*distance))  # Function to get fidelity for each link
+            # F[(v, u)] = 5*math.log(F0*math.exp(-alpha*distance))  # Function to get fidelity for each link
             F[(u, v)] = 5*(F0*math.exp(-alpha*distance))  # Function to get fidelity for each link
             F[(v, u)] = 5*(F0*math.exp(-alpha*distance))
         # for (u,v) in F:
@@ -424,7 +424,8 @@ class REPSREP(AlgorithmBase):
 
         m.update()
         
-        m.setObjective(w1*gp.quicksum(t[i][k] for k in range(maxK) for i in range(numOfSDpairs)) + w2*gp.quicksum(Fid[i][k][u][v] for k in range(maxK) for i in range(numOfSDpairs) for (u,v) in edgeIndices), gp.GRB.MAXIMIZE)
+        # m.setObjective(w1*gp.quicksum(t[i][k] for k in range(maxK) for i in range(numOfSDpairs)) + w2*gp.quicksum(Fid[i][k][u][v] for k in range(maxK) for i in range(numOfSDpairs) for (u,v) in edgeIndices), gp.GRB.MAXIMIZE)
+        m.setObjective(gp.quicksum(Fid[i][k][u][v] * t[i][k] for k in range(maxK) for i in range(numOfSDpairs) for (u,v) in edgeIndices), gp.GRB.MAXIMIZE)
         # m.setObjective(gp.quicksum(t[i][k] for k in range(maxK) for i in range(numOfSDpairs)), gp.GRB.MAXIMIZE)
 
         for i in range(numOfSDpairs):
