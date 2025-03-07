@@ -1555,6 +1555,15 @@ class QuRA_DQRL(AlgorithmBase):
                 reqState = (src,dst,current_node,tuple(path),index,req_done)
                 self.requestState[index] = reqState
                 swappSuccess = True
+                fidelity = 0
+                if len(selectedlinks):
+                    fidelity = selectedlinks[0].fidelity
+                    for link in selectedlinks[1:]:
+                        fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+                    if fidelity < self.topo.fidelity_threshold:
+                        success = False
+                        req_done = True
+
                 if success:
                     print('going to swap for ' , (src.id , dst.id ))
                     for i in range(len(selectedlinks)-1):
@@ -1632,12 +1641,7 @@ class QuRA_DQRL(AlgorithmBase):
                     reward = -1/ent_links_count
                 else:
                     reward = -1
-                if success:
-                    fidelity = selectedlinks[0].fidelity
-                    for link in selectedlinks[1:]:
-                        fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
-                    if fidelity < self.topo.fidelity_threshold:
-                        success = False
+
                 if req_done:
                     for req in T:
                         # print('(src, dst) == (req[0], req[1])' , src.id , dst.id , req[0].id , req[1].id , (src, dst) == (req[0], req[1]) , len(T))
