@@ -68,7 +68,7 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) +
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
 + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  2 6 .7"
+    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  2 6 .8"
  
 ttime = 18000
 ttime2 = 500
@@ -90,7 +90,7 @@ numOfNodes = [50 , 75 , 100 ]
 r = [0, 2, 4, 6, 8, 10]
 q = [0.7, 0.8, 0.9]
 alpha = [0.001 , 0.002 , 0.003]
-fidelity = [ .7 ]
+fidelity = [ .8 ]
 # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
 SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 preSwapFraction = [0.4,  0.6,  0.8 ,  1]
