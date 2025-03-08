@@ -70,7 +70,7 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) +
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+=  2 6 .8"
  
-ttime = 18000
+ttime = 15000
 ttime2 = 500
 step = 500
 times = 1
@@ -90,7 +90,7 @@ numOfNodes = [50 , 75 , 100 ]
 r = [0, 2, 4, 6, 8, 10]
 q = [0.7, 0.8, 0.9]
 alpha = [0.001 , 0.002 , 0.003]
-fidelity = [ .8 ]
+fidelity = [ .6 ,  .7 , .8  ]
 # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
 SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 preSwapFraction = [0.4,  0.6,  0.8 ,  1]
@@ -503,32 +503,34 @@ if __name__ == '__main__':
 
 
         print(run)
-        filename = "Timeslot" + "_" + "#successRequest" + ".txt"
-        sampleRounds = [i for i in range(0 , ttime , step)]
-        print(filename)
-        output += filename + '\n'
+        for i in range(len(Xparameters[XlabelIndex])):
+            Xparam = Xparameters[XlabelIndex][i]
+            filename = "Timeslot" + "_" + "fidelity"+ str(Xparam) + ".txt"
+            sampleRounds = [s for s in range(0 , ttime , step)]
+            print(filename)
+            output += filename + '\n'
 
 
-        F = open(targetFilePath + filename, "w")
-        for roundIndex in sampleRounds:
-            Xaxis = str(roundIndex)
-            # Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
-            Yaxis = []
-            # try:
-            #     Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
-            # except:
-            for result in Ydata[0]:
-                try:
-                    Yaxis.append(sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step)
-                except:
-                    Yaxis.append(0)
-            # print('Yaxis ' , roundIndex , Yaxis1)
-            Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-            print(Xaxis + Yaxis)
-            output += Xaxis + Yaxis + '\n'
+            F = open(targetFilePath + filename, "w")
+            for roundIndex in sampleRounds:
+                Xaxis = str(roundIndex)
+                # Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
+                Yaxis = []
+                # try:
+                #     Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
+                # except:
+                for result in Ydata[0]:
+                    try:
+                        Yaxis.append(sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step)
+                    except:
+                        Yaxis.append(0)
+                # print('Yaxis ' , roundIndex , Yaxis1)
+                Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+                print(Xaxis + Yaxis)
+                output += Xaxis + Yaxis + '\n'
 
-            F.write(Xaxis + Yaxis)
-        F.close()
+                F.write(Xaxis + Yaxis)
+            F.close()
 
         filename = "Timeslot" + "_" + "reward" + ".txt"
         sampleRounds = [i for i in range(0 , ttime , step)]
@@ -554,30 +556,32 @@ if __name__ == '__main__':
             F.write(Xaxis + Yaxis)
         F.close()
 
-        filename = "Timeslot" + "_" + "fidelity" + ".txt"
-        sampleRounds = [i for i in range(0 , ttime , step)]
-        print(filename)
-        output += filename + '\n'
-        F = open(targetFilePath + filename, "w")
-        for roundIndex in sampleRounds:
-            Xaxis = str(roundIndex)
-            # Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
-            Yaxis = []
-            # try:
-            #     Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
-            # except:
-            for result in Ydata[0]:
-                try:
-                    Yaxis.append(sum(result.fidelityPerRound[roundIndex:roundIndex+step])/step)
-                except:
-                    Yaxis.append(0)
-            # print('Yaxis ' , roundIndex , Yaxis1)
-            Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-            print(Xaxis + Yaxis)
-            output += Xaxis + Yaxis + '\n'
+        for i in range(len(Xparameters[XlabelIndex])):
+            Xparam = Xparameters[XlabelIndex][i]
+            filename = "Timeslot" + "_" + "fidelity"+ str(Xparam) + ".txt"
+            sampleRounds = [s for s in range(0 , ttime , step)]
+            print(filename)
+            output += filename + '\n'
+            F = open(targetFilePath + filename, "w")
+            for roundIndex in sampleRounds:
+                Xaxis = str(roundIndex)
+                # Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
+                Yaxis = []
+                # try:
+                #     Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
+                # except:
+                for result in Ydata[i]:
+                    try:
+                        Yaxis.append(sum(result.fidelityPerRound[roundIndex:roundIndex+step])/step)
+                    except:
+                        Yaxis.append(0)
+                # print('Yaxis ' , roundIndex , Yaxis1)
+                Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
+                print(Xaxis + Yaxis)
+                output += Xaxis + Yaxis + '\n'
 
-            F.write(Xaxis + Yaxis)
-        F.close()
+                F.write(Xaxis + Yaxis)
+            F.close()
 
         for Ylabel in Ylabels:
             filename = Xlabel + "_" + Ylabel + ".txt"
