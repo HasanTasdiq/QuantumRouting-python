@@ -224,6 +224,26 @@ class DQRLAgent:
         else:
             self.replay_memory.append(transition)
         self.priorities.append(priority)
+    
+    def save_replay_memory(self):
+        if not os.path.isdir('replay_memory'):
+            os.makedirs('replay_memory')
+        with open('replay_memory/'+self.model_name+'.txt', 'w') as f:
+            for i in range(len(self.replay_memory)):
+                f.write(str(self.replay_memory[i]) + '\n')
+        print('replay memory saved')
+    def load_replay_memory(self):
+        if not os.path.isdir('replay_memory'):
+            os.makedirs('replay_memory')
+        with open('replay_memory/'+self.model_name+'.txt', 'r') as f:
+            for line in f:
+                # print(line)
+                line = line.strip()
+                # print(line)
+                if line:
+                    line = eval(line)
+                    # print(line)
+                    self.replay_memory.append(line)
 
     # Trains main network every step during episode
     def train(self, terminal_state, step):
