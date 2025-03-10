@@ -1538,6 +1538,15 @@ class QuRA_DQRL(AlgorithmBase):
                 usedLinksDict[(src, dst)] = usedLinks
                 prevlinksDict[(src,dst)] = prev_links
                 path.append(next_node.id)
+                
+                fidelity = 0
+                if len(selectedlinks):
+                    fidelity = selectedlinks[0].fidelity
+                    for link in selectedlinks[1:]:
+                        fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
+                    if fidelity < self.topo.fidelity_threshold:
+                        success = False
+                        req_done = True
                     
                 if len(prev_links) and next_node == request[1] and good_to_search:
                     success = True
@@ -1555,14 +1564,7 @@ class QuRA_DQRL(AlgorithmBase):
                 reqState = (src,dst,current_node,tuple(path),index,req_done)
                 self.requestState[index] = reqState
                 swappSuccess = True
-                fidelity = 0
-                if len(selectedlinks):
-                    fidelity = selectedlinks[0].fidelity
-                    for link in selectedlinks[1:]:
-                        fidelity = self.fidelityAfterSwap(fidelity , link.fidelity)
-                    if fidelity < self.topo.fidelity_threshold:
-                        success = False
-                        req_done = True
+
 
                 if success:
                     print('going to swap for ' , (src.id , dst.id ))
@@ -1650,7 +1652,7 @@ class QuRA_DQRL(AlgorithmBase):
                             T.remove(req)
                             break
                     if success:
-                        print("====success====" , src.id , dst.id , [n for n in path])
+                        # print("====success====" , src.id , dst.id , [n for n in path])
                         # print('shortest path ----- ' , [n.id for n in targetPath])
                         reward = 10
                         # reward = 1

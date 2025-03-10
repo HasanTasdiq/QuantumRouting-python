@@ -74,7 +74,7 @@ ttime = 12000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 5
+gridSize = 10
 nodeNo = gridSize *gridSize
 fixed = True
 
@@ -83,14 +83,14 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [15]
+numOfRequestPerRound = [50]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [50 , 75 , 100 ]
 # numOfNodes = [20]
 r = [0, 2, 4, 6, 8, 10]
 q = [0.7, 0.8, 0.9]
 alpha = [0.001 , 0.002 , 0.003]
-fidelity = [ .6 ,  .7   ]
+fidelity = [ .5 , .6 ,  .7 , .8   ]
 # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
 SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
 preSwapFraction = [0.4,  0.6,  0.8 ,  1]
@@ -99,7 +99,7 @@ entanglementLifetimes = [1]
 requestTimeouts = [100,200,300]
 preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
-runLabel = [0]
+runLabel = [11]
 Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity" , 'fidelityThreshold']
 toRunLessAlgos = ['REPS','REPS_shortest','QuRA_Heuristic' ,'REPS_rep', 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only', 'RANDSCHEDULEGREEDY','RANDSCHEDULEROUTEGREEDY']
 
@@ -169,7 +169,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
 
 
-def Run(numOfRequestPerRound = 10, numOfNode = 0, r = 7, q = 1, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = 1, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
