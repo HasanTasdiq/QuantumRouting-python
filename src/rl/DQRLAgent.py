@@ -22,6 +22,10 @@ import copy
 # import tensorflow as tf
 # tf.compat.v1.disable_eager_execution()
 import tensorflow as tf
+import pickle
+import glob
+
+
 
 # Check if a GPU is available
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -48,13 +52,13 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
-START_EPSILON_DECAYING = 12000
-END_EPSILON_DECAYING = 16000
+START_EPSILON_DECAYING = 10000
+END_EPSILON_DECAYING = 13000
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
 
 DISCOUNT = 0.5
-REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
+REPLAY_MEMORY_SIZE = 800000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 50000  # Minimum number of steps in a memory to start training
 MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
@@ -111,7 +115,7 @@ class DQRLAgent:
         
         # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 3*self.env.SIZE + self.env.SIZE*self.env.SIZE ,)  
        
-        self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q) +'_'+'DQRLAgent.keras'
+        self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q)+'_'+str(algo.topo.fidelity_threshold) +'_'+'DQRLAgent.keras'
 
         # Main model
         self.model = self.create_model()
@@ -225,25 +229,30 @@ class DQRLAgent:
             self.replay_memory.append(transition)
         self.priorities.append(priority)
     
-    def save_replay_memory(self):
+    def save_replay_memory(self, timeSlot):
         if not os.path.isdir('replay_memory'):
             os.makedirs('replay_memory')
-        with open('replay_memory/'+self.model_name+'.txt', 'w') as f:
-            for i in range(len(self.replay_memory)):
-                f.write(str(self.replay_memory[i]) + '\n')
-        print('replay memory saved')
+        with open('replay_memory/' + self.model_name +'_'+ str(timeSlot) + '.pkl', 'wb') as f:
+            pickle.dump(self.replay_memory, f)
+        self.replay_memory.clear()
+        self.priorities.clear()
+        print('Replay memory saved')
+
     def load_replay_memory(self):
         if not os.path.isdir('replay_memory'):
             os.makedirs('replay_memory')
-        with open('replay_memory/'+self.model_name+'.txt', 'r') as f:
-            for line in f:
-                # print(line)
-                line = line.strip()
-                # print(line)
-                if line:
-                    line = eval(line)
-                    # print(line)
-                    self.replay_memory.append(line)
+        replay_memory_files = glob.glob(f'replay_memory/{self.model_name}_*.pkl')
+        self.replay_memory.clear()
+        for file in replay_memory_files:
+            try:
+                with open(file, 'rb') as f:
+                    self.replay_memory.extend(pickle.load(f))
+                print(f'Replay memory loaded from {file}')
+            except FileNotFoundError:
+                print(f'No replay memory file found: {file}')
+        print(f'Total replay memory loaded: {len(self.replay_memory)}')
+
+
 
     # Trains main network every step during episode
     def train(self, terminal_state, step):
@@ -712,6 +721,10 @@ class DQRLAgent:
             # print('update  replay memory time ' , time.time() -t3)
         t4 = time.time()
         self.update_replay_memory(trans, numsuccessReq)
+        # if (timeSlot+1) % 500 == 0:
+        #     self.save_replay_memory(timeSlot)
+
+        #     print('replay memory saved')
         # if timeSlot == 1:
         #     for i in range(80000):
         #         self.update_replay_memory(copy.deepcopy( (current_state, action, i, next_state,mask,  done)), numsuccessReq)
@@ -722,6 +735,8 @@ class DQRLAgent:
         self.env.algo.topo.reward_routing = {}
         t5 = time.time()
 
+
+        ############################################
         self.train(False , self.env.algo.timeSlot)
         print('time train ' , time.time()-t5)
 
@@ -756,3 +771,25 @@ class DQRLAgent:
         self.model.save((self.model_name))
         # print(self.model.weights)
         del self.model
+
+if __name__ == '__main__':
+    agent = DQRLAgent()
+    agent.initiate()
+    
+    # Load and train with each replay memory file
+    replay_memory_files = glob.glob(f'replay_memory/*.pkl')
+    for file in replay_memory_files:
+        try:
+            with open(file, 'rb') as f:
+                agent.replay_memory.extend(pickle.load(f))
+            print(f'Replay memory loaded from {file}')
+            
+            # Train the model with the loaded replay memory
+            for _ in range(100):
+                agent.train(terminal_state=False, step=0)
+            
+            # Clear the replay memory before loading the next file
+            agent.replay_memory.clear()
+        except FileNotFoundError:
+            print(f'No replay memory file found: {file}')
+    
