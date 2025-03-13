@@ -11,7 +11,7 @@ class Link:
         self.assigned = False
         self.entangled = False
         self.entangledTimeSlot = 0
-        F0 = .9
+        F0 = .95
         # self.p = math.exp(-self.alpha * l)
         # print('rnt prob ' , self.p, self.alpha , l)
         self.l = l
