@@ -72,7 +72,7 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) +
  
 ttime = 15000
 ttime2 = 500
-step = 100
+step = 1000
 times = 1
 gridSize = 5
 nodeNo = gridSize *gridSize
