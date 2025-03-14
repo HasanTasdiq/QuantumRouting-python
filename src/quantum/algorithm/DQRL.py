@@ -1538,8 +1538,14 @@ class QuRA_DQRL(AlgorithmBase):
                 usedLinksDict[(src, dst)] = usedLinks
                 prevlinksDict[(src,dst)] = prev_links
                 path.append(next_node.id)
-                
+
                 fidelity = 0
+
+                    
+                if len(prev_links) and next_node == request[1] and good_to_search:
+                    success = True
+                    good_to_search = False
+
                 if len(selectedlinks):
                     fidelity = selectedlinks[0].fidelity
                     for link in selectedlinks[1:]:
@@ -1547,11 +1553,6 @@ class QuRA_DQRL(AlgorithmBase):
                     if fidelity < self.topo.fidelity_threshold:
                         success = False
                         req_done = True
-                    
-                if len(prev_links) and next_node == request[1] and good_to_search:
-                    success = True
-                    good_to_search = False
-                
                 done_episode = (not good_to_search or success) and (len(T)==1)
                 t3 = time.time()
                 self.routingAgent.update_action( request ,current_node.id,  action  , current_state  , done_episode)
