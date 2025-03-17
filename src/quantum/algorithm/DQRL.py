@@ -1438,6 +1438,7 @@ class QuRA_DQRL(AlgorithmBase):
             # for (current_state , action , q , mask) in reqState_actions:
             #     if action < 0:
             #         continue
+            #     p_time2 = 0
 
 
                 total_action += 1
@@ -1445,6 +1446,7 @@ class QuRA_DQRL(AlgorithmBase):
                 t1 = time.time()
                 current_state , action , p_time2 = self.routingAgent.learn_and_predict_next_req_node()
                 # print('learn_and_predict_next_req_node time: ' , time.time() - t1)
+
                 p_time+= p_time2
                 t2 = time.time()
 
