@@ -1350,6 +1350,28 @@ class RoutingEnv(Env):
                 mask[index*self.SIZE + n] = 1
 
         return mask
+    def get_mask_all_req_schedule_route(self):
+        state_graph = np.zeros((self.SIZE, self.SIZE), dtype=int)
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+
+        masks = np.zeros((len(self.algo.requestState), self.SIZE), dtype=int)
+        for i, reqState in enumerate(self.algo.requestState):
+            src, dst, current_node, path, index, done = reqState
+            # if done:
+            #     continue
+            neighbors = np.where(state_graph[current_node.id] == 1)[0]
+            for n in neighbors:
+                if n not in path and n != current_node.id:
+                    masks[i, n] = 1
+            if not masks[i].any():
+                masks[i] = 1
+        masks_flat = masks.flatten()
+        return masks_flat
 
     def get_mask_shcedule_route(self):
         state_graph = [[0 for column in range(self.SIZE)]
@@ -1390,28 +1412,18 @@ class RoutingEnv(Env):
                     mask[index*self.SIZE + n] = 1
         return mask
     
-    def neighbor_qs_schedule_route(self , qs , mask = None):
-
-            
-        ret = []
+    def neighbor_qs_schedule_route(self, qs, mask=None):
         if mask is None:
-            t = time.time()
             mask = self.get_mask_shcedule_route()
-            # print('get mask time @@@@@@@@@  '  ,time.time()-t)
-            # if self.algo.timeSlot%100 == 0:
-            #     print(qs)
-            #     print('average q val at: ' , self.algo.timeSlot , sum(qs) / len(qs))
-            #     print(mask)
-        min_ = -sys. maxsize - 1
-        for i ,m in enumerate(mask):
-            # print('in neighbor qs m:', m  , i , qs[i])
-            if m is not None:
-                ret.append(qs[i])
-            else:
-                ret.append(min_)
-        # if self.algo.timeSlot%100 == 0:
-        #     print(ret)
-        return ret
+
+        # Convert mask to a NumPy array for efficient operations
+        mask = np.array(mask)
+        
+        # Set qs values to a very low value where mask is None
+        min_val = -sys.maxsize - 1
+        masked_qs = np.where(mask == 1, qs, min_val)
+    
+        return masked_qs.tolist()
     def rand_neighbor_schedule_route(self , mask = None):
         ret = []
         if mask is None:
