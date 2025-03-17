@@ -76,7 +76,7 @@ step = 500
 times = 1
 gridSize = 4
 nodeNo = gridSize *gridSize
-fixed = False
+fixed = True
 
 alpha_ = 0.0007
 degree = 1
@@ -90,7 +90,7 @@ numOfNodes = [50 , 75 , 100 ]
 r = [0, 2, 4, 6, 8, 10]
 q = [0.7, 0.8, 0.9]
 alpha = [0.001 , 0.002 , 0.003]
-fidelity = [ .5 , .6 , .7 , .8 ]
+fidelity = [  .7  ]
 # fidelity = [ .5  ]
 # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
 SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
