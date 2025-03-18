@@ -6,6 +6,8 @@ import geni.rspec.pg as pg
 
 # Create a portal context.
 pc = portal.Context()
+pc.defineParameter("node_hw", "GPU node type", portal.ParameterType.NODETYPE, "c240g5")
+pc.defineParameter("data_size", "GPU node local storage size", portal.ParameterType.STRING, "1024GB")
 
 # Create a Request object to start building the RSpec.
 request = pc.makeRequestRSpec()
