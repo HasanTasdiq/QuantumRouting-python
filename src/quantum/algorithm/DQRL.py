@@ -37,8 +37,9 @@ class QuRA_DQRL(AlgorithmBase):
         if 'greedy_only' not in self.name:
             self.routingAgent.initiate()
         # self.pool = None
-        self.w1 = .5
+        self.w1 = 1
         self.w2 = 1 - self.w1
+        self.maxTry = 3
 
 
 
@@ -1413,6 +1414,8 @@ class QuRA_DQRL(AlgorithmBase):
         prevlinksDict = {}
         usedLinksDict = {}
         selectedlinksDict = {}
+        tryDict = {}
+        fidelityDict = {}
 
         for reqState in self.requestState:
             src, dst = reqState[0] , reqState[1]
@@ -1421,6 +1424,8 @@ class QuRA_DQRL(AlgorithmBase):
             selectedlinksDict[(src,dst)] = []
             usedLinksDict[(src, dst)] = []
             prevlinksDict[(src,dst)] = None
+            tryDict[(src,dst)] = 0
+            fidelityDict[(src,dst)] = 1
 
         conflicts = []
 
@@ -1473,6 +1478,7 @@ class QuRA_DQRL(AlgorithmBase):
                 selectedNodes = selectedNodesDict[(src, dst)]
                 selectedEdges = selectedEdgesDict[(src, dst)]
                 selectedlinks = selectedlinksDict[(src,dst)] 
+                numtry = tryDict[(src,dst)]
                 path = list(path)
                 failed_no_ent = False
                 failed_loop = False
@@ -1498,6 +1504,10 @@ class QuRA_DQRL(AlgorithmBase):
                 if not len(ent_links):
                     good_to_search = False
                     failed_no_ent = True
+                    numtry += 1
+                    tryDict[(src,dst)] = numtry
+                    if numtry <= self.maxTry:
+                        continue
                     # conflicts_ = self.getConflicts(current_node , next_node , selectedEdgesDict)
                     # if len(conflicts_):
                     #     failed_conflict = True
@@ -1507,9 +1517,21 @@ class QuRA_DQRL(AlgorithmBase):
                     ent_links = [ent_links[0]]
                     for link in ent_links:
                         link.taken = True
+                    numtry = 0
+                    tryDict[(src,dst)] = numtry
 
                     # print(current_node.id , next_node_id , len(ent_links))
-
+                fid = fidelityDict[(src,dst)]
+                if good_to_search:
+                    fid2 = self.fidelityAfterSwap(fid , ent_links[0].fidelity)
+                    if fid2 < self.topo.fidelity_threshold:
+                        numtry += 1
+                        tryDict[(src,dst)] = numtry 
+                        if numtry <= self.maxTry:
+                            continue
+                        else:
+                            numtry = 0
+                            tryDict[(src,dst)] = numtry
 
                 if current_node == next_node:
                     good_to_search = False

@@ -68,13 +68,13 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) +
 +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
 + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 grid .9q"
+    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
  
-ttime = 50
+ttime = 15000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 10
+gridSize = 7
 nodeNo = gridSize *gridSize
 fixed = False
 
@@ -90,7 +90,7 @@ numOfNodes = [50 , 75 , 100 ]
 r = [0, 2, 4, 6, 8, 10]
 q = [0.7, 0.8, 0.9]
 alpha = [0.001 , 0.002 , 0.003]
-fidelity = [  .5 , .6 , .7, .8  ]
+fidelity = [   .5 , .55 ,  .6 , .65 , .7   ]
 # fidelity = [ .5  ]
 # alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
 SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
@@ -100,7 +100,7 @@ entanglementLifetimes = [1]
 requestTimeouts = [100,200,300]
 preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
 skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
-runLabel = [11]
+runLabel = [0]
 Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity" , 'fidelityThreshold']
 toRunLessAlgos = ['REPS','REPS_shortest','QuRA_Heuristic' ,'REPS_rep', 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only', 'RANDSCHEDULEGREEDY','RANDSCHEDULEROUTEGREEDY']
 
@@ -170,7 +170,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
 
 
-def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = .9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 100, numOfNode = 0, r = 7, q = .9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6)
@@ -270,7 +270,7 @@ def Run(numOfRequestPerRound = 50, numOfNode = 0, r = 7, q = .9, alpha = alpha_,
 
 
 
-    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
+    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
