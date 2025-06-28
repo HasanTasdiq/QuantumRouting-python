@@ -224,7 +224,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_randPFT'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_SPPFT'))
     
-    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
 
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_randPFT'))
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_SPPFT'))
