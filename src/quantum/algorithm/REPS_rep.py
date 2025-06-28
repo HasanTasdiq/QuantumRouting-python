@@ -71,11 +71,99 @@ class REPSREP(AlgorithmBase):
         self.result.idleTime += len(self.requests)
         if len(self.srcDstPairs) > 0:
             self.result.numOfTimeslot += 1
-            # self.PFT() # compute (self.ti, self.fi)
-            self.randPFT()
+            if 'randPFT' in self.name:
+                self.randPFT()
+            elif 'SPPFT' in self.name:
+                self.SPPFT()
+            else:
+                # print('[REPS] p2 start')
+                # self.PFT()
+                self.randPFT()
+
+            # self.randPFT()
         # print('[REPS] p2 end')
         
+    def get_spath(self , req):
+        G = nx.Graph()
+        w1 = 0
+        w2 = 1
+        if 'prob' in self.name:
+            w1 = 0.4
+            w2 = 0.6
+        for node in self.topo.nodes:
+            G.add_node(node.id)
+        for link in self.topo.links:
+            if link.assignable():
+                G.add_edge(link.n1.id , link.n2.id , weight=link.p() * w1+ w2/min(link.n1.remainingQubits , link.n2.remainingQubits))
         
+        try:
+            path = nx.shortest_path(G , req[0].id , req[1].id ,weight='weight')
+        except:
+            path = []
+        return path
+    
+    def SPPFT(self):
+
+        schedule = []
+        foundPath = 0
+        t = 0
+        successReq = 0
+        pathexists = True
+        while pathexists:
+            pathexists = False
+            # print('[REPS] SPPFT start')
+            # print(self.requestState)
+
+            # next_req_id = schedule[t]
+            for req in self.srcDstPairs:
+                path = self.get_spath(req)
+                # print('lenpath ' , len(path) , req[0].id , req[1].id)
+                if len(path):
+                    pathexists = True
+                    assign = self.assignQubitPath(path) 
+                    # print('assign qubit path ' , assign)
+            
+
+
+    def assignQubitPath(self , path):
+        
+        for i in range(len(path) -1):
+            n1 = self.topo.nodes[path[i]]
+            n2 = self.topo.nodes[path[i+1]]
+            assigned = 0
+            for link in n1.links:
+                if link.contains(n2):
+                    if link.assignable():
+                        assigned += 1
+
+                        break
+                    # else:   
+                    #    break
+            if not assigned:
+                return False
+        links = []
+        assigned = 0
+        for i in range(len(path) -1):
+            n1 = self.topo.nodes[path[i]]
+            n2 = self.topo.nodes[path[i+1]]
+            assigned = 0
+            for link in n1.links:
+                if link.contains(n2):
+                    if link.assignable():
+                        link.assignQubits()
+                        assigned += 1
+                        break
+                    # else:   
+                    #    break
+            if not assigned:
+                break
+        if not assigned:
+            for link in links:
+                link.clearEntanglement()
+            return False
+        # print('assigned path ' , assigned)
+        
+        return True
     def randPFT(self):
         assignable = True
         while assignable:
