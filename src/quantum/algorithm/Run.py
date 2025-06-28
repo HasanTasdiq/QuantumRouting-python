@@ -13,7 +13,7 @@ from AlgorithmBase import AlgorithmResult
 # from GreedyHopRouting import GreedyHopRouting
 from REPS import REPS
 from REPS_rep import REPSREP
-from MERR import MERR
+# from MERR import MERR
 # from REPS_cache import REPSCACHE
 # from REPS_cache2 import REPSCACHE2
 # from REPS_cache4 import REPSCACHE5
