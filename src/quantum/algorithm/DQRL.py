@@ -39,7 +39,7 @@ class QuRA_DQRL(AlgorithmBase):
         # self.pool = None
         self.w1 = 1
         self.w2 = 1 - self.w1
-        self.maxTry = 3
+        self.maxTry = 2
 
 
 
