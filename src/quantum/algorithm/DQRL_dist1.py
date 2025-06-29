@@ -18,9 +18,9 @@ import time
 
 sys.path.insert(0, "../../rl")
 
-from DQRLAgent import DQRLAgent
+from DQRLAgentDist import DQRLAgentDist
 
-class QuRA_DQRL(AlgorithmBase):
+class QuRA_DQRL_DIST(AlgorithmBase):
     def __init__(self, topo,param=None, name=''):
         super().__init__(topo)
         self.name = name
@@ -29,7 +29,7 @@ class QuRA_DQRL(AlgorithmBase):
         self.totalUsedQubits = 0
         self.totalWaitingTime = 0
         # self.entAgent = DQNAgentDistEnt(self, 0)
-        self.routingAgent = DQRLAgent(self , 0)
+        self.routingAgent = DQRLAgentDist(self , 0)
         self.weightOfNode = {node : -ln(node.q) for node in self.topo.nodes}
         self.hopCountThreshold = 25
         self.requestState = []
@@ -1434,22 +1434,23 @@ class QuRA_DQRL(AlgorithmBase):
         print([(r[0].id , r[1].id) for r in self.requests])
         # if not (self.param is not None and 'greedy_only' in self.param):
 
-        if True:
-            while len(T):
-            # t = time.time()
-            # reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
-            # # print('learn and predict time ' , time.time()-t)
+        # if True:
+        while len(T):
+            t = time.time()
+            reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
+            # print('learn and predict time ' , time.time()-t)
 
-            # for (current_state , action , q , mask) in reqState_actions:
-            #     if action < 0:
-            #         continue
-            #     p_time2 = 0
+            for (current_state , req_id , next_node_id , q , mask) in reqState_actions:
+                action = next_node_id
+                if next_node_id < 0:
+                    continue
+                p_time2 = 0
 
 
                 total_action += 1
                 
                 t1 = time.time()
-                current_state , action , p_time2 = self.routingAgent.learn_and_predict_next_req_node()
+                # current_state , action , p_time2 = self.routingAgent.learn_and_predict_next_req_node()
                 # print('learn_and_predict_next_req_node time: ' , time.time() - t1)
 
                 p_time+= p_time2
@@ -1458,7 +1459,7 @@ class QuRA_DQRL(AlgorithmBase):
 
                 # print('req iddddd ' , req_id , next_node_id)
                 # print([(req[0].id , req[1].id , req[2].id, req[4]) for req in self.requestState])
-                req_id , next_node_id = self.routingAgent.decode_schdeule_route_action(action)
+                # req_id , next_node_id = self.routingAgent.decode_schdeule_route_action(action)
 
                 reqState = self.requestState[req_id]
 
@@ -1579,7 +1580,7 @@ class QuRA_DQRL(AlgorithmBase):
                         req_done = True
                 done_episode = (not good_to_search or success) and (len(T)==1)
                 t3 = time.time()
-                self.routingAgent.update_action( request ,current_node.id,  action  , current_state  , done_episode)
+                self.routingAgent.update_action( reqState ,current_node.id,  action  , current_state  , done_episode)
                 # print('update action time ' , time.time()-t3)
                         
                 prev_node = current_node

@@ -755,7 +755,7 @@ class AlgorithmBase:
                 print(action , ': ' , self.action_count[action])
     
     def fidelityAfterSwap(self, f1 , f2):
-        fid = f1*f2+(1-f1)*(1-f2)
+        fid = f1*f2+(1-f1)*(1-f2)/3
         # print('fid::::::: ' , f1,f2,fid)
 
         return fid
@@ -782,7 +782,7 @@ class AlgorithmBase:
         # if self.name == 'SEER_6' or self.name == 'SEER_' or self.name == 'SEER_multihop' or 'preswap' in self.name:
             # self.tryEntanglement()
 
-        start = process_time()
+        start = time.time()
 
         self.p2()
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken for p2 : ' , time.time() - t1)
@@ -791,11 +791,13 @@ class AlgorithmBase:
         # if not ('preswap' in self.name):
         self.tryEntanglement()
 
-        t2 = time.time()
+        # t2 = time.time()
+        # start = process_time()
+        t2 = process_time()
         res = self.p4()
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken for p4 : ' , time.time() - t2)
 
-        end = process_time()
+        end = time.time()
 
         self.stats()
         # if self.preEnt:
@@ -809,13 +811,14 @@ class AlgorithmBase:
         self.resetNeedLinksDict()
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time calculate : ' , time.time() - t2 , 'p_time: ' , res.p_time)
 
-        if self.name == 'QuRA_DQRL_entdqrl':
-            # res.totalRuntime += res.p_time
-            res.totalRuntime += time.time() - t2
+        # if self.name == 'QuRA_DQRL_entdqrl':
+        #     # res.totalRuntime += res.p_time
+        #     res.totalRuntime += time.time() - t2
 
-        else:
-            # res.totalRuntime += (end - start)
-            res.totalRuntime += time.time() - t2
+        # else:
+        #     # res.totalRuntime += (end - start)
+        #     res.totalRuntime += time.time() - t2
+        res.totalRuntime = end-start
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
         tot = 0
         if time_ %100 == 0:
