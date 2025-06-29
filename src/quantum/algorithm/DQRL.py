@@ -39,7 +39,7 @@ class QuRA_DQRL(AlgorithmBase):
         # self.pool = None
         self.w1 = 1
         self.w2 = 1 - self.w1
-        self.maxTry = 3
+        self.maxTry = 2
 
 
 
@@ -1624,43 +1624,7 @@ class QuRA_DQRL(AlgorithmBase):
 
                     successReq += 1
                     totalEntanglement += 1
-                    # successPath = self.topo.getEstablishedEntanglementsWithLinks(src, dst)
-                    # print('len success ' , len(successPath))
-                    # print('time suxxes path ' , time.time()-t2)
-                    # if len(successPath):
 
-                    #     for path_ in successPath:
-                    #         for node, link in path_:
-                    #             if link is not None:
-                    #                 link.used = True
-                    #                 edge = self.topo.linktoEdgeSorted(link)
-
-                    #                 self.topo.reward_ent[edge] =(self.topo.reward_ent[edge] + self.topo.positive_reward) if edge in self.topo.reward_ent else self.topo.positive_reward
-                
-                    #         break
-
-                    #     for req in self.requests:
-                    #         # src = req[0]
-                    #         # dst = req[1]
-                    #         if (src, dst) == (req[0], req[1]):
-                    #             # print('[REPS] finish time:', self.timeSlot - request[2])
-                    #             self.requests.remove(req)
-                    #             break
-
-                    #     successReq += 1
-                    #     totalEntanglement += len(successPath)
-
-
-                    
-                # else:
-
-                #     # for link in usedLinks:
-                #     #         edge = self.topo.linktoEdgeSorted(link)
-                #     #         try:
-                #     #             self.topo.reward_ent[edge] += self.topo.negative_reward
-                #     #         except:
-                #     #             self.topo.reward_ent[edge] = self.topo.negative_reward
-                    
                     
 
 
@@ -1690,13 +1654,7 @@ class QuRA_DQRL(AlgorithmBase):
                         # print('shortest path ----- ' , [n.id for n in targetPath])
                         print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
                         reward = -10
-                        # reward = -1
-                    # for (current_node, next_node) in selectedEdges:
-                    #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
-                    #     try:
-                    #         self.topo.reward_routing[key] += reward
-                    #     except:
-                    #         self.topo.reward_routing[key] = reward
+
 
                 # print('lenT ' , len(T))
 

@@ -120,6 +120,7 @@ class Topo:
         self.negative_reward = -10
         self.pair_dict = {}
         self.fidelity_threshold = 0
+        self.initial_fidelity = 0.9
 
 
         # for pos in _positions:
@@ -159,8 +160,8 @@ class Topo:
             # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
             # self.nodes.append(Node(_node, _positions[_node], random.random()*11+15 , self))  # 20-40
             # self.nodes.append(Node(_node, _positions[_node], random.random()*6+4 , self)) 
-            # self.nodes.append(Node(_node, _positions[_node], 4 , self))  # 10~14
-            self.nodes.append(Node(_node, _positions[_node], 8 , self))  # 10~14
+            self.nodes.append(Node(_node, _positions[_node], 6 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], 0 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
             
@@ -217,13 +218,16 @@ class Topo:
             # rand = int(random.random()*5+3) # 3~7
             # rand = int(random.random()*2+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
-            rand = 3
+            rand = 2
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
             rand_length = random.randint(50, 200)
+            # rand_length = 20
             self.dist[(_edge[0] , _edge[1])] = rand_length
             self.dist[(_edge[1] , _edge[0])] = rand_length
+            # self.dist[(_edge[0] , _edge[1])] = self.distance(_positions[_edge[0]], _positions[_edge[1]])
+            # self.dist[(_edge[1] , _edge[0])] = self.distance(_positions[_edge[0]], _positions[_edge[1]])
 
             for _ in range(0, rand):
                 # link = Link(self, self.nodes[_edge[0]], self.nodes[_edge[1]], False, False, linkId, self.distance(_positions[_edge[0]], _positions[_edge[1]])) 
@@ -509,7 +513,7 @@ class Topo:
             #     G = Topo.gridTopo(gridSize)
             
 
-            # G = nx.waxman_graph(n, beta=0.9, alpha=0.15, domain=(0, 0, 1, 1))
+            # G = nx.waxman_graph(n, beta=0.9, alpha=0.1, domain=(0, 0, 2,4))
             # G = nx.grid_2d_graph(n , n)
             G = Topo.gridTopo(gridSize)
 

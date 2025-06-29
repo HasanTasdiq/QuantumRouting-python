@@ -624,7 +624,68 @@ class RoutingEnv(Env):
         #         print(u)
         
         return np.array(S)
-    def schedule_routing_state(self , requests=None):
+    def schedule_routing_state_dist(self , curr_req ,  requests=None):
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        state_dist = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        S = []
+        U = []
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] += 1
+                state_graph[n2][n1] += 1
+
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_dist[n1][n2] = link.fidelity
+                state_dist[n2][n1] = link.fidelity
+
+        if requests is None:
+            requests = self.algo.requestState
+
+        for req in requests:
+            state_req = [0 for i in range(self.SIZE)]
+            neighbors = [0 for i in range(self.SIZE)]
+
+            if not req[5]:
+                state_req[req[2].id] = 1 #current node
+                state_req[req[1].id] = 10
+
+            U.append(state_req)
+
+
+
+        U.extend(state_graph)
+        U.extend(state_dist)
+
+        neighbors = state_graph[curr_req[2].id]
+
+        current = [0 for i in range(self.SIZE)]
+        current[curr_req[2].id] = 10
+        current[curr_req[1].id] = 10
+
+        U.append(neighbors)
+        U.append(current)
+
+        Asd = self.get_emb_attention(U)
+
+
+        for asd in Asd:
+            tmp = []
+            for el in asd:
+                tmp.append(el[0])
+            S.append(tmp)
+
+
+        
+        return np.array(S)
+    
+    def schedule_routing_state(self  ,  requests=None):
         state_q = [0 for i in range(self.SIZE)]
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
@@ -1330,7 +1391,7 @@ class RoutingEnv(Env):
             mask = self.get_mask__request_shcedule_route()
         return mask
     def get_mask_one_req_schedule_route(self , reqState):
-        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
+        mask = [None for _ in range(self.SIZE)]
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
         for link in self.algo.topo.links:
@@ -1344,12 +1405,12 @@ class RoutingEnv(Env):
         neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
         for n in neighbors:
             if n not in path and n != current_node.id:
-                mask[index*self.SIZE + n] = 1
-        if not mask.count(1):
-            for n in range(self.SIZE):
-                mask[index*self.SIZE + n] = 1
+                mask[ n] = 1
 
-        return mask
+        if not mask.count(1): #make a random mask
+            mask = [1 for _ in range(self.SIZE)]
+
+        return np.array(mask)
     def get_mask_all_req_schedule_route(self):
         state_graph = np.zeros((self.SIZE, self.SIZE), dtype=int)
         for link in self.algo.topo.links:
@@ -1562,6 +1623,12 @@ class RoutingEnv(Env):
     #     current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
 
     #     return np.max(self.neighbor_qs(current_node_id , current_state ,[], qs))
+    def max_future_q_dist(self , qs, mask):
+        # current_node_id = np.where(current_state[2*self.SIZE + 1] == 1)[0][0]
+        # current_node_id = np.where(current_state[self.SIZE + 1] >= 1)[0][0]
+        # print('in max_future_q ' , mask)
+
+        return np.max(self.neighbor_qs_schedule_route( qs , mask))
     def max_future_q_schedule(self,reqmask , qs):
         # print('in max_future_q_schedule ' , reqmask)
         ret = []

@@ -13,9 +13,11 @@ class ChartGenerator:
     def __init__(self, dataName, Ylabel, Xlabel):
         filename = './data/' + dataName
         if Ylabel == 'successfulRequest' or Ylabel == '#successRequest':
-            Ylabel = '  Successful Request  '        
+            Ylabel = '  Successful Request (%) '        
         if Xlabel == '#RequestPerRound':
             Xlabel = '# Request Per Time Slot'
+        if Xlabel == 'fidelityThreshold':
+            Xlabel = 'Fidelity Threshold'
         if Xlabel == 'swapProbability':
             Xlabel = 'Swap Probability'
         if Xlabel == 'entanglementLifetime':
@@ -54,6 +56,10 @@ class ChartGenerator:
             "#00FF00",   
             "#0000FF",
             "#000000",
+
+            "#17becf",  # Cyan
+            "#9467bd",  # Purple
+
             "#900321",
             "#ada205",
             "#401321",
@@ -66,7 +72,7 @@ class ChartGenerator:
         Ylabel_fontsize = fontsize
         Xticks_fontsize = fontsize
         Yticks_fontsize = fontsize
-        legSize = 22
+        legSize = fontsize-3
             
         # matplotlib.rcParams['text.usetex'] = True
         # fig, ax = plt.subplots(figsize=(8, 6), dpi=600) 
@@ -188,8 +194,14 @@ class ChartGenerator:
         AlgoName = [ "schedule ","schedlue_prob", "rand_schedule","schedule_route" , 'rand_schedule_route']
         AlgoName = ['rl' , 'greedy_only']
         AlgoName = ['ILP (4)','ILP (2)','ILP (1)' , 'DQRL' , 'shortest_path']
+<<<<<<< HEAD
         AlgoName = ['ILP', 'QuRA' , 'EBSPA']
         # AlgoName = ['Fid-ILP', 'QuRA' , 'EBSPA']
+=======
+        AlgoName = ['Fid-ILP', 'DQRLA' , 'EBSPA']
+        AlgoName = ['ILP', 'Random' , 'SP' , 'AEG-LS' , 'AEG-EC' , 'AEG-PES']
+        AlgoName = ['ILP', 'Random' , 'SP' , 'AEG']
+>>>>>>> 5dd76d2dce39416eb9eca8a42be325e4985a33b7
         leg = plt.legend(
             AlgoName,
             loc = 10,
@@ -219,8 +231,13 @@ class ChartGenerator:
         plt.locator_params(axis='x', nbins=5)  
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
+<<<<<<< HEAD
         ax1.xaxis.set_label_coords(0.45, -0.15)
         # ax1.set_ylim(bottom=20)
+=======
+        ax1.xaxis.set_label_coords(0.45, -0.27)
+        # ax1.set_ylim(bottom=15)
+>>>>>>> 5dd76d2dce39416eb9eca8a42be325e4985a33b7
 
         # plt.show()
         # plt.tight_layout()

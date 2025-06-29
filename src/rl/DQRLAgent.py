@@ -52,16 +52,35 @@ ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
+
+#run 15k
 START_EPSILON_DECAYING = 5000
-END_EPSILON_DECAYING = 10000
-EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
-
-
-DISCOUNT = 0.5
-REPLAY_MEMORY_SIZE = 60000  # How many last steps to keep for model training
+END_EPSILON_DECAYING = 12000
+REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 40000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
+MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+
+#local run with 5000
+# START_EPSILON_DECAYING = 2000
+# END_EPSILON_DECAYING = 4000
+# REPLAY_MEMORY_SIZE = 40000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+
+#for testing
+# START_EPSILON_DECAYING = 20
+# END_EPSILON_DECAYING = 40
+# REPLAY_MEMORY_SIZE = 500  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 200  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+
+
+
+EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
+DISCOUNT = 0.5
 FAILURE_REWARD = -2
 # SKIP_REWAD = -2
 SKIP_REWAD = -2
@@ -394,7 +413,6 @@ class DQRLAgent:
         # ret = self.model.predict(np.array(state).reshape(-1, *state.shape), verbose=0,use_multiprocessing=True)[0]
         ret = self.model.predict_on_batch(np.array(state).reshape(-1, *state.shape))[0]
 
-        # print('predict time&&&&&&&&  ' , time.time()-t)
         return ret
 
     
@@ -589,7 +607,9 @@ class DQRLAgent:
 
 
             # next_node = np.argmax(self.get_qs(current_state))
+            t = time.time()
             qs = self.get_qs(current_state)
+            # print('get_qs time: ' , time.time() - t)
             p_time += (time.time()-t2)/5
             t2 = time.time() 
             action = np.argmax(self.env.neighbor_qs_schedule_route(qs))
@@ -643,8 +663,9 @@ class DQRLAgent:
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
         current_state = self.env.schedule_routing_state()
+        t = time.time()
         qs = self.get_qs(current_state)
-        
+        print('get_qs time: ' , time.time() - t)
         ret = []
         # masks = np.array([self.env.get_mask_one_req_schedule_route(req) for req in self.env.algo.requestState])
         masks = self.env.get_mask_all_req_schedule_route()
