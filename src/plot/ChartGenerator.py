@@ -26,6 +26,10 @@ class ChartGenerator:
             Xlabel = 'Time slot'
         if Ylabel == 'algorithmRuntime':
             Ylabel = 'Algorithm Runtime (s)'
+        if Xlabel == '#nodes':
+            Xlabel = '# Nodes \n # Request Per Time Slot'
+        if Xlabel == 'fidelityThreshold':
+            Xlabel = 'Fidelity Threshold'
         if not os.path.exists(filename):
             print("file doesn't exist")
             return
@@ -63,7 +67,7 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 30
+        fontsize = 22
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
         Xticks_fontsize = fontsize
@@ -96,7 +100,7 @@ class ChartGenerator:
         }
         
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize = (7, 6), dpi = 600)
+        fig, ax1 = plt.subplots(figsize = (8, 6), dpi = 600)
         # ax1.spines['top'].set_linewidth(1.5)
         # ax1.spines['right'].set_linewidth(1.5)
         # ax1.spines['bottom'].set_linewidth(1.5)
@@ -190,9 +194,8 @@ class ChartGenerator:
         AlgoName = [ "schedule ","schedlue_prob", "rand_schedule","schedule_route" , 'rand_schedule_route']
         AlgoName = ['rl' , 'greedy_only']
         AlgoName = ['ILP (4)','ILP (2)','ILP (1)' , 'DQRL' , 'shortest_path']
-        AlgoName = ['Fid-ILP', 'DQRLA' , 'EBSPA']
-        AlgoName = ['ILP', 'Random' , 'SP' , 'AEG-LS' , 'AEG-EC' , 'AEG-PES']
-        AlgoName = ['ILP', 'Random' , 'SP' , 'AEG']
+        AlgoName = ['ILP', 'QuRA' , 'EBSPA']
+        # AlgoName = ['Fid-ILP', 'QuRA' , 'EBSPA']
         leg = plt.legend(
             AlgoName,
             loc = 10,
@@ -211,7 +214,7 @@ class ChartGenerator:
         Ylabel += self.genMultiName(Ypow)
         Xlabel += self.genMultiName(Xpow)
         plt.subplots_adjust(top = 0.75)
-        plt.subplots_adjust(left = 0.3)
+        plt.subplots_adjust(left = 0.15)
         plt.subplots_adjust(right = 0.95)
         plt.subplots_adjust(bottom = 0.25)
 
@@ -222,8 +225,8 @@ class ChartGenerator:
         plt.locator_params(axis='x', nbins=5)  
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
-        ax1.xaxis.set_label_coords(0.45, -0.27)
-        # ax1.set_ylim(bottom=15)
+        ax1.xaxis.set_label_coords(0.45, -0.15)
+        # ax1.set_ylim(bottom=20)
 
         # plt.show()
         # plt.tight_layout()
