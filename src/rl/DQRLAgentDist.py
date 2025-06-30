@@ -62,12 +62,12 @@ MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 #for 5k local
-START_EPSILON_DECAYING = 2000
-END_EPSILON_DECAYING = 4000
-REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 2000
+# END_EPSILON_DECAYING = 4000
+# REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 
 #for testing
@@ -690,8 +690,7 @@ class DQRLAgentDist:
         # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
         if not done:
             t = time.time()
-            # next_state = self.env.schedule_routing_state_dist(request)
-            next_state = None
+            next_state = self.env.schedule_routing_state_dist(request)
             # print('update action get state time ' , time.time()-t)
         else:
             next_state = None
@@ -727,7 +726,7 @@ class DQRLAgentDist:
         for i in range(len(self.last_action_table)-1 , -1 , -1):
             t2 = time.time()
             (request , action , timeSlot ,current_node_id, current_state , next_state ,mask ,  done) = self.last_action_table[i]
-            next_state = self.env.schedule_routing_state_dist(request)
+            
             req_id , next_node_id = self.decode_schdeule_route_action(action)
             req.append(request)
             reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
