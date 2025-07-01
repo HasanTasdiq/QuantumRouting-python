@@ -37,7 +37,7 @@ else:
 
 NUM_EPISODES = 2500
 LEARNING_RATE = .8
-lr = .0005
+lr = .0001
 clip_value = .1
 
 
