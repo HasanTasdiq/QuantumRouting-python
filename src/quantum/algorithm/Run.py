@@ -224,7 +224,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_randPFT'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_SPPFT'))
     
-    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
 
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_randPFT'))
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_SPPFT'))
@@ -294,7 +294,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE_PS(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE_preswap_multihop_distdqrl' , param='ten'))
     
-    # algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
+    algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
 
 
     gc.collect()
