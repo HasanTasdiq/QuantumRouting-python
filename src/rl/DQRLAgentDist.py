@@ -37,7 +37,7 @@ else:
 
 NUM_EPISODES = 2500
 LEARNING_RATE = .8
-lr = .0001
+lr = .0005
 clip_value = .1
 
 
@@ -53,7 +53,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 
-#run 15k
+# run 25k
 START_EPSILON_DECAYING = 15000
 END_EPSILON_DECAYING = 20000
 REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
@@ -65,6 +65,14 @@ UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 # START_EPSILON_DECAYING = 2000
 # END_EPSILON_DECAYING = 4000
 # REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+
+# #for 10k local
+# START_EPSILON_DECAYING = 5000
+# END_EPSILON_DECAYING = 8000
+# REPLAY_MEMORY_SIZE = 40000  # How many last steps to keep for model training
 # MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
 # MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 # UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
@@ -676,6 +684,7 @@ class DQRLAgentDist:
             ret.append([current_state, i ,  action, q, mask])
             self.env.algo.action_count[action] += 1
             si+=1
+        ret.sort(key=lambda x: x[3], reverse=True)  # Sort by Q value in descending order
         
         return ret
     
