@@ -818,7 +818,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             reqState_actions = self.routingAgent.learn_and_predict_next_req_node_all()
             # print('learn and predict time ' , time.time()-t)
             actions = []
-            for (current_state , req_id , next_node_id , q , mask) in reqState_actions:
+            for (current_state , req_id , next_node_id , q , mask , valid_actions) in reqState_actions:
                 action = next_node_id
                 if next_node_id < 0:
                     continue
@@ -873,13 +873,25 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # targetPath = []
 
                     
+                ent_links = []
+                # print('*************************' , action , 'valid actions: ' , valid_actions)
+                for i in range(min(3,len(valid_actions))):
+                    next_node_id = valid_actions[i]
+                    next_node = self.topo.nodes[next_node_id]
+                    ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
+                    ent_links_count = len(ent_links)
+                    action = next_node_id
 
-                    
-                next_node = self.topo.nodes[next_node_id]
-                ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
-                ent_links_count = len(ent_links)
+                    if ent_links_count:
+                        # print('ent links count ' , ent_links_count)
+                        break   
                 key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                
+                # next_node = self.topo.nodes[next_node_id]
+                # ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
+                # ent_links_count = len(ent_links)
 
+                # print(src.id , dst.id , action , path)
                 if not len(ent_links):
                     good_to_search = False
                     failed_no_ent = True
