@@ -64,8 +64,8 @@ UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 #for 5k local
 # START_EPSILON_DECAYING = 2000
 # END_EPSILON_DECAYING = 4000
-# REPLAY_MEMORY_SIZE = 50000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+# REPLAY_MEMORY_SIZE = 30000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 10000  # Minimum number of steps in a memory to start training
 # MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
 # UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
@@ -138,12 +138,13 @@ class DQRLAgentDist:
         # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE + self.env.SIZE,)  
         # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE ,)  
-        self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.env.SIZE + self.env.SIZE + 2, self.env.SIZE,)  
-
-        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 3 + self.env.SIZE,self.env.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.env.SIZE + self.env.SIZE + 2, self.env.SIZE,)  
         
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 3*self.env.SIZE + self.env.SIZE*self.env.SIZE ,)  
-       
+        
+        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.env.SIZE + self.env.SIZE + 2, self.env.SIZE,)  
+        
+        self.OBSERVATION_SPACE_VALUES = (128 + self.env.SIZE + 2 * (self.env.SIZE ** 2),1,)
+
         self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q)+'_'+str(algo.topo.fidelity_threshold) +'_'+'DQRLAgent.keras'
 
         # Main model

@@ -12,7 +12,7 @@ import time
 ENTANGLEMENT_LIFETIME = 10
 
 import tensorflow as tf
-from keras.layers import Embedding, Flatten, Attention
+from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 import numpy
 from objsize import get_deep_size
 
@@ -540,10 +540,7 @@ class RoutingEnv(Env):
         
         
 
-            
-        # for self.
-
-
+    
     #with schedule and routing 
     def schedule_routing_state_long(self , requests=None):
         state_q = [0 for i in range(self.SIZE)]
@@ -624,67 +621,198 @@ class RoutingEnv(Env):
         #         print(u)
         
         return np.array(S)
-    def schedule_routing_state_dist(self , curr_req ,  requests=None):
-        state_graph = [[0 for column in range(self.SIZE)]
-                      for row in range(self.SIZE)]
-        state_dist = [[0 for column in range(self.SIZE)]
-                      for row in range(self.SIZE)]
-        S = []
-        U = []
-        for link in self.algo.topo.links:
-            if link.isEntangled() and not link.taken:
-                n1 = link.n1.id
-                n2 = link.n2.id
-                state_graph[n1][n2] += 1
-                state_graph[n2][n1] += 1
+    
+    
+    # def schedule_routing_state_dist(self , curr_req ,  requests=None):
+    #     state_graph = [[0 for column in range(self.SIZE)]
+    #                   for row in range(self.SIZE)]
+    #     state_dist = [[0 for column in range(self.SIZE)]
+    #                   for row in range(self.SIZE)]
+    #     S = []
+    #     U = []
+    #     for link in self.algo.topo.links:
+    #         if link.isEntangled() and not link.taken:
+    #             n1 = link.n1.id
+    #             n2 = link.n2.id
+    #             state_graph[n1][n2] += 1
+    #             state_graph[n2][n1] += 1
 
-        for link in self.algo.topo.links:
-            if link.isEntangled() and not link.taken:
-                n1 = link.n1.id
-                n2 = link.n2.id
-                state_dist[n1][n2] = link.fidelity
-                state_dist[n2][n1] = link.fidelity
+    #     for link in self.algo.topo.links:
+    #         if link.isEntangled() and not link.taken:
+    #             n1 = link.n1.id
+    #             n2 = link.n2.id
+    #             state_dist[n1][n2] = link.fidelity
+    #             state_dist[n2][n1] = link.fidelity
 
-        if requests is None:
-            requests = self.algo.requestState
+    #     if requests is None:
+    #         requests = self.algo.requestState
 
-        for req in requests:
-            state_req = [0 for i in range(self.SIZE)]
-            neighbors = [0 for i in range(self.SIZE)]
+    #     for req in requests:
+    #         state_req = [0 for i in range(self.SIZE)]
+    #         neighbors = [0 for i in range(self.SIZE)]
 
-            if not req[5]:
-                state_req[req[2].id] = 1 #current node
-                state_req[req[1].id] = 10
+    #         if not req[5]:
+    #             state_req[req[2].id] = 1 #current node
+    #             state_req[req[1].id] = 10
 
-            U.append(state_req)
-
-
-
-        U.extend(state_graph)
-        U.extend(state_dist)
-
-        neighbors = state_graph[curr_req[2].id]
-
-        current = [0 for i in range(self.SIZE)]
-        current[curr_req[2].id] = 10
-        current[curr_req[1].id] = 10
-
-        U.append(neighbors)
-        U.append(current)
-
-        Asd = self.get_emb_attention(U)
+    #         U.append(state_req)
 
 
-        for asd in Asd:
-            tmp = []
-            for el in asd:
-                tmp.append(el[0])
-            S.append(tmp)
+
+    #     U.extend(state_graph)
+    #     U.extend(state_dist)
+
+    #     neighbors = state_graph[curr_req[2].id]
+
+    #     current = [0 for i in range(self.SIZE)]
+    #     current[curr_req[2].id] = 10
+    #     current[curr_req[1].id] = 10
+
+    #     U.append(neighbors)
+    #     U.append(current)
+
+    #     Asd = self.get_emb_attention(U)
+
+
+    #     for asd in Asd:
+    #         tmp = []
+    #         for el in asd:
+    #             tmp.append(el[0])
+    #         S.append(tmp)
 
 
         
-        return np.array(S)
-    
+        
+    def get_state_graph_and_dist(self):
+        state_graph = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+        state_dist = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1, n2 = link.n1.id, link.n2.id
+                state_graph[n1][n2] += 1
+                state_graph[n2][n1] += 1
+                state_dist[n1][n2] = link.fidelity
+                state_dist[n2][n1] = link.fidelity
+
+        return state_graph, state_dist
+
+
+    # === 2. Request embeddings ===
+    def get_request_embeddings(self, requests):
+        features = []
+        for req in requests:
+            vec = [0] * self.SIZE
+            if not req[5]:  # if not completed
+                vec[req[2].id] = 1  # current node
+                vec[req[1].id] = 10  # destination
+            features.append(vec)
+        return tf.convert_to_tensor(features, dtype=tf.float32)
+
+
+    # === 3. Request-level attention ===
+    def apply_request_attention(self, request_tensor):
+        # request_tensor: shape [num_requests, SIZE]
+        if not hasattr(self, 'dense_proj'):
+            self.dense_proj = Dense(64, activation='relu')
+            self.mha = MultiHeadAttention(num_heads=4, key_dim=16)
+            self.ln = LayerNormalization()
+
+        # Project to 64D
+        proj = self.dense_proj(request_tensor)  # shape: [num_requests, 64]
+
+        # Add batch dimension
+        proj = tf.expand_dims(proj, axis=0)  # shape: [1, num_requests, 64]
+
+        # Apply MHA
+        attn_out = self.mha(proj, proj, proj)  # shape: [1, num_requests, 64]
+
+        # Residual + LayerNorm
+        output = self.ln(proj + attn_out)  # shape: [1, num_requests, 64]
+
+        return tf.squeeze(output, axis=0)  # shape: [num_requests, 64]
+
+    # === 4. Neighbor embedding ===
+    def get_neighbor_embeddings(self, state_graph, current_node_id):
+        neighbors = state_graph[current_node_id]
+        neighbor_feats = []
+        for node_id, has_link in enumerate(neighbors):
+            if has_link > 0:
+                feat = [0] * self.SIZE
+                feat[node_id] = 1  # one-hot neighbor
+                vec = tf.convert_to_tensor(feat, dtype=tf.float32)
+                vec = tf.expand_dims(vec, axis=0)  # (1, SIZE)
+                vec = Dense(64, activation='relu')(vec)
+                vec = tf.squeeze(vec, axis=0)      # (64,)
+                neighbor_feats.append(vec)
+        return neighbor_feats
+
+
+
+    # === 5. Neighbor attention ===
+    def apply_neighbor_attention(self, curr_emb, neighbor_embs):
+        if not neighbor_embs:
+            return np.zeros(64)
+        stack = tf.stack(neighbor_embs)  # [num_neighbors, 64]
+        query = tf.expand_dims(curr_emb, axis=0)  # [1, 64]
+        scores = tf.matmul(query, stack, transpose_b=True) / tf.math.sqrt(64.0)
+        weights = tf.nn.softmax(scores, axis=-1)
+        context = tf.matmul(weights, stack)[0].numpy()
+        return context
+
+
+    # === 6. Main function ===
+    def schedule_routing_state_dist(self, curr_req, requests=None):
+        if requests is None:
+            requests = self.algo.requestState
+
+        # 1. Link matrices
+        state_graph, state_dist = self.get_state_graph_and_dist()
+
+        state_graph_flat = np.array(state_graph).flatten()  # shape: [SIZE × SIZE]
+        state_dist_flat = np.array(state_dist).flatten()    # shape: [SIZE × SIZE]
+        
+        # 2. Request embeddings
+        req_tensor = self.get_request_embeddings(requests)
+
+        # 3. Apply self-attention
+        attn_encoded = self.apply_request_attention(req_tensor).numpy()
+
+        # 4. Locate current request
+        try:
+            curr_index = requests.index(curr_req)
+        except ValueError:
+            curr_index = next(
+                (i for i, r in enumerate(requests)
+                if r[1].id == curr_req[1].id and r[2].id == curr_req[2].id),
+                0
+            )
+
+        curr_emb = attn_encoded[curr_index]
+
+        # 5. Neighbor context
+        neighbor_embs = self.get_neighbor_embeddings(state_graph, curr_req[2].id)
+        context_vec = self.apply_neighbor_attention(curr_emb, neighbor_embs)
+
+        # 6. Local info
+        local = [0] * self.SIZE
+        local[curr_req[2].id] = 10
+        local[curr_req[1].id] = 10
+
+        # 7. Final state vector
+        ret = np.concatenate([
+            curr_emb,         # attention-aware request embedding
+            context_vec,      # neighbor context
+            np.array(local),   # current and destination
+            state_graph_flat,
+            state_dist_flat
+        ])
+
+        # print(ret)
+        # exit()
+
+        return ret
+
     def schedule_routing_state(self  ,  requests=None):
         state_q = [0 for i in range(self.SIZE)]
         state_graph = [[0 for column in range(self.SIZE)]
