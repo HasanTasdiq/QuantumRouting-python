@@ -45,6 +45,8 @@ class SCHEDULEGREEDY(AlgorithmBase):
         self.topo.clearAllEntanglements()
         self.result.waitingTime = self.totalWaitingTime / self.totalRequest
         self.result.usedQubits = self.totalUsedQubits / self.totalRequest
+        self.result.fidelityPerRound.append(0)
+
         
         # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
         self.result.remainRequestPerRound.append(len(self.requests))
