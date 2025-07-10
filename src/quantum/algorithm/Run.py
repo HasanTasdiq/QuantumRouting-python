@@ -32,9 +32,9 @@ from DQRL import QuRA_DQRL
 from DQRL_dist1 import QuRA_DQRL_DIST
 from Schedule import SCHEDULEGREEDY
 from ScheduleRoute import SCHEDULEROUTEGREEDY
-from ScheduleRoute_cache import SCHEDULEROUTEGREEDY_CACHE
-from ScheduleRoute_cache_ps import SCHEDULEROUTEGREEDY_CACHE_PS
-from Heuristic import QuRA_Heuristic
+# from ScheduleRoute_cache import SCHEDULEROUTEGREEDY_CACHE
+# from ScheduleRoute_cache_ps import SCHEDULEROUTEGREEDY_CACHE_PS
+# from Heuristic import QuRA_Heuristic
 # from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
 
@@ -73,7 +73,7 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) +
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 25000
+ttime = 100
 ttime2 = 500
 step = 500
 times = 1
@@ -83,7 +83,8 @@ nodeNo = gridSize *gridSize
 fixed = True
 
 # alpha_ = 0.0007
-alpha_ = .0002
+# alpha_ = .0002
+alpha_ = 0
 degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
@@ -224,7 +225,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_randPFT'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_SPPFT'))
     
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
 
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_randPFT'))
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_SPPFT'))
@@ -276,7 +277,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
    
     print('======================before append', Topo.print_memory_usage())
    
-    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
+    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY_prob'))
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
 
@@ -285,7 +286,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
 
 
-    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
+    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
@@ -294,7 +295,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE_PS(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE_preswap_multihop_distdqrl' , param='ten'))
     
-    algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
+    # algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
 
 
     gc.collect()
