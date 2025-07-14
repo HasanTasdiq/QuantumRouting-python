@@ -77,8 +77,8 @@ class REPSREP(AlgorithmBase):
                 self.SPPFT()
             else:
                 # print('[REPS] p2 start')
-                # self.PFT()
-                self.randPFT()
+                self.PFT()
+                # self.randPFT()
 
             # self.randPFT()
         # print('[REPS] p2 end')
