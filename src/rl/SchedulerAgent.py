@@ -36,9 +36,9 @@ DISCOUNT = 0.9
 
 START_EPSILON_DECAYING = 6000
 END_EPSILON_DECAYING = 8000
-REPLAY_MEMORY_SIZE = 7000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1200  # How many steps (samples) to use for training
+REPLAY_MEMORY_SIZE = 30000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 15000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 
