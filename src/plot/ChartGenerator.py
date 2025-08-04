@@ -13,9 +13,11 @@ class ChartGenerator:
     def __init__(self, dataName, Ylabel, Xlabel):
         filename = './data/' + dataName
         if Ylabel == 'successfulRequest' or Ylabel == '#successRequest':
-            Ylabel = '  Successful Request (%) '        
+            # Ylabel = '  Successful Request (%) '        
+            Ylabel = 'Successful Requests'        
         if Xlabel == '#RequestPerRound':
             Xlabel = '# Request Per Time Slot'
+            # Xlabel = '#Nodes \n # Request Per Time Slot'
         if Xlabel == 'fidelityThreshold':
             Xlabel = 'Fidelity Threshold'
         if Xlabel == 'swapProbability':
@@ -67,7 +69,7 @@ class ChartGenerator:
         ]
         # matplotlib.rcParams['text.usetex'] = True
 
-        fontsize = 22
+        fontsize = 28
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
         Xticks_fontsize = fontsize
@@ -167,9 +169,9 @@ class ChartGenerator:
 
         marker = ['o', 's', 'v', 'x', 'd' , '1' , '<' , '*']
         markers_on = [i for i in range(len(x))]
-        if len(markers_on) > 5:
-            # print(markers_on)
-            markers_on = get_n_index(markers_on , 5)
+        # if len(markers_on) > 5:
+        #     # print(markers_on)
+        #     markers_on = get_n_index(markers_on , 5)
         for i in range(numOfAlgo):
             ax1.plot(x, y[i], color = color[i], markevery=markers_on, lw = 2.5, linestyle = "-", marker = marker[i], markersize = 10, markerfacecolor = "none", markeredgewidth = 2.5)
         # plt.show()
@@ -194,8 +196,8 @@ class ChartGenerator:
         AlgoName = [ "schedule ","schedlue_prob", "rand_schedule","schedule_route" , 'rand_schedule_route']
         AlgoName = ['rl' , 'greedy_only']
         AlgoName = ['ILP (4)','ILP (2)','ILP (1)' , 'DQRL' , 'shortest_path']
-        AlgoName = ['ILP', 'QuRA' , 'EBSPA']
-        # AlgoName = ['Fid-ILP', 'QuRA' , 'EBSPA']
+        AlgoName = ['Fid-ILP', 'QuRA' , 'EBSPA']
+        # AlgoName = ['RL-SCHEDULER', 'QuRA' , 'EBSPA']
         leg = plt.legend(
             AlgoName,
             loc = 10,
@@ -225,7 +227,7 @@ class ChartGenerator:
         plt.locator_params(axis='x', nbins=5)  
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
-        ax1.xaxis.set_label_coords(0.45, -0.15)
+        ax1.xaxis.set_label_coords(0.45, -0.2)
         # ax1.set_ylim(bottom=20)
 
         # plt.show()
