@@ -1531,6 +1531,7 @@ class RoutingEnv(Env):
         src,dst,current_node , path , index , done = reqState
 
         neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
+        # print('in get mask +++==== ' , src.id,dst.id,current_node.id , neighbors)
         for n in neighbors:
             if n not in path and n != current_node.id:
                 mask[ n] = 1
