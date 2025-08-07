@@ -73,7 +73,7 @@ run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) +
 + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 12000
+ttime = 50
 ttime2 = 500
 step = 500
 times = 1
@@ -83,13 +83,13 @@ nodeNo = gridSize *gridSize
 fixed = False
 
 # alpha_ = 0.0007
-alpha_ = .0002
-# alpha_ = 0
+# alpha_ = .0002
+alpha_ = 0
 degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [10,20]
+numOfRequestPerRound = [20]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
 # numOfNodes = [20]
@@ -176,7 +176,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6 , int(math.sqrt(numOfNode)))
@@ -225,7 +225,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_,
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_randPFT'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_SPPFT'))
     
-    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
 
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_randPFT'))
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_SPPFT'))
@@ -268,7 +268,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_,
     
     # algorithms.append(SEE(copy.deepcopy(topo)))
 
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
+    algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
 
     # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
    
@@ -277,7 +277,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_,
    
     print('======================before append', Topo.print_memory_usage())
    
-    algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
+    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY_prob'))
     # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
 
@@ -295,7 +295,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_,
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE_PS(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE_preswap_multihop_distdqrl' , param='ten'))
     
-    # algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
+    algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
 
 
     gc.collect()

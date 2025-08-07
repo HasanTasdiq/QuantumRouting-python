@@ -782,7 +782,7 @@ class AlgorithmBase:
         # if self.name == 'SEER_6' or self.name == 'SEER_' or self.name == 'SEER_multihop' or 'preswap' in self.name:
             # self.tryEntanglement()
 
-        start = time.time()
+        # start = time.time()
 
         self.p2()
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken for p2 : ' , time.time() - t1)
@@ -792,7 +792,7 @@ class AlgorithmBase:
         self.tryEntanglement()
 
         # t2 = time.time()
-        # start = process_time()
+        start = time.time()
         t2 = process_time()
         res = self.p4()
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken for p4 : ' , time.time() - t2)

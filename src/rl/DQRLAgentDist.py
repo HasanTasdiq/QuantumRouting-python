@@ -54,14 +54,14 @@ ENTANGLEMENT_LIFETIME = 10
 EPSILON_ = 1  # not a constant, qoing to be decayed
 
 # run 25k
-START_EPSILON_DECAYING = 15000
-END_EPSILON_DECAYING = 20000
-REPLAY_MEMORY_SIZE = 100000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 50000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 15000
+# END_EPSILON_DECAYING = 20000
+# REPLAY_MEMORY_SIZE = 100000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 50000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
-#for 5k local
+# for 5k local
 # START_EPSILON_DECAYING = 2000
 # END_EPSILON_DECAYING = 4000
 # REPLAY_MEMORY_SIZE = 30000  # How many last steps to keep for model training
@@ -79,12 +79,12 @@ UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 
 # for testing
-# START_EPSILON_DECAYING = 20
-# END_EPSILON_DECAYING = 40
-# REPLAY_MEMORY_SIZE = 500  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 200  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10
+END_EPSILON_DECAYING = 20
+REPLAY_MEMORY_SIZE = 200  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
@@ -640,6 +640,34 @@ class DQRLAgentDist:
         
     #     return current_state, action , p_time
 
+    def learn_and_predict_next_req_node_single(self, req):
+        global EPSILON_
+        timeSlot = self.env.algo.timeSlot
+
+        if req[5]:
+            return None  # Request already checked/completed
+
+        current_state = self.env.schedule_routing_state_dist(req)
+        qs = self.get_qs(current_state)
+        mask = self.env.get_mask_one_req_schedule_route(req)
+        valid_actions = np.where(mask == 1)[0]
+        valid_q_values = qs[valid_actions]
+
+        # Sort valid actions based on Q values in descending order
+        sorted_valid_actions = sorted(zip(valid_actions, valid_q_values), key=lambda x: x[1], reverse=True)
+        sorted_valid_actions = [action for action, q in sorted_valid_actions]
+
+        random_val = np.random.random()
+        if random_val > EPSILON_:
+            action = np.argmax(np.where(mask == 1, qs, -np.inf))
+        else:
+            action = np.random.choice(valid_actions)
+            random.shuffle(sorted_valid_actions)
+
+        q = qs[action]
+        self.env.algo.action_count[action] += 1
+
+        return [current_state, req[4], action, q, mask, sorted_valid_actions]
     def learn_and_predict_next_req_node_all(self):
         global EPSILON_
         timeSlot = self.env.algo.timeSlot
