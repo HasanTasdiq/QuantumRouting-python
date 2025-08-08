@@ -13,11 +13,21 @@ from random import sample
 import numpy as np
 import time
 from concurrent.futures import ThreadPoolExecutor
+import threading
+import os
+from concurrent.futures import ProcessPoolExecutor
+# from topo.helper import executor as executor2
+
+
+executor2 = ProcessPoolExecutor(max_workers=8)  # Create at the top level
+
+
 
 
 # ctx._force_start_method('spawn')
 
 sys.path.insert(0, "../../rl")
+max_workers = os.cpu_count()
 
 from DQRLAgentDist import DQRLAgentDist
 
@@ -41,6 +51,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         self.w1 = 1
         self.w2 = 1 - self.w1
         self.maxTry = 2
+        self.executor = None
 
 
 
@@ -216,9 +227,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             for sd in self.Pi:
                 for path in self.Pi[sd]:
                     print([n.id for n in path])
-            
+        
+        
+
     def p4(self):
         p_time = 0
+        global executor2
 
         # self.prep4()
 
@@ -232,9 +246,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 p_time += time.time()-t
             else:
                 # self.route()
-                with ThreadPoolExecutor(max_workers=self.topo.numOfRequestPerRound) as executor:
-                    results = list(executor.map(self.route_schedule_single, self.requestState))
-                    print('results ' , results, sum([r for r in results]))
+                # with ThreadPoolExecutor(max_workers=8) as executor:
+                # with ProcessPoolExecutor(max_workers=8) as executor:
+                # if not executor2:
+                #     executor2 = ProcessPoolExecutor(max_workers=8)
+                results = list(executor2.map(self.route_schedule_single, self.requestState))
+                print('results ' , results, sum([r for r in results]))
+            
                 successReq = sum([r for r in results])
                 self.result.successfulRequestPerRound.append(successReq)
                 self.result.entanglementPerRound.append(sum([r for r in results]))
@@ -422,8 +440,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 else:
                     for link in selectedlinks:
                         link.taken = False
-                    print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path])
+                    print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path] , 'threading.get_ident():', threading.get_ident())
                         # print('shortest path ----- ' , [n.id for n in targetPath])
+                    
                     print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
                     reward = -10
 
