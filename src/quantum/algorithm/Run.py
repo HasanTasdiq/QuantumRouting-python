@@ -37,6 +37,7 @@ from ScheduleRoute import SCHEDULEROUTEGREEDY
 # from Heuristic import QuRA_Heuristic
 # from CachedEntanglement import CachedEntanglement
 from topo.Topo import Topo
+from topo.helper import executor as executor
 
 
 from random import sample
@@ -44,8 +45,11 @@ import numpy as np
 import time
 import os.path
 import multiprocessing.context as ctx
+from multiprocessing import Pool
+
 import math
-ctx._force_start_method('spawn')
+ctx._force_start_method('spawn')  # Ensure fork start method is used
+# multiprocessing.set_start_method('fork')
 
 # sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
 sys.path.insert(0, "../../rl")
@@ -77,7 +81,7 @@ ttime = 50
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 10
+gridSize = 3
 nodeNo = gridSize *gridSize
 # nodeNo = 50
 fixed = False
@@ -89,7 +93,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [20]
+numOfRequestPerRound = [3]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
 # numOfNodes = [20]
@@ -111,6 +115,9 @@ Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability",
 toRunLessAlgos = ['REPS','REPS_shortest','QuRA_Heuristic' ,'REPS_rep', 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only', 'RANDSCHEDULEGREEDY','RANDSCHEDULEROUTEGREEDY']
 
 
+# executor = ProcessPoolExecutor(max_workers=8)
+# executor = Pool(processes=8)
+
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     # if '_qrl' in algo.name:
     #     agent = Agent(algo , pid)
@@ -118,6 +125,8 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     #     agent = DQNAgent(algo , pid)
     if '_distdqrl' in algo.name:
         agent = DQNAgentDist(algo , pid)
+    # if '_DIST' in algo.name:
+    #     algo.executor = executor
     # if '_entdqrl' in algo.name:
     #     algo.entAgent = DQNAgentDistEnt(algo, pid)
     # if '_2entdqrl' in algo.name:
@@ -127,6 +136,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     
     timeSlot = ttime
     global ttime2
+    global executor
     if algo.name in toRunLessAlgos:
         timeSlot = min(ttime2,ttime)
 
@@ -148,6 +158,8 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
                 algo.requestState[req].intermediate.clearIntermediate()
     resultDict[pid] = result
 
+    if executor is not None:
+        executor.shutdown(wait=True)
 
     success_req = 0
     
@@ -358,6 +370,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
         
         for algoIndex in range(len(algorithms)):
             algo = copy.deepcopy(algorithms[algoIndex])
+
             requests = {i : [] for i in range(ttime)}
             for i in range(rtime):
                 for (src, dst) in ids[i]:
