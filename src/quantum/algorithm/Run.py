@@ -81,7 +81,7 @@ ttime = 50
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 10
+gridSize = 3
 nodeNo = gridSize *gridSize
 # nodeNo = 50
 fixed = False
@@ -93,7 +93,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [10]
+numOfRequestPerRound = [3]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
 # numOfNodes = [20]
@@ -387,11 +387,11 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
     for job in jobs:
         # job.join()
-        job.join(timeout=60)  # Wait for 60 seconds
-        if job.is_alive():
-            print(f"Process {job.pid} is still running. Terminating...")
-            job.terminate()
-            job.join()
+        job.join()  # Wait for 60 seconds
+        # if job.is_alive():
+        #     print(f"Process {job.pid} is still running. Terminating...")
+        #     job.terminate()
+        #     job.join()
 
     # print(resultDicts)
     for algoIndex in range(len(algorithms)):
