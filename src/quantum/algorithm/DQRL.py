@@ -12,7 +12,8 @@ from numpy import log as ln
 from random import sample
 import numpy as np
 import time
-
+import threading
+import os
 
 # ctx._force_start_method('spawn')
 
@@ -1500,6 +1501,7 @@ class QuRA_DQRL(AlgorithmBase):
                 ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
                 ent_links_count = len(ent_links)
                 key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                print('process id:', os.getpid(), 'thread id:', threading.get_ident(), 'next_node_id:', next_node_id , next_node)
 
                 if not len(ent_links):
                     good_to_search = False
