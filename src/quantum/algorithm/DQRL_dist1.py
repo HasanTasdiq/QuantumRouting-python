@@ -1,3 +1,5 @@
+from multiprocessing import Manager
+import pickle
 import sys
 import math
 import random
@@ -250,7 +252,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # with ProcessPoolExecutor(max_workers=8) as executor:
                 # if not executor2:
                 #     executor2 = ProcessPoolExecutor(max_workers=8)
-                results = list(executor2.map(self.route_schedule_single, self.requestState))
+                # with Manager() as manager:
+                #     shared_nodes = manager.dict({node.id: {"remainingQubits": node.remainingQubits} for node in self.topo.nodes})
+                args = [( reqState) for reqState in self.requestState]
+                # self.topo.tst = Manager().list()
+                results = list(executor2.map(self.route_schedule_single, args))
                 print('results ' , results, sum([r for r in results]))
             
                 successReq = sum([r for r in results])
@@ -307,11 +313,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
 
 
-    def route_schedule_single(self, reqState):
+    def route_schedule_single(self ,  reqState):
         """
         Serve only one request (reqState) using the routing agent.
         reqState: [src, dst, current_node, path, index, checked]
         """
+        # topo = pickle.loads(serialized_topo)
+        # nodes = pickle.loads(serialized_nodes)
         src, dst, current_node, path, index, checked = reqState
         selectedNodes = [src]
         selectedEdges = []
@@ -337,10 +345,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 break
             current_state, req_id, next_node_id, q, mask, valid_actions = result
             next_node = self.topo.nodes[next_node_id]
+            self.topo.tst.append(os.getpid())
+            print('process id:', os.getpid(), 'thread id:', threading.get_ident(), 'next_node_id:', next_node_id , next_node , set(self.topo.tst))
             current_node_id = current_node.id
             # Find entangled links
             ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
-            # print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
+            print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
             key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
             
             if not ent_links:
