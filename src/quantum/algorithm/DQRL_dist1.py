@@ -258,10 +258,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
         while good_to_search and not success and numtry <= maxTry:
             # Get next action for this request
-            result = self.routingAgent.learn_and_predict_next_req_node_single(reqState)
-            if result is None:
-                break
+
             with Lock():
+                result = self.routingAgent.learn_and_predict_next_req_node_single(reqState)
+                if result is None:
+                    break
                 current_state, req_id, next_node_id, q, mask, valid_actions = result
                 next_node = self.topo.nodes[next_node_id]
                 self.tst.append(os.getpid())
