@@ -1,5 +1,4 @@
 import multiprocessing
-from objsize import get_deep_size
 import gc
 import sys
 sys.setrecursionlimit(2000) # Increase limit to 2000
