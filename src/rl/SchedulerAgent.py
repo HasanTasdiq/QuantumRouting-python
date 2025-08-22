@@ -15,7 +15,6 @@ import psutil
 from RoutingEnv import RoutingEnv      #for ubuntu
 # from .RoutingEnv import RoutingEnv   #for mac
 
-from objsize import get_deep_size
 NUM_EPISODES = 2500
 LEARNING_RATE = 0.1
 

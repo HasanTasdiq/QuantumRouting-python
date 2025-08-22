@@ -14,7 +14,6 @@ ENTANGLEMENT_LIFETIME = 10
 import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 import numpy
-from objsize import get_deep_size
 
 
 	
