@@ -33,7 +33,9 @@ class RoutingEnv(Env):
         self.attention_layer = Attention()
 
         self.skip = True
-
+        self.dense_proj = Dense(64, activation='relu')
+        self.mha = MultiHeadAttention(num_heads=4, key_dim=16)
+        self.ln = LayerNormalization()
 
         
 
@@ -711,11 +713,7 @@ class RoutingEnv(Env):
 
     # === 3. Request-level attention ===
     def apply_request_attention(self, request_tensor):
-        # request_tensor: shape [num_requests, SIZE]
-        if not hasattr(self, 'dense_proj'):
-            self.dense_proj = Dense(64, activation='relu')
-            self.mha = MultiHeadAttention(num_heads=4, key_dim=16)
-            self.ln = LayerNormalization()
+
 
         # Project to 64D
         proj = self.dense_proj(request_tensor)  # shape: [num_requests, 64]
