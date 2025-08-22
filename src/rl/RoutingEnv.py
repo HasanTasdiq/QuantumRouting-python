@@ -724,7 +724,7 @@ class RoutingEnv(Env):
         proj = tf.expand_dims(proj, axis=0)  # shape: [1, num_requests, 64]
 
         # Apply MHA
-        attn_out = self.mha(proj, proj, proj)  # shape: [1, num_requests, 64]
+        attn_out = self.mha(query=proj, key=proj, value=proj)  # Correct usage
 
         # Residual + LayerNorm
         output = self.ln(proj + attn_out)  # shape: [1, num_requests, 64]
