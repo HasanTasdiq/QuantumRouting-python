@@ -2,6 +2,14 @@
 
 import random
 
+class sNode:
+    def __init__(self,id: int, q) -> bool:
+        self.id = id
+        self.q = q
+        self.links = []  # List of links connected to this node
+        self.internalLinks = []  # List of internal links for swapping
+
+
 class Node:
 
     
@@ -42,6 +50,9 @@ class Node:
         if b:
             self.internalLinks.append((l1, l2))
         return b
+    def addLink(self, link):
+        if link not in self.links:
+            self.links.append(link)
     def attemptPreSwapping(self, l1, l2 , times = 1):  # l1 -> Link, l2 -> Link
         if l1.n1 == self:    
             l1.s1 = True

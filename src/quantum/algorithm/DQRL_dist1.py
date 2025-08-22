@@ -1,4 +1,4 @@
-from multiprocessing import Manager
+from multiprocessing import Lock, Manager
 import pickle
 import sys
 import math
@@ -18,7 +18,8 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 import os
 from concurrent.futures import ProcessPoolExecutor
-from topo.helper import executor as executor2
+from topo.mp_helper import executor as executor2, route_schedule_single2 , route_schedule_single, qManager
+from multiprocessing.managers import BaseManager
 
 
 # executor2 = ProcessPoolExecutor(max_workers=8)  # Create at the top level
@@ -32,6 +33,7 @@ sys.path.insert(0, "../../rl")
 max_workers = os.cpu_count()
 
 from DQRLAgentDist import DQRLAgentDist
+
 
 class QuRA_DQRL_DIST(AlgorithmBase):
     def __init__(self, topo,param=None, name=''):
@@ -54,6 +56,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         self.w2 = 1 - self.w1
         self.maxTry = 2
         self.executor = None
+        self.tst = [] 
 
 
 
@@ -254,8 +257,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 #     executor2 = ProcessPoolExecutor(max_workers=8)
                 # with Manager() as manager:
                 #     shared_nodes = manager.dict({node.id: {"remainingQubits": node.remainingQubits} for node in self.topo.nodes})
+  
                 args = [( reqState) for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
+                # for _ in range(10):
+                #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
+                #     # route_schedule_single2(args[0])
+                
                 results = list(executor2.map(self.route_schedule_single, args))
                 print('results ' , results, sum([r for r in results]))
             
@@ -265,7 +273,6 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 self.result.fidelityPerRound.append(0)
 
                 self.result.successfulRequest += successReq
-
                 # p_time += self.route_schedule_seq()
             # self.route_seq()
             # self.route_schedule_seq()
@@ -343,138 +350,140 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             result = self.routingAgent.learn_and_predict_next_req_node_single(reqState)
             if result is None:
                 break
-            current_state, req_id, next_node_id, q, mask, valid_actions = result
-            next_node = self.topo.nodes[next_node_id]
-            self.topo.tst.append(os.getpid())
-            print('process id:', os.getpid(), 'thread id:', threading.get_ident(), 'next_node_id:', next_node_id , next_node , set(self.topo.tst))
-            current_node_id = current_node.id
-            # Find entangled links
-            ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
-            print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
-            key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
-            
-            if not ent_links:
+            with Lock():
+                current_state, req_id, next_node_id, q, mask, valid_actions = result
+                next_node = self.topo.nodes[next_node_id]
+                self.tst.append(os.getpid())
+                print('process id:', os.getpid(), 'thread id:', threading.get_ident(), 'next_node_id:', next_node_id , next_node , set(self.tst))
+                current_node_id = current_node.id
+                # Find entangled links
+                ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
+                print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
+                key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
+                
+                if not ent_links:
 
-                numtry += 1
-                if numtry <= self.maxTry:
-                    continue
-                else:
-                    good_to_search = False
-                    failed_no_ent = True
-            else:
-                ent_links = [ent_links[0]]
-                ent_links[0].taken = True
-                selectedlinks.append(ent_links[0])
-                prev_links = [ent_links[0]]
-                numtry = 0
-
-                # Fidelity check
-                fidelity = self.fidelityAfterSwap(fidelity, ent_links[0].fidelity)
-                if fidelity < self.topo.fidelity_threshold:
                     numtry += 1
                     if numtry <= self.maxTry:
-                            continue
+                        continue
                     else:
-                        numtry = 0
                         good_to_search = False
-
-
-            # Loop check
-            if next_node == current_node or next_node.id in path:
-                good_to_search = False
-                failed_loop = True
-                # break
-
-            selectedNodes.append(next_node)
-            selectedEdges.append((current_node, next_node))
-            # usedLinks.extend(prev_links)
-            path.append(next_node.id)
-            req_done = (not good_to_search) or success
-
-            reqState = (src,dst,next_node,tuple(path),index,req_done)
-            self.requestState[index] = reqState
-            # print('Updated request state:', reqState)
-            # Success check
-            if next_node == dst and good_to_search:
-                success = True
-                good_to_search = False
-
-            # Prepare for next hop
-            current_node = next_node
-            swappSuccess = True
-            if success:
-                print('going to swap for ' , (src.id , dst.id ))
-                for i in range(len(selectedlinks)-1):
-                    l1 = selectedlinks[i]
-                    l2 = selectedlinks[i+1]
-                    n1 = l1.n1
-                    n2 = l1.n2
-                    n = n1 if l2.contains(n1) else n2
-                    swapped = n.attemptSwapping(l1,l2)
-
-                    usedLinks.append(l1)
-                    usedLinks.append(l2)
-                    if not swapped:
-                        failed_swap = True
-                        swappSuccess = False
-                        print('================failed swap==================')
-                        break
-             
-
-
-            if success and swappSuccess:
-                print('going to find path for:', (src.id , dst.id ))
-                t2 = time.time()
-                for req in self.requests:
-                        # src = req[0]
-                        # dst = req[1]
-                    if (src, dst) == (req[0], req[1]):
-                            # print('[REPS] finish time:', self.timeSlot - request[2])
-                        self.requests.remove(req)
-                        break
-
-                # successReq += 1
-                # totalEntanglement += 1
-
-
-            reward = -1
-
-            if req_done:
-                if success:
-                        # print("====success====" , src.id , dst.id , [n for n in path])
-                        # print('shortest path ----- ' , [n.id for n in targetPath])
-                    reward = 10
-                        # reward = 1
-
-                    total_fidelity += fidelity
+                        failed_no_ent = True
                 else:
-                    for link in selectedlinks:
-                        link.taken = False
-                    print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path] , 'threading.get_ident():', threading.get_ident())
-                        # print('shortest path ----- ' , [n.id for n in targetPath])
-                    
-                    print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
-                    reward = -10
+                    ent_links = [ent_links[0]]
+                    ent_links[0].taken = True
+                    selectedlinks.append(ent_links[0])
+                    prev_links = [ent_links[0]]
+                    numtry = 0
+
+                    # Fidelity check
+                    fidelity = self.fidelityAfterSwap(fidelity, ent_links[0].fidelity)
+                    if fidelity < self.topo.fidelity_threshold:
+                        numtry += 1
+                        if numtry <= self.maxTry:
+                                continue
+                        else:
+                            numtry = 0
+                            good_to_search = False
 
 
-                # print('lenT ' , len(T))
+                # Loop check
+                if next_node == current_node or next_node.id in path:
+                    good_to_search = False
+                    failed_loop = True
+                    # break
 
-            # key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(prev_node.id) + '_' + str(next_node.id)
+                selectedNodes.append(next_node)
+                selectedEdges.append((current_node, next_node))
+                # usedLinks.extend(prev_links)
+                path.append(next_node.id)
+                req_done = (not good_to_search) or success
 
-                # reward = -self.topo.numOfRequestPerRound
+                reqState = (src,dst,next_node,tuple(path),index,req_done)
+                self.requestState[index] = reqState
+                # print('Updated request state:', reqState)
+                # Success check
+                if next_node == dst and good_to_search:
+                    success = True
+                    good_to_search = False
 
-            try:
-                self.topo.reward_routing[key] += reward
-            except:
-                self.topo.reward_routing[key] = reward    
+                # Prepare for next hop
+                current_node = next_node
+                swappSuccess = True
+                if success:
+                    print('going to swap for ' , (src.id , dst.id ))
+                    for i in range(len(selectedlinks)-1):
+                        l1 = selectedlinks[i]
+                        l2 = selectedlinks[i+1]
+                        n1 = l1.n1
+                        n2 = l1.n2
+                        n = n1 if l2.contains(n1) else n2
+                        swapped = n.attemptSwapping(l1,l2)
 
-            for link in usedLinks:
-                link.clearPhase4Swap()
+                        usedLinks.append(l1)
+                        usedLinks.append(l2)
+                        if not swapped:
+                            failed_swap = True
+                            swappSuccess = False
+                            print('================failed swap==================')
+                            break
+                
+
+
+                if success and swappSuccess:
+                    print('going to find path for:', (src.id , dst.id ))
+                    t2 = time.time()
+                    for req in self.requests:
+                            # src = req[0]
+                            # dst = req[1]
+                        if (src, dst) == (req[0], req[1]):
+                                # print('[REPS] finish time:', self.timeSlot - request[2])
+                            self.requests.remove(req)
+                            break
+
+                    # successReq += 1
+                    # totalEntanglement += 1
+
+
+                reward = -1
+
+                if req_done:
+                    if success:
+                            # print("====success====" , src.id , dst.id , [n for n in path])
+                            # print('shortest path ----- ' , [n.id for n in targetPath])
+                        reward = 10
+                            # reward = 1
+
+                        total_fidelity += fidelity
+                    else:
+                        for link in selectedlinks:
+                            link.taken = False
+                        print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path] , 'threading.get_ident():', threading.get_ident())
+                            # print('shortest path ----- ' , [n.id for n in targetPath])
+                        
+                        print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
+                        reward = -10
+
+
+                    # print('lenT ' , len(T))
+
+                # key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(prev_node.id) + '_' + str(next_node.id)
+
+                    # reward = -self.topo.numOfRequestPerRound
+
+                try:
+                    self.topo.reward_routing[key] += reward
+                except:
+                    self.topo.reward_routing[key] = reward    
+
+                for link in usedLinks:
+                    link.clearPhase4Swap()
+                
+                T = [r for r in self.requestState if not r[5]]
+                done_episode = (not good_to_search or success) and (len(T)==1)
             
-            T = [r for r in self.requestState if not r[5]]
-            done_episode = (not good_to_search or success) and (len(T)==1)
-            
-            self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
+            with Lock():
+                self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
             
 
         return success and swappSuccess

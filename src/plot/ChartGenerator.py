@@ -198,6 +198,7 @@ class ChartGenerator:
         AlgoName = ['ILP (4)','ILP (2)','ILP (1)' , 'DQRL' , 'shortest_path']
         AlgoName = ['Fid-ILP', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' , 'EBSPA']
+        AlgoName = ['RL-SCHEDULER', 'QuRA' ]
         leg = plt.legend(
             AlgoName,
             loc = 10,

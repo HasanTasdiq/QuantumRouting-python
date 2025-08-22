@@ -1,9 +1,20 @@
 
-from .Node import Node
+from .Node import Node, sNode
 import random
 import math
 from .helper import entanglement_lifetimeslot
 
+class sLink:
+    def __init__(self, id: int, n1: sNode, n2: sNode, l: float,fid:bool ,  entangled: bool = False):
+        self.id = id
+        self.n1 = n1
+        self.n2 = n2
+        self.s1 = False
+        self.s2 = False
+        self.l = l
+        self.entangledTimeSlot = 0
+        self.entangled = entangled
+        self.fidelity = fid  # Default fidelity
 class Link:
     
     def __init__(self, topo, n1: Node, n2: Node, s1: bool, s2: bool, id: int, l: float , isVirtualLink = False, vtimeslot = 0):
