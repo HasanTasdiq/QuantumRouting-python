@@ -262,7 +262,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             # Get next action for this request
 
             with Lock():
-                result = self.routingAgent.learn_and_predict_next_req_node_single(reqState)
+                result = agent.learn_and_predict_next_req_node_single(reqState)
                 if result is None:
                     break
                 current_state, req_id, next_node_id, q, mask, valid_actions = result
