@@ -170,7 +170,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # with Manager() as manager:
                 #     shared_nodes = manager.dict({node.id: {"remainingQubits": node.remainingQubits} for node in self.topo.nodes})
   
-                args = [( reqState,copy.deepcopy(self.routingAgent)) for reqState in self.requestState]
+                args = [( reqState) for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
                 # for _ in range(10):
                 #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
@@ -233,7 +233,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
 
     def route_schedule_single(self ,  args):
-        reqState , agent = args
+        reqState =  args
         """
         Serve only one request (reqState) using the routing agent.
         reqState: [src, dst, current_node, path, index, checked]
@@ -262,7 +262,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             # Get next action for this request
 
             with Lock():
-                result = agent.learn_and_predict_next_req_node_single(reqState)
+                result = self.routingAgent.learn_and_predict_next_req_node_single(reqState)
                 if result is None:
                     break
                 current_state, req_id, next_node_id, q, mask, valid_actions = result
