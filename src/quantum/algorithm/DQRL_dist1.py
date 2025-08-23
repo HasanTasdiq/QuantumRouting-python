@@ -33,7 +33,7 @@ sys.path.insert(0, "../../rl")
 max_workers = os.cpu_count()
 
 from DQRLAgentDist import DQRLAgentDist
-lock = Manager().Lock()
+# lock = Lock()
 lock2 = Lock()
 
 
@@ -172,12 +172,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # with Manager() as manager:
                 #     shared_nodes = manager.dict({node.id: {"remainingQubits": node.remainingQubits} for node in self.topo.nodes})
                 lock1 = Manager().Lock()
-                args = [( reqState) for reqState in self.requestState]
+                args = [( reqState,lock1) for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
                 # for _ in range(10):
                 #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
                 #     # route_schedule_single2(args[0])
-                mpredis.set("shared_topo", dill.dumps(self.topo))
+                mpredis.set("shared_nodes", dill.dumps(self.topo.nodes))
                 results = list(executor2.map(self.route_schedule_single, args))
                 print('results ' , results, sum([r for r in results]))
             
@@ -235,7 +235,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
 
     def route_schedule_single(self ,  args):
-        reqState =  args
+        reqState,lock =  args
         """
         Serve only one request (reqState) using the routing agent.
         reqState: [src, dst, current_node, path, index, checked]
@@ -262,18 +262,27 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
         while good_to_search and not success and numtry <= maxTry:
             # Get next action for this request
-
+            result = self.routingAgent.learn_and_predict_next_req_node_single(reqState)
+            if result is None:
+                break
             with lock:
                 t1 = time.time()
-                shared_topo = dill.loads(mpredis.get("shared_topo"))
-                print('==shared_topo load time ' , time.time() - t1)
+                tl = time.time()
+                shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+                el = 0
+                tk = 0
+                for n in shared_nodes:
+                    for l in n.links:
+                        if l.isEntangled(self.timeSlot):
+                            el += 1
+                        if l.notSwapped():
+                            tk += 1
+                print('==shared_nodes load time ' , time.time() - t1 , ' ent links ' , el, ' taken links ' , tk)
                 print('++++++process id:', os.getpid() , 'entering for processing')
 
-                result = self.routingAgent.learn_and_predict_next_req_node_single(reqState)
-                if result is None:
-                    break
+
                 current_state, req_id, next_node_id, q, mask, valid_actions = result
-                next_node = self.topo.nodes[next_node_id]
+                next_node = shared_nodes[next_node_id]
                 self.tst.append(os.getpid())
                 t1 = time.time()
 
@@ -282,20 +291,21 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # t1 = time.time()
                 # shared_topo = dill.loads(mpredis.get("shared_topo"))
                 # print('==shared_topo load time ' , time.time() - t1)
-                shared_topo.tst.append(os.getpid())
+                # shared_topo.tst.append(os.getpid())
 
-                print('process id:', os.getpid(), 'thread id:', threading.get_ident() , set(shared_topo.tst))
+                # print('process id:', os.getpid(), 'thread id:', threading.get_ident() , set(shared_topo.tst))
                 current_node_id = current_node.id
+                current_node = shared_nodes[current_node.id]  # Get the current node object
                 # Find entangled links
                 ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
-                # print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
+                print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
                 key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
-                mpredis.set("shared_topo", dill.dumps(shared_topo))
+                # mpredis.set("shared_topo", dill.dumps(shared_topo))
                 
                 if not ent_links:
 
                     numtry += 1
-                    if numtry <= self.maxTry:
+                    if numtry <= maxTry:
                         continue
                     else:
                         good_to_search = False
@@ -311,7 +321,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                     fidelity = self.fidelityAfterSwap(fidelity, ent_links[0].fidelity)
                     if fidelity < self.topo.fidelity_threshold:
                         numtry += 1
-                        if numtry <= self.maxTry:
+                        if numtry <= maxTry:
                                 continue
                         else:
                             numtry = 0
@@ -334,7 +344,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 self.requestState[index] = reqState
                 # print('Updated request state:', reqState)
                 # Success check
-                if next_node == dst and good_to_search:
+                if next_node.id == dst.id and good_to_search:
                     success = True
                     good_to_search = False
 
@@ -412,7 +422,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 
                 T = [r for r in self.requestState if not r[5]]
                 done_episode = (not good_to_search or success) and (len(T)==1)
-                print('===============process id:', os.getpid() , 'leaving after processing')
+                mpredis.set("shared_topo", dill.dumps(shared_nodes))
+                print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
+
             
             with lock2:
                 self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
