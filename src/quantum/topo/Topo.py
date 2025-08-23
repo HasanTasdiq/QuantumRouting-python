@@ -126,7 +126,7 @@ class Topo:
         self.fidelity_threshold = 0
         self.initial_fidelity = 0.9
         # self.executor = ProcessPoolExecutor(max_workers=8)
-        self.tst = Manager().list()  # Shared list for time slots
+        self.tst = [] # Shared list for time slots
 
 
         # for pos in _positions:
