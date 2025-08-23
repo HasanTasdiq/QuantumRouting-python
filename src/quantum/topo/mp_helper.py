@@ -7,6 +7,8 @@ from .Node import sNode
 from .Link import sLink
 from multiprocessing import Lock
 import logging, multiprocessing, os
+import redis, dill
+mpredis = redis.Redis()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,8 +19,8 @@ class qManager(BaseManager): pass
 qManager.register('sNode', sNode,)
 qManager.register('sLink', sLink)
 
-# executor = ProcessPoolExecutor(max_workers=8)
-executor = ThreadPoolExecutor(max_workers=128)
+executor = ProcessPoolExecutor(max_workers=32)
+# executor = ThreadPoolExecutor(max_workers=128)
 
 def route_schedule_single2(  reqState):
     print('route_schedule_single called with algo#############################################:')
@@ -61,7 +63,8 @@ def route_schedule_single(args):
 
         while good_to_search and not success and numtry <= maxTry:
             # Get next action for this request
-            with lock:
+            with mpredis.lock("my_lock", blocking_timeout=5):
+                time.sleep(1)
                 print('11111111111111')
 
                 result = algo.routingAgent.learn_and_predict_next_req_node_single(reqState)
@@ -218,3 +221,27 @@ def route_schedule_single(args):
 #                 # with ProcessPoolExecutor(max_workers=8) as executor2:
 #                 #
 # results = list(executor.map(route_schedule_single2, args))
+
+def update_shared_topo(task_id):
+    print('update_shared_topo called with task_id:', task_id)
+    with mpredis.pipeline() as pipe:
+        while True:
+            try:
+                # Watch the key for changes
+                pipe.watch("shared_topo")
+
+                # Load the object
+                obj = dill.loads(pipe.get("shared_topo"))
+
+                # Modify it
+                obj.tst.append(task_id)
+
+                # Start transaction
+                pipe.multi()
+                pipe.set("shared_topo", dill.dumps(obj))
+                pipe.execute()  # commits if key unchanged
+                return obj
+                break
+            except redis.WatchError:
+                # Retry if another process modified it concurrently
+                continue
