@@ -794,6 +794,7 @@ class AlgorithmBase:
         # t2 = time.time()
         start = time.time()
         t2 = process_time()
+        print('going to p4 ' , self.name)
         res = self.p4()
         print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken for p4 : ' , time.time() - t2)
 
