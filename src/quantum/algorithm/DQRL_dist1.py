@@ -35,8 +35,8 @@ max_workers = os.cpu_count()
 from DQRLAgentDist import DQRLAgentDist
 # lock = Lock()
 lock2 = Lock()
-# lock1 = Manager().Lock()
-lock1 = Lock()
+lock1 = Manager().Lock()
+# lock1 = Lock()
 
 
 class QuRA_DQRL_DIST(AlgorithmBase):
@@ -308,7 +308,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 current_node = shared_nodes[current_node.id]  # Get the current node object
                 # Find entangled links
                 ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
-                print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
+                # print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
                 key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node.id) + '_' + str(next_node.id)
                 # mpredis.set("shared_topo", dill.dumps(shared_topo))
                 
