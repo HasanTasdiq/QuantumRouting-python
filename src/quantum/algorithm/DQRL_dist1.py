@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 import os
 from concurrent.futures import ProcessPoolExecutor
-from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , qManager
+from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , qManager, lock1
 from multiprocessing.managers import BaseManager
 import dill
 
@@ -35,7 +35,6 @@ max_workers = os.cpu_count()
 from DQRLAgentDist import DQRLAgentDist
 # lock = Lock()
 lock2 = Lock()
-lock1 = Manager().Lock()
 # lock1 = Lock()
 
 
@@ -156,6 +155,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         p_time = 0
         global executor2
         global lock1
+        if lock1 is None:
+            lock1 = Manager().Lock()
         print('start p4 ' , self.name)
         # self.prep4()
 

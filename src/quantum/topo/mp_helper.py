@@ -8,7 +8,11 @@ from .Link import sLink
 from multiprocessing import Lock
 import logging, multiprocessing, os
 import redis, dill
+from multiprocessing import Lock, Manager
+
 mpredis = redis.Redis()
+lock1 = None
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,7 +30,12 @@ def route_schedule_single2(  reqState):
     print('route_schedule_single called with algo#############################################:')
 
 
+def getLock1():
+    global lock1
 
+    if lock1 is None:
+        lock1 = Manager().Lock()
+    return lock1
 
 def update_shared_topo(task_id):
     print('update_shared_topo called with task_id:', task_id)
