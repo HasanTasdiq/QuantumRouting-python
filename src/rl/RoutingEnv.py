@@ -3,7 +3,10 @@ from gym import Env
 from gym.spaces import Box, Discrete
 import random
 import sys
+import dill
 sys.path.append("..")
+from quantum.topo.mp_helper import mpredis
+
 # from quantum.topo.helper import needlink_timeslot
 import math
 import ast
@@ -687,8 +690,14 @@ class RoutingEnv(Env):
     def get_state_graph_and_dist(self):
         state_graph = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
         state_dist = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+        shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+        links = set()
+        for node in shared_nodes:
+            for link in node.links:
+                links.add(link)
+        
 
-        for link in self.algo.topo.links:
+        for link in links:
             if link.isEntangled() and not link.taken:
                 n1, n2 = link.n1.id, link.n2.id
                 state_graph[n1][n2] += 1

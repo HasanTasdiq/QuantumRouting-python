@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 import os
 from concurrent.futures import ProcessPoolExecutor
-from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , route_schedule_single, qManager
+from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , qManager
 from multiprocessing.managers import BaseManager
 import dill
 
@@ -35,6 +35,8 @@ max_workers = os.cpu_count()
 from DQRLAgentDist import DQRLAgentDist
 # lock = Lock()
 lock2 = Lock()
+# lock1 = Manager().Lock()
+lock1 = Lock()
 
 
 class QuRA_DQRL_DIST(AlgorithmBase):
@@ -59,6 +61,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         self.maxTry = 2
         self.executor = None
         self.tst = [] 
+
 
 
 
@@ -152,7 +155,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     def p4(self):
         p_time = 0
         global executor2
-
+        global lock1
+        print('start p4 ' , self.name)
         # self.prep4()
 
         if len(self.srcDstPairs) > 0:
@@ -171,13 +175,17 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 #     executor2 = ProcessPoolExecutor(max_workers=8)
                 # with Manager() as manager:
                 #     shared_nodes = manager.dict({node.id: {"remainingQubits": node.remainingQubits} for node in self.topo.nodes})
-                lock1 = Manager().Lock()
+                print('going to create qManager lock')
+                print('after create qManager lock')
+
                 args = [( reqState,lock1) for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
                 # for _ in range(10):
                 #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
                 #     # route_schedule_single2(args[0])
                 mpredis.set("shared_nodes", dill.dumps(self.topo.nodes))
+                mpredis.set("routing_agent", dill.dumps(self.routingAgent))
+                print('going to map route_schedule_single with args:' )
                 results = list(executor2.map(self.route_schedule_single, args))
                 print('results ' , results, sum([r for r in results]))
             
@@ -235,7 +243,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
 
     def route_schedule_single(self ,  args):
+        print('route_schedule_single called with algo#############################################:')
         reqState,lock =  args
+        agent = dill.loads(mpredis.get("routing_agent"))
         """
         Serve only one request (reqState) using the routing agent.
         reqState: [src, dst, current_node, path, index, checked]
@@ -262,7 +272,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
         while good_to_search and not success and numtry <= maxTry:
             # Get next action for this request
-            result = self.routingAgent.learn_and_predict_next_req_node_single(reqState)
+            result = agent.learn_and_predict_next_req_node_single(reqState)
             if result is None:
                 break
             with lock:
@@ -422,12 +432,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 
                 T = [r for r in self.requestState if not r[5]]
                 done_episode = (not good_to_search or success) and (len(T)==1)
-                mpredis.set("shared_topo", dill.dumps(shared_nodes))
+                mpredis.set("shared_nodes", dill.dumps(shared_nodes))
                 print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
 
             
-            with lock2:
-                self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
+            # with lock2:
+            #     self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
             
 
         return success and swappSuccess
