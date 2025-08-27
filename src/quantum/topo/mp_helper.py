@@ -12,6 +12,8 @@ from multiprocessing import Lock, Manager
 
 mpredis = redis.Redis()
 lock1 = None
+agent_lock = None
+reward_lock = None
 
 
 logging.basicConfig(
