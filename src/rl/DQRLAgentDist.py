@@ -777,7 +777,9 @@ class DQRLAgentDist:
             
             req_id , next_node_id = self.decode_schdeule_route_action(action)
             req.append(request)
+            print('before find reward time ')
             reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
+            print('after find reward time ' )
             # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
             # print((request[0].id , request[1].id) , reward)
 

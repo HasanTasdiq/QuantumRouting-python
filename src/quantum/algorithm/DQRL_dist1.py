@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 import os
 from concurrent.futures import ProcessPoolExecutor
-from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , qManager, lock1
+from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , qManager, lock1, agent_lock,reward_lock
 from multiprocessing.managers import BaseManager
 import dill
 
@@ -155,8 +155,14 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         p_time = 0
         global executor2
         global lock1
+        global agent_lock
+        global reward_lock
         if lock1 is None:
             lock1 = Manager().Lock()
+        if agent_lock is None:
+            agent_lock = Manager().Lock()
+        if reward_lock is None:
+            reward_lock = Manager().Lock()
         print('start p4 ' , self.name)
         # self.prep4()
 
@@ -179,20 +185,31 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 print('going to create qManager lock')
                 print('after create qManager lock')
 
-                args = [( reqState,lock1) for reqState in self.requestState]
+                args = [( reqState,lock1,agent_lock) for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
                 # for _ in range(10):
                 #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
                 #     # route_schedule_single2(args[0])
                 mpredis.set("shared_nodes", dill.dumps(self.topo.nodes))
                 mpredis.set("routing_agent", dill.dumps(self.routingAgent))
+                mpredis.set("reward_routing", dill.dumps(self.topo.reward_routing))
+
                 print('going to map route_schedule_single with args:' )
                 results = list(executor2.map(self.route_schedule_single, args))
-                print('results ' , results, sum([r for r in results]))
+                # print('results ' , results, sum([r for r in results]))
             
-                successReq = sum([r for r in results])
+                self.topo.reward_routing = dill.loads(mpredis.get("reward_routing"))
+                successReq = sum([r[0] for r in results])
+                print('successReq ' , successReq)
+                actions = []
+                for r in results:
+                    actions.extend(r[1])
+                print('total actionss ' , len(actions))
+                for  reqState ,current_node_id,  next_node_id  , current_state  , done_episode in actions:
+                    self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
+                print('total actionss after update ' , len(actions))
                 self.result.successfulRequestPerRound.append(successReq)
-                self.result.entanglementPerRound.append(sum([r for r in results]))
+                self.result.entanglementPerRound.append(successReq)
                 self.result.fidelityPerRound.append(0)
 
                 self.result.successfulRequest += successReq
@@ -245,7 +262,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
     def route_schedule_single(self ,  args):
         print('route_schedule_single called with algo#############################################:')
-        reqState,lock =  args
+        reqState,lock , agent_lock=  args
         agent = dill.loads(mpredis.get("routing_agent"))
         """
         Serve only one request (reqState) using the routing agent.
@@ -270,12 +287,14 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         numtry = 0
         maxTry = self.maxTry
         fidelity = 1
+        actions = []
 
         while good_to_search and not success and numtry <= maxTry:
             # Get next action for this request
-            result = agent.learn_and_predict_next_req_node_single(reqState)
-            if result is None:
-                break
+            with agent_lock:
+                result = agent.learn_and_predict_next_req_node_single(reqState)
+                if result is None:
+                    break
             with lock:
                 t1 = time.time()
                 tl = time.time()
@@ -288,7 +307,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                             el += 1
                         if l.notSwapped():
                             tk += 1
-                print('==shared_nodes load time ' , time.time() - t1 , ' ent links ' , el, ' taken links ' , tk)
+                # print('==shared_nodes load time ' , time.time() - t1 , ' ent links ' , el, ' taken links ' , tk)
                 print('++++++process id:', os.getpid() , 'entering for processing')
 
 
@@ -422,26 +441,30 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(prev_node.id) + '_' + str(next_node.id)
 
                     # reward = -self.topo.numOfRequestPerRound
-
-                try:
-                    self.topo.reward_routing[key] += reward
-                except:
-                    self.topo.reward_routing[key] = reward    
-
+                
                 for link in usedLinks:
                     link.clearPhase4Swap()
-                
-                T = [r for r in self.requestState if not r[5]]
-                done_episode = (not good_to_search or success) and (len(T)==1)
+            
+            with reward_lock:
                 mpredis.set("shared_nodes", dill.dumps(shared_nodes))
-                print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
+                reward_routing = dill.loads(mpredis.get("reward_routing"))
+                try:
+                    reward_routing[key] += reward
+                except:
+                    reward_routing[key] = reward
+                mpredis.set("reward_routing", dill.dumps(reward_routing))    
 
+                
+            T = [r for r in self.requestState if not r[5]]
+            done_episode = (not good_to_search or success) and (len(T)==1)
+            print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
+            actions.append((reqState , current_node_id , next_node_id , current_state  , done_episode))
             
             # with lock2:
             #     self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
             
-
-        return success and swappSuccess
+        print('=================final process id:', os.getpid() , 'time taken:', time.time()-tl)
+        return (success and swappSuccess , actions)
 
     def route_schedule_seq(self):
         successReq = 0
