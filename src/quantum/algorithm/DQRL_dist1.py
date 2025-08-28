@@ -185,11 +185,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 print('going to create qManager lock')
                 print('after create qManager lock')
 
-                args = [( reqState,lock1,agent_lock) for reqState in self.requestState]
+                args = [( reqState,lock1,agent_lock,reward_lock) for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
                 # for _ in range(10):
                 #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
                 #     # route_schedule_single2(args[0])
+                # for link in self.topo.links:
+                #     mpredis.set('link_' + link.id, dill.dumps(link))
                 mpredis.set("shared_nodes", dill.dumps(self.topo.nodes))
                 mpredis.set("routing_agent", dill.dumps(self.routingAgent))
                 mpredis.set("reward_routing", dill.dumps(self.topo.reward_routing))
@@ -262,7 +264,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
     def route_schedule_single(self ,  args):
         print('route_schedule_single called with algo#############################################:')
-        reqState,lock , agent_lock=  args
+        reqState,lock , agent_lock ,reward_lock =  args
         agent = dill.loads(mpredis.get("routing_agent"))
         """
         Serve only one request (reqState) using the routing agent.
@@ -444,6 +446,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 
                 for link in usedLinks:
                     link.clearPhase4Swap()
+                print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
+                
             
             with reward_lock:
                 mpredis.set("shared_nodes", dill.dumps(shared_nodes))
@@ -457,7 +461,6 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 
             T = [r for r in self.requestState if not r[5]]
             done_episode = (not good_to_search or success) and (len(T)==1)
-            print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
             actions.append((reqState , current_node_id , next_node_id , current_state  , done_episode))
             
             # with lock2:
