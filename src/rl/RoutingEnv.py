@@ -1524,11 +1524,16 @@ class RoutingEnv(Env):
         if not mask.count(1):
             mask = self.get_mask__request_shcedule_route()
         return mask
-    def get_mask_one_req_schedule_route(self , reqState):
+    def get_mask_one_req_schedule_route(self , reqState ):
         mask = [None for _ in range(self.SIZE)]
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
-        for link in self.algo.topo.links:
+        shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+        links = set()
+        for node in shared_nodes:
+            for link in node.links:
+                links.add(link)
+        for link in links:
             if link.isEntangled() and not link.taken:
                 n1 = link.n1.id
                 n2 = link.n2.id

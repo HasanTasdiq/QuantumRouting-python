@@ -193,7 +193,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # for link in self.topo.links:
                 #     mpredis.set('link_' + link.id, dill.dumps(link))
                 mpredis.set("shared_nodes", dill.dumps(self.topo.nodes))
-                mpredis.set("routing_agent", dill.dumps(self.routingAgent))
+                # mpredis.set("routing_agent", dill.dumps(self.routingAgent))
                 mpredis.set("reward_routing", dill.dumps(self.topo.reward_routing))
 
                 print('going to map route_schedule_single with args:' )
@@ -265,7 +265,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     def route_schedule_single(self ,  args):
         print('route_schedule_single called with algo#############################################:')
         reqState,lock , agent_lock ,reward_lock =  args
-        agent = dill.loads(mpredis.get("routing_agent"))
+        # agent = dill.loads(mpredis.get("routing_agent"))
+        agent = self.routingAgent
         """
         Serve only one request (reqState) using the routing agent.
         reqState: [src, dst, current_node, path, index, checked]
