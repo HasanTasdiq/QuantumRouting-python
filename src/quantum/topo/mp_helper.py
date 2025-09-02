@@ -25,7 +25,7 @@ class qManager(BaseManager): pass
 qManager.register('sNode', sNode,)
 qManager.register('sLink', sLink)
 
-executor = ProcessPoolExecutor(max_workers=32)
+executor = ProcessPoolExecutor(max_workers=8)
 # executor = ThreadPoolExecutor(max_workers=128)
 
 def route_schedule_single2(  reqState):
