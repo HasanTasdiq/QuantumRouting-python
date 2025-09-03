@@ -311,7 +311,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                         if l.notSwapped():
                             tk += 1
                 # print('==shared_nodes load time ' , time.time() - t1 , ' ent links ' , el, ' taken links ' , tk)
-                print('++++++process id:', os.getpid() , 'entering for processing')
+                # print('++++++process id:', os.getpid() , 'entering for processing')
 
 
                 current_state, req_id, next_node_id, q, mask, valid_actions = result
@@ -447,11 +447,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 
                 for link in usedLinks:
                     link.clearPhase4Swap()
-                print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
+                # print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
+                mpredis.set("shared_nodes", dill.dumps(shared_nodes))
                 
             
             with reward_lock:
-                mpredis.set("shared_nodes", dill.dumps(shared_nodes))
                 reward_routing = dill.loads(mpredis.get("reward_routing"))
                 try:
                     reward_routing[key] += reward

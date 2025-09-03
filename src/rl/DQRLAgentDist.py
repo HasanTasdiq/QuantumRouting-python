@@ -53,12 +53,12 @@ ENTANGLEMENT_LIFETIME = 10
 EPSILON_ = 1  # not a constant, qoing to be decayed
 
 # run 25k
-# START_EPSILON_DECAYING = 15000
-# END_EPSILON_DECAYING = 20000
-# REPLAY_MEMORY_SIZE = 100000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 50000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10000
+END_EPSILON_DECAYING = 20000
+REPLAY_MEMORY_SIZE = 400000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
 # START_EPSILON_DECAYING = 2000
@@ -77,12 +77,12 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
-START_EPSILON_DECAYING = 5000
-END_EPSILON_DECAYING = 8000
-REPLAY_MEMORY_SIZE = 40000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 5000
+# END_EPSILON_DECAYING = 8000
+# REPLAY_MEMORY_SIZE = 40000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 
 # for testing
@@ -264,7 +264,7 @@ class DQRLAgentDist:
             self.replay_memory.extend(transition)
         else:
             self.replay_memory.append(transition)
-        self.priorities.append(priority)
+        # self.priorities.append(priority)
     
     def save_replay_memory(self, timeSlot):
         if not os.path.isdir('replay_memory'):
@@ -298,7 +298,7 @@ class DQRLAgentDist:
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
         # print('----------size(self.replay_memory)----------------', get_deep_size(self.replay_memory)/1000000)
-        print('get deep size time ' , time.time()-t1)
+        # print('get deep size time ' , time.time()-t1)
 
         # print(len(self.replay_memory))
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
@@ -311,7 +311,7 @@ class DQRLAgentDist:
         # indices = np.random.choice(len(self.replay_memory), MINIBATCH_SIZE, p=probabilities)
         # minibatch = [self.replay_memory[i] for i in indices]
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
-        batch_size = 10
+        batch_size = MINIBATCH_SIZE
         print('=============sample ===========' , time.time() - t1)
 
         t11 = time.time()
@@ -752,6 +752,7 @@ class DQRLAgentDist:
             next_state = None
 
         if next_state is None:
+            print('next state is none in update action!!!!!!!!!!!!!')
             next_state = current_state
         # done = False
         t = time.time()
@@ -785,9 +786,9 @@ class DQRLAgentDist:
             
             req_id , next_node_id = self.decode_schdeule_route_action(action)
             req.append(request)
-            print('before find reward time ')
+            # print('before find reward time ')
             reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
-            print('after find reward time ' )
+            # print('after find reward time ' )
             # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
             # print((request[0].id , request[1].id) , reward)
 
