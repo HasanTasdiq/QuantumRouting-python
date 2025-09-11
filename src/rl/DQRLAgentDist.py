@@ -53,20 +53,20 @@ ENTANGLEMENT_LIFETIME = 10
 EPSILON_ = 1  # not a constant, qoing to be decayed
 
 # run 25k
-START_EPSILON_DECAYING = 10000
-END_EPSILON_DECAYING = 20000
-REPLAY_MEMORY_SIZE = 400000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 10000
+# END_EPSILON_DECAYING = 20000
+# REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-# START_EPSILON_DECAYING = 2000
-# END_EPSILON_DECAYING = 4000
-# REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 2000
+END_EPSILON_DECAYING = 4000
+REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
 # START_EPSILON_DECAYING = 1000
@@ -79,8 +79,8 @@ UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 #for 10k local
 # START_EPSILON_DECAYING = 5000
 # END_EPSILON_DECAYING = 8000
-# REPLAY_MEMORY_SIZE = 40000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+# REPLAY_MEMORY_SIZE = 15000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
 # MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
 # UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
