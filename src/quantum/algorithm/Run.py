@@ -84,10 +84,10 @@ ttime = 25000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 5
+gridSize = 4
 nodeNo = gridSize *gridSize
 # nodeNo = 50
-fixed = False
+fixed = True
 
 # alpha_ = 0.0007
 # alpha_ = .0002
