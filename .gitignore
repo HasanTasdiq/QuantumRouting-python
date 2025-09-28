@@ -3,3 +3,4 @@ pdf/
 !data/.gitkeep
 __pycache__
 status.txt
+*.keras
