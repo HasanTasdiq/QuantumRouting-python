@@ -87,7 +87,7 @@ times = 1
 gridSize = 10
 nodeNo = gridSize *gridSize
 # nodeNo = 50
-fixed = False
+fixed = True
 
 # alpha_ = 0.0007
 # alpha_ = .0002
