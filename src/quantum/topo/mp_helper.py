@@ -14,6 +14,7 @@ mpredis = redis.Redis()
 lock1 = None
 agent_lock = None
 reward_lock = None
+node_locks = {}
 
 
 logging.basicConfig(

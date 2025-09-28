@@ -23,6 +23,12 @@ import copy
 import tensorflow as tf
 import pickle
 import glob
+import dill
+from quantum.topo.mp_helper import mpredis
+import sys
+
+from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
+
 
 
 
@@ -53,20 +59,20 @@ ENTANGLEMENT_LIFETIME = 10
 EPSILON_ = 1  # not a constant, qoing to be decayed
 
 # run 25k
-START_EPSILON_DECAYING = 10000
-END_EPSILON_DECAYING = 20000
-REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 10000
+# END_EPSILON_DECAYING = 20000
+# REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-# START_EPSILON_DECAYING = 2000
-# END_EPSILON_DECAYING = 4000
-# REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 2000
+END_EPSILON_DECAYING = 4000
+REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
 # START_EPSILON_DECAYING = 1000
@@ -88,7 +94,7 @@ UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 # for testing
 # START_EPSILON_DECAYING = 10
 # END_EPSILON_DECAYING = 20
-# REPLAY_MEMORY_SIZE = 200  # How many last steps to keep for model training
+# REPLAY_MEMORY_SIZE = 2000  # How many last steps to keep for model training
 # MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
 # MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
 # UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
@@ -139,20 +145,21 @@ class DQRLAgentDist:
         print('++++++++++initiating DQRL agent for:' , algo.name)
 
         self.env = RoutingEnv(algo)
+        self.SIZE = self.env.SIZE
 
-        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE *2 +2,self.env.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE  + 3,self.env.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.env.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE + self.env.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.env.SIZE + self.env.SIZE*self.env.SIZE ,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.env.SIZE + self.env.SIZE + 2, self.env.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.SIZE *2 +2,self.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.SIZE  + 3,self.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.SIZE + self.SIZE*self.SIZE + self.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.SIZE + self.SIZE*self.SIZE ,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.SIZE + self.SIZE + 2, self.SIZE,)  
         
         
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.env.SIZE + self.env.SIZE + 2, self.env.SIZE,)  
+        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.SIZE + self.SIZE + 2, self.SIZE,)  
         
-        self.OBSERVATION_SPACE_VALUES = (128 + self.env.SIZE + 2 * (self.env.SIZE ** 2),1,)
+        self.OBSERVATION_SPACE_VALUES = (128 + self.SIZE + 2 * (self.SIZE ** 2),1,)
 
-        self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q)+'_'+str(algo.topo.fidelity_threshold) +'_'+'DQRLAgent.keras'
+        self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q)+'_'+str(algo.topo.fidelity_threshold) +'_'+'DQRLAgentDist.keras'
 
         # Main model
         self.model = self.create_model()
@@ -176,6 +183,12 @@ class DQRLAgentDist:
         self.target_update_counter = 0
         self.last_action_table = []
         self.reqState_qs = {}
+        self.embedding_layer = Embedding(input_dim=20, output_dim=1)
+        self.attention_layer = Attention()
+
+        self.dense_proj = Dense(64, activation='relu')
+        self.mha = MultiHeadAttention(num_heads=4, key_dim=16)
+        self.ln = LayerNormalization()
     def print_weight(self , model):
         for r in model.get_weights():
             print(r)
@@ -207,7 +220,7 @@ class DQRLAgentDist:
         # model.add(Flatten())  # this converts our 3D feature maps to 1D feature vectors
         # model.add(Dense(64))
 
-        numAction = self.env.SIZE 
+        numAction = self.SIZE 
         numInput = self.OBSERVATION_SPACE_VALUES[0]*self.OBSERVATION_SPACE_VALUES[1]
         layer1 = int((math.sqrt(numInput) +2*numAction) //3)
         layer2 = int((math.sqrt(numInput) +numAction) //4)
@@ -234,10 +247,10 @@ class DQRLAgentDist:
 
 
         model.add(Flatten(input_shape = self.OBSERVATION_SPACE_VALUES))  
-        # model.add(Dense(self.env.SIZE * 20 , activation='relu'))
-        # model.add(Dense(self.env.SIZE * 10 , activation='relu'))
+        # model.add(Dense(self.SIZE * 20 , activation='relu'))
+        # model.add(Dense(self.SIZE * 10 , activation='relu'))
         # # model.add(Dense(72 , activation='relu'))
-        # model.add(Dense(self.env.SIZE * 5 , activation='relu'))
+        # model.add(Dense(self.SIZE * 5 , activation='relu'))
         model.add(Dense(layer1, activation='relu'))
         # model.add(Dense(layer2 , activation='relu'))
         model.add(Dense(layer3 , activation='relu'))
@@ -245,8 +258,8 @@ class DQRLAgentDist:
         # model.add(Conv2D(32, 3, activation="relu"))
         # model.add(Flatten)
 
-        model.add(Dense(self.env.SIZE, activation='linear')) 
-        # model.add(Dense(self.env.SIZE , activation='linear')) 
+        model.add(Dense(self.SIZE, activation='linear')) 
+        # model.add(Dense(self.SIZE , activation='linear')) 
         # print(model.summary)
         # print('------------------self.model.get_weights()-------------------')
         # print(model.get_weights())
@@ -292,7 +305,7 @@ class DQRLAgentDist:
 
 
     # Trains main network every step during episode
-    def train(self, terminal_state, step):
+    def train(self, terminal_state):
         t1 = time.time()
 
         # Start training only if certain number of samples is already saved
@@ -362,7 +375,7 @@ class DQRLAgentDist:
             #     # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index])
             #     new_q = reward + DISCOUNT * max_future_q
             if not done:
-                max_future_q = self.env.max_future_q_dist( future_qs_list[index], mask)
+                max_future_q = self.max_future_q_dist( future_qs_list[index], mask)
                 qval = current_qs_list[index][action]
                     
                 # print('++++++++++++++++++++++++++++ ' , reward , max_future_q, current_qs_list[index][action])
@@ -410,7 +423,60 @@ class DQRLAgentDist:
             self.target_update_counter = 0
 
     # Queries main network for Q values given current observation space (environment state)
+    def max_future_q_dist(self , qs, mask):
 
+
+        return np.max(self.neighbor_qs_schedule_route( qs , mask))
+    def neighbor_qs_schedule_route(self, qs, mask=None):
+        if mask is None:
+            mask = self.get_mask_shcedule_route()
+
+        # Convert mask to a NumPy array for efficient operations
+        mask = np.array(mask)
+        
+        # Set qs values to a very low value where mask is None
+        min_val = -sys.maxsize - 1
+        masked_qs = np.where(mask == 1, qs, min_val)
+    
+        return masked_qs.tolist()
+    def get_mask_shcedule_route(self):
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        for link in self.algo.topo.links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+        
+
+        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
+        for reqState in self.algo.requestState:
+
+            src,dst,current_node , path , index , done = reqState
+            # print('in get mask +++==== ' , src.id,dst.id,current_node.id , path , index , done)
+
+            if done:
+                continue
+            neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
+            for n in neighbors:
+                if n not in path and n != current_node.id:
+                    mask[index*self.SIZE + n] = 1
+        # print('get mask ' , mask)
+        if not mask.count(1):
+            mask = self.get_mask__request_shcedule_route()
+        return mask
+    def get_mask__request_shcedule_route(self):
+        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
+        for reqState in self.algo.requestState:
+
+            src,dst,current_node , path , index , done = reqState
+            # print('in get req mask +++==== ' , src.id,dst.id,current_node.id , path , index , done)
+            if done:
+                continue
+            for n in range(self.SIZE):
+                    mask[index*self.SIZE + n] = 1
+        return mask
     def get_qs_batch(self, states):
         # t = time.time()
         # sts = list()
@@ -435,228 +501,190 @@ class DQRLAgentDist:
         # print('predict time&&&&&&&&  ' , time.time()-t)
         return ret
 
+    def get_state_graph_and_dist(self):
+        state_graph = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+        state_dist = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+        # shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+        shared_nodes = self.algo.topo.nodes
+        links = set()
+        for node in shared_nodes:
+            for link in node.links:
+                links.add(link)
+        
+
+        for link in links:
+            if link.isEntangled() and not link.taken:
+                n1, n2 = link.n1.id, link.n2.id
+                state_graph[n1][n2] += 1
+                state_graph[n2][n1] += 1
+                state_dist[n1][n2] = link.fidelity
+                state_dist[n2][n1] = link.fidelity
+
+        return state_graph, state_dist
+
+
+    # === 2. Request embeddings ===
+    def get_request_embeddings(self, requests):
+        features = []
+        for req in requests:
+            vec = [0] * self.SIZE
+            if not req[5]:  # if not completed
+                vec[req[2].id] = 1  # current node
+                vec[req[1].id] = 10  # destination
+            features.append(vec)
+        return tf.convert_to_tensor(features, dtype=tf.float32)
+
+
+    # === 3. Request-level attention ===
+    def apply_request_attention(self, request_tensor):
+
+
+        # Project to 64D
+        proj = self.dense_proj(request_tensor)  # shape: [num_requests, 64]
+
+        # Add batch dimension
+        proj = tf.expand_dims(proj, axis=0)  # shape: [1, num_requests, 64]
+
+        # Apply MHA
+        attn_out = self.mha(query=proj, key=proj, value=proj)  # Correct usage
+
+        # Residual + LayerNorm
+        output = self.ln(proj + attn_out)  # shape: [1, num_requests, 64]
+
+        return tf.squeeze(output, axis=0)  # shape: [num_requests, 64]
+
+    # === 4. Neighbor embedding ===
+    def get_neighbor_embeddings(self, state_graph, current_node_id):
+        neighbors = state_graph[current_node_id]
+        neighbor_feats = []
+        for node_id, has_link in enumerate(neighbors):
+            if has_link > 0:
+                feat = [0] * self.SIZE
+                feat[node_id] = 1  # one-hot neighbor
+                vec = tf.convert_to_tensor(feat, dtype=tf.float32)
+                vec = tf.expand_dims(vec, axis=0)  # (1, SIZE)
+                vec = Dense(64, activation='relu')(vec)
+                vec = tf.squeeze(vec, axis=0)      # (64,)
+                neighbor_feats.append(vec)
+        return neighbor_feats
+
+
+
+    # === 5. Neighbor attention ===
+    def apply_neighbor_attention(self, curr_emb, neighbor_embs):
+        if not neighbor_embs:
+            return np.zeros(64)
+        stack = tf.stack(neighbor_embs)  # [num_neighbors, 64]
+        query = tf.expand_dims(curr_emb, axis=0)  # [1, 64]
+        scores = tf.matmul(query, stack, transpose_b=True) / tf.math.sqrt(64.0)
+        weights = tf.nn.softmax(scores, axis=-1)
+        context = tf.matmul(weights, stack)[0].numpy()
+        return context
+
+
+    # === 6. Main function ===
+    def schedule_routing_state_dist(self, curr_req, requests=None):
+        if requests is None:
+            requests = self.algo.requestState
+
+        # 1. Link matrices
+        state_graph, state_dist = self.get_state_graph_and_dist()
+
+        state_graph_flat = np.array(state_graph).flatten()  # shape: [SIZE × SIZE]
+        state_dist_flat = np.array(state_dist).flatten()    # shape: [SIZE × SIZE]
+        
+        # 2. Request embeddings
+        req_tensor = self.get_request_embeddings(requests)
+
+        # 3. Apply self-attention
+        attn_encoded = self.apply_request_attention(req_tensor).numpy()
+
+        # 4. Locate current request
+        try:
+            curr_index = requests.index(curr_req)
+        except ValueError:
+            curr_index = next(
+                (i for i, r in enumerate(requests)
+                if r[1].id == curr_req[1].id and r[2].id == curr_req[2].id),
+                0
+            )
+
+        curr_emb = attn_encoded[curr_index]
+
+        # 5. Neighbor context
+        neighbor_embs = self.get_neighbor_embeddings(state_graph, curr_req[2].id)
+        context_vec = self.apply_neighbor_attention(curr_emb, neighbor_embs)
+
+        # 6. Local info
+        local = [0] * self.SIZE
+        local[curr_req[2].id] = 10
+        local[curr_req[1].id] = 10
+
+        # 7. Final state vector
+        ret = np.concatenate([
+            curr_emb,         # attention-aware request embedding
+            context_vec,      # neighbor context
+            np.array(local),   # current and destination
+            state_graph_flat,
+            state_dist_flat
+        ])
+
+        # print(ret)
+        # exit()
+
+        return ret
     
+    def get_mask_one_req_schedule_route(self , reqState ):
+        mask = [None for _ in range(self.SIZE)]
+        state_graph = [[0 for column in range(self.SIZE)]
+                      for row in range(self.SIZE)]
+        # shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+        shared_nodes = self.algo.topo.nodes
+        links = set()
+        for node in shared_nodes:
+            for link in node.links:
+                links.add(link)
+        for link in links:
+            if link.isEntangled() and not link.taken:
+                n1 = link.n1.id
+                n2 = link.n2.id
+                state_graph[n1][n2] = 1
+                state_graph[n2][n1] = 1
+        src,dst,current_node , path , index , done = reqState
+
+        neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
+        # print('in get mask +++==== ' , src.id,dst.id,current_node.id , neighbors)
+        for n in neighbors:
+            if n not in path and n != current_node.id:
+                mask[ n] = 1
+
+        if not mask.count(1): #make a random mask
+            mask = [1 for _ in range(self.SIZE)]
+
+        return np.array(mask)
+    def find_reward_routing(self, request , timeSlot,current_node_id,  action):
+        reward = 0
+        # print('------------find_reward_routing---------' , current_node_id)
+        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node_id) + '_' + str(action)
+        reward  = self.algo.topo.reward_routing[key]
+
+        # if (request,current_node_id , action) in self.algo.topo.reward_routing:
+        #     print('------------find_reward_routing---------')
+        #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + current_id + '_' + action.id
+        #     reward = self.algotopo.reward_routing[key]
+        # else:
+        #     reward = -10
+        return reward
     
-    # def update_last_action_table(self , action , timeSlot , current_state , next_state):
-
-
-    # def learn_and_predict(self):
-    #     global EPSILON_
-    #     t1 = time.time()
-    #     edges = self.env.algo.topo.edges
-    #     timeSlot = self.env.algo.timeSlot
-    #     link_action_q = []
-
-
-    #     # -----sequntial prediction----
-
-       
-
-    #     # for pair in state:
-    #     for link in edges:
-    #         self.get_link_qs_batch([link] , timeSlot)
-    #         current_state , qs = self.link_qs[link]
-    #         if np.random.random() > EPSILON_:
-    #             # Get action from Q net
-    #             # print('------self.get_qs(current_state)-----')
-    #             # print(self.get_qs(current_state))
-    #             t2 = time.time()
-
-    #             action = np.argmax(qs)
-    #             q = qs[action]
-    #             # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
-
-    #         else:
-    #             # Get random action
-    #             action = np.random.randint(0, 2)
-    #             q = qs[action]
-
-    #         next_state  = self.env.assignQubitEdge(link , action , timeSlot)
-    #         if next_state is None:
-    #             next_state = current_state
-            
-    #         if not link in self.last_action_table:
-    #             self.last_action_table[link] = [(action , timeSlot , current_state , next_state)]
-    #         else:
-    #             self.last_action_table[link].append((action , timeSlot , current_state , next_state))
-        
-
-    #     if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
-    #         EPSILON_ -= EPSILON_DECAY_VALUE
-
-    #     self.link_qs = {}
-    #     print('**learn_and_predict multicore ent dqrl done in ' , time.time() - t1 , 'seconds')
-
-    # def learn_and_predict(self):
-    #     assignable = True
-    #     while assignable:
-    #         assignable = self.learn_and_predict2()
-    #         if 'no_repeat' in self.env.algo.name:
-    #             break
-    def get_next_node_qs_batch(self , requestStates , timeSlot):
-        # print('in get p q')
-        if not len(requestStates):
-            return
-        states = []
-        for reqState in requestStates:
-            request = (reqState[0] , reqState[1])
-            current_node = reqState[2]
-            path = reqState[3]
-            current_state = self.env.routing_state(request , current_node.id ,path ,  timeSlot )
-
-            # print(current_state)
-            states.append((reqState , current_state))
-
-        # print('getting qs')
-        # print(states)
-        qs = self.get_qs_batch(states)
-        # print('getting qs done! '  , len(qs))
-        for i in range(len(states)):
-            reqState , current_state = states[i]
-            self.reqState_qs[reqState] = (current_state , qs[i]) #wip
-    def learn_and_predict_next_node_batch(self , requestStates):
-        global EPSILON_
-        timeSlot = self.env.algo.timeSlot
-        reqState_action_q = []
-
-        self.get_next_node_qs_batch(requestStates , timeSlot)
-
-        for reqState in self.reqState_qs:
-
-            current_state , qs = self.reqState_qs[reqState]
-            current_node = reqState[2]
-            path = reqState[3]
-            index = reqState[4]
-            # print(qs)
-            
-            if np.random.random() > EPSILON_:
-                # next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , self.get_qs(current_state)))
-                next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , qs))
-
-                q = qs[next_node]
-                # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
-
-            else:
-                # Get random action
-                if np.random.random() > 0 :
-                    next_node = self.env.rand_neighbor(current_node.id , current_state,path)
-                else:
-                    next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
-
-
-                q = qs[next_node]
-            # next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
-            # q = qs[next_node]
-
-
-            reqState_action_q.append((reqState , next_node , q , current_state))
-        
-        # if np.random.random() > EPSILON_:
-        #     link_action_q.sort(key=lambda x: x[2], reverse=True)
-            
-        if np.random.random() > EPSILON_:
-            reqState_action_q.sort(key=lambda x: x[2], reverse=True)
-        self.reqState_qs = {}
-
-        return reqState_action_q
-    
-    # def learn_and_predict_next_node_batch_shortest(self , requestStates):
-    #     global EPSILON_
-    #     timeSlot = self.env.algo.timeSlot
-    #     reqState_action_q = []
-
-    #     self.get_next_node_qs_batch(requestStates , timeSlot)
-
-    #     for reqState in self.reqState_qs:
-
-    #         current_state , qs = self.reqState_qs[reqState]
-    #         current_node = reqState[2]
-    #         path = reqState[3]
-    #         index = reqState[4]
-    #         # print(qs)
-            
-    #         next_node = self.env.next_node_from_shortest(current_node.id , current_state, path , qs)
-    #         # next_node = np.argmin(current_state[self.env.SIZE + 2])
-    #         # print('========= ' , next_node)
-    #         # print(current_state)
-    #         q = qs[next_node]
-    #             # print('--- get_qs-- ' , time.time() - t2 , 'seconds')
-
-
-    #         reqState_action_q.append((reqState , next_node , q , current_state))
-        
-    #     # if np.random.random() > EPSILON_:
-    #     #     link_action_q.sort(key=lambda x: x[2], reverse=True)
-            
-    #     if np.random.random() > EPSILON_:
-    #         reqState_action_q.sort(key=lambda x: x[2], reverse=True)
-    #     self.reqState_qs = {}
-
-    #     return reqState_action_q
-
-
-    # def learn_and_predict_next_node(self , request , current_node , path):
-    #     global EPSILON_
-    #     timeSlot = self.env.algo.timeSlot
-    #     current_state = self.env.routing_state(request , current_node.id ,path ,  timeSlot )
-    #     if np.random.random() > EPSILON_:
-
-    #         t2 = time.time()
-
-    #         # next_node = np.argmax(self.get_qs(current_state))
-    #         next_node = np.argmax(self.env.neighbor_qs(current_node.id , current_state, path , self.get_qs(current_state)))
-            
-    #     else:  
-    #         # next_node = np.random.randint(0, self.env.SIZE)
-    #         next_node = self.env.rand_neighbor(current_node.id , current_state,path)
-        
-    #     return current_state, next_node
-    
-    # def learn_and_predict_next_req_node(self):
-    #     global EPSILON_
-    #     timeSlot = self.env.algo.timeSlot
-    #     p_time = 0
-    #     t1 = time.time()
-
-    #     current_state = self.env.schedule_routing_state()
-    #     # print('current_state = self.env.schedule_routing_state() time: ' , time.time() - t1)
-    #     t2 = time.time()
-    #     p_time += t2-t1
-
-    #     if np.random.random() > EPSILON_:
-
-
-    #         # next_node = np.argmax(self.get_qs(current_state))
-    #         qs = self.get_qs(current_state)
-    #         p_time += (time.time()-t2)/5
-    #         t2 = time.time() 
-    #         action = np.argmax(self.env.neighbor_qs_schedule_route(qs))
-    #         p_time += (time.time()-t2)
-    #         # print('action = np.argmax(self.env.neighbor_qs_schedule_route time: ' , time.time() - t2)
-
-            
-    #     else:  
-    #         # next_node = np.random.randint(0, self.env.SIZE)
-    #         action = self.env.rand_neighbor_schedule_route()
-    #         p_time += time.time()-t2
-    #         # print('action = rand_neighbor_schedule_routetime: ' , time.time() - t2)
-
-    #     self.env.algo.action_count[action] += 1
-    #     # print('aaaaccccttttiiioooonnn ' , action)
-    #     # print(request_index , next_node_id)
-        
-    #     return current_state, action , p_time
-
     def learn_and_predict_next_req_node_single(self, req):
         global EPSILON_
-        timeSlot = self.env.algo.timeSlot
 
         if req[5]:
             return None  # Request already checked/completed
 
-        current_state = self.env.schedule_routing_state_dist(req)
+        current_state = self.schedule_routing_state_dist(req)
         qs = self.get_qs(current_state)
-        mask = self.env.get_mask_one_req_schedule_route(req)
+        mask = self.get_mask_one_req_schedule_route(req)
         valid_actions = np.where(mask == 1)[0]
         valid_q_values = qs[valid_actions]
 
@@ -672,81 +700,22 @@ class DQRLAgentDist:
             random.shuffle(sorted_valid_actions)
 
         q = qs[action]
-        self.env.algo.action_count[action] += 1
+        # self.env.algo.action_count[action] += 1
 
         return [current_state, req[4], action, q, mask, sorted_valid_actions]
-    def learn_and_predict_next_req_node_all(self):
-        global EPSILON_
-        timeSlot = self.env.algo.timeSlot
-        states = []
-        for req in self.env.algo.requestState:
-            request_index = req[4]
-            current_node_id = req[2].id
-            path = req[3]
-            if not req[5]:
-                current_state = self.env.schedule_routing_state_dist(req)
-                states.append(current_state)
-        t = time.time()
-        qs = self.get_qs_batch(states)
-        # print('get_qs_batch time: ' , time.time() - t)
-        
-        ret = []
-        # masks = np.array([self.env.get_mask_one_req_schedule_route(req) for req in self.env.algo.requestState])
-        masks = self.env.get_mask_all_req_schedule_route()
-        # print('maaaaasssssskkk  ' , masks )
-        random_vals = np.random.random(len(self.env.algo.requestState))
-        
-        size = self.env.SIZE
-
-        si = 0
-        
-        for i, req in enumerate(self.env.algo.requestState):
-            if req[5]:
-                continue
-            mask = self.env.get_mask_one_req_schedule_route(req)
-
-            valid_actions = np.where(mask == 1)[0]  # Extract valid actions using the mask
-            valid_q_values = qs[si][valid_actions]  # Filter Q values for valid actions
-
-            # Sort valid actions based on Q values in descending order
-            sorted_valid_actions = sorted(zip(valid_actions, valid_q_values), key=lambda x: x[1], reverse=True)
-
-            sorted_valid_actions = [action for action, q in sorted_valid_actions]
    
-            # print('mask ::::::::::::::::::' , mask , qs[i])
-            if random_vals[i] > EPSILON_:
-                action = np.argmax(np.where(mask == 1, qs[si], -np.inf))
-
-            else:
-                valid_actions = np.where(mask == 1)[0]
-                # print('valid_actions ::::::::::::::::::' , valid_actions , np.where(mask == 1))
-                action = np.random.choice(valid_actions)
-                random.shuffle(sorted_valid_actions)  # Use random.choice for selecting a random pair
-            
-            if req[5]:
-                action = -1
-       
-            current_state = states[si]
-            q = qs[si][action]
-            ret.append([current_state, i ,  action, q, mask , sorted_valid_actions])
-            self.env.algo.action_count[action] += 1
-            si+=1
-        # ret.sort(key=lambda x: x[3], reverse=True)  # Sort by Q value in descending order
-        
-        return ret
     
     def decode_schdeule_route_action(self, action):
-        request_index = math.floor(action / self.env.SIZE)
-        next_node_id = action % self.env.SIZE
+        request_index = math.floor(action / self.SIZE)
+        next_node_id = action % self.SIZE
         return request_index , next_node_id
-    def update_action(self , request ,current_node_id,  action  , current_state  , done):
+    def update_action(self , request ,current_node_id,  action  , current_state  , done , timeSlot):
         global EPSILON_
 
-        timeSlot = self.env.algo.timeSlot
         # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
         if not done:
             t = time.time()
-            next_state = self.env.schedule_routing_state_dist(request)
+            next_state = self.schedule_routing_state_dist(request)
             # print('update action get state time ' , time.time()-t)
         else:
             next_state = None
@@ -756,7 +725,7 @@ class DQRLAgentDist:
             next_state = current_state
         # done = False
         t = time.time()
-        mask = self.env.get_mask_one_req_schedule_route(request) #action is the next node id
+        mask = self.get_mask_one_req_schedule_route(request) #action is the next node id
         # print('update action get get_mask_shcedule_route time ' , time.time()-t)
         t = time.time()
         self.last_action_table.append((request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done))
@@ -764,10 +733,9 @@ class DQRLAgentDist:
 
 
     
-    def update_reward(self, numsuccessReq , avgFidelity):
+    def update_reward(self, numsuccessReq , avgFidelity , timeSlot):
         global EPSILON_
 
-        timeSlot = self.env.algo.timeSlot
         print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_table) )
         t1 = time.time()
         R = []
@@ -787,7 +755,7 @@ class DQRLAgentDist:
             req_id , next_node_id = self.decode_schdeule_route_action(action)
             req.append(request)
             # print('before find reward time ')
-            reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
+            reward = self.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
             # print('after find reward time ' )
             # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
             # print((request[0].id , request[1].id) , reward)
@@ -840,7 +808,7 @@ class DQRLAgentDist:
 
 
         ############################################
-        self.train(False , self.env.algo.timeSlot)
+        self.train(False )
         print('time train ' , time.time()-t5)
 
 

@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 import os
 from concurrent.futures import ProcessPoolExecutor
-from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , qManager, lock1, agent_lock,reward_lock
+from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , qManager, lock1, agent_lock,reward_lock, node_locks
 from multiprocessing.managers import BaseManager
 import dill
 
@@ -163,6 +163,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             agent_lock = Manager().Lock()
         if reward_lock is None:
             reward_lock = Manager().Lock()
+        global node_locks
+        for node in self.topo.nodes:
+            if node.id not in node_locks:
+                node_locks[node.id] = Manager().Lock()
         print('start p4 ' , self.name)
         # self.prep4()
 
@@ -185,14 +189,16 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 print('going to create qManager lock')
                 print('after create qManager lock')
 
-                args = [( reqState,lock1,agent_lock,reward_lock) for reqState in self.requestState]
+                args = [( reqState,lock1,agent_lock,reward_lock,node_locks) for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
                 # for _ in range(10):
                 #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
                 #     # route_schedule_single2(args[0])
                 # for link in self.topo.links:
                 #     mpredis.set('link_' + link.id, dill.dumps(link))
-                mpredis.set("shared_nodes", dill.dumps(self.topo.nodes))
+                # mpredis.set("shared_nodes", dill.dumps(self.topo.nodes))
+                # for node in self.topo.nodes:
+                #     mpredis.set("node_" + str(node.id), dill.dumps(node))
                 # mpredis.set("routing_agent", dill.dumps(self.routingAgent))
                 mpredis.set("reward_routing", dill.dumps(self.topo.reward_routing))
 
@@ -208,7 +214,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                     actions.extend(r[1])
                 print('total actionss ' , len(actions))
                 for  reqState ,current_node_id,  next_node_id  , current_state  , done_episode in actions:
-                    self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
+                    self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode, self.timeSlot)
                 print('total actionss after update ' , len(actions))
                 self.result.successfulRequestPerRound.append(successReq)
                 self.result.entanglementPerRound.append(successReq)
@@ -230,7 +236,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             if self.timeSlot <= 500000:
                 t = time.time()
                 
-                reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.result.fidelityPerRound[-1])
+                reward = self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.result.fidelityPerRound[-1], self.timeSlot)
                 reward = 0
                 print('time for update_reward ======== ' , time.time() - t)
 
@@ -264,9 +270,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
     def route_schedule_single(self ,  args):
         print('route_schedule_single called with algo#############################################:')
-        reqState,lock , agent_lock ,reward_lock =  args
+        reqState,lock , agent_lock ,reward_lock, node_locks =  args
         # agent = dill.loads(mpredis.get("routing_agent"))
+        tt = time.time()
         agent = self.routingAgent
+        print('$$$$$$$$$$$$$$$$$$$time to load agent ' , time.time() - tt)
         """
         Serve only one request (reqState) using the routing agent.
         reqState: [src, dst, current_node, path, index, checked]
@@ -291,33 +299,46 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         maxTry = self.maxTry
         fidelity = 1
         actions = []
+        tl = time.time()
+        swappSuccess = False
 
         while good_to_search and not success and numtry <= maxTry:
+            # break
             # Get next action for this request
+            t = time.time()
             with agent_lock:
                 result = agent.learn_and_predict_next_req_node_single(reqState)
+                # result = None
                 if result is None:
                     break
-            with lock:
-                t1 = time.time()
-                tl = time.time()
-                shared_nodes = dill.loads(mpredis.get("shared_nodes"))
-                el = 0
-                tk = 0
-                for n in shared_nodes:
-                    for l in n.links:
-                        if l.isEntangled(self.timeSlot):
-                            el += 1
-                        if l.notSwapped():
-                            tk += 1
+            # result = agent.learn_and_predict_next_req_node_single(reqState)
+            # if result is None:
+            #         break
+            # print('time to get action ' , time.time() - t)
+            t = time.time()
+            # with lock:
+                # t1 = time.time()
+            # shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+            shared_nodes = self.topo.nodes
+                # print('==shared_nodes load time ' , time.time() - t1)
+                # el = 0
+                # tk = 0
+                # for n in shared_nodes:
+                #     for l in n.links:
+                #         if l.isEntangled(self.timeSlot):
+                #             el += 1
+                #         if l.notSwapped():
+                #             tk += 1
                 # print('==shared_nodes load time ' , time.time() - t1 , ' ent links ' , el, ' taken links ' , tk)
                 # print('++++++process id:', os.getpid() , 'entering for processing')
 
 
-                current_state, req_id, next_node_id, q, mask, valid_actions = result
-                next_node = shared_nodes[next_node_id]
-                self.tst.append(os.getpid())
-                t1 = time.time()
+            current_state, req_id, next_node_id, q, mask, valid_actions = result
+            # next_node = dill.loads(mpredis.get("node_" + str(next_node_id)))
+
+            next_node = shared_nodes[next_node_id]
+            self.tst.append(os.getpid())
+            t1 = time.time()
 
                 # shared_topo = update_shared_topo(os.getpid())
                 # print('==shared_topo update time ' , time.time() - t1)
@@ -327,8 +348,20 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # shared_topo.tst.append(os.getpid())
 
                 # print('process id:', os.getpid(), 'thread id:', threading.get_ident() , set(shared_topo.tst))
-                current_node_id = current_node.id
-                current_node = shared_nodes[current_node.id]  # Get the current node object
+            current_node_id = current_node.id
+            current_node = shared_nodes[current_node.id]  # Get the current node object
+            # current_node = dill.loads(mpredis.get("node_" + str(current_node.id)))
+            cnlock = node_locks[current_node.id]
+            nnlock = node_locks[next_node.id]
+            # print('-------===----=-=-=-=-=going to acquire locks ' , current_node.id , next_node.id)
+            # locks = [cnlock, nnlock]
+            # if cnlock == nnlock:
+            #     locks = [cnlock]
+            # with lock in locks:
+            for lock in {cnlock, nnlock}:
+                lock.acquire()
+            try:
+                # print('-------===----=-=-=-=-=acquired locks ' , current_node.id , next_node.id)
                 # Find entangled links
                 ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
                 # print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
@@ -382,6 +415,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                     good_to_search = False
 
                 # Prepare for next hop
+                # t1 = time.time()
+                # mpredis.set("node_" + str(current_node.id), dill.dumps(current_node))
+                # mpredis.set("node_" + str(next_node.id), dill.dumps(next_node))
+                # print('==shared_nodes save time ' , time.time() - t1)
                 current_node = next_node
                 swappSuccess = True
                 if success:
@@ -448,16 +485,24 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 for link in usedLinks:
                     link.clearPhase4Swap()
                 # print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
-                mpredis.set("shared_nodes", dill.dumps(shared_nodes))
-                
+                # t1 = time.time()
+                # mpredis.set("shared_nodes", dill.dumps(shared_nodes))
+                # print('==shared_nodes save time ' , time.time() - t1)
+            finally:
+                for lock in {cnlock, nnlock}:
+                    lock.release()
             
             with reward_lock:
+                t1 = time.time()
                 reward_routing = dill.loads(mpredis.get("reward_routing"))
+                # print('==reward_routing load time ' , time.time() - t1)
                 try:
                     reward_routing[key] += reward
                 except:
                     reward_routing[key] = reward
-                mpredis.set("reward_routing", dill.dumps(reward_routing))    
+                t1 = time.time()
+                mpredis.set("reward_routing", dill.dumps(reward_routing))  
+                # print('==reward_routing save time ' , time.time() - t1)  
 
                 
             T = [r for r in self.requestState if not r[5]]
@@ -763,7 +808,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 p_time += time.time()-t2
 
             for (reqState , current_node_id , action  , current_state  , done_episode) in actions:
-                self.routingAgent.update_action( reqState ,current_node_id,  action  , current_state  , done_episode)
+                self.routingAgent.update_action( reqState ,current_node_id,  action  , current_state  , done_episode,self.timeSlot)
 
         t2 = time.time()
         self.result.usedLinks += len(usedLinks)
