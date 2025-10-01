@@ -505,7 +505,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             # Get next action for this request
             print('-------===----=-=-=-=-=going to get action ' , current_node_id , path , numtry)
             t = time.time()
-            with agent_lock:
+            # with agent_lock:
+            if True:
                 print('-------===----=-=-=-=-=acquired agent lock ' , current_node_id , path , numtry, reqState)
                 # result = agent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
                 result = self.get_action(reqState , ent_matrix, req_matrix,dist_matrix)

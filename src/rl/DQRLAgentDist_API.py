@@ -129,6 +129,7 @@ np.random.seed(1)
 # Create models folder
 if not os.path.isdir('models'):
     os.makedirs('models')
+table_lock = multiprocessing.Lock()
 
 class DQRLAgentDist:
     def __init__(self , pid = 0):
@@ -610,7 +611,8 @@ class DQRLAgentDist:
         mask = self.get_mask_one_req_schedule_route(request,ent_matrix , req_matrix) #action is the next node id
         # print('update action get get_mask_shcedule_route time ' , time.time()-t)
         t = time.time()
-        self.last_action_table.append((request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward))
+        with table_lock:
+            self.last_action_table.append((request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward))
         # print('update action  last_action_table.append( time ' , time.time()-t)
 
 
@@ -630,48 +632,49 @@ class DQRLAgentDist:
         req = []
         total_reward = 0
         trans = []
-        for i in range(len(self.last_action_table)-1 , -1 , -1):
-            t2 = time.time()
-            (request , action , ts ,current_node_id, current_state , next_state ,mask ,  done,reward) = self.last_action_table[i]
-            
-            # req_id , next_node_id = self.decode_schdeule_route_action(action)
-            # req.append(request)
-            print('before find reward time ')
-            # reward = self.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
-            # print('after find reward time ' )
-            # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
-            # print((request[0].id , request[1].id) , reward)
+        with table_lock:
+            for i in range(len(self.last_action_table)-1 , -1 , -1):
+                t2 = time.time()
+                (request , action , ts ,current_node_id, current_state , next_state ,mask ,  done,reward) = self.last_action_table[i]
+                
+                # req_id , next_node_id = self.decode_schdeule_route_action(action)
+                # req.append(request)
+                print('before find reward time ')
+                # reward = self.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
+                # print('after find reward time ' )
+                # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
+                # print((request[0].id , request[1].id) , reward)
 
 
-            # if len(R):
-            #     f = 0
+                # if len(R):
+                #     f = 0
 
 
-            #     reward = reward * ALPHA + GAMMA * R[-1]
+                #     reward = reward * ALPHA + GAMMA * R[-1]
 
-            #     reward /= pathlen
-            #     # print((request[0].id , request[1].id) , reward)
+                #     reward /= pathlen
+                #     # print((request[0].id , request[1].id) , reward)
 
-            #     # R.append(reward)
-                    
-            # else:
-            #     # reward = reward*ALPHA + numsuccessReq * GAMMA + avgFidelity* DELTA
-            #     reward = reward*ALPHA + numsuccessReq * GAMMA 
-            #     # reward = numsuccessReq
-            #     reward /= pathlen
-            #     R.append(reward)
-            # reward = reward*ALPHA + numsuccessReq * GAMMA 
-            reward = numsuccessReq
+                #     # R.append(reward)
+                        
+                # else:
+                #     # reward = reward*ALPHA + numsuccessReq * GAMMA + avgFidelity* DELTA
+                #     reward = reward*ALPHA + numsuccessReq * GAMMA 
+                #     # reward = numsuccessReq
+                #     reward /= pathlen
+                #     R.append(reward)
+                # reward = reward*ALPHA + numsuccessReq * GAMMA 
+                reward = numsuccessReq
 
-            # reward /=10
-            total_reward += reward
-            print('get reward time ' , time.time() -t2)
-            t3 = time.time()
-            transition = ( current_state, action, reward, next_state,mask,  done)
-            trans.append(transition)
+                # reward /=10
+                total_reward += reward
+                print('get reward time ' , time.time() -t2)
+                t3 = time.time()
+                transition = ( current_state, action, reward, next_state,mask,  done)
+                trans.append(transition)
 
 
-            # print('update  replay memory time ' , time.time() -t3)
+                # print('update  replay memory time ' , time.time() -t3)
         t4 = time.time()
         print('before update replay memory time ' , time.time()-t4)
         self.update_replay_memory(trans, numsuccessReq)

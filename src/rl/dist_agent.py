@@ -46,14 +46,20 @@ def make_json_safe(obj):
 
 
 @app.post("/update_action_batch")
-async def update_action_batch(params: UpdateActionBatchParams):
+async def update_action_batch(params: UpdateActionBatchParams, background_tasks: BackgroundTasks):
     results = []
     for p in params.batch:
         # Call your actual function here
-        result = agent.update_action(
-            p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
-            p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
-        )
+        def task(p):
+            return agent.update_action(
+                p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
+                p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
+            )
+        background_tasks.add_task(task, p)
+        # result = agent.update_action(
+        #     p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
+        #     p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
+        # )
 
     return {"results": 'success'}
 
