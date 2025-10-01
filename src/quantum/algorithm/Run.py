@@ -12,7 +12,7 @@ from AlgorithmBase import AlgorithmResult
 # from GreedyHopRouting import GreedyHopRouting
 
 # from REPS import REPS
-from REPS_rep import REPSREP
+# from REPS_rep import REPSREP
 
 # from MERR import MERR
 # from REPS_cache import REPSCACHE
@@ -64,30 +64,36 @@ sys.path.insert(0, "../../rl")
 
 
 # from DQNAgent import DQNAgent   
-from DQNAgentDist import DQNAgentDist
-from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD,clip_value
-from DQRLAgent import lr,START_EPSILON_DECAYING,SKIP_REWAD,MINIBATCH_SIZE,REPLAY_MEMORY_SIZE,DELTA
+# from DQNAgentDist import DQNAgentDist
+# from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD,clip_value
+# from DQRLAgent import lr,START_EPSILON_DECAYING,SKIP_REWAD,MINIBATCH_SIZE,REPLAY_MEMORY_SIZE,DELTA
+
+
+
+
+
 # from DQNAgentDistEnt import DQNAgentDistEnt
 # from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
 # from DQRLAgent import DQRLAgent
 # from SchedulerAgent import SchedulerAgent
 
-run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) + " DELTA = "+ str(DELTA) + " lr "+str(LEARNING_RATE)\
-+" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)\
-+", then done implemented+ skip link  rand 3 req 5 gs ute "\
-+str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
-+ " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
-+ str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-    +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
+run = ""
+# run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) + " DELTA = "+ str(DELTA) + " lr "+str(LEARNING_RATE)\
+# +" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)\
+# +", then done implemented+ skip link  rand 3 req 5 gs ute "\
+# +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
+# + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
+# + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
+#     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 5000
+ttime = 1000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 10
+gridSize = 3
 nodeNo = gridSize *gridSize
 # nodeNo = 50
-fixed = True
+fixed = False
 
 # alpha_ = 0.0007
 # alpha_ = .0002
@@ -96,7 +102,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [20]
+numOfRequestPerRound = [3]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
 # numOfNodes = [20]
@@ -126,8 +132,8 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
     #     agent = Agent(algo , pid)
     # if '_dqrl' in algo.name:
     #     agent = DQNAgent(algo , pid)
-    if '_distdqrl' in algo.name:
-        agent = DQNAgentDist(algo , pid)
+    # if '_distdqrl' in algo.name:
+    #     agent = DQNAgentDist(algo , pid)
     # if '_DIST' in algo.name:
     #     algo.executor = executor
     # if '_entdqrl' in algo.name:
@@ -144,15 +150,15 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
         timeSlot = min(ttime2,ttime)
 
     for i in range(timeSlot):
-        if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
-            agent.learn_and_predict()
+        # if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
+        #     agent.learn_and_predict()
 
         # print([(r[0].id, r[1].id) for r in requests[i]])
         
         result = algo.work(requests[i], i)
 
-        if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
-            agent.update_reward()
+    #     if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
+    #         agent.update_reward()
 
     if algo.name == "My" or 'SEER' in algo.name:
         print('============ in runThread', algo.name)

@@ -9,8 +9,6 @@ from collections import deque
 import time
 import random
 import os
-from RoutingEnv import RoutingEnv      #for ubuntu
-# from .RoutingEnv import RoutingEnv   #for mac
 import multiprocessing
 import math
 import warnings
@@ -24,7 +22,6 @@ import tensorflow as tf
 import pickle
 import glob
 import dill
-from quantum.topo.mp_helper import mpredis
 import sys
 
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
@@ -67,12 +64,12 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 # UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-START_EPSILON_DECAYING = 2000
-END_EPSILON_DECAYING = 4000
-REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 2000
+# END_EPSILON_DECAYING = 4000
+# REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
 # START_EPSILON_DECAYING = 1000
@@ -92,12 +89,12 @@ UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 
 # for testing
-# START_EPSILON_DECAYING = 10
-# END_EPSILON_DECAYING = 20
-# REPLAY_MEMORY_SIZE = 2000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10
+END_EPSILON_DECAYING = 20
+REPLAY_MEMORY_SIZE = 2000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
@@ -134,33 +131,23 @@ if not os.path.isdir('models'):
     os.makedirs('models')
 
 class DQRLAgentDist:
-    def __init__(self ,algo , pid):
-        self.algo = algo
+    def __init__(self , pid = 0):
+        self.pid = pid
 
 
 
 
     def initiate(self):
-        algo = self.algo
-        print('++++++++++initiating DQRL agent for:' , algo.name)
+        # algo = self.algo
+        print('++++++++++initiating DQRL agent for distributed routing++++++++++')
 
-        self.env = RoutingEnv(algo)
-        self.SIZE = self.env.SIZE
+        # self.env = RoutingEnv(algo)
+        self.SIZE = 9
 
-        # self.OBSERVATION_SPACE_VALUES = (self.SIZE *2 +2,self.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.SIZE  + 3,self.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.SIZE + 2 + self.env.algo.topo.numOfRequestPerRound,self.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.SIZE + self.SIZE*self.SIZE + self.SIZE,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound , 4*self.SIZE + self.SIZE*self.SIZE ,)  
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.SIZE + self.SIZE + 2, self.SIZE,)  
-        
-        
-        # self.OBSERVATION_SPACE_VALUES = (self.env.algo.topo.numOfRequestPerRound + self.SIZE + self.SIZE + 2, self.SIZE,)  
-        
+
         self.OBSERVATION_SPACE_VALUES = (128 + self.SIZE + 2 * (self.SIZE ** 2),1,)
 
-        self.model_name = algo.name+'_'+ str(len(algo.topo.nodes)) +'_'+str(algo.topo.alpha) +'_'+str(algo.topo.q)+'_'+str(algo.topo.fidelity_threshold) +'_'+'DQRLAgentDist.keras'
-
+        self.model_name = 'DQRL_dist_' + str(self.SIZE)
         # Main model
         self.model = self.create_model()
 
@@ -429,8 +416,11 @@ class DQRLAgentDist:
         return np.max(self.neighbor_qs_schedule_route( qs , mask))
     def neighbor_qs_schedule_route(self, qs, mask=None):
         if mask is None:
-            mask = self.get_mask_shcedule_route()
-
+            try:
+                mask = self.get_mask_shcedule_route()
+            except:
+                print('====================no mask found in neighbor_qs_schedule_route===============')
+                mask = [1 for _ in range(len(qs))]
         # Convert mask to a NumPy array for efficient operations
         mask = np.array(mask)
         
@@ -439,36 +429,29 @@ class DQRLAgentDist:
         masked_qs = np.where(mask == 1, qs, min_val)
     
         return masked_qs.tolist()
-    def get_mask_shcedule_route(self):
-        state_graph = [[0 for column in range(self.SIZE)]
-                      for row in range(self.SIZE)]
-        for link in self.algo.topo.links:
-            if link.isEntangled() and not link.taken:
-                n1 = link.n1.id
-                n2 = link.n2.id
-                state_graph[n1][n2] = 1
-                state_graph[n2][n1] = 1
+    def get_mask_shcedule_route(self,ent_matrix=None, req_matrix=None):
+
         
+        state_graph = ent_matrix
+        mask = [None for _ in range(len(req_matrix) * self.SIZE)]
+        for reqState in req_matrix:
 
-        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
-        for reqState in self.algo.requestState:
-
-            src,dst,current_node , path , index , done = reqState
+            src,dst,current_node_id ,path , index , done = reqState
             # print('in get mask +++==== ' , src.id,dst.id,current_node.id , path , index , done)
 
             if done:
                 continue
-            neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
+            neighbors = [i for i, x in enumerate(state_graph[current_node_id]) if x >= 1]
             for n in neighbors:
-                if n not in path and n != current_node.id:
+                if n != current_node_id:
                     mask[index*self.SIZE + n] = 1
         # print('get mask ' , mask)
         if not mask.count(1):
-            mask = self.get_mask__request_shcedule_route()
+            mask = self.get_mask__request_shcedule_route(req_matrix)
         return mask
-    def get_mask__request_shcedule_route(self):
-        mask = [None for _ in range(self.algo.topo.numOfRequestPerRound * self.SIZE)]
-        for reqState in self.algo.requestState:
+    def get_mask__request_shcedule_route(self, req_matrix):
+        mask = [None for _ in range(len(req_matrix) * self.SIZE)]
+        for reqState in req_matrix:
 
             src,dst,current_node , path , index , done = reqState
             # print('in get req mask +++==== ' , src.id,dst.id,current_node.id , path , index , done)
@@ -501,37 +484,39 @@ class DQRLAgentDist:
         # print('predict time&&&&&&&&  ' , time.time()-t)
         return ret
 
-    def get_state_graph_and_dist(self):
-        state_graph = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
-        state_dist = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
-        # shared_nodes = dill.loads(mpredis.get("shared_nodes"))
-        shared_nodes = self.algo.topo.nodes
-        links = set()
-        for node in shared_nodes:
-            for link in node.links:
-                links.add(link)
+    # def get_state_graph_and_dist(self, ent_matrix=None, req_matrix=None,dist_matrix=None):
+    #     state_graph = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+    #     state_dist = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+    #     # shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+    #     shared_nodes = self.algo.topo.nodes
+    #     links = set()
+    #     for node in shared_nodes:
+    #         for link in node.links:
+    #             links.add(link)
         
 
-        for link in links:
-            if link.isEntangled() and not link.taken:
-                n1, n2 = link.n1.id, link.n2.id
-                state_graph[n1][n2] += 1
-                state_graph[n2][n1] += 1
-                state_dist[n1][n2] = link.fidelity
-                state_dist[n2][n1] = link.fidelity
+    #     for link in links:
+    #         if link.isEntangled() and not link.taken:
+    #             n1, n2 = link.n1.id, link.n2.id
+    #             state_graph[n1][n2] += 1
+    #             state_graph[n2][n1] += 1
+    #             state_dist[n1][n2] = link.fidelity
+    #             state_dist[n2][n1] = link.fidelity
 
-        return state_graph, state_dist
+    #     return state_graph, state_dist
 
 
     # === 2. Request embeddings ===
-    def get_request_embeddings(self, requests):
+    def get_request_embeddings(self, req_matrix):
+        print('get_request_embeddings called' , len(req_matrix))
         features = []
-        for req in requests:
+        for req in req_matrix:
             vec = [0] * self.SIZE
             if not req[5]:  # if not completed
-                vec[req[2].id] = 1  # current node
-                vec[req[1].id] = 10  # destination
+                vec[req[0]] = 1  # current node
+                vec[req[1]] = 10  # destination
             features.append(vec)
+        print('get_request_embeddings before return')
         return tf.convert_to_tensor(features, dtype=tf.float32)
 
 
@@ -583,41 +568,39 @@ class DQRLAgentDist:
 
 
     # === 6. Main function ===
-    def schedule_routing_state_dist(self, curr_req, requests=None):
-        if requests is None:
-            requests = self.algo.requestState
+    def schedule_routing_state_dist(self, curr_req, ent_matrix=None, req_matrix=None, dist_matrix=None):
+
 
         # 1. Link matrices
-        state_graph, state_dist = self.get_state_graph_and_dist()
+        print('in schedule_routing_state_dist' )
+        state_graph, state_dist = ent_matrix, dist_matrix
+        print('state_graph found')
 
         state_graph_flat = np.array(state_graph).flatten()  # shape: [SIZE × SIZE]
         state_dist_flat = np.array(state_dist).flatten()    # shape: [SIZE × SIZE]
-        
+        print('state_graph_flat found')
         # 2. Request embeddings
-        req_tensor = self.get_request_embeddings(requests)
+        req_tensor = self.get_request_embeddings(req_matrix)
+        print('req_tensor found')
 
         # 3. Apply self-attention
         attn_encoded = self.apply_request_attention(req_tensor).numpy()
-
+        print('attn_encoded found')
         # 4. Locate current request
-        try:
-            curr_index = requests.index(curr_req)
-        except ValueError:
-            curr_index = next(
-                (i for i, r in enumerate(requests)
-                if r[1].id == curr_req[1].id and r[2].id == curr_req[2].id),
-                0
-            )
+        curr_index = curr_req[4]
+        print('curr_index found' , curr_index)
 
         curr_emb = attn_encoded[curr_index]
 
         # 5. Neighbor context
-        neighbor_embs = self.get_neighbor_embeddings(state_graph, curr_req[2].id)
+        neighbor_embs = self.get_neighbor_embeddings(state_graph, curr_req[2])
+        print('neighbor_embs found' , len(neighbor_embs))
         context_vec = self.apply_neighbor_attention(curr_emb, neighbor_embs)
+        print('context_vec found')
 
         # 6. Local info
         local = [0] * self.SIZE
-        local[curr_req[2].id] = 10
+        local[curr_req[2]] = 10
         local[curr_req[1].id] = 10
 
         # 7. Final state vector
@@ -634,57 +617,48 @@ class DQRLAgentDist:
 
         return ret
     
-    def get_mask_one_req_schedule_route(self , reqState ):
+    def get_mask_one_req_schedule_route(self , reqState , ent_matrix=None, req_matrix=None):
         mask = [None for _ in range(self.SIZE)]
-        state_graph = [[0 for column in range(self.SIZE)]
-                      for row in range(self.SIZE)]
-        # shared_nodes = dill.loads(mpredis.get("shared_nodes"))
-        shared_nodes = self.algo.topo.nodes
-        links = set()
-        for node in shared_nodes:
-            for link in node.links:
-                links.add(link)
-        for link in links:
-            if link.isEntangled() and not link.taken:
-                n1 = link.n1.id
-                n2 = link.n2.id
-                state_graph[n1][n2] = 1
-                state_graph[n2][n1] = 1
-        src,dst,current_node , path , index , done = reqState
+        
 
-        neighbors = [i for i, x in enumerate(state_graph[current_node.id]) if x == 1]
+        src,dst,current_node_id , path , index , done = reqState
+        state_graph = ent_matrix
+
+        neighbors = [i for i, x in enumerate(state_graph[current_node_id]) if x >= 1]
         # print('in get mask +++==== ' , src.id,dst.id,current_node.id , neighbors)
         for n in neighbors:
-            if n not in path and n != current_node.id:
+            if n not in path and n != current_node_id:
                 mask[ n] = 1
 
         if not mask.count(1): #make a random mask
             mask = [1 for _ in range(self.SIZE)]
 
         return np.array(mask)
-    def find_reward_routing(self, request , timeSlot,current_node_id,  action):
-        reward = 0
-        # print('------------find_reward_routing---------' , current_node_id)
-        key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node_id) + '_' + str(action)
-        reward  = self.algo.topo.reward_routing[key]
-
-        # if (request,current_node_id , action) in self.algo.topo.reward_routing:
-        #     print('------------find_reward_routing---------')
-        #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + current_id + '_' + action.id
-        #     reward = self.algotopo.reward_routing[key]
-        # else:
-        #     reward = -10
-        return reward
+    # def find_reward_routing(self, request , timeSlot,current_node_id,  action):
+    #     reward = 0
+    #     print('------------find_reward_routing---------' , current_node_id)
+    #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + str(current_node_id) + '_' + str(action)
+    #     print('key' , key)
+    #     reward  = self.algo.topo.reward_routing[key]
+    #     print('reward' , reward)
+    #     # if (request,current_node_id , action) in self.algo.topo.reward_routing:
+    #     #     print('------------find_reward_routing---------')
+    #     #     key = str(request[0].id) + '_' + str(request[1].id) + '_' + current_id + '_' + action.id
+    #     #     reward = self.algotopo.reward_routing[key]
+    #     # else:
+    #     #     reward = -10
+    #     return reward
     
-    def learn_and_predict_next_req_node_single(self, req):
+    def learn_and_predict_next_req_node_single(self, req, ent_matrix , req_matrix,dist_matrix):
         global EPSILON_
 
         if req[5]:
             return None  # Request already checked/completed
 
-        current_state = self.schedule_routing_state_dist(req)
+        current_state = self.schedule_routing_state_dist(req , ent_matrix , req_matrix, dist_matrix)
+        print('current_state')
         qs = self.get_qs(current_state)
-        mask = self.get_mask_one_req_schedule_route(req)
+        mask = self.get_mask_one_req_schedule_route(req, ent_matrix , req_matrix)
         valid_actions = np.where(mask == 1)[0]
         valid_q_values = qs[valid_actions]
 
@@ -709,13 +683,13 @@ class DQRLAgentDist:
         request_index = math.floor(action / self.SIZE)
         next_node_id = action % self.SIZE
         return request_index , next_node_id
-    def update_action(self , request ,current_node_id,  action  , current_state  , done , timeSlot):
+    def update_action(self , request ,current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix):
         global EPSILON_
 
         # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
         if not done:
             t = time.time()
-            next_state = self.schedule_routing_state_dist(request)
+            next_state = self.schedule_routing_state_dist(request, ent_matrix , req_matrix,dist_matrix)
             # print('update action get state time ' , time.time()-t)
         else:
             next_state = None
@@ -725,10 +699,10 @@ class DQRLAgentDist:
             next_state = current_state
         # done = False
         t = time.time()
-        mask = self.get_mask_one_req_schedule_route(request) #action is the next node id
+        mask = self.get_mask_one_req_schedule_route(request,ent_matrix , req_matrix) #action is the next node id
         # print('update action get get_mask_shcedule_route time ' , time.time()-t)
         t = time.time()
-        self.last_action_table.append((request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done))
+        self.last_action_table.append((request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward))
         # print('update action  last_action_table.append( time ' , time.time()-t)
 
 
@@ -750,12 +724,12 @@ class DQRLAgentDist:
         trans = []
         for i in range(len(self.last_action_table)-1 , -1 , -1):
             t2 = time.time()
-            (request , action , timeSlot ,current_node_id, current_state , next_state ,mask ,  done) = self.last_action_table[i]
+            (request , action , timeSlot ,current_node_id, current_state , next_state ,mask ,  done,reward) = self.last_action_table[i]
             
             req_id , next_node_id = self.decode_schdeule_route_action(action)
             req.append(request)
-            # print('before find reward time ')
-            reward = self.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
+            print('before find reward time ')
+            # reward = self.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
             # print('after find reward time ' )
             # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
             # print((request[0].id , request[1].id) , reward)
@@ -783,7 +757,7 @@ class DQRLAgentDist:
 
             # reward /=10
             total_reward += reward
-            # print('get reward time ' , time.time() -t2)
+            print('get reward time ' , time.time() -t2)
             t3 = time.time()
             transition = ( current_state, action, reward, next_state,mask,  done)
             trans.append(transition)
@@ -791,6 +765,7 @@ class DQRLAgentDist:
 
             # print('update  replay memory time ' , time.time() -t3)
         t4 = time.time()
+        print('before update replay memory time ' , time.time()-t4)
         self.update_replay_memory(trans, numsuccessReq)
         # if (timeSlot+1) % 500 == 0:
         #     self.save_replay_memory(timeSlot)
@@ -803,7 +778,7 @@ class DQRLAgentDist:
             
             # print(R)
         print('time for update memory ' , time.time()-t4)
-        self.env.algo.topo.reward_routing = {}
+        # self.env.algo.topo.reward_routing = {}
         t5 = time.time()
 
 

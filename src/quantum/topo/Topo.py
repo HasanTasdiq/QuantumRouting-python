@@ -13,7 +13,7 @@ from itertools import islice
 from random import sample
 import itertools
 import time
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from .helper import entanglement_lifetimeslot
 from random import sample
 import pickle
@@ -625,34 +625,34 @@ class Topo:
         # G.pos = pos
         G = nx.relabel_nodes(G, mapping)
         return G
-    def draw_graph( G):
-        pos = nx.get_node_attributes(G, 'pos')
-        repeater_nodes = []
-        end_nodes = []
-        for node in G.nodes():
-            end_nodes.append(node)
-        fig, ax = plt.subplots(figsize=(7, 7))
-        end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=150,
-                                        node_color=[[1.0, 120 / 255, 0.]], label="End Node", linewidths=3)
-        end_nodes.set_edgecolor('k')
-        rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=150,
-                                        node_color=[[1, 1, 1]], label="Repeater Node")
-        rep_nodes.set_edgecolor('k')
-        end_node_labels = {}
-        repeater_node_labels = {}
-        for node, nodedata in G.nodes.items():
-            end_node_labels[node] = node
+    # def draw_graph( G):
+    #     pos = nx.get_node_attributes(G, 'pos')
+    #     repeater_nodes = []
+    #     end_nodes = []
+    #     for node in G.nodes():
+    #         end_nodes.append(node)
+    #     fig, ax = plt.subplots(figsize=(7, 7))
+    #     end_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=end_nodes, node_shape='s', node_size=150,
+    #                                     node_color=[[1.0, 120 / 255, 0.]], label="End Node", linewidths=3)
+    #     end_nodes.set_edgecolor('k')
+    #     rep_nodes = nx.draw_networkx_nodes(G=G, pos=pos, nodelist=repeater_nodes, node_size=150,
+    #                                     node_color=[[1, 1, 1]], label="Repeater Node")
+    #     rep_nodes.set_edgecolor('k')
+    #     end_node_labels = {}
+    #     repeater_node_labels = {}
+    #     for node, nodedata in G.nodes.items():
+    #         end_node_labels[node] = node
 
-        nx.draw_networkx_labels(G=G, pos=pos, labels=end_node_labels, font_size=7, font_weight="bold", font_color="w",
-                                font_family='serif')
-        nx.draw_networkx_labels(G=G, pos=pos, labels=repeater_node_labels, font_size=5, font_weight="bold")
-        nx.draw_networkx_edges(G=G, pos=pos, width=1)
-        plt.axis('off')
-        margin = 0.33
-        fig.subplots_adjust(margin, margin, 1. - margin, 1. - margin)
-        ax.axis('equal')
-        fig.tight_layout()
-        plt.show()
+    #     nx.draw_networkx_labels(G=G, pos=pos, labels=end_node_labels, font_size=7, font_weight="bold", font_color="w",
+    #                             font_family='serif')
+    #     nx.draw_networkx_labels(G=G, pos=pos, labels=repeater_node_labels, font_size=5, font_weight="bold")
+    #     nx.draw_networkx_edges(G=G, pos=pos, width=1)
+    #     plt.axis('off')
+    #     margin = 0.33
+    #     fig.subplots_adjust(margin, margin, 1. - margin, 1. - margin)
+    #     ax.axis('equal')
+    #     fig.tight_layout()
+    #     plt.show()
 
     def widthPhase2(self, path):
         curMinWidth = min(path[0].remainingQubits, path[-1].remainingQubits)

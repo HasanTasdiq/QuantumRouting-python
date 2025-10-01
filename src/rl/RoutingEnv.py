@@ -690,7 +690,8 @@ class RoutingEnv(Env):
     def get_state_graph_and_dist(self):
         state_graph = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
         state_dist = [[0 for _ in range(self.SIZE)] for _ in range(self.SIZE)]
-        shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+        # shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+        shared_nodes = self.algo.topo.nodes
         links = set()
         for node in shared_nodes:
             for link in node.links:
@@ -1528,7 +1529,8 @@ class RoutingEnv(Env):
         mask = [None for _ in range(self.SIZE)]
         state_graph = [[0 for column in range(self.SIZE)]
                       for row in range(self.SIZE)]
-        shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+        # shared_nodes = dill.loads(mpredis.get("shared_nodes"))
+        shared_nodes = self.algo.topo.nodes
         links = set()
         for node in shared_nodes:
             for link in node.links:
