@@ -154,13 +154,14 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                     print([n.id for n in path])
         
     def get_ent_graph_matrix(self):
-        n = len(self.topo.nodes)
+        # n = len(self.topo.nodes)
+        n = 100
         matrix = np.zeros((n,n))
-        node_index = {self.topo.nodes[i].id : i for i in range(n)}
+        # node_index = {self.topo.nodes[i].id : i for i in range(n)}
         for link in self.topo.links:
             if link.isEntangled(self.timeSlot) and link.notSwapped() and not link.taken:
-                i = node_index[link.n1.id]
-                j = node_index[link.n2.id]
+                i = link.n1.id
+                j = link.n2.id
                 matrix[i][j] += 1
                 matrix[j][i] += 1
         return matrix
@@ -174,23 +175,25 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
         return node_matrix_info
     def dist_matrix(self):
-        n = len(self.topo.nodes)
+        # n = len(self.topo.nodes)
+        n = 100
         matrix = np.zeros((n,n))
-        node_index = {self.topo.nodes[i].id : i for i in range(n)}
+        # node_index = {self.topo.nodes[i].id : i for i in range(n)}
         for link in self.topo.links:
             if link.isEntangled(self.timeSlot) and link.notSwapped() and not link.taken:
-                i = node_index[link.n1.id]
-                j = node_index[link.n2.id]
+                i = link.n1.id
+                j = link.n2.id
                 matrix[i][j] = link.fidelity
                 matrix[j][i] = link.fidelity
 
         return matrix
     def q_matrix(self):
-        n = len(self.topo.nodes)
+        # n = len(self.topo.nodes)
+        n = 100
         matrix = np.zeros((n))
-        node_index = {self.topo.nodes[i].id : i for i in range(n)}
+        # node_index = {self.topo.nodes[i].id : i for i in range(n)}
         for node in self.topo.nodes:
-            i = node_index[node.id]
+            i = node.id
             matrix[i] = node.q
         print('q_matrix ' , matrix)
         return matrix
@@ -198,12 +201,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     def req_matrix(self):
         matrix = []
         paths = []
+        n = 100
         for req in self.requestState:
-            r = [0 for _ in range(len(self.topo.nodes))]
+            r = [0 for _ in range(n)]
             r[0] = req[0].id
             r[1] = req[1].id
             r[2] = req[2]
-            path = [0 for _ in range(len(self.topo.nodes))]
+            path = [0 for _ in range(n)]
             path[req[2]] = 1
         
             r[4] = req[4]
@@ -237,9 +241,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         if reward_lock is None:
             reward_lock = Manager().Lock()
         global node_locks
-        for node in self.topo.nodes:
-            if node.id not in node_locks:
-                node_locks[node.id] = Manager().Lock()
+        for i in range(100):
+            if i not in node_locks:
+                node_locks[i] = Manager().Lock()
         print('start p4 ' , self.name)
         # self.prep4()
 
