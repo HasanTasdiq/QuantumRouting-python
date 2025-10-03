@@ -195,7 +195,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         for node in self.topo.nodes:
             i = node.id
             matrix[i] = node.q
-        print('q_matrix ' , matrix)
+        # print('q_matrix ' , matrix)
         return matrix
     
     def req_matrix(self):
@@ -301,14 +301,19 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                     # print('r[1] ' , r[1])
                     # actions.append(r[1])
                 print('total actionss ' , len(actions))
+                ta = time.time()
 
                 try:
                     # for  index ,current_node_id,  next_node_id  , current_state  , done_episode,reward in actions:
                     #     self.routingAgent.update_action( index ,current_node_id,  next_node_id  , current_state  , done_episode, self.timeSlot,reward , node_matrix,req_matrix,dist_matrix)
+                    # for action in actions:
+                    #     self.call_update_action_batch([action])
+                    # self.call_update_action_batch(actions[:min(5, len(actions))])
                     self.call_update_action_batch(actions)
                 except Exception as e:
                     import traceback
                     traceback.print_exc()
+                print('time for update action ======== ' , time.time() - ta)
                 print('total actionss after update ' , len(actions))
                 self.result.successfulRequestPerRound.append(successReq)
                 self.result.entanglementPerRound.append(successReq)
@@ -503,22 +508,24 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         actions = []
         tl = time.time()
         swappSuccess = False
+        action_time = 0
 
         while good_to_search and not success and numtry <= maxTry:
             # break
             # Get next action for this request
-            print('-------===----=-=-=-=-=going to get action ' , current_node_id , path , numtry)
+            # print('-------===----=-=-=-=-=going to get action ' , current_node_id , path , numtry)
             t = time.time()
             # with agent_lock:
             if True:
-                print('-------===----=-=-=-=-=acquired agent lock ' , current_node_id , path , numtry, reqState)
+                # print('-------===----=-=-=-=-=acquired agent lock ' , current_node_id , path , numtry, reqState)
                 # result = agent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
                 result = self.get_action(reqState , ent_matrix, req_matrix,dist_matrix)
                 # result = None
+                action_time += time.time() - t
                 if result is None:
                     print('-------===----=-=-=-=-=no action found break' , current_node_id , path , numtry)
                     break
-            print('time to get action ' , time.time() - t)
+            # print('time to get action ' , time.time() - t)
             # result = agent.learn_and_predict_next_req_node_single(reqState)
             # if result is None:
             #         break
@@ -566,7 +573,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             # if cnlock == nnlock:
             #     locks = [cnlock]
             # with lock in locks:
-            print('-------===----=-=-=-=-=acquiring locks ' , current_node_id , next_node_id)
+            # print('-------===----=-=-=-=-=acquiring locks ' , current_node_id , next_node_id)
             for lock in {cnlock, nnlock}:
                 lock.acquire()
             try:
@@ -576,7 +583,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
                 key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node_id) + '_' + str(next_node_id)
                 # mpredis.set("shared_topo", dill.dumps(shared_topo))
-                print('going to find ent_links for ' , (current_node_id , next_node_id) , ' ent_matrix ' , ent_matrix[current_node_id] [next_node_id])
+                # print('going to find ent_links for ' , (current_node_id , next_node_id) , ' ent_matrix ' , ent_matrix[current_node_id] [next_node_id])
                 ent_links = ent_matrix[current_node_id] [next_node_id]
                 if not ent_links:
 
@@ -613,7 +620,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # usedLinks.extend(prev_links)
                 path.append(next_node_id)
                 req_done = (not good_to_search) or success
-                print('added to path')
+                # print('added to path')
 
                 reqState = (src,dst,next_node_id,tuple(path),index,req_done)
                 self.requestState[index] = reqState
@@ -634,7 +641,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 current_node_id = next_node_id
                 swappSuccess = True
                 if success:
-                    print('going to swap for ' , (src.id , dst.id ))
+                    # print('going to swap for ' , (src.id , dst.id ))
                     for i in range(1 , len(path)-1):
                         swapped = False
                         # print('qmatrix ' , q_matrix)
@@ -698,8 +705,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             finally:
                 for lock in {cnlock, nnlock}:
                     lock.release()
-                print('-------===----=-=-=-=-=released locks ' , current_node_id , next_node_id)
-            print('-------===----=-=-=-=-=released locks ' , current_node_id , next_node_id)
+                # print('-------===----=-=-=-=-=released locks ' , current_node_id , next_node_id)
+            # print('-------===----=-=-=-=-=released locks ' , current_node_id , next_node_id)
             # with reward_lock:
             #     t1 = time.time()
             #     # reward_routing = dill.loads(mpredis.get("reward_routing"))
@@ -715,12 +722,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
             T = [r for r in self.requestState if not r[5]]
             done_episode = (not good_to_search or success) and (len(T)==1)
+            current_state = (ent_matrix.copy().tolist(), req_matrix.copy().tolist())
             actions.append([index , current_node_id , next_node_id , current_state  , done_episode ,self.timeSlot,reward])
-            print('time for one hop2 ======== ' , time.time() - t , good_to_search , success , numtry , maxTry)
+            # print('time for one hop2 ======== ' , time.time() - t , good_to_search , success , numtry , maxTry)
             
             # with lock2:
             #     self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
-            
+        print('time in action selection ======== ' , action_time,'s, for {len(actions)} actions' )
         print('=================final process id:', os.getpid() , 'time taken:', time.time()-tl)
         return (success and swappSuccess , actions)
 

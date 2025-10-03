@@ -4,6 +4,8 @@ from pydantic import BaseModel
 import uvicorn
 from DQRLAgentDist_API import DQRLAgentDist  # replace with your actual module
 import numpy as np
+import psutil
+import os
 app = FastAPI()
 
 class UpdateActionParams(BaseModel):
@@ -48,14 +50,15 @@ def make_json_safe(obj):
 @app.post("/update_action_batch")
 async def update_action_batch(params: UpdateActionBatchParams, background_tasks: BackgroundTasks):
     results = []
+    print(f"=============Received batch of size: {len(params.batch)}")
     for p in params.batch:
-        # Call your actual function here
-        # def task(p):
-        #     return agent.update_action(
-        #         p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
-        #         p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
-        #     )
-        # background_tasks.add_task(task, p)
+    #     # Call your actual function here
+    #     def task(p):
+    #         return agent.update_action(
+    #             p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
+    #             p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
+    #         )
+    #     background_tasks.add_task(task, p)
         result = agent.update_action(
             p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
             p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
@@ -90,10 +93,40 @@ async def call_learn_and_predict(data: LearnPredictRequest):
         import traceback
         traceback.print_exc()
         return {"error": str(e)}
-    result = make_json_safe(result)
-    # print('==============learn_and_predict result:', result)
-    return {"result": result}
-    
+    # result = make_json_safe(result)
+
+    print('==============learn_and_predict result:', type(result[0]), type(result[1]))
+    print(type(result))
+    return {"result": [[], result[1]]}
+
+process = psutil.Process(os.getpid())
+
+@app.get("/debug_memory")
+def debug_memory():
+    mem = process.memory_info().rss / 1024 / 1024
+    return {"rss_MB": round(mem, 2)}
+import tracemalloc
+
+@app.on_event("startup")
+def start_tracing():
+    tracemalloc.start()
+
+@app.get("/snapshot")
+def snapshot():
+    snapshot = tracemalloc.take_snapshot()
+    # Group by traceback instead of just lineno
+    top_stats = snapshot.statistics("traceback")
+
+    report = []
+    for stat in top_stats[:10]:  # top 10 memory hogs
+        block = {
+            "size_MB": round(stat.size / 1024 / 1024, 2),
+            "count": stat.count,
+            "traceback": stat.traceback.format()  # list of stack frames
+        }
+        report.append(block)
+
+    return {"top": report}
 
 if __name__ == "__main__":
     agent = DQRLAgentDist()

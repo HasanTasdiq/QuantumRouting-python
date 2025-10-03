@@ -1,3 +1,4 @@
+import gc
 import numpy as np
 
 from keras.models import Sequential, load_model
@@ -23,6 +24,8 @@ import pickle
 import glob
 import dill
 import sys
+from objsize import get_deep_size
+
 
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 
@@ -64,20 +67,20 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 # UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-START_EPSILON_DECAYING = 2000
-END_EPSILON_DECAYING = 4000
-REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 2000
+# END_EPSILON_DECAYING = 4000
+# REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 100  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
-# START_EPSILON_DECAYING = 1000
-# END_EPSILON_DECAYING = 2500
-# REPLAY_MEMORY_SIZE = 12000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10
+END_EPSILON_DECAYING = 25
+REPLAY_MEMORY_SIZE = 3000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
 # START_EPSILON_DECAYING = 5000
@@ -91,7 +94,7 @@ UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 # for testing
 # START_EPSILON_DECAYING = 10
 # END_EPSILON_DECAYING = 20
-# REPLAY_MEMORY_SIZE = 2000  # How many last steps to keep for model training
+# REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
 # MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
 # MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
 # UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
@@ -268,6 +271,7 @@ class DQRLAgentDist:
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
+        print('----------size(self.replay memory)----------------', get_deep_size(self.replay_memory)/1024/1024 , 'MB')
 
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
@@ -426,7 +430,7 @@ class DQRLAgentDist:
 
     # === 2. Request embeddings ===
     def get_request_embeddings(self, req_matrix):
-        print('get_request_embeddings called' , len(req_matrix)//2)
+        # print('get_request_embeddings called' , len(req_matrix)//2)
         features = []
         for req in req_matrix:
             vec = [0] * self.SIZE
@@ -434,7 +438,7 @@ class DQRLAgentDist:
                 vec[req[0]] = 1  # current node
                 vec[req[1]] = 10  # destination
             features.append(vec)
-        print('get_request_embeddings before return')
+        # print('get_request_embeddings before return')
         return tf.convert_to_tensor(features, dtype=tf.float32)
 
 
@@ -490,31 +494,31 @@ class DQRLAgentDist:
 
 
         # 1. Link matrices
-        print('in schedule_routing_state_dist' )
+        # print('in schedule_routing_state_dist' )
         state_graph, state_dist = ent_matrix, dist_matrix
-        print('state_graph found')
+        # print('state_graph found')
 
         state_graph_flat = np.array(state_graph).flatten()  # shape: [SIZE × SIZE]
         state_dist_flat = np.array(state_dist).flatten()    # shape: [SIZE × SIZE]
-        print('state_graph_flat found')
+        # print('state_graph_flat found')
         # 2. Request embeddings
         req_tensor = self.get_request_embeddings(req_matrix)
-        print('req_tensor found')
+        # print('req_tensor found')
 
         # 3. Apply self-attention
         attn_encoded = self.apply_request_attention(req_tensor).numpy()
-        print('attn_encoded found')
+        # print('attn_encoded found')
         # 4. Locate current request
         curr_index = curr_req[4]
-        print('curr_index found' , curr_index)
+        # print('curr_index found' , curr_index)
 
         curr_emb = attn_encoded[curr_index]
 
         # 5. Neighbor context
         neighbor_embs = self.get_neighbor_embeddings(state_graph, curr_req[2])
-        print('neighbor_embs found' , len(neighbor_embs))
+        # print('neighbor_embs found' , len(neighbor_embs))
         context_vec = self.apply_neighbor_attention(curr_emb, neighbor_embs)
-        print('context_vec found')
+        # print('context_vec found')
 
         # 6. Local info
         local = [0] * self.SIZE
@@ -522,16 +526,34 @@ class DQRLAgentDist:
         local[curr_req[1]] = 10
 
         # 7. Final state vector
-        ret = np.concatenate([
-            curr_emb,         # attention-aware request embedding
-            context_vec,      # neighbor context
-            np.array(local),   # current and destination
-            state_graph_flat,
-            state_dist_flat
-        ])
+        # ret = np.concatenate([
+        #     curr_emb,         # attention-aware request embedding
+        #     context_vec,      # neighbor context
+        #     np.array(local),   # current and destination
+        #     state_graph_flat,
+        #     state_dist_flat
+        # ])
+        # del curr_emb, context_vec, local, state_graph_flat, state_dist_flat
 
         # print(ret)
         # exit()
+
+        total_len = curr_emb.size + context_vec.size + len(local) + len(state_graph_flat) + len(state_dist_flat)
+        # ret = np.empty(total_len, dtype=np.float32)
+        if not hasattr(self, "_concat_buffer") or self._concat_buffer.size < total_len:
+            self._concat_buffer = np.empty(total_len, dtype=np.float32)
+        ret = self._concat_buffer[:total_len]
+
+        start = 0
+        ret[start:start+curr_emb.size] = curr_emb
+        start += curr_emb.size
+        ret[start:start+context_vec.size] = context_vec
+        start += context_vec.size
+        ret[start:start+len(local)] = local
+        start += len(local)
+        ret[start:start+len(state_graph_flat)] = state_graph_flat
+        start += len(state_graph_flat)
+        ret[start:start+len(state_dist_flat)] = state_dist_flat
 
         return ret
     
@@ -563,7 +585,7 @@ class DQRLAgentDist:
             return None  # Request already checked/completed
 
         current_state = self.schedule_routing_state_dist(req , ent_matrix , req_matrix, dist_matrix)
-        print('current_state going to get qs')
+        # print('current_state going to get qs')
         qs = self.get_qs(current_state)
         mask = self.get_mask_one_req_schedule_route(req, ent_matrix , req_matrix)
         valid_actions = np.where(mask == 1)[0]
@@ -583,7 +605,7 @@ class DQRLAgentDist:
         q = qs[action]
         # self.env.algo.action_count[action] += 1
 
-        return [current_state.tolist() , action]
+        return [current_state.tolist() , int(action)]
    
     
     def decode_schdeule_route_action(self, action):
@@ -594,6 +616,13 @@ class DQRLAgentDist:
         global EPSILON_
         request = req_matrix[request_index][:6]
         request[3] = req_matrix[request_index + len(req_matrix)//2]
+        prev_ent_matrix = current_state[0]
+        prev_req_matrix = current_state[1]
+        prev_dist_matrix = dist_matrix
+        prev_request = prev_req_matrix[request_index][:6]
+        prev_request[3] = prev_req_matrix[request_index + len(prev_req_matrix)//2]
+
+        current_state = self.schedule_routing_state_dist(prev_request , prev_ent_matrix , prev_req_matrix, prev_dist_matrix)
 
         # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
         if not done:
@@ -615,7 +644,17 @@ class DQRLAgentDist:
             self.last_action_table.append((request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward))
         # print('update action  last_action_table.append( time ' , time.time()-t)
 
-
+        # del request
+        # del prev_request
+        # del prev_ent_matrix
+        # del prev_req_matrix
+        # del prev_dist_matrix
+        # del ent_matrix
+        # del req_matrix
+        # del dist_matrix
+        # del current_state
+        # del next_state
+        # gc.collect()
     
     def update_reward(self, numsuccessReq  , timeSlot):
         global EPSILON_
@@ -639,7 +678,7 @@ class DQRLAgentDist:
                 
                 # req_id , next_node_id = self.decode_schdeule_route_action(action)
                 # req.append(request)
-                print('before find reward time ')
+                # print('before find reward time ')
                 # reward = self.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
                 # print('after find reward time ' )
                 # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
@@ -668,7 +707,7 @@ class DQRLAgentDist:
 
                 # reward /=10
                 total_reward += reward
-                print('get reward time ' , time.time() -t2)
+                # print('get reward time ' , time.time() -t2)
                 t3 = time.time()
                 transition = ( current_state, action, reward, next_state,mask,  done)
                 trans.append(transition)
@@ -688,20 +727,23 @@ class DQRLAgentDist:
         self.train(False )
         print('time train ' , time.time()-t5)
 
-
+        print('===---------size of model memory----------------===-' , get_deep_size(self.model)/1024/1024 , 'MB')
+        print('===---------size of target model memory----------------===-' , get_deep_size(self.target_model)/1024/1024 , 'MB')
+        print('==----------size(self.last_action_table memory)---------------==-', get_deep_size(self.last_action_table)/1024/1024 , 'MB')
 
         self.last_action_table = []
+        gc.collect()
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
         # print(R)
         # print([(r[0].id,r[1].id) for r in req])
 
-        print('update_reward done in \n')
-        print('update_reward done in \n')
-        print('update_reward done in \n')
-        print('update_reward done in \n')
-        print('update_reward done in \n')
-        print('update_reward done in ' , time.time() - t1 , 'seconds\n')
+        # print('update_reward done in \n')
+        # print('update_reward done in \n')
+        # print('update_reward done in \n')
+        # print('update_reward done in \n')
+        # print('update_reward done in \n')
+        # print('update_reward done in ' , time.time() - t1 , 'seconds\n')
 
         return total_reward
 
