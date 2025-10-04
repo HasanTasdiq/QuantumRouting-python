@@ -584,7 +584,12 @@ class DQRLAgentDist:
         return np.array(mask)
 
     
-    def learn_and_predict_next_req_node_single(self, reqIndex, ent_matrix , req_matrix,dist_matrix):
+    def learn_and_predict_next_req_node_single(self, reqIndex, ent_matrix , req_matrix,dist_matrix,timeSlot):
+        if timeSlot > 0 and timeSlot % 100 == 0:
+            try:
+                self.model = load_model(self.model_name)
+            except:
+                print('no model found to load!!!!!!!!!!!!!!!')    
         global EPSILON_
         req = req_matrix[reqIndex][:6]
         req[3] = req_matrix[reqIndex + len(req_matrix)//2]
@@ -799,7 +804,9 @@ class DQRLAgentDist:
         # print('update_reward done in \n')
         # print('update_reward done in \n')
         # print('update_reward done in ' , time.time() - t1 , 'seconds\n')
-
+        if timeSlot % 100 == 0:
+            self.save_model()
+            print('model saved at time slot ' , timeSlot)
         return total_reward
 
     def getOrderedRequests(self , paths):

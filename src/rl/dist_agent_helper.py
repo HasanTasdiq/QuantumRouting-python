@@ -17,7 +17,7 @@ ln = LayerNormalization()
 _concat_buffer = None
 
 def process_update_action(  p):
-        print('process_update_action called ' , p.reqIndex)
+        # print('process_update_action called ' , p.reqIndex)
     # Recreate necessary agent if needed or call static function
         return update_action(
             p.reqIndex,
@@ -33,7 +33,7 @@ def process_update_action(  p):
         )
 
 def update_action( request_index ,current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix):
-        print('update_action called ')
+        # print('update_action called ')
         request = req_matrix[request_index][:6]
         request[3] = req_matrix[request_index + len(req_matrix)//2]
         prev_ent_matrix = current_state[0]
@@ -42,7 +42,7 @@ def update_action( request_index ,current_node_id,  action  , current_state  , d
         prev_request = prev_req_matrix[request_index][:6]
         prev_request[3] = prev_req_matrix[request_index + len(prev_req_matrix)//2]
 
-        print('update_action got request ')
+        # print('update_action got request ')
         current_state = schedule_routing_state_dist(prev_request , prev_ent_matrix , prev_req_matrix, prev_dist_matrix)
 
         # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
@@ -54,7 +54,7 @@ def update_action( request_index ,current_node_id,  action  , current_state  , d
             next_state = None
 
         if next_state is None:
-            print('next state is none in update action!!!!!!!!!!!!!')
+            # print('next state is none in update action!!!!!!!!!!!!!')
             next_state = current_state
         # done = False
         t = time.time()
@@ -98,20 +98,20 @@ def get_request_embeddings( req_matrix):
 
     # === 3. Request-level attention ===
 def apply_request_attention( request_tensor):
-        print('called apply_request_attention ')
+        # print('called apply_request_attention ')
 
         # Project to 64D
         proj = dense_proj(request_tensor)  # shape: [num_requests, 64]
-        print('after dense proj ')
+        # print('after dense proj ')
         # Add batch dimension
         proj = tf.expand_dims(proj, axis=0)  # shape: [1, num_requests, 64]
-        print('after expand dims ')
+        # print('after expand dims ')
         # Apply MHA
         attn_out = mha(query=proj, key=proj, value=proj)  # Correct usage
-        print('after mha ')
+        # print('after mha ')
         # Residual + LayerNorm
         output = ln(proj + attn_out)  # shape: [1, num_requests, 64]
-        print('after layer norm ')
+        # print('after layer norm ')
         return tf.squeeze(output, axis=0)  # shape: [num_requests, 64]
 
     # === 4. Neighbor embedding ===
@@ -156,12 +156,12 @@ def schedule_routing_state_dist( curr_req, ent_matrix=None, req_matrix=None, dis
         state_dist_flat = np.array(state_dist).flatten()    # shape: [SIZE × SIZE]
         # print('state_graph_flat found')
         # 2. Request embeddings
-        print('going to get get_request_embeddings ')
+        # print('going to get get_request_embeddings ')
         req_tensor = get_request_embeddings(req_matrix)
         # print('req_tensor found')
 
         # 3. Apply self-attention
-        print('going to get apply_request_attention ')
+        # print('going to get apply_request_attention ')
         attn_encoded = apply_request_attention(req_tensor).numpy()
         # print('attn_encoded found')
         # 4. Locate current request
@@ -171,10 +171,10 @@ def schedule_routing_state_dist( curr_req, ent_matrix=None, req_matrix=None, dis
         curr_emb = attn_encoded[curr_index]
 
         # 5. Neighbor context
-        print('going to get get_neighbor_embeddings ')
+        # print('going to get get_neighbor_embeddings ')
         neighbor_embs = get_neighbor_embeddings(state_graph, curr_req[2])
         # print('neighbor_embs found' , len(neighbor_embs))
-        print('going to get apply_neighbor_attention ')
+        # print('going to get apply_neighbor_attention ')
         context_vec = apply_neighbor_attention(curr_emb, neighbor_embs)
         # print('context_vec found')
 

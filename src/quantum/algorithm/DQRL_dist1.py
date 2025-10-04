@@ -282,13 +282,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # mpredis.set("routing_agent", dill.dumps(self.routingAgent))
                 # mpredis.set("reward_routing", dill.dumps(self.topo.reward_routing))
 
-                print('going to map route_schedule_single with args:' )
+                # print('going to map route_schedule_single with args:' )
                 results = list(executor2.map(self.route_parallel, args))
                 # print('results ' , results, sum([r for r in results]))
             
                 # self.topo.reward_routing = dill.loads(mpredis.get("reward_routing"))
                 successReq = sum([r[0] for r in results])
-                print('successReq ' , successReq)
+                # print('successReq ' , successReq)
                 actions = []
                 
                 node_matrix = self.get_ent_graph_matrix()
@@ -300,7 +300,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                         actions.append(actionss)
                     # print('r[1] ' , r[1])
                     # actions.append(r[1])
-                print('total actionss ' , len(actions))
+                # print('total actionss ' , len(actions))
                 ta = time.time()
 
                 try:
@@ -313,8 +313,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 except Exception as e:
                     import traceback
                     traceback.print_exc()
-                print('time for update action ======== ' , time.time() - ta)
-                print('total actionss after update ' , len(actions))
+                # print('time for update action ======== ' , time.time() - ta)
+                # print('total actionss after update ' , len(actions))
                 self.result.successfulRequestPerRound.append(successReq)
                 self.result.entanglementPerRound.append(successReq)
                 self.result.fidelityPerRound.append(0)
@@ -378,7 +378,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             import traceback
             traceback.print_exc()
             return (0, [])
-    def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
+    async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
         url = "http://127.0.0.1:8000/update_reward"
         batch_json = []
         for param in actions:
@@ -461,13 +461,14 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             print(f"Error calling batch API: {e}")
             return None
         
-    def call_learn_and_predict_api(self , reqState, ent_matrix, req_matrix, dist_matrix):
+    def call_learn_and_predict_api(self , reqState, ent_matrix, req_matrix, dist_matrix, timeSlot):
         url = "http://127.0.0.1:8080/learn_predict"  # adjust host/port if needed
         payload = {
             "reqIndex": reqState[4],
             "ent_matrix": ent_matrix.tolist(),
             "req_matrix": req_matrix.tolist(),
-            "dist_matrix": dist_matrix.tolist()
+            "dist_matrix": dist_matrix.tolist(),
+            "timeSlot": timeSlot
         }
         # print('Calling learn_predict API with payload:', payload)
         try:
@@ -486,15 +487,15 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             print(f"Error calling learn_predict API: {e}")
             return None
         
-    def get_action(self ,reqState , ent_matrix, req_matrix,dist_matrix):
+    def get_action(self ,reqState , ent_matrix, req_matrix,dist_matrix, timeSlot):
         # return self.routingAgent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
         t = time.time()
-        ret =  self.call_learn_and_predict_api(reqState , ent_matrix, req_matrix,dist_matrix)
+        ret =  self.call_learn_and_predict_api(reqState , ent_matrix, req_matrix,dist_matrix, timeSlot)
         # print('============time to call learn_predict_api ' , time.time() - t)
         return ret
 
     def route_schedule_single(self ,  args):
-        print('route_schedule_single called with algo#############################################:')
+        # print('route_schedule_single called with algo#############################################:')
         node_matrix_info , req_matrix_info,dist_matrix , q_matrix, reqState,lock , agent_lock ,reward_lock, node_locks =  args
 
         shm_name, shape, dtype = node_matrix_info
@@ -510,7 +511,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # print('=======req_matrix in route_schedule_single ' , req_matrix.shape  )
         # agent = dill.loads(mpredis.get("routing_agent"))
         tt = time.time()
-        print('$$$$$$$$$$$$$$$$$$$time to load agent ' , time.time() - tt)
+        # print('$$$$$$$$$$$$$$$$$$$time to load agent ' , time.time() - tt)
         """
         Serve only one request (reqState) using the routing agent.
         reqState: [src, dst, current_node, path, index, checked]
@@ -549,7 +550,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             if True:
                 # print('-------===----=-=-=-=-=acquired agent lock ' , current_node_id , path , numtry, reqState)
                 # result = agent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
-                result = self.get_action(reqState , ent_matrix, req_matrix,dist_matrix)
+                result = self.get_action(reqState , ent_matrix, req_matrix,dist_matrix, self.timeSlot)
                 # result = None
                 action_time += time.time() - t
                 if result is None:
@@ -680,13 +681,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                         if not swapped:
                             failed_swap = True
                             swappSuccess = False
-                            print('================failed swap==================')
+                            # print('================failed swap==================')
                             break
                 
 
 
                 if success and swappSuccess:
-                    print('going to find path for:', (src.id , dst.id ))
+                    # print('going to find path for:', (src.id , dst.id ))
                     t2 = time.time()
                     for req in self.requests:
                             # src = req[0]
@@ -715,10 +716,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                             ent_matrix[path[i-1]] [path[i]] += 1
                             ent_matrix[path[i]] [path[i-1]] += 1
                       
-                        print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path] , 'threading.get_ident():', threading.get_ident())
+                        # print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path] , 'threading.get_ident():', threading.get_ident())
                             # print('shortest path ----- ' , [n.id for n in targetPath])
                         
-                        print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
+                        # print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
                         reward = -10
 
 

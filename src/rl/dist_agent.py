@@ -34,6 +34,7 @@ class UpdateRewardRequest(BaseModel):
 
 class LearnPredictRequest(BaseModel):
     reqIndex: int
+    timeSlot: int
     ent_matrix: list
     req_matrix: list
     dist_matrix: list
@@ -51,25 +52,25 @@ def make_json_safe(obj):
         return obj
 
 
-@app.post("/update_action_batch")
-async def update_action_batch(params: UpdateActionBatchParams, background_tasks: BackgroundTasks):
+# @app.post("/update_action_batch")
+# async def update_action_batch(params: UpdateActionBatchParams, background_tasks: BackgroundTasks):
 
-    results = []
-    print(f"=============Received batch of size: {len(params.batch)}")
-    for p in params.batch:
-    #     # Call your actual function here
-    #     def task(p):
-    #         return agent.update_action(
-    #             p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
-    #             p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
-    #         )
-    #     background_tasks.add_task(task, p)
-        result = agent.update_action(
-            p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
-            p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
-        )
+#     results = []
+#     print(f"=============Received batch of size: {len(params.batch)}")
+#     for p in params.batch:
+#     #     # Call your actual function here
+#     #     def task(p):
+#     #         return agent.update_action(
+#     #             p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
+#     #             p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
+#     #         )
+#     #     background_tasks.add_task(task, p)
+#         result = agent.update_action(
+#             p.reqIndex, p.current_node_id, p.next_node_id, p.current_state,
+#             p.done_episode, p.timeSlot, p.reward, p.node_matrix, p.req_matrix, p.dist_matrix
+#         )
 
-    return {"results": 'success'}
+#     return {"results": 'success'}
 
 
 @app.post("/update_reward")
@@ -100,7 +101,8 @@ async def call_learn_and_predict(data: LearnPredictRequest):
             data.reqIndex,
             data.ent_matrix,
             data.req_matrix,
-            data.dist_matrix
+            data.dist_matrix,
+            data.timeSlot
         )
         # print('learn_and_predict result:', result)
     except Exception as e:
