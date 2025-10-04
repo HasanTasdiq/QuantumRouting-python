@@ -71,12 +71,12 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 # UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-# START_EPSILON_DECAYING = 2000
-# END_EPSILON_DECAYING = 4000
-# REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 100  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 2000
+END_EPSILON_DECAYING = 4000
+REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 100  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
 # START_EPSILON_DECAYING = 10
@@ -96,12 +96,12 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 
 
 # for testing
-START_EPSILON_DECAYING = 10
-END_EPSILON_DECAYING = 20
-REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 10
+# END_EPSILON_DECAYING = 20
+# REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
@@ -691,7 +691,7 @@ class DQRLAgentDist:
         # self.executor
         print('process_actions called ' , len(params), executor is not None)
         # futures = [executor.submit(self.process_update_action, p) for p in params]
-        futures = list(executor.map(process_update_action, [p for p in params] , chunksize=20))
+        futures = list(executor.map(process_update_action, [p for p in params] , chunksize=50))
 
         results = []
         # for f in as_completed(futures):
@@ -728,9 +728,9 @@ class DQRLAgentDist:
         req = []
         total_reward = 0
         trans = []
-        print('++++++++++++++++++++++++before process action ' )
+        print('++++++++++++++++++++++++before process action ', timeSlot )
         self.last_action_table = self.process_actions(actions)
-        print('++++++++++++++++++++++++after process action ' , len(self.last_action_table) , time.time()-t1 , 'seconds' )
+        print('++++++++++++++++++++++++after process action ' , len(self.last_action_table), timeSlot , time.time()-t1 , 'seconds' )
         with table_lock:
             for i in range(len(self.last_action_table)-1 , -1 , -1):
                 t2 = time.time()
