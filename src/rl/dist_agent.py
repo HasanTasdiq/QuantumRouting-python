@@ -81,13 +81,13 @@ async def call_update_reward(data: UpdateRewardRequest, background_tasks: Backgr
             data.timeSlot,
             data.actions
         )
-    # background_tasks.add_task(task)
-    try:
-        task()
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {"error": str(e)}
+    background_tasks.add_task(task)
+    # try:
+    #     task()
+    # except Exception as e:
+    #     import traceback
+    #     traceback.print_exc()
+    #     return {"error": str(e)}
     return {"status": "update_reward started in background"}
 
 
