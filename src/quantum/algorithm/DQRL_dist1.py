@@ -340,8 +340,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot)
                 print('going to call update_reward with ')
                 try:
-                    asyncio.run(self.call_update_reward(successful_requests=5, timeSlot=10, actions=actions))
-
+                    asyncio.create_task(self.call_update_reward(
+                        successful_requests=self.result.successfulRequestPerRound[-1],
+                        timeSlot=self.timeSlot,
+                        actions=actions
+                    ))
                     # self.call_update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot,actions)
                 except Exception as e:
                     import traceback
