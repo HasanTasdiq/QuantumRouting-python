@@ -73,24 +73,23 @@ def make_json_safe(obj):
 #     return {"results": 'success'}
 
 
-import threading
-from fastapi import Request
-
 @app.post("/update_reward")
-async def call_update_reward(request: Request):
-    data = await request.json()
-    successfulRequest = data.get("successfulRequest")
-    timeSlot = data.get("timeSlot")
-    actions = data.get("actions")
+async def call_update_reward(data: UpdateRewardRequest, background_tasks: BackgroundTasks):
+    print('In update_reward API with timeSlot:', data.timeSlot)
+    successfulRequest = data.successfulRequest
+    timeSlot = data.timeSlot
+    actions = data.actions
 
-    threading.Thread(
-        target=agent.update_reward,
-        args=(successfulRequest, timeSlot, actions),
-        daemon=True,
-    ).start()
+    def task():
+        try:
+            agent.update_reward(successfulRequest, timeSlot, actions)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(f"[BackgroundTaskError] update_reward failed: {e}")
 
+    background_tasks.add_task(task)
     return {"status": "update_reward started in background"}
-
 
 
 
