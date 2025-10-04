@@ -828,7 +828,7 @@ class DQRLAgentDist:
         
         self.model.save((self.model_name))
         # print(self.model.weights)
-        del self.model
+        # del self.model
 
 if __name__ == '__main__':
     agent = DQRLAgentDist()

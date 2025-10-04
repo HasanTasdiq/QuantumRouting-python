@@ -379,7 +379,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             traceback.print_exc()
             return (0, [])
     def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
-        print('going to call update_reward with ')
+        print('in update_reward with ', timeSlot)
         url = "http://127.0.0.1:8000/update_reward"
         batch_json = []
         for param in actions:
@@ -404,8 +404,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         }
 
         try:
+            print('going to call update_reward api ', timeSlot)
+
             response = requests.post(url, json=payload)
             response.raise_for_status()
+            print('update_reward api called successfully ', timeSlot)
             return response.json()  # Should return reward value
         except requests.exceptions.RequestException as e:
             print(f"Error calling update_reward API: {e}")
