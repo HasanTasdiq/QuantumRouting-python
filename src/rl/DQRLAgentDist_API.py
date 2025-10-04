@@ -725,7 +725,7 @@ class DQRLAgentDist:
         trans = []
         print('++++++++++++++++++++++++before process action ' )
         self.last_action_table = self.process_actions(actions)
-        print('++++++++++++++++++++++++after process action ' , len(self.last_action_table))
+        print('++++++++++++++++++++++++after process action ' , len(self.last_action_table) , time.time()-t1 , 'seconds' )
         with table_lock:
             for i in range(len(self.last_action_table)-1 , -1 , -1):
                 t2 = time.time()
