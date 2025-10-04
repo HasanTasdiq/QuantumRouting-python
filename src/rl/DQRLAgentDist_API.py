@@ -1,3 +1,6 @@
+import multiprocessing as mp
+mp.set_start_method("spawn", force=True)
+from concurrent.futures import ProcessPoolExecutor,as_completed,ThreadPoolExecutor
 import gc
 import numpy as np
 
@@ -28,6 +31,7 @@ from objsize import get_deep_size
 
 
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
+from dist_agent_helper import executor, process_update_action
 
 
 
@@ -75,12 +79,12 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
-START_EPSILON_DECAYING = 10
-END_EPSILON_DECAYING = 25
-REPLAY_MEMORY_SIZE = 3000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 10
+# END_EPSILON_DECAYING = 25
+# REPLAY_MEMORY_SIZE = 3000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
 # START_EPSILON_DECAYING = 5000
@@ -92,12 +96,12 @@ UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 
 # for testing
-# START_EPSILON_DECAYING = 10
-# END_EPSILON_DECAYING = 20
-# REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10
+END_EPSILON_DECAYING = 20
+REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
@@ -133,6 +137,10 @@ np.random.seed(1)
 if not os.path.isdir('models'):
     os.makedirs('models')
 table_lock = multiprocessing.Lock()
+executor = ProcessPoolExecutor(max_workers=20)
+# executor = ThreadPoolExecutor(max_workers=8)
+
+
 
 class DQRLAgentDist:
     def __init__(self , pid = 0):
@@ -640,6 +648,8 @@ class DQRLAgentDist:
         mask = self.get_mask_one_req_schedule_route(request,ent_matrix , req_matrix) #action is the next node id
         # print('update action get get_mask_shcedule_route time ' , time.time()-t)
         t = time.time()
+        data = (request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward)
+        return data
         with table_lock:
             self.last_action_table.append((request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward))
         # print('update action  last_action_table.append( time ' , time.time()-t)
@@ -655,8 +665,50 @@ class DQRLAgentDist:
         # del current_state
         # del next_state
         # gc.collect()
-    
-    def update_reward(self, numsuccessReq  , timeSlot):
+    # def process_update_action(self ,  p):
+    #     print('process_update_action called ' , p.reqIndex)
+    # # Recreate necessary agent if needed or call static function
+    #     return self.update_action(
+    #         p.reqIndex,
+    #         p.current_node_id,
+    #         p.next_node_id,
+    #         p.current_state,
+    #         p.done_episode,
+    #         p.timeSlot,
+    #         p.reward,
+    #         p.node_matrix,
+    #         p.req_matrix,
+    #         p.dist_matrix
+    #     )
+
+    def process_actions(self, params):
+        global executor
+        # self.executor
+        print('process_actions called ' , len(params), executor is not None)
+        # futures = [executor.submit(self.process_update_action, p) for p in params]
+        futures = list(executor.map(process_update_action, [p for p in params] , chunksize=20))
+
+        results = []
+        # for f in as_completed(futures):
+        #     results.append(f.result())
+        for data in futures:
+            try:
+                results.append(data)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                print(f"Error processing action: {e}")
+
+        # Combine results
+        actions = []
+        for r in results:
+            if r is not None:
+                actions.append(r)
+
+
+        return actions
+
+    def update_reward(self, numsuccessReq  , timeSlot , actions = None):
         global EPSILON_
 
         print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_table) )
@@ -671,6 +723,9 @@ class DQRLAgentDist:
         req = []
         total_reward = 0
         trans = []
+        print('++++++++++++++++++++++++before process action ' )
+        self.last_action_table = self.process_actions(actions)
+        print('++++++++++++++++++++++++after process action ' , len(self.last_action_table))
         with table_lock:
             for i in range(len(self.last_action_table)-1 , -1 , -1):
                 t2 = time.time()

@@ -336,8 +336,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 t = time.time()
                 
                 # self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot)
-                self.call_update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot)
-
+                print('going to call update_reward with ')
+                try:
+                    self.call_update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot,actions)
+                except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                 reward = 0
                 print('time for update_reward ======== ' , time.time() - t)
 
@@ -374,11 +378,28 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             import traceback
             traceback.print_exc()
             return (0, [])
-    def call_update_reward(self, successful_requests: int, timeSlot: int):
+    def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
         url = "http://127.0.0.1:8000/update_reward"
+        batch_json = []
+        for param in actions:
+            param_dict = {
+                "reqIndex": param[0],
+                "current_node_id": param[1],
+                "next_node_id": param[2],
+                "current_state": param[3],
+                "done_episode": param[4],
+                "timeSlot": param[5],
+                "reward": param[6],
+                "node_matrix": param[7].tolist(),
+                "req_matrix": param[8].tolist(),
+                "dist_matrix": param[9].tolist()
+            }
+            batch_json.append(param_dict)
+
         payload = {
             "successfulRequest": successful_requests,
-            "timeSlot": timeSlot
+            "timeSlot": timeSlot,
+            "actions": batch_json
         }
 
         try:
@@ -403,6 +424,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             serializable_batch.append(serializable_action)
         return serializable_batch
     def call_update_action_batch(self, batch_params: list):
+        return
         url = "http://127.0.0.1:8000/update_action_batch"  # adjust host/port if needed
 
         """
@@ -440,7 +462,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             return None
         
     def call_learn_and_predict_api(self , reqState, ent_matrix, req_matrix, dist_matrix):
-        url = "http://127.0.0.1:8000/learn_predict"  # adjust host/port if needed
+        url = "http://127.0.0.1:8080/learn_predict"  # adjust host/port if needed
         payload = {
             "reqIndex": reqState[4],
             "ent_matrix": ent_matrix.tolist(),
@@ -449,9 +471,16 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         }
         # print('Calling learn_predict API with payload:', payload)
         try:
+            t = time.time()
             response = requests.post(url, json=payload)
+            # print('Time for learn_predict API call:', time.time() - t)
+            t = time.time()
             response.raise_for_status()  # raises error for HTTP issues
+            # print('Time after response.raise_for_status():', time.time() - t)
+            t = time.time()
             result = response.json().get("result")
+            # print('Time to parse JSON response:', time.time() - t)
+            print
             return result
         except Exception as e:
             print(f"Error calling learn_predict API: {e}")
@@ -459,9 +488,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         
     def get_action(self ,reqState , ent_matrix, req_matrix,dist_matrix):
         # return self.routingAgent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
-
-        return self.call_learn_and_predict_api(reqState , ent_matrix, req_matrix,dist_matrix)
-        
+        t = time.time()
+        ret =  self.call_learn_and_predict_api(reqState , ent_matrix, req_matrix,dist_matrix)
+        # print('============time to call learn_predict_api ' , time.time() - t)
+        return ret
 
     def route_schedule_single(self ,  args):
         print('route_schedule_single called with algo#############################################:')
@@ -471,13 +501,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         shm = shared_memory.SharedMemory(name=shm_name)
         ent_matrix = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
         self.shared_memories.append(shm)  # keep reference
-        print('=======matrix in route_schedule_single ' , ent_matrix.sum() )
+        # print('=======matrix in route_schedule_single ' , ent_matrix.sum() )
 
         shm_name2, shape2, dtype2 = req_matrix_info
         shm2 = shared_memory.SharedMemory(name=shm_name2)
         req_matrix = np.ndarray(shape2, dtype=dtype2, buffer=shm2.buf)
         self.shared_memories.append(shm2)  # keep reference
-        print('=======req_matrix in route_schedule_single ' , req_matrix.shape  )
+        # print('=======req_matrix in route_schedule_single ' , req_matrix.shape  )
         # agent = dill.loads(mpredis.get("routing_agent"))
         tt = time.time()
         print('$$$$$$$$$$$$$$$$$$$time to load agent ' , time.time() - tt)
@@ -728,7 +758,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             
             # with lock2:
             #     self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
-        print('time in action selection ======== ' , action_time,'s, for {len(actions)} actions' )
+        print('time in action selection ======== ' , action_time,'s, for ' , len(actions), ' actions' )
         print('=================final process id:', os.getpid() , 'time taken:', time.time()-tl)
         return (success and swappSuccess , actions)
 

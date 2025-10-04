@@ -1,4 +1,5 @@
 import asyncio
+import time
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 import uvicorn
@@ -7,6 +8,8 @@ import numpy as np
 import psutil
 import os
 app = FastAPI()
+agent = None  # global agent reference per worker
+
 
 class UpdateActionParams(BaseModel):
     reqIndex: int
@@ -27,6 +30,7 @@ class UpdateActionBatchParams(BaseModel):
 class UpdateRewardRequest(BaseModel):
     successfulRequest: int
     timeSlot: int
+    actions: list[UpdateActionParams]
 
 class LearnPredictRequest(BaseModel):
     reqIndex: int
@@ -49,6 +53,7 @@ def make_json_safe(obj):
 
 @app.post("/update_action_batch")
 async def update_action_batch(params: UpdateActionBatchParams, background_tasks: BackgroundTasks):
+
     results = []
     print(f"=============Received batch of size: {len(params.batch)}")
     for p in params.batch:
@@ -69,18 +74,27 @@ async def update_action_batch(params: UpdateActionBatchParams, background_tasks:
 
 @app.post("/update_reward")
 async def call_update_reward(data: UpdateRewardRequest, background_tasks: BackgroundTasks):
+
     def task():
         agent.update_reward(
             data.successfulRequest,
-            data.timeSlot
+            data.timeSlot,
+            data.actions
         )
-    background_tasks.add_task(task)
+    # background_tasks.add_task(task)
+    try:
+        task()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
     return {"status": "update_reward started in background"}
 
 
 
 @app.post("/learn_predict")
 async def call_learn_and_predict(data: LearnPredictRequest):
+    t = time.time()
     try:
         result = agent.learn_and_predict_next_req_node_single(
             data.reqIndex,
@@ -95,7 +109,7 @@ async def call_learn_and_predict(data: LearnPredictRequest):
         return {"error": str(e)}
     # result = make_json_safe(result)
 
-    print('==============learn_and_predict result:', type(result[0]), type(result[1]))
+    print('==============learn_and_predict result:', time.time() - t , ' s')
     print(type(result))
     return {"result": [[], result[1]]}
 
@@ -108,8 +122,14 @@ def debug_memory():
 import tracemalloc
 
 @app.on_event("startup")
-def start_tracing():
+async def startup_event():
+    """Initialize per-worker agent and start memory tracing."""
+    global agent
+    print(f"[Worker PID {os.getpid()}] Initializing agent...")
     tracemalloc.start()
+    agent = DQRLAgentDist()
+    agent.initiate()
+    print(f"[Worker PID {os.getpid()}] Agent ready.")
 
 @app.get("/snapshot")
 def snapshot():
@@ -129,6 +149,6 @@ def snapshot():
     return {"top": report}
 
 if __name__ == "__main__":
-    agent = DQRLAgentDist()
-    agent.initiate()
+    # agent = DQRLAgentDist()
+    # agent.initiate()
     uvicorn.run(app, host="0.0.0.0", port=8000)
