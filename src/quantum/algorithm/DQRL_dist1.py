@@ -378,7 +378,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             import traceback
             traceback.print_exc()
             return (0, [])
-    async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
+    def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
+        print('going to call update_reward with ')
         url = "http://127.0.0.1:8000/update_reward"
         batch_json = []
         for param in actions:
