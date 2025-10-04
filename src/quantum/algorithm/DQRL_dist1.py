@@ -340,7 +340,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot)
                 print('going to call update_reward with ')
                 try:
-                    asyncio.create_task(self.call_update_reward(
+                    self.run_async_in_thread(self.call_update_reward(
                         successful_requests=self.result.successfulRequestPerRound[-1],
                         timeSlot=self.timeSlot,
                         actions=actions
@@ -385,6 +385,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             import traceback
             traceback.print_exc()
             return (0, [])
+    def run_async_in_thread(self , coro):
+        def target():
+            asyncio.run(coro)
+        threading.Thread(target=target, daemon=True).start()
     async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
         print('in update_reward with ', timeSlot)
         url = "http://127.0.0.1:8000/update_reward"
