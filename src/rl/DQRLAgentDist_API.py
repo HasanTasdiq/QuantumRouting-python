@@ -137,6 +137,7 @@ np.random.seed(1)
 if not os.path.isdir('models'):
     os.makedirs('models')
 table_lock = multiprocessing.Lock()
+model_lock = multiprocessing.Lock()
 executor = ProcessPoolExecutor(max_workers=20)
 # executor = ThreadPoolExecutor(max_workers=8)
 
@@ -303,7 +304,8 @@ class DQRLAgentDist:
         # Get current states from minibatch, then query NN model for Q values
         current_states = np.array([transition[0] for transition in minibatch])
         # print(current_states)
-        current_qs_list = self.model.predict(current_states , verbose=0, batch_size=batch_size)
+        with model_lock:
+            current_qs_list = self.model.predict(current_states , verbose=0, batch_size=batch_size)
         print('=============current_qs_list predict ===========' , time.time() - t11)
 
         t2 = time.time()
@@ -353,7 +355,8 @@ class DQRLAgentDist:
         t4 = time.time()
         # print('=============train start===========')
         # Fit on all samples as one batch, log only on terminal state
-        hist = self.model.fit(np.array(X), np.array(y), batch_size=batch_size, verbose=0, shuffle=True,)
+        with model_lock:
+            hist = self.model.fit(np.array(X), np.array(y), batch_size=batch_size, verbose=0, shuffle=True,)
         print('============= total train done===========' , time.time() - t1)
         print('=============only train done===========' , time.time() - t4)
         # Update target network counter every episode
@@ -365,8 +368,8 @@ class DQRLAgentDist:
         if self.target_update_counter >= UPDATE_TARGET_EVERY:
             print('------------------self.model.get_weights()-------------------')
 
-
-            self.target_model.set_weights(self.model.get_weights())
+            with model_lock:
+                self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
 
     # Queries main network for Q values given current observation space (environment state)
@@ -787,9 +790,9 @@ class DQRLAgentDist:
         self.train(False )
         print('time train ' , time.time()-t5)
 
-        print('===---------size of model memory----------------===-' , get_deep_size(self.model)/1024/1024 , 'MB')
-        print('===---------size of target model memory----------------===-' , get_deep_size(self.target_model)/1024/1024 , 'MB')
-        print('==----------size(self.last_action_table memory)---------------==-', get_deep_size(self.last_action_table)/1024/1024 , 'MB')
+        # print('===---------size of model memory----------------===-' , get_deep_size(self.model)/1024/1024 , 'MB')
+        # print('===---------size of target model memory----------------===-' , get_deep_size(self.target_model)/1024/1024 , 'MB')
+        # print('==----------size(self.last_action_table memory)---------------==-', get_deep_size(self.last_action_table)/1024/1024 , 'MB')
 
         self.last_action_table = []
         gc.collect()
@@ -825,8 +828,9 @@ class DQRLAgentDist:
             random.shuffle(T)
         return T
     def save_model(self):
+        with model_lock:
         
-        self.model.save((self.model_name))
+            self.model.save((self.model_name))
         # print(self.model.weights)
         # del self.model
 
