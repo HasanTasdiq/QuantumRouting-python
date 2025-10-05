@@ -585,7 +585,13 @@ class DQRLAgentDist:
             mask = [1 for _ in range(self.SIZE)]
 
         return np.array(mask)
-
+    def get_epsilon_linear(self , timeSlot, eps_start=EPSILON_):
+        if timeSlot < START_EPSILON_DECAYING:
+            return eps_start
+        if timeSlot >= END_EPSILON_DECAYING:
+            return 0
+        epsilon = eps_start - eps_start  * (timeSlot / END_EPSILON_DECAYING)
+        return max(0, epsilon)
     
     def learn_and_predict_next_req_node_single(self, reqIndex, ent_matrix , req_matrix,dist_matrix,timeSlot):
         if timeSlot > 0 and timeSlot % 100 == 0:
@@ -612,7 +618,9 @@ class DQRLAgentDist:
         sorted_valid_actions = [action for action, q in sorted_valid_actions]
 
         random_val = np.random.random()
-        if random_val > EPSILON_:
+        epsilon = self.get_epsilon_linear(timeSlot)
+        if random_val > epsilon:
+            print('using greedy action from model ' , timeSlot , epsilon)
             action = np.argmax(np.where(mask == 1, qs, -np.inf))
         else:
             action = np.random.choice(valid_actions)
