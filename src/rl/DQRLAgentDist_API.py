@@ -66,7 +66,7 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 # UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-START_EPSILON_DECAYING = 2000
+START_EPSILON_DECAYING = 200
 END_EPSILON_DECAYING = 4000
 REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
@@ -277,9 +277,9 @@ class DQRLAgentDist:
     # Trains main network every step during episode
     def train(self, terminal_state):
         t1 = time.time()
-        global model_lock
-        if model_lock is None:
-            model_lock = multiprocessing.Lock()
+        # global model_lock
+        # if model_lock is None:
+        #     model_lock = multiprocessing.Lock()
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
@@ -307,8 +307,8 @@ class DQRLAgentDist:
         # Get current states from minibatch, then query NN model for Q values
         current_states = np.array([transition[0] for transition in minibatch])
         # print(current_states)
-        with model_lock:
-            current_qs_list = self.model.predict(current_states , verbose=0, batch_size=batch_size)
+        # with model_lock:
+        current_qs_list = self.model.predict(current_states , verbose=0, batch_size=batch_size)
         print('=============current_qs_list predict ===========' , time.time() - t11)
 
         t2 = time.time()
@@ -358,8 +358,8 @@ class DQRLAgentDist:
         t4 = time.time()
         # print('=============train start===========')
         # Fit on all samples as one batch, log only on terminal state
-        with model_lock:
-            hist = self.model.fit(np.array(X), np.array(y), batch_size=batch_size, verbose=0, shuffle=True,)
+        # with model_lock:
+        hist = self.model.fit(np.array(X), np.array(y), batch_size=batch_size, verbose=0, shuffle=True,)
         print('============= total train done===========' , time.time() - t1)
         print('=============only train done===========' , time.time() - t4)
         # Update target network counter every episode
@@ -371,8 +371,8 @@ class DQRLAgentDist:
         if self.target_update_counter >= UPDATE_TARGET_EVERY:
             print('------------------self.model.get_weights()-------------------')
 
-            with model_lock:
-                self.target_model.set_weights(self.model.get_weights())
+            # with model_lock:
+            self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
 
     # Queries main network for Q values given current observation space (environment state)
@@ -705,7 +705,7 @@ class DQRLAgentDist:
     def process_actions(self, params):
         global executor
         if executor is None:
-            executor = ProcessPoolExecutor(max_workers=20)
+            executor = ProcessPoolExecutor(max_workers=50)
         # self.executor
         print('process_actions called ' , len(params), executor is not None)
         # futures = [executor.submit(self.process_update_action, p) for p in params]
@@ -843,13 +843,13 @@ class DQRLAgentDist:
             random.shuffle(T)
         return T
     def save_model(self):
-        global model_lock
-        if model_lock is None:
-            model_lock = multiprocessing.Lock()
+        # global model_lock
+        # if model_lock is None:
+        #     model_lock = multiprocessing.Lock()
 
-        with model_lock:
+        # with model_lock:
         
-            self.model.save((self.model_name))
+        self.model.save((self.model_name))
         # print(self.model.weights)
         # del self.model
 
