@@ -36,12 +36,7 @@ from dist_agent_helper import executor, process_update_action
 
 
 
-# Check if a GPU is available
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    print(f"GPUs are available: {gpus}")
-else:
-    print("No GPUs detected. Running on CPU.")
+
 
 
 NUM_EPISODES = 2500
@@ -136,9 +131,8 @@ np.random.seed(1)
 # Create models folder
 if not os.path.isdir('models'):
     os.makedirs('models')
-table_lock = multiprocessing.Lock()
-model_lock = multiprocessing.Lock()
-executor = ProcessPoolExecutor(max_workers=20)
+model_lock = None
+executor = None
 # executor = ThreadPoolExecutor(max_workers=8)
 
 
@@ -146,6 +140,12 @@ executor = ProcessPoolExecutor(max_workers=20)
 class DQRLAgentDist:
     def __init__(self , pid = 0):
         self.pid = pid
+        # Check if a GPU is available
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            print(f"GPUs are available: {gpus}")
+        else:
+            print("No GPUs detected. Running on CPU.")
 
 
 
@@ -277,6 +277,9 @@ class DQRLAgentDist:
     # Trains main network every step during episode
     def train(self, terminal_state):
         t1 = time.time()
+        global model_lock
+        if model_lock is None:
+            model_lock = multiprocessing.Lock()
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
@@ -505,31 +508,31 @@ class DQRLAgentDist:
 
 
         # 1. Link matrices
-        # print('in schedule_routing_state_dist' )
+        print('in schedule_routing_state_dist' )
         state_graph, state_dist = ent_matrix, dist_matrix
-        # print('state_graph found')
+        print('state_graph found')
 
         state_graph_flat = np.array(state_graph).flatten()  # shape: [SIZE × SIZE]
         state_dist_flat = np.array(state_dist).flatten()    # shape: [SIZE × SIZE]
-        # print('state_graph_flat found')
+        print('state_graph_flat found')
         # 2. Request embeddings
         req_tensor = self.get_request_embeddings(req_matrix)
-        # print('req_tensor found')
+        print('req_tensor found')
 
         # 3. Apply self-attention
         attn_encoded = self.apply_request_attention(req_tensor).numpy()
-        # print('attn_encoded found')
+        print('attn_encoded found')
         # 4. Locate current request
         curr_index = curr_req[4]
-        # print('curr_index found' , curr_index)
+        print('curr_index found' , curr_index)
 
         curr_emb = attn_encoded[curr_index]
 
         # 5. Neighbor context
         neighbor_embs = self.get_neighbor_embeddings(state_graph, curr_req[2])
-        # print('neighbor_embs found' , len(neighbor_embs))
+        print('neighbor_embs found' , len(neighbor_embs))
         context_vec = self.apply_neighbor_attention(curr_emb, neighbor_embs)
-        # print('context_vec found')
+        print('context_vec found')
 
         # 6. Local info
         local = [0] * self.SIZE
@@ -599,17 +602,19 @@ class DQRLAgentDist:
                 self.model = load_model(self.model_name)
             except:
                 print('no model found to load!!!!!!!!!!!!!!!')    
-        global EPSILON_
+        print('learn_and_predict_next_req_node_single called ' )
         req = req_matrix[reqIndex][:6]
         req[3] = req_matrix[reqIndex + len(req_matrix)//2]
 
         if req[5]:
             return None  # Request already checked/completed
-
+        print('going to get current state')
         current_state = self.schedule_routing_state_dist(req , ent_matrix , req_matrix, dist_matrix)
-        # print('current_state going to get qs')
+        print('current_state going to get qs')
         qs = self.get_qs(current_state)
+        print('going to get mask')
         mask = self.get_mask_one_req_schedule_route(req, ent_matrix , req_matrix)
+        print('got mask')
         valid_actions = np.where(mask == 1)[0]
         valid_q_values = qs[valid_actions]
 
@@ -699,6 +704,8 @@ class DQRLAgentDist:
 
     def process_actions(self, params):
         global executor
+        if executor is None:
+            executor = ProcessPoolExecutor(max_workers=20)
         # self.executor
         print('process_actions called ' , len(params), executor is not None)
         # futures = [executor.submit(self.process_update_action, p) for p in params]
@@ -742,7 +749,7 @@ class DQRLAgentDist:
         print('++++++++++++++++++++++++before process action ', timeSlot )
         self.last_action_table = self.process_actions(actions)
         print('++++++++++++++++++++++++after process action ' , len(self.last_action_table), timeSlot , time.time()-t1 , 'seconds' )
-        with table_lock:
+        if True:
             for i in range(len(self.last_action_table)-1 , -1 , -1):
                 t2 = time.time()
                 (request , action , ts ,current_node_id, current_state , next_state ,mask ,  done,reward) = self.last_action_table[i]
@@ -836,6 +843,10 @@ class DQRLAgentDist:
             random.shuffle(T)
         return T
     def save_model(self):
+        global model_lock
+        if model_lock is None:
+            model_lock = multiprocessing.Lock()
+
         with model_lock:
         
             self.model.save((self.model_name))

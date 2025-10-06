@@ -305,16 +305,16 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # print('total actionss ' , len(actions))
                 ta = time.time()
 
-                try:
-                    # for  index ,current_node_id,  next_node_id  , current_state  , done_episode,reward in actions:
-                    #     self.routingAgent.update_action( index ,current_node_id,  next_node_id  , current_state  , done_episode, self.timeSlot,reward , node_matrix,req_matrix,dist_matrix)
-                    # for action in actions:
-                    #     self.call_update_action_batch([action])
-                    # self.call_update_action_batch(actions[:min(5, len(actions))])
-                    self.call_update_action_batch(actions)
-                except Exception as e:
-                    import traceback
-                    traceback.print_exc()
+                # try:
+                #     # for  index ,current_node_id,  next_node_id  , current_state  , done_episode,reward in actions:
+                #     #     self.routingAgent.update_action( index ,current_node_id,  next_node_id  , current_state  , done_episode, self.timeSlot,reward , node_matrix,req_matrix,dist_matrix)
+                #     # for action in actions:
+                #     #     self.call_update_action_batch([action])
+                #     # self.call_update_action_batch(actions[:min(5, len(actions))])
+                #     self.call_update_action_batch(actions)
+                # except Exception as e:
+                #     import traceback
+                #     traceback.print_exc()
                 # print('time for update action ======== ' , time.time() - ta)
                 # print('total actionss after update ' , len(actions))
                 self.result.successfulRequestPerRound.append(successReq)
@@ -334,7 +334,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot < 500000:
+            if self.timeSlot < 00000:
                 t = time.time()
                 
                 # self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot)
@@ -487,10 +487,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             "dist_matrix": dist_matrix.tolist(),
             "timeSlot": timeSlot
         }
-        # print('Calling learn_predict API with payload:', payload)
+        # print('Calling learn_predict API with payload ===')
         try:
             t = time.time()
-            response = requests.post(url, json=payload)
+            response = requests.post(url, json=payload, timeout=5)
             # print('Time for learn_predict API call:', time.time() - t)
             t = time.time()
             response.raise_for_status()  # raises error for HTTP issues
@@ -508,7 +508,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # return self.routingAgent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
         t = time.time()
         ret =  self.call_learn_and_predict_api(reqState , ent_matrix, req_matrix,dist_matrix, timeSlot)
-        # print('============time to call learn_predict_api ' , time.time() - t)
+        print('============time to call learn_predict_api ' , time.time() - t)
         return ret
 
     def route_schedule_single(self ,  args):
@@ -536,6 +536,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # topo = pickle.loads(serialized_topo)
         # nodes = pickle.loads(serialized_nodes)
         src, dst, current_node_id, path, index, checked = reqState
+        next_node_id = None
         # current_node_id = current_node.id
         selectedNodes = [src]
         selectedEdges = []
@@ -567,12 +568,20 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             if True:
                 # print('-------===----=-=-=-=-=acquired agent lock ' , current_node_id , path , numtry, reqState)
                 # result = agent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
-                result = self.get_action(reqState , ent_matrix, req_matrix,dist_matrix, self.timeSlot)
+                print('**going to get action for req ' , current_node_id , next_node_id)
+                try:
+                    result = self.get_action(reqState , ent_matrix, req_matrix,dist_matrix, self.timeSlot)
+                except Exception as e:
+                    import traceback
+                    traceback.print_exc()
+                    exit(1)
+                    # result = None
                 # result = None
                 action_time += time.time() - t
                 if result is None:
                     print('-------===----=-=-=-=-=no action found break' , current_node_id , path , numtry)
                     break
+                print('-------===----=-=-=-=-=got action ' , current_node_id ,next_node_id)
             # print('time to get action ' , time.time() - t)
             # result = agent.learn_and_predict_next_req_node_single(reqState)
             # if result is None:
@@ -621,7 +630,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             # if cnlock == nnlock:
             #     locks = [cnlock]
             # with lock in locks:
-            # print('-------===----=-=-=-=-=acquiring locks ' , current_node_id , next_node_id)
+            print('-------===----=-=-=-=-=acquiring locks ' , current_node_id , next_node_id , ' index: ' , index)
+            pnode = current_node_id
             for lock in {cnlock, nnlock}:
                 lock.acquire()
             try:
@@ -632,6 +642,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node_id) + '_' + str(next_node_id)
                 # mpredis.set("shared_topo", dill.dumps(shared_topo))
                 # print('going to find ent_links for ' , (current_node_id , next_node_id) , ' ent_matrix ' , ent_matrix[current_node_id] [next_node_id])
+                print('**going for ent_matrix ' , current_node_id , next_node_id , 'index' , index)
                 ent_links = ent_matrix[current_node_id] [next_node_id]
                 if not ent_links:
 
@@ -686,6 +697,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # mpredis.set("node_" + str(current_node.id), dill.dumps(current_node))
                 # mpredis.set("node_" + str(next_node.id), dill.dumps(next_node))
                 # print('==shared_nodes save time ' , time.time() - t1)
+                pnode = current_node_id
                 current_node_id = next_node_id
                 swappSuccess = True
                 if success:
@@ -753,7 +765,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             finally:
                 for lock in {cnlock, nnlock}:
                     lock.release()
-                # print('-------===----=-=-=-=-=released locks ' , current_node_id , next_node_id)
+                print('-------===----=-=-=-=-=released locks ' , pnode , next_node_id)
             # print('-------===----=-=-=-=-=released locks ' , current_node_id , next_node_id)
             # with reward_lock:
             #     t1 = time.time()

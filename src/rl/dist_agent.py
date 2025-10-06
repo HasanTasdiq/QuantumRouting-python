@@ -95,24 +95,29 @@ async def call_update_reward(data: UpdateRewardRequest, background_tasks: Backgr
 
 @app.post("/learn_predict")
 async def call_learn_and_predict(data: LearnPredictRequest):
+    print('request received for learn_and_predict_next_req_node_single with reqIndex:')
     t = time.time()
     try:
-        result = agent.learn_and_predict_next_req_node_single(
-            data.reqIndex,
-            data.ent_matrix,
-            data.req_matrix,
-            data.dist_matrix,
-            data.timeSlot
+        # Run CPU-bound function in separate thread with timeout
+        result = await asyncio.wait_for(
+            asyncio.to_thread(
+                agent.learn_and_predict_next_req_node_single,
+                data.reqIndex,
+                data.ent_matrix,
+                data.req_matrix,
+                data.dist_matrix,
+                data.timeSlot
+            ),
+            timeout=5  # timeout in seconds
         )
-        # print('learn_and_predict result:', result)
+    except asyncio.TimeoutError:
+        return {"error": "Request timed out"}
     except Exception as e:
         import traceback
         traceback.print_exc()
         return {"error": str(e)}
-    # result = make_json_safe(result)
 
-    print('==============learn_and_predict result:', time.time() - t , ' s')
-    print(type(result))
+    print('==============learn_and_predict result time:', time.time() - t, 's')
     return {"result": [[], result[1]]}
 
 process = psutil.Process(os.getpid())
@@ -132,6 +137,7 @@ async def startup_event():
     agent = DQRLAgentDist()
     agent.initiate()
     print(f"[Worker PID {os.getpid()}] Agent ready.")
+
 
 @app.get("/snapshot")
 def snapshot():
