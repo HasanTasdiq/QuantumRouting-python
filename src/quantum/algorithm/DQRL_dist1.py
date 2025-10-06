@@ -334,7 +334,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot < 00000:
+            if self.timeSlot < 500000:
                 t = time.time()
                 
                 # self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot)
@@ -390,7 +390,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             asyncio.run(coro)
         threading.Thread(target=target, daemon=True).start()
     async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
-        print('in update_reward with ', timeSlot)
+        # print('in update_reward with ', timeSlot)
         url = "http://127.0.0.1:8000/update_reward"
         batch_json = []
         for param in actions:
@@ -418,7 +418,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             async with httpx.AsyncClient(timeout=None) as client:
                 response = await client.post(url, json=payload)
                 response.raise_for_status()
-                print('update_reward api called successfully', timeSlot)
+                # print('update_reward api called successfully', timeSlot)
                 return response.json()
         except httpx.RequestError as e:
             print(f"Network error while calling update_reward: {e}")
@@ -511,6 +511,36 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         print('============time to call learn_predict_api ' , time.time() - t)
         return ret
 
+
+    def acquire_two_locks(self , lock1, lock2, timeout=2.0, backoff_range=(0.01, 0.1)):
+        """
+        Safely acquire two locks without deadlock.
+        Always acquire in a fixed order.
+        If not successful within timeout, release and retry.
+        """
+        start_time = time.time()
+        while True:
+            # Acquire first lock
+            got_first = lock1.acquire(timeout=timeout)
+            if not got_first:
+                continue
+
+            # Try to acquire the second lock
+            got_second = lock2.acquire(timeout=timeout)
+            if got_second:
+                # success
+                return True
+            else:
+                # Failed to acquire second, release first and back off
+                lock1.release()
+                sleep_time = random.uniform(*backoff_range)
+                time.sleep(sleep_time)
+
+            # Optional: break if too long
+            if time.time() - start_time > timeout * 5:
+                return False
+
+
     def route_schedule_single(self ,  args):
         # print('route_schedule_single called with algo#############################################:')
         node_matrix_info , req_matrix_info,dist_matrix , q_matrix, reqState,lock , agent_lock ,reward_lock, node_locks =  args
@@ -568,7 +598,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             if True:
                 # print('-------===----=-=-=-=-=acquired agent lock ' , current_node_id , path , numtry, reqState)
                 # result = agent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
-                print('**going to get action for req ' , current_node_id , next_node_id)
+                # print('**going to get action for req ' , current_node_id , next_node_id)
                 try:
                     result = self.get_action(reqState , ent_matrix, req_matrix,dist_matrix, self.timeSlot)
                 except Exception as e:
@@ -579,9 +609,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # result = None
                 action_time += time.time() - t
                 if result is None:
-                    print('-------===----=-=-=-=-=no action found break' , current_node_id , path , numtry)
+                    # print('-------===----=-=-=-=-=no action found break' , current_node_id , path , numtry)
                     break
-                print('-------===----=-=-=-=-=got action ' , current_node_id ,next_node_id)
+                # print('-------===----=-=-=-=-=got action ' , current_node_id ,next_node_id)
             # print('time to get action ' , time.time() - t)
             # result = agent.learn_and_predict_next_req_node_single(reqState)
             # if result is None:
@@ -623,62 +653,14 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             # current_node_id = current_node.id
             # current_node = shared_nodes[current_node.id]  # Get the current node object
             # current_node = dill.loads(mpredis.get("node_" + str(current_node.id)))
-            cnlock = node_locks[current_node_id]
-            nnlock = node_locks[next_node_id]
-            # print('-------===----=-=-=-=-=going to acquire locks ' , current_node.id , next_node.id)
-            # locks = [cnlock, nnlock]
-            # if cnlock == nnlock:
-            #     locks = [cnlock]
-            # with lock in locks:
-            print('-------===----=-=-=-=-=acquiring locks ' , current_node_id , next_node_id , ' index: ' , index)
-            pnode = current_node_id
-            for lock in {cnlock, nnlock}:
-                lock.acquire()
-            try:
-                # print('-------===----=-=-=-=-=acquired locks ' , current_node.id , next_node.id)
-                # Find entangled links
-                # ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
-                # print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
-                key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node_id) + '_' + str(next_node_id)
-                # mpredis.set("shared_topo", dill.dumps(shared_topo))
-                # print('going to find ent_links for ' , (current_node_id , next_node_id) , ' ent_matrix ' , ent_matrix[current_node_id] [next_node_id])
-                print('**going for ent_matrix ' , current_node_id , next_node_id , 'index' , index)
-                ent_links = ent_matrix[current_node_id] [next_node_id]
-                if not ent_links:
-
-                    numtry += 1
-                    if numtry <= maxTry:
-                        continue
-                    else:
-                        good_to_search = False
-                        failed_no_ent = True
+            if current_node_id == next_node_id:
+                numtry += 1
+                if numtry <= maxTry:
+                    continue
                 else:
-                    numtry = 0
-                    ent_matrix[current_node_id] [next_node_id] -= 1
-                    ent_matrix[next_node_id] [current_node_id] -= 1
-
-                    # Fidelity check
-                    # fidelity = self.fidelityAfterSwap(fidelity, ent_links[0].fidelity)
-                    # if fidelity < self.topo.fidelity_threshold:
-                    #     numtry += 1
-                    #     if numtry <= maxTry:
-                    #             continue
-                    #     else:
-                    #         numtry = 0
-                    #         good_to_search = False
-
-
-                # Loop check
-                if next_node_id == current_node_id or next_node_id in path:
                     good_to_search = False
                     failed_loop = True
-                    # break
-
-                # selectedNodes.append(next_node)
-                # selectedEdges.append((current_node, next_node))
-                # usedLinks.extend(prev_links)
-                path.append(next_node_id)
-                req_done = (not good_to_search) or success
+                req_done = (not good_to_search)
                 # print('added to path')
 
                 reqState = (src,dst,next_node_id,tuple(path),index,req_done)
@@ -686,71 +668,152 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 req_matrix[index][2] = next_node_id
                 req_matrix[index][5] = req_done
                 req_matrix[len(self.requestState)+index][next_node_id] = 1
-                # print('Updated request state:', reqState)
-                # Success check
-                if next_node_id == dst.id and good_to_search:
-                    success = True
-                    good_to_search = False
-
-                # Prepare for next hop
-                # t1 = time.time()
-                # mpredis.set("node_" + str(current_node.id), dill.dumps(current_node))
-                # mpredis.set("node_" + str(next_node.id), dill.dumps(next_node))
-                # print('==shared_nodes save time ' , time.time() - t1)
-                pnode = current_node_id
-                current_node_id = next_node_id
-                swappSuccess = True
-                if success:
-                    # print('going to swap for ' , (src.id , dst.id ))
-                    for i in range(1 , len(path)-1):
-                        swapped = False
-                        # print('qmatrix ' , q_matrix)
-                        if random.random() <= q_matrix[path[i]]:
-                            swapped = True
-                        if not swapped:
-                            failed_swap = True
-                            swappSuccess = False
-                            # print('================failed swap==================')
-                            break
+                continue
                 
+            cnlock = node_locks[current_node_id]
+            nnlock = node_locks[next_node_id]
+            # print('-------===----=-=-=-=-=going to acquire locks ' , current_node.id , next_node.id)
+            # locks = [cnlock, nnlock]
+            # if cnlock == nnlock:
+            #     locks = [cnlock]
+            # with lock in locks:
+            pnode = current_node_id
+            # for lock in {cnlock, nnlock}:
+            #     lock.acquire()
+            # with cnlock, nnlock:
+            timeout = 1
+            while True:
+                if self.acquire_two_locks(cnlock, nnlock):
+
+                    try:
+                    
+                        # print('-------===----=-=-=-=-=acquired locks+ ' ,  current_node_id , next_node_id , ' index: ' , index)
+                        # Find entangled links
+                        # ent_links = [link for link in current_node.links if (link.isEntangled(self.timeSlot) and link.contains(next_node) and link.notSwapped() and not link.taken)]
+                        # print(f"Processing request {src.id} to {dst.id},current node ID: {current_node.id} next node ID: {next_node_id}", 'len ent_links:', len(ent_links) , 'path:', path)
+                        key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(current_node_id) + '_' + str(next_node_id)
+                        # mpredis.set("shared_topo", dill.dumps(shared_topo))
+                        # print('going to find ent_links for ' , (current_node_id , next_node_id) , ' ent_matrix ' , ent_matrix[current_node_id] [next_node_id])
+                        # print('**going for ent_matrix ' , current_node_id , next_node_id , 'index' , index)
+                        ent_links = ent_matrix[current_node_id] [next_node_id]
+                        if not ent_links:
+
+                            numtry += 1
+                            if numtry <= maxTry:
+                                continue
+                            else:
+                                good_to_search = False
+                                failed_no_ent = True
+                        else:
+                            numtry = 0
+                            ent_matrix[current_node_id] [next_node_id] -= 1
+                            ent_matrix[next_node_id] [current_node_id] -= 1
+
+                            # Fidelity check
+                            # fidelity = self.fidelityAfterSwap(fidelity, ent_links[0].fidelity)
+                            # if fidelity < self.topo.fidelity_threshold:
+                            #     numtry += 1
+                            #     if numtry <= maxTry:
+                            #             continue
+                            #     else:
+                            #         numtry = 0
+                            #         good_to_search = False
 
 
-                if success and swappSuccess:
-                    # print('going to find path for:', (src.id , dst.id ))
-                    t2 = time.time()
-                    for req in self.requests:
-                            # src = req[0]
-                            # dst = req[1]
-                        if (src, dst) == (req[0], req[1]):
-                                # print('[REPS] finish time:', self.timeSlot - request[2])
-                            self.requests.remove(req)
-                            break
+                        # Loop check
+                        if next_node_id == current_node_id or next_node_id in path:
+                            good_to_search = False
+                            failed_loop = True
+                            # break
 
-                    # successReq += 1
-                    # totalEntanglement += 1
+                        # selectedNodes.append(next_node)
+                        # selectedEdges.append((current_node, next_node))
+                        # usedLinks.extend(prev_links)
+                        path.append(next_node_id)
+                        req_done = (not good_to_search) or success
+                        # print('added to path')
 
+                        reqState = (src,dst,next_node_id,tuple(path),index,req_done)
+                        self.requestState[index] = reqState
+                        req_matrix[index][2] = next_node_id
+                        req_matrix[index][5] = req_done
+                        req_matrix[len(self.requestState)+index][next_node_id] = 1
+                        # print('Updated request state:', reqState)
+                        # Success check
+                        if next_node_id == dst.id and good_to_search:
+                            success = True
+                            good_to_search = False
 
-                reward = -1
-
-                if req_done:
-                    if success:
-                            # print("====success====" , src.id , dst.id , [n for n in path])
-                            # print('shortest path ----- ' , [n.id for n in targetPath])
-                        reward = 10
-                            # reward = 1
-
-                        total_fidelity += fidelity
-                    else:
-                        for i in range(1 , len(path)):
-                            ent_matrix[path[i-1]] [path[i]] += 1
-                            ent_matrix[path[i]] [path[i-1]] += 1
-                      
-                        # print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path] , 'threading.get_ident():', threading.get_ident())
-                            # print('shortest path ----- ' , [n.id for n in targetPath])
+                        # Prepare for next hop
+                        # t1 = time.time()
+                        # mpredis.set("node_" + str(current_node.id), dill.dumps(current_node))
+                        # mpredis.set("node_" + str(next_node.id), dill.dumps(next_node))
+                        # print('==shared_nodes save time ' , time.time() - t1)
+                        pnode = current_node_id
+                        current_node_id = next_node_id
+                        swappSuccess = True
+                        if success:
+                            # print('going to swap for ' , (src.id , dst.id ))
+                            for i in range(1 , len(path)-1):
+                                swapped = False
+                                # print('qmatrix ' , q_matrix)
+                                if random.random() <= q_matrix[path[i]]:
+                                    swapped = True
+                                if not swapped:
+                                    failed_swap = True
+                                    swappSuccess = False
+                                    # print('================failed swap==================')
+                                    break
                         
-                        # print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
-                        reward = -10
 
+
+                        if success and swappSuccess:
+                            # print('going to find path for:', (src.id , dst.id ))
+                            t2 = time.time()
+                            for req in self.requests:
+                                    # src = req[0]
+                                    # dst = req[1]
+                                if (src, dst) == (req[0], req[1]):
+                                        # print('[REPS] finish time:', self.timeSlot - request[2])
+                                    self.requests.remove(req)
+                                    break
+
+                            # successReq += 1
+                            # totalEntanglement += 1
+
+
+                        reward = -1
+
+                        if req_done:
+                            if success:
+                                    # print("====success====" , src.id , dst.id , [n for n in path])
+                                    # print('shortest path ----- ' , [n.id for n in targetPath])
+                                reward = 10
+                                    # reward = 1
+
+                                total_fidelity += fidelity
+                            else:
+                                for i in range(1 , len(path)):
+                                    ent_matrix[path[i-1]] [path[i]] += 1
+                                    ent_matrix[path[i]] [path[i-1]] += 1
+                            
+                                # print("!!!!!!!=fail=!!!!!!!" , src.id , dst.id , [n for n in path] , 'threading.get_ident():', threading.get_ident())
+                                    # print('shortest path ----- ' , [n.id for n in targetPath])
+                                
+                                # print('fail_hopcount' , fail_hopcount , 'failed_loop' , failed_loop , 'failed_no_ent' , failed_no_ent , 'failed_swap' , failed_swap)
+                                reward = -10
+
+                    finally:
+                        nnlock.release()
+                        cnlock.release()
+                        # print('-------===----=-=-=-=-=released locks* ' , pnode , next_node_id)
+                    break
+                else:
+                    time.sleep(random.uniform(0.01, 0.1))
+
+
+
+                
 
                     # print('lenT ' , len(T))
 
@@ -762,11 +825,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # t1 = time.time()
                 # mpredis.set("shared_nodes", dill.dumps(shared_nodes))
                 # print('==shared_nodes save time ' , time.time() - t1)
-            finally:
-                for lock in {cnlock, nnlock}:
-                    lock.release()
-                print('-------===----=-=-=-=-=released locks ' , pnode , next_node_id)
-            # print('-------===----=-=-=-=-=released locks ' , current_node_id , next_node_id)
+            # finally:
+            #     for lock in {cnlock, nnlock}:
+            #         lock.release()
+            #     print('-------===----=-=-=-=-=released locks ' , pnode , next_node_id)
             # with reward_lock:
             #     t1 = time.time()
             #     # reward_routing = dill.loads(mpredis.get("reward_routing"))
