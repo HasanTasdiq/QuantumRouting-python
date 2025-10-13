@@ -1,6 +1,6 @@
 import asyncio
 import time
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, Request
 from pydantic import BaseModel
 import uvicorn
 from DQRLAgentDist_API import DQRLAgentDist  # replace with your actual module
@@ -9,6 +9,7 @@ import psutil
 import os
 app = FastAPI()
 agent = None  # global agent reference per worker
+import gc
 
 
 class UpdateActionParams(BaseModel):
@@ -80,16 +81,31 @@ async def call_update_reward(data: UpdateRewardRequest, background_tasks: Backgr
     timeSlot = data.timeSlot
     actions = data.actions
 
-    def task():
+    def task(successfulRequest, timeSlot, actions):
         try:
             agent.update_reward(successfulRequest, timeSlot, actions)
         except Exception as e:
             import traceback
             traceback.print_exc()
             print(f"[BackgroundTaskError] update_reward failed: {e}")
-
-    background_tasks.add_task(task)
+        finally:
+            del successfulRequest, timeSlot, actions
+            # import gc; 
+            gc.collect()
+    task(successfulRequest, timeSlot, actions)
+    # background_tasks.add_task(task, successfulRequest, timeSlot, actions)
     return {"status": "update_reward started in background"}
+
+# @app.post("/update_reward")
+# async def call_update_reward(request: Request, background_tasks: BackgroundTasks):
+#     raw_body = await request.body()
+#     background_tasks.add_task(process_update_reward, raw_body)
+#     return {"status": "started"}
+
+# def process_update_reward(raw_body):
+#     import orjson
+#     data = orjson.loads(raw_body)
+#     agent.update_reward(data["successfulRequest"], data["timeSlot"], data["actions"])
 
 
 

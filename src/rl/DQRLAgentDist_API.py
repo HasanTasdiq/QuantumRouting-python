@@ -69,8 +69,8 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 START_EPSILON_DECAYING = 200
 END_EPSILON_DECAYING = 4000
 REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 100  # How many steps (samples) to use for training
+MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 256  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
@@ -188,16 +188,16 @@ class DQRLAgentDist:
         for r in model.get_weights():
             print(r)
     def create_model(self):
-        # try:
-        #     model = load_model(self.model_name)
-        #     print('=====================================================model loaded from ',self.model_name,' =====================================')
-        #     print(model.weights)
+        try:
+            model = load_model(self.model_name)
+            print('=====================================================model loaded from ',self.model_name,' =====================================')
+            print(model.weights)
             
-        #     # time.sleep(10)
-        #     return model
-        # except:
-        #     print('=====================no model found========================')
-        #     # time.sleep(10)
+            # time.sleep(10)
+            return model
+        except:
+            print('=====================no model found========================')
+            # time.sleep(10)
 
         
         model = Sequential()
@@ -825,6 +825,7 @@ class DQRLAgentDist:
         if timeSlot % 100 == 0:
             self.save_model()
             print('model saved at time slot ' , timeSlot)
+        print('======!=======!==== total update reward done in ' , time.time() - t1 , 'seconds\n')
         return total_reward
 
     def getOrderedRequests(self , paths):

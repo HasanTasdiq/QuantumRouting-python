@@ -2,7 +2,7 @@ import requests
 import time
 import json
 
-BASE_URL = "http://127.0.0.1:8080"  # Change to your API server address
+BASE_URL = "http://127.0.0.1:8000"  # Change to your API server address
 INTERVAL = 10  # seconds between memory checks
 TAKE_SNAPSHOT = True  # Set True to also get top memory allocations
 

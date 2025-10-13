@@ -29,6 +29,8 @@ qManager.register('sLink', sLink)
 executor = ProcessPoolExecutor(max_workers=20)
 # executor = ThreadPoolExecutor(max_workers=8)
 
+train_executor = ThreadPoolExecutor(max_workers=20)
+
 def route_schedule_single2(  reqState):
     print('route_schedule_single called with algo#############################################:')
 

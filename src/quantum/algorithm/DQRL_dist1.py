@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 import os
 from concurrent.futures import ProcessPoolExecutor
-from topo.mp_helper import executor as executor2,mpredis,update_shared_topo, route_schedule_single2 , qManager, lock1, agent_lock,reward_lock, node_locks
+from topo.mp_helper import executor as executor2,train_executor , mpredis,update_shared_topo, route_schedule_single2 , qManager, lock1, agent_lock,reward_lock, node_locks
 from multiprocessing.managers import BaseManager
 import dill
 import requests
@@ -337,7 +337,6 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             if self.timeSlot < 500000:
                 t = time.time()
                 
-                # self.routingAgent.update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot)
                 print('going to call update_reward with ')
                 try:
                     self.run_async_in_thread(self.call_update_reward(
@@ -345,10 +344,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                         timeSlot=self.timeSlot,
                         actions=actions
                     ))
-                    # self.call_update_reward(self.result.successfulRequestPerRound[-1], self.timeSlot,actions)
                 except Exception as e:
                     import traceback
                     traceback.print_exc()
+         
                 reward = 0
                 print('time for update_reward ======== ' , time.time() - t)
 
@@ -386,9 +385,17 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             traceback.print_exc()
             return (0, [])
     def run_async_in_thread(self , coro):
+        global train_executor
         def target():
             asyncio.run(coro)
-        threading.Thread(target=target, daemon=True).start()
+        try:
+            # train_executor.submit(target)
+            target()
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+
     async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
         # print('in update_reward with ', timeSlot)
         url = "http://127.0.0.1:8000/update_reward"
@@ -419,7 +426,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 response = await client.post(url, json=payload)
                 response.raise_for_status()
                 # print('update_reward api called successfully', timeSlot)
-                return response.json()
+                # return response.json()
+                return
         except httpx.RequestError as e:
             print(f"Network error while calling update_reward: {e}")
             return {"status": "error", "message": str(e)}
