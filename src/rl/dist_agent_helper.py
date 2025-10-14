@@ -184,34 +184,30 @@ def schedule_routing_state_dist( curr_req, ent_matrix=None, req_matrix=None, dis
         local[curr_req[1]] = 10
 
         # 7. Final state vector
-        # ret = np.concatenate([
-        #     curr_emb,         # attention-aware request embedding
-        #     context_vec,      # neighbor context
-        #     np.array(local),   # current and destination
-        #     state_graph_flat,
-        #     state_dist_flat
-        # ])
-        # del curr_emb, context_vec, local, state_graph_flat, state_dist_flat
+        ret = np.concatenate([
+            curr_emb,         # attention-aware request embedding
+            context_vec,      # neighbor context
+            np.array(local),   # current and destination
+            state_graph_flat,
+            state_dist_flat
+        ])
 
-        # print(ret)
-        # exit()
+        # total_len = curr_emb.size + context_vec.size + len(local) + len(state_graph_flat) + len(state_dist_flat)
+        # # ret = np.empty(total_len, dtype=np.float32)
+        # global _concat_buffer
+        # if _concat_buffer is None or _concat_buffer.size < total_len:
+        #     _concat_buffer = np.empty(total_len, dtype=np.float32)
+        # ret = _concat_buffer[:total_len]
 
-        total_len = curr_emb.size + context_vec.size + len(local) + len(state_graph_flat) + len(state_dist_flat)
-        # ret = np.empty(total_len, dtype=np.float32)
-        global _concat_buffer
-        if _concat_buffer is None or _concat_buffer.size < total_len:
-            _concat_buffer = np.empty(total_len, dtype=np.float32)
-        ret = _concat_buffer[:total_len]
-
-        start = 0
-        ret[start:start+curr_emb.size] = curr_emb
-        start += curr_emb.size
-        ret[start:start+context_vec.size] = context_vec
-        start += context_vec.size
-        ret[start:start+len(local)] = local
-        start += len(local)
-        ret[start:start+len(state_graph_flat)] = state_graph_flat
-        start += len(state_graph_flat)
-        ret[start:start+len(state_dist_flat)] = state_dist_flat
+        # start = 0
+        # ret[start:start+curr_emb.size] = curr_emb
+        # start += curr_emb.size
+        # ret[start:start+context_vec.size] = context_vec
+        # start += context_vec.size
+        # ret[start:start+len(local)] = local
+        # start += len(local)
+        # ret[start:start+len(state_graph_flat)] = state_graph_flat
+        # start += len(state_graph_flat)
+        # ret[start:start+len(state_dist_flat)] = state_dist_flat
 
         return ret
