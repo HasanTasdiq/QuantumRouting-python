@@ -520,7 +520,7 @@ class DQRLAgentDist:
     def process_actions(self, params):
         global executor
         if executor is None:
-            executor = ProcessPoolExecutor(max_workers=50)
+            executor = ProcessPoolExecutor(max_workers=100)
         # self.executor
         print('process_actions called ' , len(params), executor is not None)
         # futures = [executor.submit(self.process_update_action, p) for p in params]
