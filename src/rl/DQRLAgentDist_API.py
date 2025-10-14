@@ -470,11 +470,12 @@ class DQRLAgentDist:
         return max(0, epsilon)
     
     def learn_and_predict_next_req_node_single(self, reqIndex, ent_matrix , req_matrix,dist_matrix,timeSlot):
-        # if timeSlot > 0 and timeSlot % 100 == 0:
-        #     try:
-        #         self.model = load_model(self.model_name)
-        #     except:
-        #         print('no model found to load!!!!!!!!!!!!!!!')    
+        if timeSlot > 0 and timeSlot % 100 == 0:
+            try:
+                self.model = load_model(self.model_name)
+                print('model loaded from ' , self.model_name , ' at timeSlot ' , timeSlot)
+            except:
+                print('no model found to load!!!!!!!!!!!!!!!')    
         print('learn_and_predict_next_req_node_single called ' )
         req = req_matrix[reqIndex][:6]
         req[3] = req_matrix[reqIndex + len(req_matrix)//2]
