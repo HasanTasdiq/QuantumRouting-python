@@ -518,13 +518,15 @@ class DQRLAgentDist:
    
 
     def process_actions(self, params):
+        max_workers = 20
         global executor
         if executor is None:
-            executor = ProcessPoolExecutor(max_workers=100)
+            executor = ProcessPoolExecutor(max_workers=max_workers)
         # self.executor
         print('process_actions called ' , len(params), executor is not None)
         # futures = [executor.submit(self.process_update_action, p) for p in params]
-        futures = list(executor.map(process_update_action, [p for p in params] , chunksize=100))
+        chunk_size = max(1, len(params) // (max_workers))
+        futures = list(executor.map(process_update_action, [p for p in params] , chunksize=chunk_size))
 
         results = []
         # for f in as_completed(futures):

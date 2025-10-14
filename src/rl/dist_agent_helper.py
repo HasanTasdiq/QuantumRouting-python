@@ -7,7 +7,7 @@ from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttentio
 
 
 
-executor = ProcessPoolExecutor(max_workers=100)
+executor = ProcessPoolExecutor(max_workers=20)
 SIZE = 100
 embedding_layer = Embedding(input_dim=20, output_dim=1)
 attention_layer = Attention()
