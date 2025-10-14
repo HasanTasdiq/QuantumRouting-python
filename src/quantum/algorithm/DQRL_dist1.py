@@ -389,8 +389,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         def target():
             asyncio.run(coro)
         try:
-            # train_executor.submit(target)
-            target()
+            train_executor.submit(target)
+            # target()
 
         except Exception as e:
             import traceback
@@ -516,7 +516,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # return self.routingAgent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
         t = time.time()
         ret =  self.call_learn_and_predict_api(reqState , ent_matrix, req_matrix,dist_matrix, timeSlot)
-        print('============time to call learn_predict_api ' , time.time() - t)
+        # print('============time to call learn_predict_api ' , time.time() - t)
         return ret
 
 
