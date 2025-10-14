@@ -66,12 +66,12 @@ MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-START_EPSILON_DECAYING = 2000
-END_EPSILON_DECAYING = 4000
-REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 2000
+# END_EPSILON_DECAYING = 4000
+# REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
 # START_EPSILON_DECAYING = 10
@@ -524,7 +524,7 @@ class DQRLAgentDist:
         # self.executor
         print('process_actions called ' , len(params), executor is not None)
         # futures = [executor.submit(self.process_update_action, p) for p in params]
-        futures = list(executor.map(process_update_action, [p for p in params] , chunksize=50))
+        futures = list(executor.map(process_update_action, [p for p in params] , chunksize=100))
 
         results = []
         # for f in as_completed(futures):
