@@ -325,7 +325,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # p_time += self.route_schedule_seq()
             # self.route_seq()
             # self.route_schedule_seq()
-            print('time for route schedule ======== ' , time.time() - t)
+            print('*=========time for route schedule ======== ' , time.time() - t)
         t = time.time()
         self.filterReqeuest()
 
@@ -858,8 +858,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             
             # with lock2:
             #     self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
-        print('time in action selection ======== ' , action_time,'s, for ' , len(actions), ' actions' )
-        print('=================final process id:', os.getpid() , 'time taken:', time.time()-tl)
+        # print('time in action selection ======== ' , action_time,'s, for ' , len(actions), ' actions' )
+        # print('=================final process id:', os.getpid() , 'time taken:', time.time()-tl)
         return (success and swappSuccess , actions)
 
     # def route_schedule_single(self ,  args):
