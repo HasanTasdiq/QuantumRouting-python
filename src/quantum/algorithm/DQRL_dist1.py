@@ -398,7 +398,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
     async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
         # print('in update_reward with ', timeSlot)
-        url = "http://127.0.0.1:8000/update_reward"
+        url = "http://127.0.0.1:8080/update_reward"
         batch_json = []
         for param in actions:
             param_dict = {

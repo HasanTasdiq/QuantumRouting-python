@@ -66,12 +66,12 @@ EPSILON_ = 1  # not a constant, qoing to be decayed
 # UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-START_EPSILON_DECAYING = 200
-END_EPSILON_DECAYING = 4000
-REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 256  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 2000
+# END_EPSILON_DECAYING = 4000
+# REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
 # START_EPSILON_DECAYING = 10
@@ -91,12 +91,12 @@ UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 
 # for testing
-# START_EPSILON_DECAYING = 10
-# END_EPSILON_DECAYING = 20
-# REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10
+END_EPSILON_DECAYING = 20
+REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
@@ -188,16 +188,16 @@ class DQRLAgentDist:
         for r in model.get_weights():
             print(r)
     def create_model(self):
-        try:
-            model = load_model(self.model_name)
-            print('=====================================================model loaded from ',self.model_name,' =====================================')
-            print(model.weights)
+        # try:
+        #     model = load_model(self.model_name)
+        #     print('=====================================================model loaded from ',self.model_name,' =====================================')
+        #     print(model.weights)
             
-            # time.sleep(10)
-            return model
-        except:
-            print('=====================no model found========================')
-            # time.sleep(10)
+        #     # time.sleep(10)
+        #     return model
+        # except:
+        #     print('=====================no model found========================')
+        #     # time.sleep(10)
 
         
         model = Sequential()
@@ -540,34 +540,34 @@ class DQRLAgentDist:
         local[curr_req[1]] = 10
 
         # 7. Final state vector
-        # ret = np.concatenate([
-        #     curr_emb,         # attention-aware request embedding
-        #     context_vec,      # neighbor context
-        #     np.array(local),   # current and destination
-        #     state_graph_flat,
-        #     state_dist_flat
-        # ])
+        ret = np.concatenate([
+            curr_emb,         # attention-aware request embedding
+            context_vec,      # neighbor context
+            np.array(local),   # current and destination
+            state_graph_flat,
+            state_dist_flat
+        ])
         # del curr_emb, context_vec, local, state_graph_flat, state_dist_flat
 
         # print(ret)
         # exit()
 
-        total_len = curr_emb.size + context_vec.size + len(local) + len(state_graph_flat) + len(state_dist_flat)
-        # ret = np.empty(total_len, dtype=np.float32)
-        if not hasattr(self, "_concat_buffer") or self._concat_buffer.size < total_len:
-            self._concat_buffer = np.empty(total_len, dtype=np.float32)
-        ret = self._concat_buffer[:total_len]
+        # total_len = curr_emb.size + context_vec.size + len(local) + len(state_graph_flat) + len(state_dist_flat)
+        # # ret = np.empty(total_len, dtype=np.float32)
+        # if not hasattr(self, "_concat_buffer") or self._concat_buffer.size < total_len:
+        #     self._concat_buffer = np.empty(total_len, dtype=np.float32)
+        # ret = self._concat_buffer[:total_len]
 
-        start = 0
-        ret[start:start+curr_emb.size] = curr_emb
-        start += curr_emb.size
-        ret[start:start+context_vec.size] = context_vec
-        start += context_vec.size
-        ret[start:start+len(local)] = local
-        start += len(local)
-        ret[start:start+len(state_graph_flat)] = state_graph_flat
-        start += len(state_graph_flat)
-        ret[start:start+len(state_dist_flat)] = state_dist_flat
+        # start = 0
+        # ret[start:start+curr_emb.size] = curr_emb
+        # start += curr_emb.size
+        # ret[start:start+context_vec.size] = context_vec
+        # start += context_vec.size
+        # ret[start:start+len(local)] = local
+        # start += len(local)
+        # ret[start:start+len(state_graph_flat)] = state_graph_flat
+        # start += len(state_graph_flat)
+        # ret[start:start+len(state_dist_flat)] = state_dist_flat
 
         return ret
     
@@ -597,11 +597,11 @@ class DQRLAgentDist:
         return max(0, epsilon)
     
     def learn_and_predict_next_req_node_single(self, reqIndex, ent_matrix , req_matrix,dist_matrix,timeSlot):
-        if timeSlot > 0 and timeSlot % 100 == 0:
-            try:
-                self.model = load_model(self.model_name)
-            except:
-                print('no model found to load!!!!!!!!!!!!!!!')    
+        # if timeSlot > 0 and timeSlot % 100 == 0:
+        #     try:
+        #         self.model = load_model(self.model_name)
+        #     except:
+        #         print('no model found to load!!!!!!!!!!!!!!!')    
         print('learn_and_predict_next_req_node_single called ' )
         req = req_matrix[reqIndex][:6]
         req[3] = req_matrix[reqIndex + len(req_matrix)//2]
@@ -625,7 +625,7 @@ class DQRLAgentDist:
         random_val = np.random.random()
         epsilon = self.get_epsilon_linear(timeSlot)
         if random_val > epsilon:
-            print('using greedy action from model ' , timeSlot , epsilon)
+            print('======using greedy action from model ' , timeSlot , epsilon)
             action = np.argmax(np.where(mask == 1, qs, -np.inf))
         else:
             action = np.random.choice(valid_actions)
