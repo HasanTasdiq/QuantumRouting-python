@@ -108,12 +108,12 @@ def run_async_in_thread( coro):
     def target():
         asyncio.run(coro)
 
-    if len(active_futures) >= 10:
-        while len(active_futures):
-            # Wait for at least one to finish before submitting new one
-            print('Waiting for an active future to complete.......................................')
-            done, pending = wait(active_futures)
-            active_futures -= done
+    # if len(active_futures) >= 10:
+    #     while len(active_futures):
+    #         # Wait for at least one to finish before submitting new one
+    #         print('Waiting for an active future to complete.......................................')
+    #         done, pending = wait(active_futures)
+    #         active_futures -= done
 
 
 
