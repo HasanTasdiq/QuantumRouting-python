@@ -17,7 +17,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import os
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor,wait,FIRST_COMPLETED
 from topo.mp_helper import executor as executor2,train_executor , mpredis,update_shared_topo, route_schedule_single2 , qManager, lock1, agent_lock,reward_lock, node_locks
 from multiprocessing.managers import BaseManager
 import dill
@@ -34,7 +34,7 @@ import asyncio
 
 sys.path.insert(0, "../../rl")
 max_workers = os.cpu_count()
-
+active_futures = set()
 # lock = Lock()
 lock2 = Lock()
 # lock1 = Lock()
@@ -60,6 +60,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         self.executor = None
         self.tst = [] 
         self.shared_memories = []
+        self.active_futures = set()
 
 
 
@@ -386,10 +387,31 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             return (0, [])
     def run_async_in_thread(self , coro):
         global train_executor
+        global active_futures
         def target():
             asyncio.run(coro)
+        print('in run async in thread ' , len(active_futures))
+        if len(active_futures) >= 10:
+
+            # Wait for at least one to finish before submitting new one
+            print('Waiting for an active future to complete.......................................')
+            done, pending = wait(active_futures)
+
+            active_futures = {f for f in active_futures if not f.done()}
+            print('in run async in thread after waiting' , len(active_futures))
+
+
+
+
         try:
-            train_executor.submit(target)
+
+            future = train_executor.submit(target)
+            # future.result()  # Wait for completion
+            # results = list(train_executor.map(target))
+
+            # future.join()
+            active_futures.add(future)
+            print('Submitted a new background task. Active tasks:', len(self.active_futures))
             # target()
 
         except Exception as e:

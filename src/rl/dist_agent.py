@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor,wait
 import time
 from fastapi import FastAPI, BackgroundTasks, Request
 from pydantic import BaseModel
@@ -11,6 +12,8 @@ app = FastAPI()
 agent = None  # global agent reference per worker
 import gc
 
+train_executor = ThreadPoolExecutor(max_workers=10)
+active_futures = set()
 
 class UpdateActionParams(BaseModel):
     reqIndex: int
@@ -74,6 +77,56 @@ def make_json_safe(obj):
 #     return {"results": 'success'}
 
 
+# @app.post("/update_reward")
+# async def call_update_reward(data: UpdateRewardRequest, background_tasks: BackgroundTasks):
+#     print('In update_reward API with timeSlot:', data.timeSlot)
+#     successfulRequest = data.successfulRequest
+#     timeSlot = data.timeSlot
+#     actions = data.actions
+
+#     async def background_task(successfulRequest, timeSlot, actions):
+#         async with semaphore:  # Wait if 10 are already running
+#             try:
+#                 # Run the blocking function in a thread to not block the event loop
+#                 await asyncio.to_thread(agent.update_reward, successfulRequest, timeSlot, actions)
+#             except Exception as e:
+#                 import traceback
+#                 traceback.print_exc()
+#                 print(f"[BackgroundTaskError] update_reward failed: {e}")
+#             finally:
+#                 del successfulRequest, timeSlot, actions
+#                 gc.collect()
+
+#     # Add to background task list
+#     background_tasks.add_task(asyncio.create_task, background_task(successfulRequest, timeSlot, actions))
+
+#     return {"status": "update_reward started in background"}
+
+def run_async_in_thread( coro):
+    global active_futures
+    global train_executor
+    def target():
+        asyncio.run(coro)
+
+    if len(active_futures) >= 10:
+        while len(active_futures):
+            # Wait for at least one to finish before submitting new one
+            print('Waiting for an active future to complete.......................................')
+            done, pending = wait(active_futures)
+            active_futures -= done
+
+
+
+    try:
+        # future = train_executor.submit(target)
+        # print('Submitted a new background task. Active tasks:', len(active_futures) + 1)
+        # active_futures.add(future)
+        target()
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+
 @app.post("/update_reward")
 async def call_update_reward(data: UpdateRewardRequest, background_tasks: BackgroundTasks):
     print('In update_reward API with timeSlot:', data.timeSlot)
@@ -92,6 +145,9 @@ async def call_update_reward(data: UpdateRewardRequest, background_tasks: Backgr
             del successfulRequest, timeSlot, actions
             # import gc; 
             gc.collect()
+    # run_async_in_thread(task(successfulRequest, timeSlot, actions))
+        
+
     task(successfulRequest, timeSlot, actions)
     # background_tasks.add_task(task, successfulRequest, timeSlot, actions)
     return {"status": "update_reward started in background"}

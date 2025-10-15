@@ -58,20 +58,20 @@ ENTANGLEMENT_LIFETIME = 10
 EPSILON_ = 1  # not a constant, qoing to be decayed
 
 # run 25k
-START_EPSILON_DECAYING = 10000
-END_EPSILON_DECAYING = 20000
-REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 10000
+# END_EPSILON_DECAYING = 20000
+# REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-# START_EPSILON_DECAYING = 2000
-# END_EPSILON_DECAYING = 4000
-# REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 2000
+END_EPSILON_DECAYING = 4000
+REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
 # START_EPSILON_DECAYING = 10
@@ -294,7 +294,8 @@ class DQRLAgentDist:
 
         # indices = np.random.choice(len(self.replay_memory), MINIBATCH_SIZE, p=probabilities)
         # minibatch = [self.replay_memory[i] for i in indices]
-        minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+        minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE//2)
+        minibatch.extend(self.replay_memory[-(MINIBATCH_SIZE//2):])
         batch_size = MINIBATCH_SIZE
         print('=============sample ===========' , time.time() - t1)
 
