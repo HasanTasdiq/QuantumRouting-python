@@ -391,14 +391,14 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         def target():
             asyncio.run(coro)
         print('in run async in thread ' , len(active_futures))
-        if len(active_futures) >= 10:
+        # if len(active_futures) >= 10:
 
-            # Wait for at least one to finish before submitting new one
-            print('Waiting for an active future to complete.......................................')
-            done, pending = wait(active_futures)
+        #     # Wait for at least one to finish before submitting new one
+        #     print('Waiting for an active future to complete.......................................')
+        #     done, pending = wait(active_futures)
 
-            active_futures = {f for f in active_futures if not f.done()}
-            print('in run async in thread after waiting' , len(active_futures))
+        #     active_futures = {f for f in active_futures if not f.done()}
+        #     print('in run async in thread after waiting' , len(active_futures))
 
 
 
@@ -420,6 +420,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
     async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
         # print('in update_reward with ', timeSlot)
+        t = time.time()
         url = "http://127.0.0.1:8000/update_reward"
         batch_json = []
         for param in actions:
@@ -456,6 +457,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         except httpx.HTTPStatusError as e:
             print(f"HTTP error from update_reward API: {e.response.status_code}")
             return {"status": "error", "message": str(e)}
+        print('update_reward api call completed', time.time() - t , 'sec for timeSlot ' , timeSlot)
     def convert_to_serializable_actions(self , batch_params):
         """Convert any NumPy arrays or NumPy scalars to Python native types."""
         serializable_batch = []
