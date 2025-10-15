@@ -63,7 +63,7 @@ START_EPSILON_DECAYING = 10000
 END_EPSILON_DECAYING = 20000
 REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 1500  # How many steps (samples) to use for training
+MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
@@ -288,7 +288,7 @@ class DQRLAgentDist:
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(self.replay_memory))
-        print('----------size(self.replay memory)----------------', get_deep_size(self.replay_memory)/1024/1024 , 'MB')
+        # print('----------size(self.replay memory)----------------', get_deep_size(self.replay_memory)/1024/1024 , 'MB')
 
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
@@ -628,8 +628,8 @@ class DQRLAgentDist:
 
 
         ############################################
-        if timeSlot % 3 == 0:
-            self.train(False )
+        # if timeSlot % 3 == 0:
+        self.train(False )
         print('time train ' , time.time()-t5)
 
         # print('===---------size of model memory----------------===-' , get_deep_size(self.model)/1024/1024 , 'MB')
