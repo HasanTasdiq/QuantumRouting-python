@@ -391,7 +391,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         def target():
             asyncio.run(coro)
         print('in run async in thread ' , len(active_futures))
-        if len(active_futures) >= 100:
+        if len(active_futures) >= 10:
 
             # Wait for at least one to finish before submitting new one
             print('Waiting for an active future to complete.......................................')
