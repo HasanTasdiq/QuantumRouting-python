@@ -75,12 +75,12 @@ UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
-# START_EPSILON_DECAYING = 10
-# END_EPSILON_DECAYING = 25
-# REPLAY_MEMORY_SIZE = 3000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10
+END_EPSILON_DECAYING = 250
+REPLAY_MEMORY_SIZE = 3000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
 # START_EPSILON_DECAYING = 5000

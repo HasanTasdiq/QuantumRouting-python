@@ -450,6 +450,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 response.raise_for_status()
                 # print('update_reward api called successfully', timeSlot)
                 # return response.json()
+                print('~~~~~~~~~~@@@@@@update_reward api call completed', time.time() - t , 'sec for $$$$$$$$$$$$ timeSlot ' , timeSlot)
+
                 return
         except httpx.RequestError as e:
             print(f"Network error while calling update_reward: {e}")
@@ -457,7 +459,6 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         except httpx.HTTPStatusError as e:
             print(f"HTTP error from update_reward API: {e.response.status_code}")
             return {"status": "error", "message": str(e)}
-        print('~~~~~~~~~~@@@@@@update_reward api call completed', time.time() - t , 'sec for $$$$$$$$$$$$ timeSlot ' , timeSlot)
     def convert_to_serializable_actions(self , batch_params):
         """Convert any NumPy arrays or NumPy scalars to Python native types."""
         serializable_batch = []
