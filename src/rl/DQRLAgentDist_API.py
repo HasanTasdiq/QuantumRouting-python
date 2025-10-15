@@ -1,3 +1,4 @@
+from itertools import islice
 import multiprocessing as mp
 mp.set_start_method("spawn", force=True)
 from concurrent.futures import ProcessPoolExecutor,as_completed,ThreadPoolExecutor
@@ -275,6 +276,10 @@ class DQRLAgentDist:
 
 
     # Trains main network every step during episode
+    def get_last_n(self , d, n):
+        """Return last n elements of a deque efficiently"""
+        return list(islice(d, len(d)-n, len(d)))
+    
     def train(self, terminal_state):
         t1 = time.time()
         # global model_lock
@@ -294,8 +299,10 @@ class DQRLAgentDist:
 
         # indices = np.random.choice(len(self.replay_memory), MINIBATCH_SIZE, p=probabilities)
         # minibatch = [self.replay_memory[i] for i in indices]
+        last_half = self.get_last_n(self.replay_memory, MINIBATCH_SIZE // 2)
+
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE//2)
-        minibatch.extend(self.replay_memory[-(MINIBATCH_SIZE//2):])
+        minibatch.extend(last_half)
         batch_size = MINIBATCH_SIZE
         print('=============sample ===========' , time.time() - t1)
 
