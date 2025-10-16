@@ -522,6 +522,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             return None
         
     def call_learn_and_predict_api(self , reqState, ent_matrix, req_matrix, dist_matrix, timeSlot):
+
         url = "http://127.0.0.1:8080/learn_predict"  # adjust host/port if needed
         payload = {
             "reqIndex": reqState[4],
@@ -530,6 +531,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             "dist_matrix": dist_matrix.tolist(),
             "timeSlot": timeSlot
         }
+        print('size of payload in learn_predict ' , get_deep_size(payload) / (1024*1024) , ' MB for reqIndex ' , reqState[4])
         # print('Calling learn_predict API with payload ===')
         try:
             t = time.time()
@@ -551,7 +553,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # return self.routingAgent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
         t = time.time()
         ret =  self.call_learn_and_predict_api(reqState , ent_matrix, req_matrix,dist_matrix, timeSlot)
-        # print('============time to call learn_predict_api ' , time.time() - t)
+        print('============time to call learn_predict_api ' , time.time() - t)
         return ret
 
 
