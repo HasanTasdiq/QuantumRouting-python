@@ -531,11 +531,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         mpredis.set(f"reqId_{reqId}_dist_matrix", pickle.dumps(dist_matrix))
         payload = {
             "reqIndex": reqState[4],
-            "ent_matrix":[],
-            "req_matrix": [],
-            "dist_matrix": [],
             "timeSlot": timeSlot,
-            'reId': reqId
+            'reqId': reqId
         }
         # print('size of payload in learn_predict ' , get_deep_size(payload) / (1024*1024) , ' MB for reqIndex ' , reqState[4])
         # print('Calling learn_predict API with payload ===')

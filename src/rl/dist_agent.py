@@ -41,9 +41,6 @@ class UpdateRewardRequest(BaseModel):
 class LearnPredictRequest(BaseModel):
     reqIndex: int
     timeSlot: int
-    ent_matrix: list
-    req_matrix: list
-    dist_matrix: list
     reqId: str
 
 def make_json_safe(obj):
