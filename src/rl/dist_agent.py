@@ -44,6 +44,7 @@ class LearnPredictRequest(BaseModel):
     ent_matrix: list
     req_matrix: list
     dist_matrix: list
+    reqId: str
 
 def make_json_safe(obj):
     if isinstance(obj, np.ndarray):
@@ -174,15 +175,23 @@ async def call_update_reward(data: UpdateRewardRequest, background_tasks: Backgr
 async def call_learn_and_predict(data: LearnPredictRequest):
     print('request received for learn_and_predict_next_req_node_single with reqIndex:')
     t = time.time()
+    ent_matrix = pickle.loads(mpredis.get(f"reqId_{data.reqId}_ent_matrix"))
+    req_matrix = pickle.loads(mpredis.get(f"reqId_{data.reqId}_req_matrix"))
+    dist_matrix = pickle.loads(mpredis.get(f"reqId_{data.reqId}_dist_matrix"))
+
+    mpredis.delete(f"reqId_{data.reqId}_ent_matrix")
+    mpredis.delete(f"reqId_{data.reqId}_req_matrix")
+    mpredis.delete(f"reqId_{data.reqId}_dist_matrix")
+    print('======================got matrices from redis time ' , time.time() - t)
     try:
         # Run CPU-bound function in separate thread with timeout
         result = await asyncio.wait_for(
             asyncio.to_thread(
                 agent.learn_and_predict_next_req_node_single,
                 data.reqIndex,
-                data.ent_matrix,
-                data.req_matrix,
-                data.dist_matrix,
+                ent_matrix.tolist(),
+                req_matrix.tolist(),
+                dist_matrix.append,
                 data.timeSlot
             ),
             timeout=5  # timeout in seconds
