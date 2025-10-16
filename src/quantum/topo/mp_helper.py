@@ -27,7 +27,7 @@ class qManager(BaseManager): pass
 qManager.register('sNode', sNode,)
 qManager.register('sLink', sLink)
 
-executor = ProcessPoolExecutor(max_workers=100)
+executor = ProcessPoolExecutor(max_workers=20)
 # executor = ThreadPoolExecutor(max_workers=8)
 
 train_executor = ThreadPoolExecutor(max_workers=20)
