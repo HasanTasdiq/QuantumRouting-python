@@ -191,7 +191,7 @@ async def call_learn_and_predict(data: LearnPredictRequest):
                 data.reqIndex,
                 ent_matrix.tolist(),
                 req_matrix.tolist(),
-                dist_matrix.append,
+                dist_matrix.tolist(),
                 data.timeSlot
             ),
             timeout=5  # timeout in seconds
