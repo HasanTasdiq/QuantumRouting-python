@@ -424,7 +424,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
         t = time.time()
         print('~~~~~~~~~~~in update_reward with ', timeSlot)
-        mpredis.set(f"batch_{timeSlot}", pickle.dumps(actions))
+        mpredis.set(f"batch_{timeSlot}", pickle.dumps(actions) , ex=300)  # expire in 5 minutes
         print('**set to redis time ' , time.time() - t)
 
         t = time.time()
@@ -526,9 +526,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
         url = "http://127.0.0.1:8080/learn_predict"  # adjust host/port if needed
         reqId = str(uuid.uuid4())
-        mpredis.set(f"reqId_{reqId}_ent_matrix", pickle.dumps(ent_matrix))
-        mpredis.set(f"reqId_{reqId}_req_matrix", pickle.dumps(req_matrix))
-        mpredis.set(f"reqId_{reqId}_dist_matrix", pickle.dumps(dist_matrix))
+        mpredis.set(f"reqId_{reqId}_ent_matrix", pickle.dumps(ent_matrix) , ex=300)  # expire in 5 minutes
+        mpredis.set(f"reqId_{reqId}_req_matrix", pickle.dumps(req_matrix), ex=300)  # expire in 5 minutes
+        mpredis.set(f"reqId_{reqId}_dist_matrix", pickle.dumps(dist_matrix), ex=300)  # expire in 5 minutes
         payload = {
             "reqIndex": reqState[4],
             "timeSlot": timeSlot,
