@@ -534,6 +534,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             "timeSlot": timeSlot,
             'reqId': reqId
         }
+        print('pppppppppaaaayyyyllllooooaaaaadddd in learn_predict ' , payload)
         # print('size of payload in learn_predict ' , get_deep_size(payload) / (1024*1024) , ' MB for reqIndex ' , reqState[4])
         # print('Calling learn_predict API with payload ===')
         try:
