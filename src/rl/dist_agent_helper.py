@@ -2,6 +2,7 @@ from concurrent.futures import ProcessPoolExecutor
 import time
 
 import numpy as np
+import redis
 import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 
@@ -15,22 +16,26 @@ dense_proj = Dense(64, activation='relu')
 mha = MultiHeadAttention(num_heads=4, key_dim=16)
 ln = LayerNormalization()
 _concat_buffer = None
+mpredis = redis.Redis(host='localhost', port=6379, db=0)
+
 
 def process_update_action(  p):
         # print('process_update_action called ' , p.reqIndex)
     # Recreate necessary agent if needed or call static function
-        return update_action(
-            p.reqIndex,
-            p.current_node_id,
-            p.next_node_id,
-            p.current_state,
-            p.done_episode,
-            p.timeSlot,
-            p.reward,
-            p.node_matrix,
-            p.req_matrix,
-            p.dist_matrix
-        )
+        # return update_action(
+        #     p.reqIndex,
+        #     p.current_node_id,
+        #     p.next_node_id,
+        #     p.current_state,
+        #     p.done_episode,
+        #     p.timeSlot,
+        #     p.reward,
+        #     p.node_matrix,
+        #     p.req_matrix,
+        #     p.dist_matrix
+        # )
+        reqIndex , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix = p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7].tolist(),p[8].tolist(),p[9].tolist()
+        return update_action(reqIndex , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix)
 
 def update_action( request_index ,current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix):
         # print('update_action called ')

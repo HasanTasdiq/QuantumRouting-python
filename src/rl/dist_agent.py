@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor,wait
+import pickle
 import time
 from fastapi import FastAPI, BackgroundTasks, Request
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ import os
 app = FastAPI()
 agent = None  # global agent reference per worker
 import gc
+from dist_agent_helper import mpredis
 
 train_executor = ThreadPoolExecutor(max_workers=10)
 active_futures = set()
@@ -132,8 +134,11 @@ async def call_update_reward(data: UpdateRewardRequest, background_tasks: Backgr
     print('In update_reward API with timeSlot:', data.timeSlot)
     successfulRequest = data.successfulRequest
     timeSlot = data.timeSlot
-    actions = data.actions
+    t = time.time()
+    actions = pickle.loads(mpredis.get(f"batch_{data.timeSlot}"))
+    mpredis.delete(f"batch_{data.timeSlot}")
 
+    print('======================got actions from redis time ' , time.time() - t)
     def task(successfulRequest, timeSlot, actions):
         try:
             agent.update_reward(successfulRequest, timeSlot, actions)

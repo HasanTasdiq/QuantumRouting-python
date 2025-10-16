@@ -10,7 +10,8 @@ import logging, multiprocessing, os
 import redis, dill
 from multiprocessing import Lock, Manager
 
-mpredis = redis.Redis()
+# mpredis = redis.Redis()
+mpredis = redis.Redis(host='localhost', port=6379, db=0)
 lock1 = None
 agent_lock = None
 reward_lock = None

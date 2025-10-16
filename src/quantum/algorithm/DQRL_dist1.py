@@ -24,6 +24,8 @@ import dill
 import requests
 import httpx
 import asyncio
+from objsize import get_deep_size
+
 
 # executor2 = ProcessPoolExecutor(max_workers=8)  # Create at the top level
 
@@ -419,30 +421,38 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             traceback.print_exc()
 
     async def call_update_reward(self, successful_requests: int, timeSlot: int, actions : list):
+        t = time.time()
         print('~~~~~~~~~~~in update_reward with ', timeSlot)
+        mpredis.set(f"batch_{timeSlot}", pickle.dumps(actions))
+        print('**set to redis time ' , time.time() - t)
+
         t = time.time()
         url = "http://127.0.0.1:8000/update_reward"
+
         batch_json = []
-        for param in actions:
-            param_dict = {
-                "reqIndex": param[0],
-                "current_node_id": param[1],
-                "next_node_id": param[2],
-                "current_state": param[3],
-                "done_episode": param[4],
-                "timeSlot": param[5],
-                "reward": param[6],
-                "node_matrix": param[7].tolist(),
-                "req_matrix": param[8].tolist(),
-                "dist_matrix": param[9].tolist()
-            }
-            batch_json.append(param_dict)
+        # for param in actions:
+        #     param_dict = {
+        #         "reqIndex": param[0],
+        #         "current_node_id": param[1],
+        #         "next_node_id": param[2],
+        #         "current_state": param[3],
+        #         "done_episode": param[4],
+        #         "timeSlot": param[5],
+        #         "reward": param[6],
+        #         "node_matrix": param[7].tolist(),
+        #         "req_matrix": param[8].tolist(),
+        #         "dist_matrix": param[9].tolist()
+        #     }
+        #     batch_json.append(param_dict)
 
         payload = {
             "successfulRequest": successful_requests,
             "timeSlot": timeSlot,
-            "actions": batch_json
+            "actions": []
         }
+        # print('**size of actions in update_reward ' , get_deep_size(actions) / (1024*1024) , ' MB with ' , len(actions) , ' actions')
+
+        # print('size of payload in update_reward ' , get_deep_size(payload) / (1024*1024) , ' MB with ' , len(actions) , ' actions')
 
         try:
             async with httpx.AsyncClient(timeout=None) as client:
