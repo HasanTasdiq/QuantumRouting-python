@@ -1,4 +1,6 @@
+from collections import deque
 from concurrent.futures import ProcessPoolExecutor
+import pickle
 import time
 
 import numpy as np
@@ -7,8 +9,8 @@ import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 
 
-
-executor = ProcessPoolExecutor(max_workers=20)
+max_workers = 20
+executor = ProcessPoolExecutor(max_workers=max_workers)
 SIZE = 100
 embedding_layer = Embedding(input_dim=20, output_dim=1)
 attention_layer = Attention()
@@ -19,7 +21,53 @@ _concat_buffer = None
 mpredis = redis.Redis(host='localhost', port=6379, db=0)
 
 
-def process_update_action(  p):
+# run 25k
+START_EPSILON_DECAYING = 10000
+END_EPSILON_DECAYING = 20000
+REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+
+# for 5k local
+# START_EPSILON_DECAYING = 2000
+# END_EPSILON_DECAYING = 4000
+# REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+
+# for 3k local
+# START_EPSILON_DECAYING = 10
+# END_EPSILON_DECAYING = 250
+# REPLAY_MEMORY_SIZE = 3000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+
+#for 10k local
+# START_EPSILON_DECAYING = 5000
+# END_EPSILON_DECAYING = 8000
+# REPLAY_MEMORY_SIZE = 15000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+
+
+# for testing
+# START_EPSILON_DECAYING = 10
+# END_EPSILON_DECAYING = 20
+# REPLAY_MEMORY_SIZE = 10000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+
+
+
+replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
+
+
+def process_update_action(  actionId):
         # print('process_update_action called ' , p.reqIndex)
     # Recreate necessary agent if needed or call static function
         # return update_action(
@@ -34,11 +82,17 @@ def process_update_action(  p):
         #     p.req_matrix,
         #     p.dist_matrix
         # )
-        reqIndex , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix = p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7].tolist(),p[8].tolist(),p[9].tolist()
-        return update_action(reqIndex , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix)
+        return update_action(actionId)
 
-def update_action( request_index ,current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix):
+        # reqIndex , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix = p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7].tolist(),p[8].tolist(),p[9].tolist()
+        # return update_action(reqIndex , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix)
+
+def update_action( actionId):
         # print('update_action called ')
+
+        elem =  pickle.loads(mpredis.get(f"action_{actionId}"))
+        request_index , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix = elem[0],elem[1],elem[2],elem[3],elem[4],elem[5],elem[6],elem[7].tolist(),elem[8].tolist(),elem[9].tolist()
+
         request = req_matrix[request_index][:6]
         request[3] = req_matrix[request_index + len(req_matrix)//2]
         prev_ent_matrix = current_state[0]
@@ -67,6 +121,7 @@ def update_action( request_index ,current_node_id,  action  , current_state  , d
         # print('update action get get_mask_shcedule_route time ' , time.time()-t)
         t = time.time()
         data = (request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward)
+        del elem
         return data
 
 
@@ -216,3 +271,34 @@ def schedule_routing_state_dist( curr_req, ent_matrix=None, req_matrix=None, dis
         # ret[start:start+len(state_dist_flat)] = state_dist_flat
 
         return ret
+
+def process_actions(actionIds):
+        # max_workers = 2
+        # # global executor
+        # if executor is None:
+        #     executor = ProcessPoolExecutor(max_workers=max_workers)
+        # self.executor
+        print('process_actions called ' , len(actionIds), executor is not None)
+        # futures = [executor.submit(self.process_update_action, p) for p in params]
+        chunk_size = max(1, len(actionIds) // (max_workers))
+        futures = list(executor.map(process_update_action, [p for p in actionIds] , chunksize=chunk_size))
+
+        results = []
+        # for f in as_completed(futures):
+        #     results.append(f.result())
+        for data in futures:
+            try:
+                results.append(data)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                print(f"Error processing action: {e}")
+
+        # Combine results
+        actions = []
+        for r in results:
+            if r is not None:
+                actions.append(r)
+
+
+        return actions

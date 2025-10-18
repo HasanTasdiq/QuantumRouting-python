@@ -426,6 +426,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         print('~~~~~~~~~~~in update_reward with ', timeSlot)
         mpredis.set(f"batch_{timeSlot}", pickle.dumps(actions) , ex=300)  # expire in 5 minutes
         print('**set to redis time ' , time.time() - t)
+        actionIds = []
+        for i in range(len(actions)):
+            actionId = str(uuid.uuid4())
+            mpredis.set(f"action_{actionId}", pickle.dumps(actions[i]) , ex=300)  # expire in 5 minutes
+            actionIds.append(actionId)
 
         t = time.time()
         url = "http://127.0.0.1:8000/update_reward"
@@ -449,7 +454,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         payload = {
             "successfulRequest": successful_requests,
             "timeSlot": timeSlot,
-            "actions": []
+            "actions": [],
+            "actionIds": actionIds
         }
         # print('**size of actions in update_reward ' , get_deep_size(actions) / (1024*1024) , ' MB with ' , len(actions) , ' actions')
 

@@ -36,6 +36,7 @@ class UpdateActionBatchParams(BaseModel):
 class UpdateRewardRequest(BaseModel):
     successfulRequest: int
     timeSlot: int
+    actionIds: list[str]
     actions: list[UpdateActionParams]
 
 class LearnPredictRequest(BaseModel):
@@ -102,56 +103,33 @@ def make_json_safe(obj):
 
 #     return {"status": "update_reward started in background"}
 
-def run_async_in_thread( coro):
-    global active_futures
-    global train_executor
-    def target():
-        asyncio.run(coro)
-
-    # if len(active_futures) >= 10:
-    #     while len(active_futures):
-    #         # Wait for at least one to finish before submitting new one
-    #         print('Waiting for an active future to complete.......................................')
-    #         done, pending = wait(active_futures)
-    #         active_futures -= done
-
-
-
-    try:
-        # future = train_executor.submit(target)
-        # print('Submitted a new background task. Active tasks:', len(active_futures) + 1)
-        # active_futures.add(future)
-        target()
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
 
 @app.post("/update_reward")
 async def call_update_reward(data: UpdateRewardRequest, background_tasks: BackgroundTasks):
     print('In update_reward API with timeSlot:', data.timeSlot)
     successfulRequest = data.successfulRequest
     timeSlot = data.timeSlot
-    t = time.time()
-    actions = pickle.loads(mpredis.get(f"batch_{data.timeSlot}"))
-    mpredis.delete(f"batch_{data.timeSlot}")
+    actionIds = data.actionIds
+    # t = time.time()
+    # actions = pickle.loads(mpredis.get(f"batch_{data.timeSlot}"))
+    # mpredis.delete(f"batch_{data.timeSlot}")
 
-    print('======================got actions from redis time ' , time.time() - t)
-    def task(successfulRequest, timeSlot, actions):
+    # print('======================got actions from redis time ' , time.time() - t)
+    def task(successfulRequest, timeSlot, actionIds):
         try:
-            agent.update_reward(successfulRequest, timeSlot, actions)
+            agent.update_reward(successfulRequest, timeSlot, actionIds)
         except Exception as e:
             import traceback
             traceback.print_exc()
             print(f"[BackgroundTaskError] update_reward failed: {e}")
         finally:
-            del successfulRequest, timeSlot, actions
+            del successfulRequest, timeSlot, actionIds
             # import gc; 
             gc.collect()
     # run_async_in_thread(task(successfulRequest, timeSlot, actions))
         
 
-    task(successfulRequest, timeSlot, actions)
+    task(successfulRequest, timeSlot, actionIds)
     # background_tasks.add_task(task, successfulRequest, timeSlot, actions)
     return {"status": "update_reward started in background"}
 

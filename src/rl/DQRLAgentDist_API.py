@@ -32,8 +32,7 @@ from objsize import get_deep_size
 
 
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
-from dist_agent_helper import executor, process_update_action, schedule_routing_state_dist
-
+from dist_agent_helper import executor, schedule_routing_state_dist , process_actions , replay_memory, REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE, UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING
 
 
 
@@ -58,46 +57,7 @@ ENTANGLEMENT_LIFETIME = 10
 
 EPSILON_ = 1  # not a constant, qoing to be decayed
 
-# run 25k
-START_EPSILON_DECAYING = 10000
-END_EPSILON_DECAYING = 20000
-REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
-# for 5k local
-# START_EPSILON_DECAYING = 2000
-# END_EPSILON_DECAYING = 4000
-# REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
-
-# for 3k local
-# START_EPSILON_DECAYING = 10
-# END_EPSILON_DECAYING = 250
-# REPLAY_MEMORY_SIZE = 3000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
-
-#for 10k local
-# START_EPSILON_DECAYING = 5000
-# END_EPSILON_DECAYING = 8000
-# REPLAY_MEMORY_SIZE = 15000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
-
-
-# for testing
-# START_EPSILON_DECAYING = 10
-# END_EPSILON_DECAYING = 20
-# REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 
 EPSILON_DECAY_VALUE = EPSILON_/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
@@ -133,7 +93,6 @@ np.random.seed(1)
 if not os.path.isdir('models'):
     os.makedirs('models')
 model_lock = None
-executor = None
 # executor = ThreadPoolExecutor(max_workers=8)
 
 
@@ -172,7 +131,7 @@ class DQRLAgentDist:
 
 
         # An array with last n steps for training
-        self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
+        # self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
         self.priorities = deque(maxlen=REPLAY_MEMORY_SIZE)
 
         # Used to count when to update target network with main network's weights
@@ -244,34 +203,14 @@ class DQRLAgentDist:
     # Adds step's data to a memory replay array
     # (observation space, action, reward, new observation space, done)
     def update_replay_memory(self, transition , priority):
+        global replay_memory
         if type(transition) is list:
-            self.replay_memory.extend(transition)
+            replay_memory.extend(transition)
         else:
-            self.replay_memory.append(transition)
+            replay_memory.append(transition)
         # self.priorities.append(priority)
     
-    def save_replay_memory(self, timeSlot):
-        if not os.path.isdir('replay_memory'):
-            os.makedirs('replay_memory')
-        with open('replay_memory/' + self.model_name +'_'+ str(timeSlot) + '.pkl', 'wb') as f:
-            pickle.dump(self.replay_memory, f)
-        self.replay_memory.clear()
-        self.priorities.clear()
-        print('Replay memory saved')
 
-    def load_replay_memory(self):
-        if not os.path.isdir('replay_memory'):
-            os.makedirs('replay_memory')
-        replay_memory_files = glob.glob(f'replay_memory/{self.model_name}_*.pkl')
-        self.replay_memory.clear()
-        for file in replay_memory_files:
-            try:
-                with open(file, 'rb') as f:
-                    self.replay_memory.extend(pickle.load(f))
-                print(f'Replay memory loaded from {file}')
-            except FileNotFoundError:
-                print(f'No replay memory file found: {file}')
-        print(f'Total replay memory loaded: {len(self.replay_memory)}')
 
 
 
@@ -281,16 +220,17 @@ class DQRLAgentDist:
         return list(islice(d, len(d)-n, len(d)))
     
     def train(self, terminal_state):
+        global replay_memory
         t1 = time.time()
         # global model_lock
         # if model_lock is None:
         #     model_lock = multiprocessing.Lock()
 
         # Start training only if certain number of samples is already saved
-        print('----------len(self.replay_memory)----------------', len(self.replay_memory))
-        # print('----------size(self.replay memory)----------------', get_deep_size(self.replay_memory)/1024/1024 , 'MB')
+        print('----------len(self.replay_memory)----------------', len(replay_memory))
+        print('----------size(self.replay memory)----------------', get_deep_size(replay_memory)/1024/1024 , 'MB')
 
-        if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
+        if len(replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
         
 
@@ -300,9 +240,9 @@ class DQRLAgentDist:
 
         # indices = np.random.choice(len(self.replay_memory), MINIBATCH_SIZE, p=probabilities)
         # minibatch = [self.replay_memory[i] for i in indices]
-        last_half = self.get_last_n(self.replay_memory, MINIBATCH_SIZE // 2)
+        last_half = self.get_last_n(replay_memory, MINIBATCH_SIZE // 2)
 
-        minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE//2)
+        minibatch = random.sample(replay_memory, MINIBATCH_SIZE//2)
         minibatch.extend(last_half)
         batch_size = MINIBATCH_SIZE
         print('=============sample ===========' , time.time() - t1)
@@ -526,41 +466,10 @@ class DQRLAgentDist:
         return request_index , next_node_id
    
 
-    def process_actions(self, params):
-        max_workers = 64
-        global executor
-        if executor is None:
-            executor = ProcessPoolExecutor(max_workers=max_workers)
-        # self.executor
-        print('process_actions called ' , len(params), executor is not None)
-        # futures = [executor.submit(self.process_update_action, p) for p in params]
-        chunk_size = max(1, len(params) // (max_workers))
-        futures = list(executor.map(process_update_action, [p for p in params] , chunksize=chunk_size))
 
-        results = []
-        # for f in as_completed(futures):
-        #     results.append(f.result())
-        for data in futures:
-            try:
-                results.append(data)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                print(f"Error processing action: {e}")
-
-        # Combine results
-        actions = []
-        for r in results:
-            if r is not None:
-                actions.append(r)
-
-
-        return actions
-
-    def update_reward(self, numsuccessReq  , timeSlot , actions = None):
+    def update_reward(self, numsuccessReq  , timeSlot , actionIds = None):
         global EPSILON_
 
-        print('update reward DQRA :::::::::::::::::::::::: ' , len(self.last_action_table) )
         t1 = time.time()
         R = []
 
@@ -573,12 +482,12 @@ class DQRLAgentDist:
         total_reward = 0
         trans = []
         print('++++++++++++++++++++++++before process action ', timeSlot )
-        self.last_action_table = self.process_actions(actions)
-        print('++++++++++++++++++++++++after process action ' , len(self.last_action_table), timeSlot , time.time()-t1 , 'seconds' )
+        last_action_table = process_actions(actionIds)
+        print('++++++++++++++++++++++++after process action ' , len(last_action_table), timeSlot , time.time()-t1 , 'seconds' )
         if True:
-            for i in range(len(self.last_action_table)-1 , -1 , -1):
+            for i in range(len(last_action_table)-1 , -1 , -1):
                 t2 = time.time()
-                (request , action , ts ,current_node_id, current_state , next_state ,mask ,  done,reward) = self.last_action_table[i]
+                (request , action , ts ,current_node_id, current_state , next_state ,mask ,  done,reward) = last_action_table[i]
                 
                 # req_id , next_node_id = self.decode_schdeule_route_action(action)
                 # req.append(request)
@@ -636,7 +545,7 @@ class DQRLAgentDist:
         # print('===---------size of target model memory----------------===-' , get_deep_size(self.target_model)/1024/1024 , 'MB')
         # print('==----------size(self.last_action_table memory)---------------==-', get_deep_size(self.last_action_table)/1024/1024 , 'MB')
 
-        self.last_action_table = []
+        last_action_table = []
         gc.collect()
         if END_EPSILON_DECAYING >= timeSlot >= START_EPSILON_DECAYING:
             EPSILON_ -= EPSILON_DECAY_VALUE
