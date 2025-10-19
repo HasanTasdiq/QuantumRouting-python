@@ -73,10 +73,18 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     def genNameByBbracket(self, varName: str, parName: list):
         return (varName + str(parName)).replace(' ', '').replace(',', '][')
     def cleanup_shared_memory(self):
+        print('cleaning up shared memory...')
+        print('number of shared memories to clean:', len(self.shared_memories))
         try:
             for shm in self.shared_memories:
-                shm.close()
-                shm.unlink()
+                try:
+                    shm.close()
+                except Exception as e:
+                    print("Error closing shared memory:", e)
+                try:
+                    shm.unlink()
+                except Exception as e:
+                    print("Error unlinking shared memory:", e)
             self.shared_memories.clear()
         except Exception as e:
             print("Error cleaning up shared memory:", e)
