@@ -907,6 +907,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             #     self.routingAgent.update_action( reqState ,current_node_id,  next_node_id  , current_state  , done_episode)
         # print('time in action selection ======== ' , action_time,'s, for ' , len(actions), ' actions' )
         # print('=================final process id:', os.getpid() , 'time taken:', time.time()-tl)
+       
+        try:
+            shm.close()  # Don't unlink, just close in worker
+            shm2.close()
+        except:
+            pass
         return (success and swappSuccess , actions)
 
     # def route_schedule_single(self ,  args):
