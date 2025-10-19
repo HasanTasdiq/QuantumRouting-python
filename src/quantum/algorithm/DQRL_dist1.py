@@ -73,10 +73,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     def genNameByBbracket(self, varName: str, parName: list):
         return (varName + str(parName)).replace(' ', '').replace(',', '][')
     def cleanup_shared_memory(self):
-        for shm in self.shared_memories:
-            shm.close()
-            shm.unlink()
-        self.shared_memories.clear()
+        try:
+            for shm in self.shared_memories:
+                shm.close()
+                shm.unlink()
+            self.shared_memories.clear()
+        except Exception as e:
+            print("Error cleaning up shared memory:", e)
     def printResult(self):
         self.topo.clearAllEntanglements()
         self.result.waitingTime = self.totalWaitingTime / self.totalRequest
