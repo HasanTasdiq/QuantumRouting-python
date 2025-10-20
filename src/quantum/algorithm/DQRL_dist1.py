@@ -248,15 +248,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     def p4(self):
         p_time = 0
         global executor2
-        global lock1
-        global agent_lock
-        global reward_lock
-        if lock1 is None:
-            lock1 = Manager().Lock()
-        if agent_lock is None:
-            agent_lock = Manager().Lock()
-        if reward_lock is None:
-            reward_lock = Manager().Lock()
+
         global node_locks
         for i in range(100):
             if i not in node_locks:
@@ -286,7 +278,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 q_matrix = self.q_matrix()
 
             
-                args = [( node_matrix_info ,req_matrix_info, dist_matrix,q_matrix , reqState,lock1,agent_lock,reward_lock,node_locks) for reqState in self.requestState]
+                args = [( node_matrix_info ,req_matrix_info, dist_matrix,q_matrix , reqState,node_locks) for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
                 # for _ in range(10):
                 #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
@@ -609,7 +601,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
     def route_schedule_single(self ,  args):
         # print('route_schedule_single called with algo#############################################:')
-        node_matrix_info , req_matrix_info,dist_matrix , q_matrix, reqState,lock , agent_lock ,reward_lock, node_locks =  args
+        node_matrix_info , req_matrix_info,dist_matrix , q_matrix, reqState, node_locks =  args
 
         shm_name, shape, dtype = node_matrix_info
         shm = shared_memory.SharedMemory(name=shm_name)
@@ -875,7 +867,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                         # print('-------===----=-=-=-=-=released locks* ' , pnode , next_node_id)
                     break
                 else:
-                    time.sleep(random.uniform(0.01, 0.1))
+                    time.sleep(random.uniform(0.001, 0.005))
 
 
 
