@@ -614,13 +614,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         shm_name, shape, dtype = node_matrix_info
         shm = shared_memory.SharedMemory(name=shm_name)
         ent_matrix = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
-        self.shared_memories.append(shm)  # keep reference
+        # self.shared_memories.append(shm)  # keep reference
         # print('=======matrix in route_schedule_single ' , ent_matrix.sum() )
 
         shm_name2, shape2, dtype2 = req_matrix_info
         shm2 = shared_memory.SharedMemory(name=shm_name2)
         req_matrix = np.ndarray(shape2, dtype=dtype2, buffer=shm2.buf)
-        self.shared_memories.append(shm2)  # keep reference
+        # self.shared_memories.append(shm2)  # keep reference
         # print('=======req_matrix in route_schedule_single ' , req_matrix.shape  )
         # agent = dill.loads(mpredis.get("routing_agent"))
         tt = time.time()
