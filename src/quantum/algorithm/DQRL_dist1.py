@@ -5,7 +5,9 @@ import sys
 import math
 import random
 from queue import PriorityQueue
-import uuid 
+import uuid
+
+import psutil 
 sys.path.append("..")
 from AlgorithmBase import AlgorithmBase
 from AlgorithmBase import AlgorithmResult
@@ -36,10 +38,9 @@ from objsize import get_deep_size
 # ctx._force_start_method('spawn')
 
 sys.path.insert(0, "../../rl")
-max_workers = os.cpu_count()
 active_futures = set()
+lock_manager = None
 # lock = Lock()
-lock2 = Lock()
 # lock1 = Lock()
 
 
@@ -63,7 +64,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         self.executor = None
         self.tst = [] 
         self.shared_memories = []
-        self.active_futures = set()
+        self.executor_stats = []
+
 
 
 
@@ -78,6 +80,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         try:
             for shm in self.shared_memories:
                 try:
+                    size = shm.size
+                    size_mb = size / 1024 / 1024
+                    print(f"******************************Cleaning shared memory: Name={shm.name}, Size={size_mb:.2f} MB")
                     shm.close()
                 except Exception as e:
                     print("Error closing shared memory:", e)
@@ -249,10 +254,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     def p4(self):
         p_time = 0
         global executor2
-
+        global lock_manager
         global node_locks
-
-        lock_manager = Manager()
+        if lock_manager is None:
+            lock_manager = Manager()
         for i in range(100):
             if i not in node_locks:
                 node_locks[i] = lock_manager.Lock()
@@ -295,9 +300,22 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # mpredis.set("reward_routing", dill.dumps(self.topo.reward_routing))
 
                 # print('going to map route_schedule_single with args:' )
+                print(f"\n🔍 [-----------BEFORE executor2.map] Checking executor memory...")
+                before_map = self.check_executor_memory()
+                
                 results = list(executor2.map(self.route_parallel, args))
                 # print('results ' , results, sum([r for r in results]))
             
+                print(f"\n🔍 [->->->->-AFTER executor2.map] Checking executor memory...")
+                after_map = self.check_executor_memory()
+        
+                # Compare
+                if after_map and before_map:
+                    delta = after_map['workers'] - before_map['workers']
+                    print(f"\n📊 Worker memory delta: {delta:+.2f} MB")
+                    if delta > 50:
+                        print(f"⚠️  !!!!!!!!!!!!WARNING: Workers consumed {delta:.2f} MB during this map operation!")
+    
                 # self.topo.reward_routing = dill.loads(mpredis.get("reward_routing"))
                 successReq = sum([r[0] for r in results])
                 # print('successReq ' , successReq)
@@ -363,6 +381,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
             a = 10
         self.result.rewardPerRound.append(reward)
+        
+        print(f"\n🔍 [AFTER p4] Checking executor memory...")
+        self.check_executor_memory()
+        if self.timeSlot % 10 == 0:
+            self.print_executor_memory_trend()
+        
         p_time += time.time()-t
         self.result.p_time = p_time
         print('self.w1 w2 ' , self.w1 , self.w2)
@@ -394,6 +418,122 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             import traceback
             traceback.print_exc()
             return (0, [])
+    def check_executor_memory(self):
+        """Check memory of executor2 and train_executor workers"""
+        
+        print("\n" + "="*80)
+        print(f"EXECUTOR MEMORY CHECK @ timeslot {self.timeSlot}")
+        print("="*80)
+        
+        parent = psutil.Process(os.getpid())
+        children = parent.children(recursive=True)
+        
+        # Categorize children
+        worker_processes = []
+        manager_processes = []
+        other_processes = []
+        
+        for child in children:
+            try:
+                cmdline = ' '.join(child.cmdline())
+                print('cmdline ' , cmdline)
+                
+                if 'multiprocessing.spawn' in cmdline or 'worker' in cmdline.lower():
+                    worker_processes.append(child)
+                elif 'semaphore_tracker' in cmdline or 'resource_tracker' in cmdline:
+                    manager_processes.append(child)
+                else:
+                    other_processes.append(child)
+                    
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+        
+        # Calculate memory
+        worker_memory = sum(w.memory_info().rss for w in worker_processes) / 1024 / 1024
+        manager_memory = sum(m.memory_info().rss for m in manager_processes) / 1024 / 1024
+        other_memory = sum(o.memory_info().rss for o in other_processes) / 1024 / 1024
+        parent_memory = parent.memory_info().rss / 1024 / 1024
+        
+        print(f"\nProcess Breakdown:")
+        print(f"  Parent process:      {parent_memory:8.2f} MB")
+        print(f"  Worker processes:    {len(worker_processes):3d} processes, {worker_memory:8.2f} MB")
+        print(f"  Manager processes:   {len(manager_processes):3d} processes, {manager_memory:8.2f} MB")
+        print(f"  Other processes:     {len(other_processes):3d} processes, {other_memory:8.2f} MB")
+        print(f"  {'─'*40}")
+        print(f"  Total:               {parent_memory + worker_memory + manager_memory + other_memory:8.2f} MB")
+        
+        # Detailed worker info
+        if worker_processes:
+            print(f"\nWorker Details:")
+            print(f"  {'PID':<8} {'Status':<12} {'Memory (MB)':<12} {'CPU %':<10}")
+            print(f"  {'-'*50}")
+            
+            for worker in sorted(worker_processes, 
+                                key=lambda w: w.memory_info().rss, 
+                                reverse=True)[:10]:  # Top 10
+                try:
+                    mem = worker.memory_info().rss / 1024 / 1024
+                    cpu = worker.cpu_percent(interval=0.1)
+                    status = worker.status()
+                    
+                    print(f"  {worker.pid:<8} {status:<12} {mem:<12.2f} {cpu:<10.1f}")
+                except:
+                    pass
+        
+        print("="*80)
+        
+        # Store stats
+        stats = {
+            'timeslot': self.timeSlot,
+            'parent': parent_memory,
+            'workers': worker_memory,
+            'num_workers': len(worker_processes),
+            'managers': manager_memory,
+            'total': parent_memory + worker_memory + manager_memory + other_memory
+        }
+        self.executor_stats.append(stats)
+        
+        return stats
+    
+    def print_executor_memory_trend(self):
+        """Print executor memory usage trend"""
+        
+        if len(self.executor_stats) < 2:
+            print("Not enough data for trend analysis")
+            return
+        
+        print("\n" + "="*80)
+        print("EXECUTOR MEMORY TREND")
+        print("="*80)
+        
+        print(f"{'Timeslot':<12} {'Parent':<10} {'Workers':<10} {'# Workers':<12} {'Total':<10}")
+        print("-"*80)
+        
+        for stat in self.executor_stats[-10:]:  # Last 10
+            print(f"{stat['timeslot']:<12} {stat['parent']:<10.2f} "
+                  f"{stat['workers']:<10.2f} {stat['num_workers']:<12} "
+                  f"{stat['total']:<10.2f}")
+        
+        # Analysis
+        first = self.executor_stats[0]
+        last = self.executor_stats[-1]
+        
+        worker_growth = last['workers'] - first['workers']
+        total_growth = last['total'] - first['total']
+        
+        print("-"*80)
+        print(f"\nGrowth Analysis:")
+        print(f"  Worker memory growth:  {worker_growth:+.2f} MB")
+        print(f"  Total memory growth:   {total_growth:+.2f} MB")
+        print(f"  Worker count change:   {last['num_workers'] - first['num_workers']:+d}")
+        
+        if worker_growth > 100:
+            print(f"  ⚠️  WARNING: Worker memory grew by {worker_growth:.2f} MB!")
+        
+        if last['num_workers'] > first['num_workers']:
+            print(f"  ⚠️  WARNING: Worker count increased (possible leak)!")
+        
+        print("="*80)
     def run_async_in_thread(self , coro):
         global train_executor
         global active_futures
@@ -420,7 +560,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
             # future.join()
             active_futures.add(future)
-            print('Submitted a new background task. Active tasks:', len(self.active_futures))
+            print('Submitted a new background task. Active tasks:', len(active_futures))
             # target()
 
         except Exception as e:
