@@ -85,9 +85,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                     shm.unlink()
                 except Exception as e:
                     print("Error unlinking shared memory:", e)
-            self.shared_memories.clear()
         except Exception as e:
             print("Error cleaning up shared memory:", e)
+        finally:
+            self.shared_memories = []
     def printResult(self):
         self.topo.clearAllEntanglements()
         self.result.waitingTime = self.totalWaitingTime / self.totalRequest
@@ -250,9 +251,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         global executor2
 
         global node_locks
-        for i in range(100):
-            if i not in node_locks:
-                node_locks[i] = Manager().Lock()
+
         print('start p4 ' , self.name)
         # self.prep4()
 
