@@ -301,20 +301,20 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
                 # print('going to map route_schedule_single with args:' )
                 print(f"\n🔍 [-----------BEFORE executor2.map] Checking executor memory...")
-                before_map = self.check_executor_memory()
+                # before_map = self.check_executor_memory()
                 
                 results = list(executor2.map(self.route_parallel, args))
                 # print('results ' , results, sum([r for r in results]))
             
                 print(f"\n🔍 [->->->->-AFTER executor2.map] Checking executor memory...")
-                after_map = self.check_executor_memory()
+                # after_map = self.check_executor_memory()
         
-                # Compare
-                if after_map and before_map:
-                    delta = after_map['workers'] - before_map['workers']
-                    print(f"\n📊 Worker memory delta: {delta:+.2f} MB")
-                    if delta > 50:
-                        print(f"⚠️  !!!!!!!!!!!!WARNING: Workers consumed {delta:.2f} MB during this map operation!")
+                # # Compare
+                # if after_map and before_map:
+                #     delta = after_map['workers'] - before_map['workers']
+                #     print(f"\n📊 Worker memory delta: {delta:+.2f} MB")
+                #     if delta > 50:
+                #         print(f"⚠️  !!!!!!!!!!!!WARNING: Workers consumed {delta:.2f} MB during this map operation!")
     
                 # self.topo.reward_routing = dill.loads(mpredis.get("reward_routing"))
                 successReq = sum([r[0] for r in results])
@@ -382,10 +382,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             a = 10
         self.result.rewardPerRound.append(reward)
         
-        print(f"\n🔍 [AFTER p4] Checking executor memory...")
-        self.check_executor_memory()
-        if self.timeSlot % 10 == 0:
-            self.print_executor_memory_trend()
+        # print(f"\n🔍 [AFTER p4] Checking executor memory...")
+        # self.check_executor_memory()
+        # if self.timeSlot % 10 == 0:
+        #     self.print_executor_memory_trend()
         
         p_time += time.time()-t
         self.result.p_time = p_time
