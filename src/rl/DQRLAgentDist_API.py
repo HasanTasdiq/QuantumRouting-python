@@ -32,7 +32,7 @@ from objsize import get_deep_size
 
 
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
-from dist_agent_helper import executor, schedule_routing_state_dist , process_actions , replay_memory, REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE, UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING
+from dist_agent_helper import  schedule_routing_state_dist , process_actions , replay_memory, REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE, UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING
 
 
 
@@ -228,7 +228,7 @@ class DQRLAgentDist:
 
         # Start training only if certain number of samples is already saved
         print('----------len(self.replay_memory)----------------', len(replay_memory))
-        print('----------size(self.replay memory)----------------', get_deep_size(replay_memory)/1024/1024 , 'MB')
+        # print('----------size(self.replay memory)----------------', get_deep_size(replay_memory)/1024/1024 , 'MB')
 
         if len(replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return

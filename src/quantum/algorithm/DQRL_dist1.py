@@ -362,7 +362,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot < 00000:
+            if self.timeSlot < 100:
                 t = time.time()
                 
                 print('going to call update_reward with ')
@@ -436,7 +436,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         for child in children:
             try:
                 cmdline = ' '.join(child.cmdline())
-                print('cmdline ' , cmdline)
+                # print('cmdline ' , cmdline)
                 
                 if 'multiprocessing.spawn' in cmdline or 'worker' in cmdline.lower():
                     worker_processes.append(child)
