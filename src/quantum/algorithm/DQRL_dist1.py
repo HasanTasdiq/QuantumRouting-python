@@ -252,6 +252,10 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
         global node_locks
 
+        lock_manager = Manager()
+        for i in range(100):
+            if i not in node_locks:
+                node_locks[i] = lock_manager.Lock()
         print('start p4 ' , self.name)
         # self.prep4()
 

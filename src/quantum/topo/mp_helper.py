@@ -17,9 +17,9 @@ agent_lock = None
 reward_lock = None
 node_locks = {}
 
-qManager = Manager()
-for i in range(100):
-    node_locks[i] = qManager.Lock()
+# qManager = Manager()
+# for i in range(100):
+#     node_locks[i] = qManager.Lock()
 
 
 logging.basicConfig(

@@ -9,7 +9,7 @@ import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 
 
-max_workers = 64
+max_workers = 20
 executor = ProcessPoolExecutor(max_workers=max_workers)
 SIZE = 100
 embedding_layer = Embedding(input_dim=20, output_dim=1)
