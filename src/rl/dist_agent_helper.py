@@ -24,20 +24,20 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 
 
 # run 25k
-# START_EPSILON_DECAYING = 10000
-# END_EPSILON_DECAYING = 20000
-# REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10000
+END_EPSILON_DECAYING = 20000
+REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-# START_EPSILON_DECAYING = 2000
-# END_EPSILON_DECAYING = 4000
-# REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 2000
+END_EPSILON_DECAYING = 4000
+REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
 # START_EPSILON_DECAYING = 10
@@ -57,12 +57,12 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 
 
 # for testing
-START_EPSILON_DECAYING = 10
-END_EPSILON_DECAYING = 20
-REPLAY_MEMORY_SIZE = 10000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 10
+# END_EPSILON_DECAYING = 20
+# REPLAY_MEMORY_SIZE = 10000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 
 
 

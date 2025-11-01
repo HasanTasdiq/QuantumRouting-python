@@ -56,7 +56,7 @@ while true; do
     # sleep 20  # 3600 seconds = 60 minutes
 
     while true; do
-        sleep 10
+        sleep 100
         PYTHON_PID=$(pgrep -f "dist_agent.py")
 
         MEM_KB=$(ps -o rss= -p $PYTHON_PID 2>/dev/null)
