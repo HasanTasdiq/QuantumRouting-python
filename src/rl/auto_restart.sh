@@ -3,7 +3,7 @@
 echo "Starting auto-restart script for dist_agent.py (every 60 minutes)..."
 # Find and kill any process using port 8000
 PORT_PID=$(lsof -t -i:8000)
-MEMORY_LIMIT_GB=8  # Set memory limit to 4GB
+MEMORY_LIMIT_GB=50  # Set memory limit to 4GB
 
 if [ ! -z "$PORT_PID" ]; then
     echo "Killing process on port 8000 (PID: $PORT_PID)"
