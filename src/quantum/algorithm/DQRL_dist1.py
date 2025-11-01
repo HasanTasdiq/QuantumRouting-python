@@ -300,13 +300,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # mpredis.set("reward_routing", dill.dumps(self.topo.reward_routing))
 
                 # print('going to map route_schedule_single with args:' )
-                print(f"\n🔍 [-----------BEFORE executor2.map] Checking executor memory...")
+                # print(f"\n🔍 [-----------BEFORE executor2.map] Checking executor memory...")
                 # before_map = self.check_executor_memory()
                 
                 results = list(executor2.map(self.route_parallel, args))
                 # print('results ' , results, sum([r for r in results]))
             
-                print(f"\n🔍 [->->->->-AFTER executor2.map] Checking executor memory...")
+                # print(f"\n🔍 [->->->->-AFTER executor2.map] Checking executor memory...")
                 # after_map = self.check_executor_memory()
         
                 # # Compare
@@ -362,7 +362,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot < 100:
+            if self.timeSlot < 100000:
                 t = time.time()
                 
                 print('going to call update_reward with ')
@@ -538,7 +538,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         global train_executor
         global active_futures
         def target():
-            asyncio.run(coro)
+            try:
+                asyncio.run(coro)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
         print('in run async in thread ' , len(active_futures))
         if len(active_futures) >= 10:
 

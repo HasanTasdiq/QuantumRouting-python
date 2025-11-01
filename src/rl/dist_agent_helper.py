@@ -1,7 +1,9 @@
 from collections import deque
 from concurrent.futures import ProcessPoolExecutor
+import gzip
 import pickle
 import time
+import os
 
 import numpy as np
 import redis
@@ -9,15 +11,15 @@ import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 
 
-max_workers = 20
+max_workers = 60
 executor = ProcessPoolExecutor(max_workers=max_workers)
 SIZE = 100
-embedding_layer = Embedding(input_dim=20, output_dim=1)
-attention_layer = Attention()
+# embedding_layer = Embedding(input_dim=20, output_dim=1)
+# attention_layer = Attention()
 dense_proj = Dense(64, activation='relu')
 mha = MultiHeadAttention(num_heads=4, key_dim=16)
 ln = LayerNormalization()
-_concat_buffer = None
+
 mpredis = redis.Redis(host='localhost', port=6379, db=0)
 
 
@@ -46,26 +48,59 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
-START_EPSILON_DECAYING = 5000
-END_EPSILON_DECAYING = 8000
-REPLAY_MEMORY_SIZE = 15000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 5000
+# END_EPSILON_DECAYING = 8000
+# REPLAY_MEMORY_SIZE = 15000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 2024  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 
 # for testing
-# START_EPSILON_DECAYING = 10
-# END_EPSILON_DECAYING = 20
-# REPLAY_MEMORY_SIZE = 10000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 10
+END_EPSILON_DECAYING = 20
+REPLAY_MEMORY_SIZE = 10000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
 
 
 
 replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
+REPLAY_MEMORY_FILE = "replay_memory.pkl"
 
+
+def save_replay_memory():
+    """Save replay memory with compression"""
+    t1 = time.time()
+    try:
+        if len(replay_memory) == 0:
+            return
+        
+        print(f"Saving replay memory ({len(replay_memory)} items)...")
+        with gzip.open(REPLAY_MEMORY_FILE, 'wb') as f:
+            pickle.dump(list(replay_memory), f, protocol=pickle.HIGHEST_PROTOCOL)
+        
+        file_size = os.path.getsize(REPLAY_MEMORY_FILE) / (1024 * 1024)
+        print(f"✓ Saved {file_size:.2f} MB in {time.time() - t1:.2f} seconds")
+    except Exception as e:
+        print(f"✗ Error saving: {e}")
+
+def load_replay_memory():
+    """Load replay memory"""
+    # global replay_memory
+    t1 = time.time()
+    try:
+        if os.path.exists(REPLAY_MEMORY_FILE):
+            print(f"Loading replay memory...")
+            with gzip.open(REPLAY_MEMORY_FILE, 'rb') as f:
+                data = pickle.load(f)
+            replay_memory.extend(data)
+            print(f"✓ Loaded {len(replay_memory)} items in {time.time() - t1:.2f} seconds")
+        else:
+            print("No saved memory found")
+    except Exception as e:
+        print(f"✗ Error loading: {e}")
 
 def process_update_action(  actionId):
         # print('process_update_action called ' , p.reqIndex)
@@ -91,6 +126,7 @@ def update_action( actionId):
         # print('update_action called ')
 
         elem =  pickle.loads(mpredis.get(f"action_{actionId}"))
+        mpredis.delete(f"action_{actionId}") 
         request_index , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix = elem[0],elem[1],elem[2],elem[3],elem[4],elem[5],elem[6],elem[7].tolist(),elem[8].tolist(),elem[9].tolist()
 
         request = req_matrix[request_index][:6]
@@ -270,6 +306,9 @@ def schedule_routing_state_dist( curr_req, ent_matrix=None, req_matrix=None, dis
         # start += len(state_graph_flat)
         # ret[start:start+len(state_dist_flat)] = state_dist_flat
 
+        del req_tensor, attn_encoded, curr_emb, neighbor_embs, context_vec
+        tf.keras.backend.clear_session()
+        
         return ret
 
 def process_actions(actionIds):

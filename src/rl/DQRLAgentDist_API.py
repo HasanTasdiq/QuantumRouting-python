@@ -151,7 +151,7 @@ class DQRLAgentDist:
         try:
             model = load_model(self.model_name)
             print('=====================================================model loaded from ',self.model_name,' =====================================')
-            print(model.weights)
+            # print(model.weights)
             
             # time.sleep(10)
             return model
@@ -323,6 +323,11 @@ class DQRLAgentDist:
             # with model_lock:
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
+
+        del X, y, current_states, new_current_states
+        del current_qs_list, future_qs_list, minibatch
+        tf.keras.backend.clear_session()
+        gc.collect()
 
     # Queries main network for Q values given current observation space (environment state)
     def max_future_q_dist(self , qs, mask):

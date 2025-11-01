@@ -12,7 +12,7 @@ import os
 app = FastAPI()
 agent = None  # global agent reference per worker
 import gc
-from dist_agent_helper import mpredis
+from dist_agent_helper import mpredis, executor, save_replay_memory, load_replay_memory
 
 train_executor = ThreadPoolExecutor(max_workers=10)
 active_futures = set()
@@ -116,6 +116,7 @@ async def call_update_reward(data: UpdateRewardRequest, background_tasks: Backgr
 
     # print('======================got actions from redis time ' , time.time() - t)
     def task(successfulRequest, timeSlot, actionIds):
+        # time.sleep(2)  # simulate some delay
         try:
             agent.update_reward(successfulRequest, timeSlot, actionIds)
         except Exception as e:
@@ -189,12 +190,26 @@ def debug_memory():
     return {"rss_MB": round(mem, 2)}
 import tracemalloc
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    global executor
+    """Only called when FastAPI app is shutting down"""
+    print(f"[Worker PID {os.getpid()}] Shutting down...")
+    print("Shutting down executor...")
+    executor.shutdown(wait=True)
+    print("Saving replay memory...")
+    save_replay_memory()
+    print('replay memory saved.')
+    print("Shutdown complete.")
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize per-worker agent and start memory tracing."""
     global agent
     print(f"[Worker PID {os.getpid()}] Initializing agent...")
     tracemalloc.start()
+    load_replay_memory()
+
     agent = DQRLAgentDist()
     agent.initiate()
     print(f"[Worker PID {os.getpid()}] Agent ready.")
