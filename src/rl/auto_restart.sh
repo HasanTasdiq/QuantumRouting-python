@@ -64,7 +64,7 @@ while true; do
             MEM_MB=$((MEM_KB / 1024))
             MEM_GB=$((MEM_MB / 1024))
             echo "$(date): Current memory usage: (${MEM_GB}"
-            if [ $MEM_MB -gt $MEMORY_LIMIT_GB ]; then
+            if [ $MEM_GB -gt $MEMORY_LIMIT_GB ]; then
                 echo "$(date): Memory usage ${MEM_GB}GB > ${MEMORY_LIMIT_GB}GB. Restarting..."
                 break
             fi
