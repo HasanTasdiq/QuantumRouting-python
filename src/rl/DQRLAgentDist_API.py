@@ -32,7 +32,7 @@ from objsize import get_deep_size
 
 
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
-from dist_agent_helper import  schedule_routing_state_dist , process_actions , replay_memory, REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE, UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING
+from dist_agent_helper import  schedule_routing_state_dist , process_actions , replay_memory, REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE, UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING, load_model_from_redis, save_model_to_redis
 
 
 
@@ -144,6 +144,7 @@ class DQRLAgentDist:
         self.dense_proj = Dense(64, activation='relu')
         self.mha = MultiHeadAttention(num_heads=4, key_dim=16)
         self.ln = LayerNormalization()
+        self.loaded_ts = set()
     def print_weight(self , model):
         for r in model.get_weights():
             print(r)
@@ -423,13 +424,19 @@ class DQRLAgentDist:
         epsilon = eps_start - eps_start  * (timeSlot / END_EPSILON_DECAYING)
         return max(0, epsilon)
     
+
+    
     def learn_and_predict_next_req_node_single(self, reqIndex, ent_matrix , req_matrix,dist_matrix,timeSlot):
-        if timeSlot > 0 and timeSlot % 100 == 0:
-            try:
-                self.model = load_model(self.model_name)
-                print('model loaded from ' , self.model_name , ' at timeSlot ' , timeSlot)
-            except:
-                print('no model found to load!!!!!!!!!!!!!!!')    
+        if timeSlot > 0:
+            if timeSlot not in self.loaded_ts:
+                self.loaded_ts.add(timeSlot)
+                try:
+                    ml = time.time()
+                    load_model_from_redis(self.model , self.model_name)
+                    # self.model = load_model(self.model_name)
+                    print('model loaded from ' , self.model_name , ' at timeSlot ' , timeSlot , ' time taken ' , time.time() - ml)
+                except:
+                    print('no model found to load!!!!!!!!!!!!!!!')    
         print('learn_and_predict_next_req_node_single called ' )
         req = req_matrix[reqIndex][:6]
         req[3] = req_matrix[reqIndex + len(req_matrix)//2]
@@ -563,9 +570,10 @@ class DQRLAgentDist:
         # print('update_reward done in \n')
         # print('update_reward done in \n')
         # print('update_reward done in ' , time.time() - t1 , 'seconds\n')
-        if timeSlot % 100 == 0:
+        if timeSlot % 1 == 0:
+            st = time.time()
             self.save_model()
-            print('model saved at time slot ' , timeSlot)
+            print('model saved at time slot ' , timeSlot, 'time taken ' , time.time() - st)
         print('======!=======!==== total update reward done in ' , time.time() - t1 , 'seconds\n')
         return total_reward
 
@@ -584,14 +592,17 @@ class DQRLAgentDist:
         if np.random.random() > EPSILON_:
             random.shuffle(T)
         return T
+
+
     def save_model(self):
         # global model_lock
         # if model_lock is None:
         #     model_lock = multiprocessing.Lock()
 
         # with model_lock:
-        
-        self.model.save((self.model_name))
+
+        save_model_to_redis(self.model, self.model_name)
+        # self.model.save((self.model_name))
         # print(self.model.weights)
         # del self.model
 

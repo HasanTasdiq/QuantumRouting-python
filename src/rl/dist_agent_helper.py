@@ -32,19 +32,19 @@ MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
-START_EPSILON_DECAYING = 2000
-END_EPSILON_DECAYING = 4000
-REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 2000
+# END_EPSILON_DECAYING = 4000
+# REPLAY_MEMORY_SIZE = 15000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
-# START_EPSILON_DECAYING = 10
-# END_EPSILON_DECAYING = 250
-# REPLAY_MEMORY_SIZE = 3000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 1000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
+# START_EPSILON_DECAYING = 1000
+# END_EPSILON_DECAYING = 2500
+# REPLAY_MEMORY_SIZE = 10000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 3000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
@@ -69,38 +69,142 @@ UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
 REPLAY_MEMORY_FILE = "replay_memory.pkl"
 
+def load_model_from_redis( model, model_name="dqrl_model"):
+    """Load model weights from Redis if newer version available"""
+    try:
+        redis_version = int(mpredis.get(f"{model_name}_version") or 0)
+        serialized = mpredis.get(f"{model_name}_weights")
+            
+        if serialized:
+            weights = pickle.loads(serialized)
+            model.set_weights(weights)
+            print(f"Model loaded from Redis - version {redis_version}")
+            return redis_version
+        return None
+    except Exception as e:
+        print(f"Error loading from Redis: {e}")
+        return None
+        
+def save_model_to_redis( model, model_name="dqrl_model"):
+    """Save model weights to Redis"""
+    try:
+        weights = model.get_weights()
+        serialized = pickle.dumps(weights)
+            
+        # Store with version
+        version = mpredis.incr(f"{model_name}_version")
+        mpredis.set(f"{model_name}_weights", serialized ,ex=60)  # expire in 1 day)
+            
+        print(f"Model saved to Redis - version {version}")
+        return version
+    except Exception as e:
+        print(f"Error saving to Redis: {e}")
+        return None
+# def save_replay_memory():
+#     """Save replay memory with compression"""
+#     t1 = time.time()
+#     try:
+#         if len(replay_memory) == 0:
+#             return
+        
+#         print(f"Saving replay memory ({len(replay_memory)} items)...")
+#         with gzip.open(REPLAY_MEMORY_FILE, 'wb') as f:
+#             pickle.dump(list(replay_memory), f, protocol=pickle.HIGHEST_PROTOCOL)
+        
+#         file_size = os.path.getsize(REPLAY_MEMORY_FILE) / (1024 * 1024)
+#         print(f"✓ Saved {file_size:.2f} MB in {time.time() - t1:.2f} seconds")
+#     except Exception as e:
+#         print(f"✗ Error saving: {e}")
+
+# def load_replay_memory():
+#     """Load replay memory"""
+#     # global replay_memory
+#     t1 = time.time()
+#     try:
+#         if os.path.exists(REPLAY_MEMORY_FILE):
+#             print(f"Loading replay memory...")
+#             with gzip.open(REPLAY_MEMORY_FILE, 'rb') as f:
+#                 data = pickle.load(f)
+#             replay_memory.extend(data)
+#             print(f"✓ Loaded {len(replay_memory)} items in {time.time() - t1:.2f} seconds")
+#         else:
+#             print("No saved memory found")
+#     except Exception as e:
+#         print(f"✗ Error loading: {e}")
+
+
+
+REPLAY_MEMORY_KEY = "replay_memory_compressed"
+REPLAY_MEMORY_VERSION_KEY = "replay_memory_version"
 
 def save_replay_memory():
-    """Save replay memory with compression"""
+    """Save replay memory to Redis with compression"""
     t1 = time.time()
     try:
         if len(replay_memory) == 0:
+            print("Replay memory is empty, nothing to save")
             return
         
-        print(f"Saving replay memory ({len(replay_memory)} items)...")
-        with gzip.open(REPLAY_MEMORY_FILE, 'wb') as f:
-            pickle.dump(list(replay_memory), f, protocol=pickle.HIGHEST_PROTOCOL)
+        print(f"Saving replay memory ({len(replay_memory)} items) to Redis...")
         
-        file_size = os.path.getsize(REPLAY_MEMORY_FILE) / (1024 * 1024)
-        print(f"✓ Saved {file_size:.2f} MB in {time.time() - t1:.2f} seconds")
+        # Serialize
+        serialized = pickle.dumps(list(replay_memory), protocol=pickle.HIGHEST_PROTOCOL)
+        original_size = len(serialized) / (1024 * 1024)
+        
+        # Compress
+        compressed = gzip.compress(serialized, compresslevel=6)
+        compressed_size = len(compressed) / (1024 * 1024)
+        
+        # Save to Redis
+        mpredis.set(REPLAY_MEMORY_KEY, compressed , ex=60*60*24)  # expire in 1 day
+        
+        # Increment version
+        version = mpredis.incr(REPLAY_MEMORY_VERSION_KEY)
+        
+        compression_ratio = (1 - compressed_size/original_size) * 100 if original_size > 0 else 0
+        print(f"✓ Saved {compressed_size:.2f} MB (compressed from {original_size:.2f} MB, {compression_ratio:.1f}% reduction)")
+        print(f"  Version {version} in {time.time() - t1:.2f} seconds")
+        
     except Exception as e:
-        print(f"✗ Error saving: {e}")
+        print(f"✗ Error saving to Redis: {e}")
+        import traceback
+        traceback.print_exc()
 
 def load_replay_memory():
-    """Load replay memory"""
-    # global replay_memory
+    """Load replay memory from Redis with decompression"""
     t1 = time.time()
     try:
-        if os.path.exists(REPLAY_MEMORY_FILE):
-            print(f"Loading replay memory...")
-            with gzip.open(REPLAY_MEMORY_FILE, 'rb') as f:
-                data = pickle.load(f)
+        if not mpredis.exists(REPLAY_MEMORY_KEY):
+            print("No saved memory found in Redis")
+            return
+        
+        print(f"Loading replay memory from Redis...")
+        
+        # Get compressed data from Redis
+        compressed = mpredis.get(REPLAY_MEMORY_KEY)
+        
+        if compressed:
+            compressed_size = len(compressed) / (1024 * 1024)
+            
+            # Decompress
+            serialized = gzip.decompress(compressed)
+            
+            # Deserialize
+            data = pickle.loads(serialized)
             replay_memory.extend(data)
-            print(f"✓ Loaded {len(replay_memory)} items in {time.time() - t1:.2f} seconds")
+            
+            version = mpredis.get(REPLAY_MEMORY_VERSION_KEY)
+            version = int(version) if version else 0
+            
+            print(f"✓ Loaded {len(replay_memory)} items from Redis")
+            print(f"  Decompressed {compressed_size:.2f} MB, version {version} in {time.time() - t1:.2f} seconds")
         else:
-            print("No saved memory found")
+            print("No data found in Redis")
+            
     except Exception as e:
-        print(f"✗ Error loading: {e}")
+        print(f"✗ Error loading from Redis: {e}")
+        import traceback
+        traceback.print_exc()
 
 def process_update_action(  actionId):
         # print('process_update_action called ' , p.reqIndex)
