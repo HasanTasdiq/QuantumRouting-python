@@ -241,10 +241,15 @@ class DQRLAgentDist:
 
         # indices = np.random.choice(len(self.replay_memory), MINIBATCH_SIZE, p=probabilities)
         # minibatch = [self.replay_memory[i] for i in indices]
-        last_half = self.get_last_n(replay_memory, MINIBATCH_SIZE // 2)
 
-        minibatch = random.sample(replay_memory, MINIBATCH_SIZE//2)
-        minibatch.extend(last_half)
+
+        # last_half = self.get_last_n(replay_memory, MINIBATCH_SIZE // 2)
+
+        # minibatch = random.sample(replay_memory, MINIBATCH_SIZE//2)
+        # minibatch.extend(last_half)
+
+        minibatch = random.sample(replay_memory, MINIBATCH_SIZE)
+
         batch_size = MINIBATCH_SIZE
         print('=============sample ===========' , time.time() - t1)
 
