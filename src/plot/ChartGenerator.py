@@ -196,9 +196,9 @@ class ChartGenerator:
         AlgoName = [ "schedule ","schedlue_prob", "rand_schedule","schedule_route" , 'rand_schedule_route']
         AlgoName = ['rl' , 'greedy_only']
         AlgoName = ['ILP (4)','ILP (2)','ILP (1)' , 'DQRL' , 'shortest_path']
-        AlgoName = ['Fid-ILP', 'QuRA' , 'EBSPA']
+        AlgoName = ['ILP', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' , 'EBSPA']
-        AlgoName = ['RL-SCHEDULER', 'QuRA' ]
+        # AlgoName = ['RL-SCHEDULER', 'QuRA' ]
         leg = plt.legend(
             AlgoName,
             loc = 10,
