@@ -577,8 +577,8 @@ class DQRLAgentDist:
         # print('update_reward done in ' , time.time() - t1 , 'seconds\n')
         if timeSlot % 1 == 0:
             st = time.time()
-            self.save_model()
-            print('model saved at time slot ' , timeSlot, 'time taken ' , time.time() - st)
+            save_model_to_redis(self.model, self.model_name) 
+            print('model saved to redis at time slot ' , timeSlot, 'time taken ' , time.time() - st)
         print('======!=======!==== total update reward done in ' , time.time() - t1 , 'seconds\n')
         return total_reward
 
@@ -606,8 +606,8 @@ class DQRLAgentDist:
 
         # with model_lock:
 
-        save_model_to_redis(self.model, self.model_name)
-        # self.model.save((self.model_name))
+        # save_model_to_redis(self.model, self.model_name)
+        self.model.save((self.model_name))
         # print(self.model.weights)
         # del self.model
 

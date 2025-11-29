@@ -14,7 +14,8 @@ class ChartGenerator:
         filename = './data/' + dataName
         if Ylabel == 'successfulRequest' or Ylabel == '#successRequest':
             # Ylabel = '  Successful Request (%) '        
-            Ylabel = 'Successful Requests'        
+            Ylabel = 'Successful Requests'   
+            Ylabel = 'Throughput'     
         if Xlabel == '#RequestPerRound':
             Xlabel = '# Request Per Time Slot'
             # Xlabel = '#Nodes \n # Request Per Time Slot'
@@ -72,7 +73,7 @@ class ChartGenerator:
         fontsize = 28
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
-        Xticks_fontsize = fontsize
+        Xticks_fontsize = 10
         Yticks_fontsize = fontsize
         legSize = fontsize-3
             
@@ -169,9 +170,9 @@ class ChartGenerator:
 
         marker = ['o', 's', 'v', 'x', 'd' , '1' , '<' , '*']
         markers_on = [i for i in range(len(x))]
-        # if len(markers_on) > 5:
-        #     # print(markers_on)
-        #     markers_on = get_n_index(markers_on , 5)
+        if len(markers_on) > 5:
+            # print(markers_on)
+            markers_on = get_n_index(markers_on , 5)
         for i in range(numOfAlgo):
             ax1.plot(x, y[i], color = color[i], markevery=markers_on, lw = 2.5, linestyle = "-", marker = marker[i], markersize = 10, markerfacecolor = "none", markeredgewidth = 2.5)
         # plt.show()
@@ -199,6 +200,7 @@ class ChartGenerator:
         AlgoName = ['ILP', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' ]
+        AlgoName = ['Sequential QuRA', 'Parallel QuRA']
         leg = plt.legend(
             AlgoName,
             loc = 10,
@@ -225,7 +227,7 @@ class ChartGenerator:
         plt.xticks(x)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 10)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
-        plt.locator_params(axis='x', nbins=5)  
+        plt.locator_params(axis='x', nbins=9)  
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.2)
