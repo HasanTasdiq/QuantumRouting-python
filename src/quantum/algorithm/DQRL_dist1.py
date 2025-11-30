@@ -362,7 +362,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot < 100000:
+            if self.timeSlot < 7000:
                 t = time.time()
                 
                 print('going to call update_reward with ')
