@@ -440,6 +440,8 @@ class DQRLAgentDist:
                     load_model_from_redis(self.model , self.model_name)
                     # self.model = load_model(self.model_name)
                     print('model loaded from ' , self.model_name , ' at timeSlot ' , timeSlot , ' time taken ' , time.time() - ml)
+                    if timeSlot+1 % 500 == 0:
+                        self.save_model()
                 except:
                     print('no model found to load!!!!!!!!!!!!!!!')    
         print('learn_and_predict_next_req_node_single called ' )

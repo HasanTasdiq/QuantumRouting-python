@@ -93,7 +93,7 @@ def save_model_to_redis( model, model_name="dqrl_model"):
             
         # Store with version
         version = mpredis.incr(f"{model_name}_version")
-        mpredis.set(f"{model_name}_weights", serialized ,ex=60)  # expire in 1 day)
+        mpredis.set(f"{model_name}_weights", serialized ,ex=60)  # expire in 60 seconds)
             
         print(f"Model saved to Redis - version {version}")
         return version
