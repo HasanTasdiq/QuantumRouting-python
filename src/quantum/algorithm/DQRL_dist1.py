@@ -190,6 +190,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         return matrix
     def get_ent_graph_matrix_info(self):
         matrix = self.get_ent_graph_matrix()
+        matrix *= 2
         shm = shared_memory.SharedMemory(create=True, size=matrix.nbytes)
         shared_matrix = np.ndarray(matrix.shape, dtype=matrix.dtype, buffer=shm.buf)
         shared_matrix[:] = matrix[:]
@@ -304,6 +305,18 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # before_map = self.check_executor_memory()
                 
                 results = list(executor2.map(self.route_parallel, args))
+                print('results from map ')
+                print('got results with conflicts' , sum([r[0] for r in results]))
+                node_matrix = self.get_ent_graph_matrix()
+                print('node_matrix after map ')
+                try:
+                    successReq = self.resolve_conflict( results , q_matrix , node_matrix.copy())
+                    print('got results after conflicts' , successReq)
+
+                except Exception as e:
+                    import traceback
+                    traceback.print_exc()
+                print('results after resolve conflict ')
                 # print('results ' , results, sum([r for r in results]))
             
                 # print(f"\n🔍 [->->->->-AFTER executor2.map] Checking executor memory...")
@@ -317,13 +330,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 #         print(f"⚠️  !!!!!!!!!!!!WARNING: Workers consumed {delta:.2f} MB during this map operation!")
     
                 # self.topo.reward_routing = dill.loads(mpredis.get("reward_routing"))
-                successReq = sum([r[0] for r in results])
+                # successReq = sum([r[0] for r in results])
                 # print('successReq ' , successReq)
                 actions = []
                 
-                node_matrix = self.get_ent_graph_matrix()
                 req_matrix = self.req_matrix()
-                dist_matrix = self.dist_matrix()
+                # dist_matrix = self.dist_matrix()
                 for r in results:
                     for actionss in r[1]:
                         actionss.extend([node_matrix, req_matrix, dist_matrix])
@@ -362,7 +374,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot < 7000:
+            if self.timeSlot < 10000:
                 t = time.time()
                 
                 print('going to call update_reward with ')
@@ -410,6 +422,61 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 conflicts.append((req , next_node, current_node))
         
         return conflicts
+    def resolve_conflict(self , results, q_matrix=None, node_matrix=None):
+        path_infos = []
+        for r in results:
+            if r[0]:
+                path_infos.append((r[2],r[3]))  # (index, path)
+        print('path_infos before sort == ' , len(path_infos))
+
+        path_infos.sort(key=lambda x: (len(x[1])) , reverse=True)
+        success_req = 0
+        for path_info in path_infos:
+            index = path_info[0]
+            req = self.requestState[index]
+
+            path = path_info[1]
+            swappSuccess = True
+                
+            # print('going to swap for ' , (src.id , dst.id ))
+            for i in range(1 , len(path)-1):
+                swapped = False
+
+                if node_matrix[path[i-1]][path[i]] >= 1:
+                    # print('qmatrix ' , q_matrix)
+                    if random.random() <= q_matrix[path[i]]:
+                        swapped = True
+                if not swapped:
+                    failed_swap = True
+                    swappSuccess = False
+                    # print('================failed swap==================')
+                    break
+            
+
+                        
+
+
+            if  swappSuccess:
+                # print('going to find path for:', (src.id , dst.id ))
+
+                for i in range(1 , len(path)):
+                    node_matrix[path[i-1]][path[i]] -= 1
+                    node_matrix[path[i]][path[i-1]] -= 1
+                t2 = time.time()
+                for req in self.requests:
+                    src = req[0]
+                    dst = req[1]
+                    if (src, dst) == (req[0], req[1]):
+                        # print('[REPS] finish time:', self.timeSlot - request[2])
+                        self.requests.remove(req)
+                        break
+                success_req += 1
+
+
+        return success_req
+            
+
+
 
     def route_parallel(self, args):
         try:
@@ -955,36 +1022,37 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                         # mpredis.set("node_" + str(next_node.id), dill.dumps(next_node))
                         # print('==shared_nodes save time ' , time.time() - t1)
                         pnode = current_node_id
+
                         current_node_id = next_node_id
-                        swappSuccess = True
-                        if success:
-                            # print('going to swap for ' , (src.id , dst.id ))
-                            for i in range(1 , len(path)-1):
-                                swapped = False
-                                # print('qmatrix ' , q_matrix)
-                                if random.random() <= q_matrix[path[i]]:
-                                    swapped = True
-                                if not swapped:
-                                    failed_swap = True
-                                    swappSuccess = False
-                                    # print('================failed swap==================')
-                                    break
+                        # swappSuccess = True
+                        # if success:
+                        #     # print('going to swap for ' , (src.id , dst.id ))
+                        #     for i in range(1 , len(path)-1):
+                        #         swapped = False
+                        #         # print('qmatrix ' , q_matrix)
+                        #         if random.random() <= q_matrix[path[i]]:
+                        #             swapped = True
+                        #         if not swapped:
+                        #             failed_swap = True
+                        #             swappSuccess = False
+                        #             # print('================failed swap==================')
+                        #             break
                         
 
 
-                        if success and swappSuccess:
-                            # print('going to find path for:', (src.id , dst.id ))
-                            t2 = time.time()
-                            for req in self.requests:
-                                    # src = req[0]
-                                    # dst = req[1]
-                                if (src, dst) == (req[0], req[1]):
-                                        # print('[REPS] finish time:', self.timeSlot - request[2])
-                                    self.requests.remove(req)
-                                    break
+                        # if success and swappSuccess:
+                        #     # print('going to find path for:', (src.id , dst.id ))
+                        #     t2 = time.time()
+                        #     for req in self.requests:
+                        #             # src = req[0]
+                        #             # dst = req[1]
+                        #         if (src, dst) == (req[0], req[1]):
+                        #                 # print('[REPS] finish time:', self.timeSlot - request[2])
+                        #             self.requests.remove(req)
+                        #             break
 
-                            # successReq += 1
-                            # totalEntanglement += 1
+                        #     # successReq += 1
+                        #     # totalEntanglement += 1
 
 
                         reward = -1
@@ -1017,36 +1085,6 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                     time.sleep(random.uniform(0.001, 0.005))
 
 
-
-                
-
-                    # print('lenT ' , len(T))
-
-                # key = str(reqState[0].id) + '_' + str(reqState[1].id) + '_' + str(prev_node.id) + '_' + str(next_node.id)
-
-                    # reward = -self.topo.numOfRequestPerRound
-                
-                # print('===============process id:', os.getpid() , 'leaving after processing, time taken:', time.time()-tl)  
-                # t1 = time.time()
-                # mpredis.set("shared_nodes", dill.dumps(shared_nodes))
-                # print('==shared_nodes save time ' , time.time() - t1)
-            # finally:
-            #     for lock in {cnlock, nnlock}:
-            #         lock.release()
-            #     print('-------===----=-=-=-=-=released locks ' , pnode , next_node_id)
-            # with reward_lock:
-            #     t1 = time.time()
-            #     # reward_routing = dill.loads(mpredis.get("reward_routing"))
-            #     reward_routing = self.topo.reward_routing
-            #     # print('==reward_routing load time ' , time.time() - t1)
-            #     try:
-            #         reward_routing[key] += reward
-            #     except:
-            #         reward_routing[key] = reward
-            #     t1 = time.time()
-                # mpredis.set("reward_routing", dill.dumps(reward_routing))  
-                # print('==reward_routing save time ' , time.time() - t1)  
-
             T = [r for r in self.requestState if not r[5]]
             done_episode = (not good_to_search or success) and (len(T)==1)
             current_state = (ent_matrix.copy().tolist(), req_matrix.copy().tolist())
@@ -1063,7 +1101,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             shm2.close()
         except:
             pass
-        return (success and swappSuccess , actions)
+        return (success , actions , index , path)
 
     # def route_schedule_single(self ,  args):
         print('route_schedule_single called with algo#############################################:')

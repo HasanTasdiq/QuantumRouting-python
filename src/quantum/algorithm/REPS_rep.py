@@ -14,6 +14,7 @@ from numpy import log as ln
 from random import sample
 import numpy as np
 import networkx as nx
+from topo.mp_helper import solve_max_throughput_ILP
 
 
 EPS = 1e-6
@@ -40,6 +41,7 @@ class REPSREP(AlgorithmBase):
         
         # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
         self.result.remainRequestPerRound.append(len(self.requests))
+
         
         print("[REPS] total time:", self.result.waitingTime)
         print("[REPS] remain request:", len(self.requests))
@@ -182,6 +184,9 @@ class REPSREP(AlgorithmBase):
         totalEntanglement = 0
         successReq = 0
         total_fidelity = 0
+
+        print('------------going to get get max throughput from custom ILP ------------------')
+        # solve_max_throughput_ILP(self.topo.updatedG_ent() , [(req[0].id , req[1].id) for req in self.requests])
 
         if len(self.srcDstPairs) > 0:
             for i in range(4):

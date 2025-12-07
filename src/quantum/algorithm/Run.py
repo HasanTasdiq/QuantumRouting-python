@@ -12,7 +12,7 @@ from AlgorithmBase import AlgorithmResult
 # from GreedyHopRouting import GreedyHopRouting
 
 # from REPS import REPS
-# from REPS_rep import REPSREP
+from REPS_rep import REPSREP
 
 # from MERR import MERR
 # from REPS_cache import REPSCACHE
@@ -86,11 +86,11 @@ run = ""
 # + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
 #     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 10000
+ttime = 12000
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 4       
+gridSize = 3       
 nodeNo = gridSize *gridSize
 # nodeNo = 50
 fixed = False
@@ -102,7 +102,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [5]
+numOfRequestPerRound = [3]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
 # numOfNodes = [20]
@@ -322,6 +322,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE_PS(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE_preswap_multihop_distdqrl' , param='ten'))
     
+
     algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
 
 
