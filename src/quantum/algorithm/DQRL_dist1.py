@@ -190,7 +190,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         return matrix
     def get_ent_graph_matrix_info(self):
         matrix = self.get_ent_graph_matrix()
-        matrix *= 2
+        # matrix *= 2
         shm = shared_memory.SharedMemory(create=True, size=matrix.nbytes)
         shared_matrix = np.ndarray(matrix.shape, dtype=matrix.dtype, buffer=shm.buf)
         shared_matrix[:] = matrix[:]
