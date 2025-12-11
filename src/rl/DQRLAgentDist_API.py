@@ -8,7 +8,7 @@ import numpy as np
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatten, Conv1D, MaxPooling1D
 from keras.optimizers import Adam
-from keras import Input
+from keras import Input,Model, layers
 
 from collections import deque
 import time
@@ -145,6 +145,21 @@ class DQRLAgentDist:
         self.mha = MultiHeadAttention(num_heads=4, key_dim=16)
         self.ln = LayerNormalization()
         self.loaded_ts = set()
+
+
+        self.MAX_REQUESTS = 100 # Set this to the max expected requests per timeslot
+        # --- QMIX Mixers ---
+        # We need the global state shape. Based on your code, it seems to be in self.OBSERVATION_SPACE_VALUES
+        # Note: Flatten the state shape for the mixer input if it's not already 1D
+        mixer_state_dim = self.OBSERVATION_SPACE_VALUES[0] * self.OBSERVATION_SPACE_VALUES[1]
+        
+        self.mixer = QMixer(self.MAX_REQUESTS, mixer_state_dim)
+        self.target_mixer = QMixer(self.MAX_REQUESTS, mixer_state_dim)
+        
+        # Optimizer specifically for QMIX training (trains both Agent and Mixer)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+
+
     def print_weight(self , model):
         for r in model.get_weights():
             print(r)
@@ -209,6 +224,7 @@ class DQRLAgentDist:
             replay_memory.extend(transition)
         else:
             replay_memory.append(transition)
+        print('replay_memory size ' ,  len(replay_memory))
         # self.priorities.append(priority)
     
 
@@ -219,6 +235,261 @@ class DQRLAgentDist:
     def get_last_n(self , d, n):
         """Return last n elements of a deque efficiently"""
         return list(islice(d, len(d)-n, len(d)))
+    
+    # Inside DQRLAgentDist class
+    # --- COMPILED TRAINING STEP (Fast Execution) ---
+    @tf.function
+    def _train_step(self, padded_states, padded_actions, padded_next_states, global_states, next_global_states, rewards, dones, mask_tensor):
+        with tf.GradientTape() as tape:
+            # 1. Agent Forward Pass (ONLINE)
+            # Reshape to (Batch * Max_Reqs, State_Dim) to feed to model efficiently
+            flat_states = tf.reshape(padded_states, (-1, self.OBSERVATION_SPACE_VALUES[0]))
+            
+            # CRITICAL: calling self.model(...) tracks gradients
+            all_q_values = self.model(flat_states) 
+            
+            # Reshape back to (Batch, Max_Reqs, Action_Space)
+            all_q_values = tf.reshape(all_q_values, (MINIBATCH_SIZE, self.MAX_REQUESTS, -1))
+
+            # 2. Gather Q-values for the specific actions taken
+            # Indices setup for gather_nd
+            action_indices = tf.cast(padded_actions, tf.int32)
+            batch_indices = tf.expand_dims(tf.range(MINIBATCH_SIZE), 1) * tf.ones_like(action_indices)
+            req_indices = tf.expand_dims(tf.range(self.MAX_REQUESTS), 0) * tf.ones_like(action_indices)
+            
+            # [Batch_Idx, Req_Idx, Action_Idx]
+            gather_indices = tf.stack([batch_indices, req_indices, action_indices], axis=-1)
+            
+            chosen_qs = tf.gather_nd(all_q_values, gather_indices)
+            
+            # Zero out padding
+            agent_qs_inputs = chosen_qs * mask_tensor
+
+            # 3. Target Calculations (Double DQN)
+            flat_next_states = tf.reshape(padded_next_states, (-1, self.OBSERVATION_SPACE_VALUES[0]))
+            
+            online_next_qs = self.model(flat_next_states) 
+            target_next_qs = self.target_model(flat_next_states)
+            
+            online_next_qs = tf.reshape(online_next_qs, (MINIBATCH_SIZE, self.MAX_REQUESTS, -1))
+            target_next_qs = tf.reshape(target_next_qs, (MINIBATCH_SIZE, self.MAX_REQUESTS, -1))
+            
+            best_actions = tf.argmax(online_next_qs, axis=2, output_type=tf.int32)
+            
+            gather_indices_next = tf.stack([batch_indices, req_indices, best_actions], axis=-1)
+            target_qs_selected = tf.gather_nd(target_next_qs, gather_indices_next)
+            
+            target_agent_qs_inputs = target_qs_selected * mask_tensor
+
+            # 4. Mixer Forward Pass
+            q_tot_online = self.mixer((agent_qs_inputs, global_states))
+            target_q_tot = self.target_mixer((target_agent_qs_inputs, next_global_states))
+
+            # 5. Loss
+            y_target = rewards + (GAMMA * target_q_tot * (1 - dones))
+            loss = tf.keras.losses.MSE(y_target, q_tot_online)
+
+        # 6. Apply Gradients
+        variables = self.model.trainable_variables + self.mixer.trainable_variables
+        gradients = tape.gradient(loss, variables)
+        self.optimizer.apply_gradients(zip(gradients, variables))
+        
+        return loss
+
+    # --- MAIN TRAIN FUNCTION (Optimized Data Prep) ---
+    def train_qmix(self, terminal_state):
+        if len(replay_memory) < MIN_REPLAY_MEMORY_SIZE:
+            return
+
+        minibatch = random.sample(replay_memory, MINIBATCH_SIZE)
+
+        # 1. Pre-allocate NumPy Arrays (Speed Optimization)
+        # Using float32 matches TensorFlow native type to avoid casting lag
+        padded_states = np.zeros((MINIBATCH_SIZE, self.MAX_REQUESTS, self.OBSERVATION_SPACE_VALUES[0]), dtype=np.float32)
+        padded_actions = np.zeros((MINIBATCH_SIZE, self.MAX_REQUESTS), dtype=np.int32)
+        mask = np.zeros((MINIBATCH_SIZE, self.MAX_REQUESTS), dtype=np.float32)
+        padded_next_states = np.zeros((MINIBATCH_SIZE, self.MAX_REQUESTS, self.OBSERVATION_SPACE_VALUES[0]), dtype=np.float32)
+        
+        # Determine global state dim dynamically from first sample
+        g_dim = len(minibatch[0][4].flatten()) 
+        global_states = np.zeros((MINIBATCH_SIZE, g_dim), dtype=np.float32)
+        next_global_states = np.zeros((MINIBATCH_SIZE, g_dim), dtype=np.float32)
+        
+        rewards_batch = np.zeros((MINIBATCH_SIZE, 1), dtype=np.float32)
+        dones_batch = np.zeros((MINIBATCH_SIZE, 1), dtype=np.float32)
+
+        # 2. Fill Data
+        for i, sample in enumerate(minibatch):
+            ts_states, ts_actions, ts_rewards, ts_next_states, g_state, next_g_state, done = sample
+            
+            num_reqs = min(len(ts_states), self.MAX_REQUESTS)
+            
+            if num_reqs > 0:
+                padded_states[i, :num_reqs] = np.array(ts_states, dtype=np.float32)[:num_reqs]
+                padded_actions[i, :num_reqs] = np.array(ts_actions, dtype=np.int32)[:num_reqs]
+                padded_next_states[i, :num_reqs] = np.array(ts_next_states, dtype=np.float32)[:num_reqs]
+                mask[i, :num_reqs] = 1.0
+            
+            global_states[i] = g_state.flatten()
+            next_global_states[i] = next_g_state.flatten()
+            rewards_batch[i] = np.sum(ts_rewards)
+            dones_batch[i] = done
+
+        # 3. Run Compiled Training Step
+        # No need for manual conversion, TF handles NumPy input efficiently in @tf.function
+        loss = self._train_step(padded_states, padded_actions, padded_next_states, global_states, next_global_states, rewards_batch, dones_batch, mask)
+
+        # 4. Update Target Networks
+        self.target_update_counter += 1
+        if self.target_update_counter >= UPDATE_TARGET_EVERY:
+            self.target_model.set_weights(self.model.get_weights())
+            self.target_mixer.set_weights(self.mixer.get_weights())
+            self.target_update_counter = 0
+            # print(f"--- QMIX Loss: {loss:.4f} ---") # Optional Debug
+
+        tf.keras.backend.clear_session()
+        # gc.collect() # Only enable if memory is tight, slows down loop
+
+    def train_qmix2(self, terminal_state):
+        if len(replay_memory) < MIN_REPLAY_MEMORY_SIZE:
+            return
+
+        minibatch = random.sample(replay_memory, MINIBATCH_SIZE)
+
+        # --- PRE-PROCESSING (Outside Tape) ---
+        # We need to structure data so we can feed it to the model in one go
+        
+        # 1. Prepare padded batches
+        # Shape: [Batch_Size, MAX_REQUESTS, State_Dim]
+        padded_states = np.zeros((MINIBATCH_SIZE, self.MAX_REQUESTS, self.OBSERVATION_SPACE_VALUES[0]))
+        # Shape: [Batch_Size, MAX_REQUESTS] (Indices of actions taken)
+        padded_actions = np.zeros((MINIBATCH_SIZE, self.MAX_REQUESTS), dtype=np.int32)
+        # Mask to remember which slots are real requests vs padding
+        mask = np.zeros((MINIBATCH_SIZE, self.MAX_REQUESTS), dtype=np.float32)
+        
+        # Target Network Data
+        padded_next_states = np.zeros((MINIBATCH_SIZE, self.MAX_REQUESTS, self.OBSERVATION_SPACE_VALUES[0]))
+        
+        global_states = []
+        next_global_states = []
+        rewards_batch = []
+        dones_batch = []
+        t1 = time.time()
+        for i, sample in enumerate(minibatch):
+            ts_states, ts_actions, ts_rewards, ts_next_states, g_state, next_g_state, done = sample
+            
+            # Limit to MAX_REQUESTS to prevent overflow
+            num_reqs = min(len(ts_states), self.MAX_REQUESTS)
+            
+            # Fill the padded arrays
+            if num_reqs > 0:
+                padded_states[i, :num_reqs] = np.array(ts_states)[:num_reqs]
+                padded_actions[i, :num_reqs] = np.array(ts_actions)[:num_reqs]
+                padded_next_states[i, :num_reqs] = np.array(ts_next_states)[:num_reqs]
+                mask[i, :num_reqs] = 1.0
+            
+            global_states.append(g_state.flatten())
+            next_global_states.append(next_g_state.flatten())
+            rewards_batch.append(np.sum(ts_rewards))
+            dones_batch.append(done)
+        print('Pre-processing time: ', time.time() - t1)
+
+        t1 = time.time()
+        # Convert to Tensors
+        padded_states = tf.convert_to_tensor(padded_states, dtype=tf.float32)
+        padded_next_states = tf.convert_to_tensor(padded_next_states, dtype=tf.float32)
+        global_states = tf.convert_to_tensor(global_states, dtype=tf.float32)
+        next_global_states = tf.convert_to_tensor(next_global_states, dtype=tf.float32)
+        rewards = tf.reshape(tf.convert_to_tensor(rewards_batch, dtype=tf.float32), (-1, 1))
+        dones = tf.reshape(tf.convert_to_tensor(dones_batch, dtype=tf.float32), (-1, 1))
+        mask_tensor = tf.convert_to_tensor(mask, dtype=tf.float32)
+        print('Tensor conversion time: ', time.time() - t1)
+        t2 = time.time()
+        # --- TRAINING (Inside Tape) ---
+        with tf.GradientTape() as tape:
+            # 1. Agent Forward Pass (ONLINE)
+            # We reshape to (Batch * Max_Reqs, State_Dim) to feed to model
+            flat_states = tf.reshape(padded_states, (-1, self.OBSERVATION_SPACE_VALUES[0]))
+            
+            # CRITICAL: calling self.model(...) tracks gradients!
+            t1 = time.time()
+            all_q_values = self.model(flat_states) 
+            print('Agent forward pass time: ', time.time() - t1)
+            
+            # Reshape back to (Batch, Max_Reqs, Action_Space)
+            all_q_values = tf.reshape(all_q_values, (MINIBATCH_SIZE, self.MAX_REQUESTS, -1))
+
+            # 2. Gather Q-values for the specific actions taken
+            # We need to pick the specific value at 'padded_actions' index
+            action_indices = tf.cast(padded_actions, tf.int32)
+            # Create a batch index grid to pair with action indices
+            batch_indices = tf.expand_dims(tf.range(MINIBATCH_SIZE), 1) * tf.ones_like(action_indices)
+            req_indices = tf.expand_dims(tf.range(self.MAX_REQUESTS), 0) * tf.ones_like(action_indices)
+            
+            # Full indices: [Batch_Idx, Req_Idx, Action_Idx]
+            gather_indices = tf.stack([batch_indices, req_indices, action_indices], axis=-1)
+            
+            # Extract Q-values
+            chosen_qs = tf.gather_nd(all_q_values, gather_indices)
+            
+            # Zero out the padding using the mask
+            agent_qs_inputs = chosen_qs * mask_tensor
+
+            # 3. Target Calculations (Can be outside tape, but easier here)
+            # (Note: stop_gradient is implied for target model, but good practice to be explicit)
+            flat_next_states = tf.reshape(padded_next_states, (-1, self.OBSERVATION_SPACE_VALUES[0]))
+            
+            # Double DQN Logic
+            t1 = time.time()
+            online_next_qs = self.model(flat_next_states) # For selection
+            print('Online next Qs pass time: ', time.time() - t1)
+            t1 = time.time()
+            target_next_qs = self.target_model(flat_next_states) # For evaluation
+            print('Target next Qs pass time: ', time.time() - t1)
+            
+            # Reshape
+            online_next_qs = tf.reshape(online_next_qs, (MINIBATCH_SIZE, self.MAX_REQUESTS, -1))
+            target_next_qs = tf.reshape(target_next_qs, (MINIBATCH_SIZE, self.MAX_REQUESTS, -1))
+            
+            # Max action from Online
+            best_actions = tf.argmax(online_next_qs, axis=2, output_type=tf.int32)
+            
+            # Gather value from Target
+            gather_indices_next = tf.stack([batch_indices, req_indices, best_actions], axis=-1)
+            target_qs_selected = tf.gather_nd(target_next_qs, gather_indices_next)
+            
+            # Mask Target
+            target_agent_qs_inputs = target_qs_selected * mask_tensor
+
+            # 4. Mixer Forward Pass
+            q_tot_online = self.mixer((agent_qs_inputs, global_states))
+            target_q_tot = self.target_mixer((target_agent_qs_inputs, next_global_states))
+
+            # 5. Loss
+            y_target = rewards + (GAMMA * target_q_tot * (1 - dones))
+            t1 = time.time()
+            loss = tf.keras.losses.MSE(y_target, q_tot_online)
+            print('Loss calculation time: ', time.time() - t1)
+
+        print('Total training step time inside tape: ', time.time() - t2)
+        # 6. Gradients
+        # Now variables includes the agent's weights!
+        t1 = time.time()
+        variables = self.model.trainable_variables + self.mixer.trainable_variables
+        print('Variable gathering time: ', time.time() - t1)
+        t1 = time.time()
+        gradients = tape.gradient(loss, variables)
+        print('Gradient calculation time: ', time.time() - t1)
+        t1 = time.time()
+        self.optimizer.apply_gradients(zip(gradients, variables))
+        print('Optimizer apply gradients time: ', time.time() - t1)
+
+        # Update Targets
+        self.target_update_counter += 1
+        if self.target_update_counter >= UPDATE_TARGET_EVERY:
+            self.target_model.set_weights(self.model.get_weights())
+            self.target_mixer.set_weights(self.mixer.get_weights())
+            self.target_update_counter = 0
     
     def train(self, terminal_state):
         global replay_memory
@@ -486,6 +757,7 @@ class DQRLAgentDist:
    
 
 
+
     def update_reward(self, numsuccessReq  , timeSlot , actionIds = None):
         global EPSILON_
 
@@ -503,61 +775,109 @@ class DQRLAgentDist:
         print('++++++++++++++++++++++++before process action ', timeSlot )
         last_action_table = process_actions(actionIds)
         print('++++++++++++++++++++++++after process action ' , len(last_action_table), timeSlot , time.time()-t1 , 'seconds' )
-        if True:
-            for i in range(len(last_action_table)-1 , -1 , -1):
-                t2 = time.time()
-                (request , action , ts ,current_node_id, current_state , next_state ,mask ,  done,reward) = last_action_table[i]
+        
+        
+        # if True:
+        #     for i in range(len(last_action_table)-1 , -1 , -1):
+        #         t2 = time.time()
+        #         (request , action , ts ,current_node_id, current_state , next_state ,mask ,  done,reward) = last_action_table[i]
                 
-                # req_id , next_node_id = self.decode_schdeule_route_action(action)
-                # req.append(request)
-                # print('before find reward time ')
-                # reward = self.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
-                # print('after find reward time ' )
-                # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
-                # print((request[0].id , request[1].id) , reward)
+        #         # req_id , next_node_id = self.decode_schdeule_route_action(action)
+        #         # req.append(request)
+        #         # print('before find reward time ')
+        #         # reward = self.find_reward_routing(request  , timeSlot ,current_node_id , next_node_id)
+        #         # print('after find reward time ' )
+        #         # reward = self.env.find_reward_routing(request  , timeSlot ,current_node_id , action)
+        #         # print((request[0].id , request[1].id) , reward)
 
 
-                # if len(R):
-                #     f = 0
+        #         # if len(R):
+        #         #     f = 0
 
 
-                #     reward = reward * ALPHA + GAMMA * R[-1]
+        #         #     reward = reward * ALPHA + GAMMA * R[-1]
 
-                #     reward /= pathlen
-                #     # print((request[0].id , request[1].id) , reward)
+        #         #     reward /= pathlen
+        #         #     # print((request[0].id , request[1].id) , reward)
 
-                #     # R.append(reward)
+        #         #     # R.append(reward)
                         
-                # else:
-                #     # reward = reward*ALPHA + numsuccessReq * GAMMA + avgFidelity* DELTA
-                #     reward = reward*ALPHA + numsuccessReq * GAMMA 
-                #     # reward = numsuccessReq
-                #     reward /= pathlen
-                #     R.append(reward)
-                # reward = reward*ALPHA + numsuccessReq * GAMMA 
-                reward = numsuccessReq
+        #         # else:
+        #         #     # reward = reward*ALPHA + numsuccessReq * GAMMA + avgFidelity* DELTA
+        #         #     reward = reward*ALPHA + numsuccessReq * GAMMA 
+        #         #     # reward = numsuccessReq
+        #         #     reward /= pathlen
+        #         #     R.append(reward)
+        #         # reward = reward*ALPHA + numsuccessReq * GAMMA 
+        #         reward = numsuccessReq
 
-                # reward /=10
-                total_reward += reward
-                # print('get reward time ' , time.time() -t2)
-                t3 = time.time()
-                transition = ( current_state, action, reward, next_state,mask,  done)
-                trans.append(transition)
+        #         # reward /=10
+        #         total_reward += reward
+        #         # print('get reward time ' , time.time() -t2)
+        #         t3 = time.time()
+        #         transition = ( current_state, action, reward, next_state,mask,  done)
+        #         trans.append(transition)
 
 
-                # print('update  replay memory time ' , time.time() -t3)
-        t4 = time.time()
-        print('before update replay memory time ' , time.time()-t4)
-        self.update_replay_memory(trans, numsuccessReq)
+        #         # print('update  replay memory time ' , time.time() -t3)
+        # t4 = time.time()
+        # print('before update replay memory time ' , time.time()-t4)
+        # self.update_replay_memory(trans, numsuccessReq)
 
-        print('time for update memory ' , time.time()-t4)
-        # self.env.algo.topo.reward_routing = {}
+        # print('time for update memory ' , time.time()-t4)
+        # # self.env.algo.topo.reward_routing = {}
         t5 = time.time()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+        # Aggregators for the whole time slot
+        ts_states = []
+        ts_actions = []
+        ts_rewards = []
+        ts_next_states = []
+        
+        # We need a representation of the GLOBAL state. 
+        # Currently your state is local-centric. 
+        # For QMIX, you might pick the state of the first request or a dedicated global vector.
+        # Let's assume we use the first request's state structure as the global proxy for now, 
+        # but ideally, this should be the raw entanglement matrix flattened.
+        global_state_proxy = None 
+        next_global_state_proxy = None
+
+        for i in range(len(last_action_table)):
+            (request, action, ts, current_node_id, current_state, next_state, mask, done, reward) = last_action_table[i]
+            
+            ts_states.append(current_state)
+            ts_actions.append(action)
+            ts_rewards.append(reward) # Or numsuccessReq
+            ts_next_states.append(next_state)
+            
+            if i == 0:
+                global_state_proxy = current_state # Should be purely global info
+                next_global_state_proxy = next_state
+
+        # Construct the Joint Transition
+        # (List of States, List of Actions, List of Rewards, List of Next States, Global State, Next Global State, Done)
+        if len(ts_states) > 0:
+            transition = (ts_states, ts_actions, ts_rewards, ts_next_states, global_state_proxy, next_global_state_proxy, False)
+            
+            # Push this TUPLE to replay memory (not a list of transitions)
+            self.update_replay_memory(transition, numsuccessReq)
         ############################################
         # if timeSlot % 3 == 0:
-        self.train(False )
+        self.train_qmix(False)
+        # self.train(False )
         print('time train ' , time.time()-t5)
 
         # print('===---------size of model memory----------------===-' , get_deep_size(self.model)/1024/1024 , 'MB')
@@ -613,6 +933,70 @@ class DQRLAgentDist:
         # print(self.model.weights)
         # del self.model
 
+
+
+
+
+class QMixer(Model):
+    def __init__(self, n_agents, state_shape, embed_dim=32):
+        super(QMixer, self).__init__()
+        self.n_agents = n_agents
+        self.state_shape = state_shape
+        self.embed_dim = embed_dim
+
+        # Hypernetwork 1: Generates weights for 1st layer of mixing
+        # Input: Global State -> Output: n_agents * embed_dim weights
+        self.hyper_w1 = layers.Dense(n_agents * embed_dim)
+        # Hypernetwork 1 Bias
+        self.hyper_b1 = layers.Dense(embed_dim)
+
+        # Hypernetwork 2: Generates weights for 2nd layer (final)
+        # Input: Global State -> Output: embed_dim * 1 weights
+        self.hyper_w2 = layers.Dense(embed_dim)
+        
+        # Hypernetwork 2 Bias (V(s))
+        self.hyper_b2 = Sequential([
+            layers.Dense(embed_dim, activation='relu'),
+            layers.Dense(1)
+        ])
+
+    def call(self, inputs):
+        # inputs is a tuple: (agent_qs, states)
+        # agent_qs shape: [batch_size, n_agents] (Q values of selected actions)
+        # states shape: [batch_size, state_dim]
+        agent_qs, states = inputs
+        
+        batch_size = tf.shape(agent_qs)[0]
+
+        # 1. First Layer Weights (Enforce Monotonicity with Abs)
+        w1 = tf.abs(self.hyper_w1(states))
+        w1 = tf.reshape(w1, (batch_size, self.n_agents, self.embed_dim))
+        
+        b1 = self.hyper_b1(states)
+        b1 = tf.reshape(b1, (batch_size, 1, self.embed_dim))
+
+        # 2. Reshape Agent Qs for Matmul
+        agent_qs_reshaped = tf.reshape(agent_qs, (batch_size, 1, self.n_agents))
+
+        # 3. First Hidden Layer calculation
+        # (Batch, 1, Agents) * (Batch, Agents, Embed) -> (Batch, 1, Embed)
+        hidden = tf.nn.elu(tf.matmul(agent_qs_reshaped, w1) + b1)
+
+        # 4. Second Layer Weights
+        w2 = tf.abs(self.hyper_w2(states))
+        w2 = tf.reshape(w2, (batch_size, self.embed_dim, 1))
+
+        # 5. Second Layer Bias
+        b2 = self.hyper_b2(states)
+        b2 = tf.reshape(b2, (batch_size, 1, 1))
+
+        # 6. Final Q_tot
+        y = tf.matmul(hidden, w2) + b2
+        
+        # Reshape to [batch_size, 1]
+        q_tot = tf.reshape(y, (batch_size, 1))
+        return q_tot
+    
 if __name__ == '__main__':
     agent = DQRLAgentDist()
     agent.initiate()

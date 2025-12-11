@@ -11,7 +11,7 @@ import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 
 
-max_workers = 60
+max_workers = 10
 executor = ProcessPoolExecutor(max_workers=max_workers)
 SIZE = 100
 # embedding_layer = Embedding(input_dim=20, output_dim=1)
@@ -24,12 +24,12 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 
 
 # run 25k
-START_EPSILON_DECAYING = 15000
-END_EPSILON_DECAYING = 20000
-REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 15000
+# END_EPSILON_DECAYING = 20000
+# REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
+# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
 # START_EPSILON_DECAYING = 4000
@@ -40,12 +40,12 @@ UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 # for 3k local
-# START_EPSILON_DECAYING = 1000
-# END_EPSILON_DECAYING = 2500
-# REPLAY_MEMORY_SIZE = 10000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 3000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 500  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 1000
+END_EPSILON_DECAYING = 2500
+REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 300  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 50  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
 # START_EPSILON_DECAYING = 3000
@@ -221,18 +221,76 @@ def process_update_action(  actionId):
         #     p.req_matrix,
         #     p.dist_matrix
         # )
-        return update_action(actionId)
+
+        try:
+            return update_action( actionId)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(f"Error in process_update_action for actionId {actionId}: {e}")
 
         # reqIndex , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix = p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7].tolist(),p[8].tolist(),p[9].tolist()
         # return update_action(reqIndex , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix)
+class GlobalStateExtractor:
+    """
+    Extracts global state from the distributed routing environment
+    """
+    
+    def __init__(self, size=100):
+        self.size = size
+        
+    def extract_global_state(self, ent_matrix, req_matrix, dist_matrix):
+        """
+        Extract global state representation from environment matrices
+        
+        Args:
+            ent_matrix: Entanglement/link matrix
+            req_matrix: Request matrix
+            dist_matrix: Distance matrix
+            
+        Returns:
+            Global state vector
+        """
+        # Flatten matrices
+        ent_flat = np.array(ent_matrix).flatten()
+        dist_flat = np.array(dist_matrix).flatten()
+        
+        # Request statistics
+        active_requests = sum(1 for req in req_matrix if not req[5])  # not done
+        total_requests = len(req_matrix) // 2
+        
+        # Network utilization
+        total_links = np.sum(ent_flat > 0)
+        avg_link_capacity = np.mean(ent_flat[ent_flat > 0]) if total_links > 0 else 0
+        
+        # Aggregate features
+        global_features = np.array([
+            active_requests / max(total_requests, 1),
+            avg_link_capacity,
+            total_links / (self.size * self.size),
+        ])
+        
+        # Combine into global state
+        # Sample subset of matrices to keep state size manageable
+        sample_size = min(500, len(ent_flat))
+        indices = np.linspace(0, len(ent_flat)-1, sample_size, dtype=int)
+        
+        global_state = np.concatenate([
+            global_features,
+            ent_flat[indices],
+            dist_flat[indices]
+        ])
+        
+        return global_state.astype(np.float32)
 
 def update_action( actionId):
-        # print('update_action called ')
+        # print('update_action called ', actionId)
 
         elem =  pickle.loads(mpredis.get(f"action_{actionId}"))
+        # print('update_action got elem ' )
         mpredis.delete(f"action_{actionId}") 
         request_index , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix = elem[0],elem[1],elem[2],elem[3],elem[4],elem[5],elem[6],elem[7].tolist(),elem[8].tolist(),elem[9].tolist()
-
+        # print('actions extarcted')
         request = req_matrix[request_index][:6]
         request[3] = req_matrix[request_index + len(req_matrix)//2]
         prev_ent_matrix = current_state[0]
@@ -241,9 +299,12 @@ def update_action( actionId):
         prev_request = prev_req_matrix[request_index][:6]
         prev_request[3] = prev_req_matrix[request_index + len(prev_req_matrix)//2]
 
+        extractor = GlobalStateExtractor(size=SIZE)
+        global_state = extractor.extract_global_state(prev_ent_matrix, prev_req_matrix, dist_matrix)
+        # print('global state extracted')
         # print('update_action got request ')
         current_state = schedule_routing_state_dist(prev_request , prev_ent_matrix , prev_req_matrix, prev_dist_matrix)
-
+        # print('update_action got current state ')
         # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
         if not done:
             t = time.time()
@@ -350,20 +411,27 @@ def schedule_routing_state_dist( curr_req, ent_matrix=None, req_matrix=None, dis
         # 1. Link matrices
         # print('in schedule_routing_state_dist' )
         state_graph, state_dist = ent_matrix, dist_matrix
-        # print('state_graph found')
+        # print('state_graph found 1 ')
 
         state_graph_flat = np.array(state_graph).flatten()  # shape: [SIZE × SIZE]
         state_dist_flat = np.array(state_dist).flatten()    # shape: [SIZE × SIZE]
-        # print('state_graph_flat found')
+        # print('state_graph_flat found 2')
         # 2. Request embeddings
         # print('going to get get_request_embeddings ')
         req_tensor = get_request_embeddings(req_matrix)
-        # print('req_tensor found')
+        # print('req_tensor found 3')
 
         # 3. Apply self-attention
         # print('going to get apply_request_attention ')
-        attn_encoded = apply_request_attention(req_tensor).numpy()
-        # print('attn_encoded found')
+        try:
+            attn_encoded = apply_request_attention(req_tensor).numpy()
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(f"Error in apply_request_attention: {e}")
+            attn_encoded = np.zeros((len(req_matrix), 64))
+
+        # print('attn_encoded found 4')
         # 4. Locate current request
         curr_index = curr_req[4]
         # print('curr_index found' , curr_index)
@@ -373,10 +441,10 @@ def schedule_routing_state_dist( curr_req, ent_matrix=None, req_matrix=None, dis
         # 5. Neighbor context
         # print('going to get get_neighbor_embeddings ')
         neighbor_embs = get_neighbor_embeddings(state_graph, curr_req[2])
-        # print('neighbor_embs found' , len(neighbor_embs))
+        # print('neighbor_embs found 5 ' , len(neighbor_embs))
         # print('going to get apply_neighbor_attention ')
         context_vec = apply_neighbor_attention(curr_emb, neighbor_embs)
-        # print('context_vec found')
+        # print('context_vec found 6')
 
         # 6. Local info
         local = [0] * SIZE
@@ -411,7 +479,7 @@ def schedule_routing_state_dist( curr_req, ent_matrix=None, req_matrix=None, dis
         # ret[start:start+len(state_dist_flat)] = state_dist_flat
 
         del req_tensor, attn_encoded, curr_emb, neighbor_embs, context_vec
-        tf.keras.backend.clear_session()
+        # tf.keras.backend.clear_session()
         
         return ret
 
@@ -421,11 +489,11 @@ def process_actions(actionIds):
         # if executor is None:
         #     executor = ProcessPoolExecutor(max_workers=max_workers)
         # self.executor
-        print('process_actions called ' , len(actionIds), executor is not None)
+        # print('process_actions called ' , len(actionIds), executor is not None)
         # futures = [executor.submit(self.process_update_action, p) for p in params]
         chunk_size = max(1, len(actionIds) // (max_workers))
         futures = list(executor.map(process_update_action, [p for p in actionIds] , chunksize=chunk_size))
-
+        # print('process_actions got futures ' , len(futures))
         results = []
         # for f in as_completed(futures):
         #     results.append(f.result())
@@ -443,5 +511,5 @@ def process_actions(actionIds):
             if r is not None:
                 actions.append(r)
 
-
+        # print('process_actions done ' , len(actions))
         return actions
