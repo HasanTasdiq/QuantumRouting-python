@@ -10,7 +10,7 @@ from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatt
 from keras.optimizers import Adam
 from keras import Input,Model, layers
 
-from collections import deque
+from collections import defaultdict, deque
 import time
 import random
 import os
@@ -158,6 +158,7 @@ class DQRLAgentDist:
         
         # Optimizer specifically for QMIX training (trains both Agent and Mixer)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+        self.GLOBAL_STATE_DIM = (self.SIZE * self.SIZE) + self.SIZE
 
 
     def print_weight(self , model):
@@ -842,38 +843,45 @@ class DQRLAgentDist:
 
 
         # Aggregators for the whole time slot
-        ts_states = []
-        ts_actions = []
-        ts_rewards = []
-        ts_next_states = []
+        ts_states = defaultdict(list)
+        ts_actions = defaultdict(list)
+        ts_rewards = defaultdict(list)
+        ts_next_states = defaultdict(list)
         
         # We need a representation of the GLOBAL state. 
         # Currently your state is local-centric. 
         # For QMIX, you might pick the state of the first request or a dedicated global vector.
         # Let's assume we use the first request's state structure as the global proxy for now, 
         # but ideally, this should be the raw entanglement matrix flattened.
-        global_state_proxy = None 
-        next_global_state_proxy = None
+        global_state_proxy = defaultdict(list) 
+        next_global_state_proxy = defaultdict(list)
+
+        a_ids = set()
 
         for i in range(len(last_action_table)):
-            (request, action, ts, current_node_id, current_state, next_state, mask, done, reward) = last_action_table[i]
+            (request, action, ts, current_node_id, current_state, next_state, mask, done, reward, global_state , next_global_state , a_id) = last_action_table[i]
             
-            ts_states.append(current_state)
-            ts_actions.append(action)
-            ts_rewards.append(reward) # Or numsuccessReq
-            ts_next_states.append(next_state)
+            ts_states[a_id].append(current_state)
+            ts_actions[a_id].append(action)
+            ts_rewards[a_id].append(reward) # Or numsuccessReq
+            ts_next_states[a_id].append(next_state)
             
-            if i == 0:
-                global_state_proxy = current_state # Should be purely global info
-                next_global_state_proxy = next_state
+            if a_id not in a_ids:
+                a_ids.add(a_id)
+                global_state_proxy[a_id] = global_state  # Should be purely global info
+            next_global_state_proxy[a_id] = next_global_state
 
         # Construct the Joint Transition
         # (List of States, List of Actions, List of Rewards, List of Next States, Global State, Next Global State, Done)
-        if len(ts_states) > 0:
-            transition = (ts_states, ts_actions, ts_rewards, ts_next_states, global_state_proxy, next_global_state_proxy, False)
+        print('size of a_ids ' , len(a_ids) , a_ids)
+        if len(a_ids) > 0:
+            for a_id in a_ids:
+                transition = (ts_states[a_id], ts_actions[a_id], ts_rewards[a_id], ts_next_states[a_id], global_state_proxy[a_id], next_global_state_proxy[a_id], False)
+                self.update_replay_memory(transition, numsuccessReq)
+            # transition = (ts_states, ts_actions, ts_rewards, ts_next_states, global_state_proxy, next_global_state_proxy, False)
             
-            # Push this TUPLE to replay memory (not a list of transitions)
-            self.update_replay_memory(transition, numsuccessReq)
+            # # Push this TUPLE to replay memory (not a list of transitions)
+            # self.update_replay_memory(transition, numsuccessReq)
         ############################################
         # if timeSlot % 3 == 0:
         self.train_qmix(False)

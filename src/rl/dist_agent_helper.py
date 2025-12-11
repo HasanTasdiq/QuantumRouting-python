@@ -282,6 +282,24 @@ class GlobalStateExtractor:
         ])
         
         return global_state.astype(np.float32)
+def get_global_state_vector(ent_matrix, req_matrix):
+    # 1. Flatten Entanglement Matrix
+    flat_ent = np.array(ent_matrix).flatten()
+    
+    # 2. Request Density Map (Where are the agents?)
+    density_map = np.zeros(SIZE, dtype=np.float32)
+    
+    # Check if req_matrix is valid list
+    if req_matrix is not None:
+        for req in req_matrix:
+            # req format: [src, dst, current_node, path, index, done]
+            # We only count active requests
+            if len(req) > 5 and not req[5]: 
+                curr_node = int(req[2])
+                if 0 <= curr_node < SIZE:
+                    density_map[curr_node] += 1
+                    
+    return np.concatenate([flat_ent, density_map])
 
 def update_action( actionId):
         # print('update_action called ', actionId)
@@ -289,8 +307,11 @@ def update_action( actionId):
         elem =  pickle.loads(mpredis.get(f"action_{actionId}"))
         # print('update_action got elem ' )
         mpredis.delete(f"action_{actionId}") 
-        request_index , current_node_id,  action  , current_state  , done , timeSlot,lreward,ent_matrix , req_matrix,dist_matrix = elem[0],elem[1],elem[2],elem[3],elem[4],elem[5],elem[6],elem[7].tolist(),elem[8].tolist(),elem[9].tolist()
+        request_index , current_node_id,  action  , current_state  , done , timeSlot,lreward,next_state ,dist_matrix, a_id = elem[0],elem[1],elem[2],elem[3],elem[4],elem[5],elem[6],elem[7],elem[8].tolist(),int(elem[9])
         # print('actions extarcted')
+        ent_matrix = next_state[0]
+        req_matrix = next_state[1]
+
         request = req_matrix[request_index][:6]
         request[3] = req_matrix[request_index + len(req_matrix)//2]
         prev_ent_matrix = current_state[0]
@@ -299,13 +320,16 @@ def update_action( actionId):
         prev_request = prev_req_matrix[request_index][:6]
         prev_request[3] = prev_req_matrix[request_index + len(prev_req_matrix)//2]
 
-        extractor = GlobalStateExtractor(size=SIZE)
-        global_state = extractor.extract_global_state(prev_ent_matrix, prev_req_matrix, dist_matrix)
-        # print('global state extracted')
-        # print('update_action got request ')
+
+
+
         current_state = schedule_routing_state_dist(prev_request , prev_ent_matrix , prev_req_matrix, prev_dist_matrix)
-        # print('update_action got current state ')
-        # print('doooooooooooooooooooone -------------- ' , done , (request[0].id , request[1].id) ,current_node_id , action)
+
+        global_state = get_global_state_vector(prev_ent_matrix, prev_req_matrix)
+    
+        # State at t+1
+        next_global_state = get_global_state_vector(ent_matrix, req_matrix)
+        
         if not done:
             t = time.time()
             next_state = schedule_routing_state_dist(request, ent_matrix , req_matrix,dist_matrix)
@@ -321,7 +345,7 @@ def update_action( actionId):
         mask = get_mask_one_req_schedule_route(request,ent_matrix , req_matrix) #action is the next node id
         # print('update action get get_mask_shcedule_route time ' , time.time()-t)
         t = time.time()
-        data = (request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward)
+        data = (request , action , timeSlot ,current_node_id,  current_state , next_state ,mask ,  done, lreward,global_state , next_global_state,a_id)
         del elem
         return data
 

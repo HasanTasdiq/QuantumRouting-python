@@ -338,7 +338,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # dist_matrix = self.dist_matrix()
                 for r in results:
                     for actionss in r[1]:
-                        actionss.extend([node_matrix, req_matrix, dist_matrix])
+                        # actionss.extend([node_matrix, req_matrix, dist_matrix])
                         actions.append(actionss)
                     # print('r[1] ' , r[1])
                     # actions.append(r[1])
@@ -860,6 +860,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         tl = time.time()
         swappSuccess = False
         action_time = 0
+        a_id = 0
 
         while good_to_search and not success and numtry <= maxTry:
             # break
@@ -908,6 +909,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
 
             current_state, next_node_id = result
+            current_state = (ent_matrix.copy().tolist(), req_matrix.copy().tolist())
             # next_node = dill.loads(mpredis.get("node_" + str(next_node_id)))
 
             # next_node = shared_nodes[next_node_id]
@@ -1087,8 +1089,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
             T = [r for r in self.requestState if not r[5]]
             done_episode = (not good_to_search or success) and (len(T)==1)
-            current_state = (ent_matrix.copy().tolist(), req_matrix.copy().tolist())
-            actions.append([index , current_node_id , next_node_id , current_state  , done_episode ,self.timeSlot,reward])
+            next_state = (ent_matrix.copy().tolist(), req_matrix.copy().tolist())
+            actions.append([index , current_node_id , next_node_id , current_state  , done_episode ,self.timeSlot,reward, next_state, dist_matrix , a_id])
+            a_id += 1
             # print('time for one hop2 ======== ' , time.time() - t , good_to_search , success , numtry , maxTry)
             
             # with lock2:

@@ -208,7 +208,7 @@ async def startup_event():
     global agent
     print(f"[Worker PID {os.getpid()}] Initializing agent...")
     tracemalloc.start()
-    load_replay_memory()
+    # load_replay_memory()
 
     agent = DQRLAgentDist()
     agent.initiate()
