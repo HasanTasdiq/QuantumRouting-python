@@ -225,7 +225,7 @@ class DQRLAgentDist:
             replay_memory.extend(transition)
         else:
             replay_memory.append(transition)
-        print('replay_memory size ' ,  len(replay_memory))
+        # print('replay_memory size ' ,  len(replay_memory))
         # self.priorities.append(priority)
     
 
