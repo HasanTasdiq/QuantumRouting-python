@@ -164,16 +164,16 @@ class DQRLAgentDist:
         for r in model.get_weights():
             print(r)
     def create_model(self):
-        try:
-            model = load_model(self.model_name)
-            print('=====================================================model loaded from ',self.model_name,' =====================================')
-            # print(model.weights)
+        # try:
+        #     model = load_model(self.model_name)
+        #     print('=====================================================model loaded from ',self.model_name,' =====================================')
+        #     # print(model.weights)
             
-            # time.sleep(10)
-            return model
-        except:
-            print('=====================no model found========================')
-            # time.sleep(10)
+        #     # time.sleep(10)
+        #     return model
+        # except:
+        #     print('=====================no model found========================')
+        #     # time.sleep(10)
 
         
         model = Sequential()
