@@ -48,12 +48,12 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
-START_EPSILON_DECAYING = 3000
-END_EPSILON_DECAYING = 8000
-REPLAY_MEMORY_SIZE = 2500  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 500  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 50  # How many steps  to use for training
-UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 1500
+END_EPSILON_DECAYING = 3500
+REPLAY_MEMORY_SIZE = 700  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 300  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 20  # How many steps  to use for training
+UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 
 
 # for testing
