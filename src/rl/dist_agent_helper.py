@@ -11,7 +11,7 @@ import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 
 
-max_workers = 10
+max_workers = 20
 executor = ProcessPoolExecutor(max_workers=max_workers)
 SIZE = 100
 # embedding_layer = Embedding(input_dim=20, output_dim=1)
@@ -48,11 +48,11 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
-START_EPSILON_DECAYING = 3500
-END_EPSILON_DECAYING = 7500
-REPLAY_MEMORY_SIZE = 5000  # How many last steps to keep for model training
+START_EPSILON_DECAYING = 7500
+END_EPSILON_DECAYING = 14500
+REPLAY_MEMORY_SIZE = 7000  # How many last steps to keep for model training
 MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 20  # How many steps  to use for training
+MINIBATCH_SIZE = 100  # How many steps  to use for training
 UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 
 
