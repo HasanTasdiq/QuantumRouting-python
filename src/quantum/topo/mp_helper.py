@@ -81,7 +81,7 @@ def solve_max_throughput_with_paths(G, pairs, time_limit=120):
     Solves Maximum Edge-Disjoint Paths on any MultiDiGraph.
     """
     model = gp.Model("RandomGraphRouting")
-    model.setParam('OutputFlag', 1)
+    # model.setParam('OutputFlag', 1)
     model.setParam('TimeLimit', time_limit)
     
     # --- 1. Variables ---
@@ -157,9 +157,11 @@ def solve_max_throughput_with_paths(G, pairs, time_limit=120):
 def solve_max_throughput_ILP(G, pairs):
     routes = solve_max_throughput_with_paths(G, pairs, time_limit=180)
 
-    print(f"\n--- Results ---")
+    print(f"\n--- Results --- ")
     print(f"Nodes: {len(G.nodes)}")
     print(f"Total Links (inc. parallel): {len(G.edges)}")
     print(f"Requests: {len(pairs)}")
     print(f"Served: {len(routes)}")
     print(f"Success Rate: {len(routes)/len(pairs)*100:.1f}%")
+
+    return len(routes)

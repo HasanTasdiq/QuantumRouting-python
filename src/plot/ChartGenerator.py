@@ -15,7 +15,8 @@ class ChartGenerator:
         if Ylabel == 'successfulRequest' or Ylabel == '#successRequest':
             # Ylabel = '  Successful Request (%) '        
             Ylabel = 'Successful Requests'   
-            Ylabel = 'Throughput'     
+            Ylabel = 'Throughput'  
+            # Ylabel = '#Overbooking Conflicts'   
         if Xlabel == '#RequestPerRound':
             Xlabel = '# Request Per Time Slot'
             # Xlabel = '#Nodes \n # Request Per Time Slot'
@@ -26,7 +27,7 @@ class ChartGenerator:
         if Xlabel == 'entanglementLifetime':
             Xlabel = 'Ent. Lifetime (Time slot)'
         if Xlabel == 'Timeslot':
-            Xlabel = 'Time slot'
+            Xlabel = 'Time (Hours)'
         if Ylabel == 'algorithmRuntime':
             Ylabel = 'Algorithm Runtime (s)'
         if Xlabel == '#nodes':
@@ -73,9 +74,9 @@ class ChartGenerator:
         fontsize = 28
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
-        Xticks_fontsize = 10
-        Yticks_fontsize = fontsize
-        legSize = fontsize-3
+        Xticks_fontsize = fontsize
+        Yticks_fontsize = 22
+        legSize = fontsize-8
             
         # matplotlib.rcParams['text.usetex'] = True
         # fig, ax = plt.subplots(figsize=(8, 6), dpi=600) 
@@ -103,7 +104,7 @@ class ChartGenerator:
         }
         
         matplotlib.rcParams.update(andy_theme)
-        fig, ax1 = plt.subplots(figsize = (8, 6), dpi = 600)
+        fig, ax1 = plt.subplots(figsize = (7, 6), dpi = 600)
         # ax1.spines['top'].set_linewidth(1.5)
         # ax1.spines['right'].set_linewidth(1.5)
         # ax1.spines['bottom'].set_linewidth(1.5)
@@ -200,7 +201,7 @@ class ChartGenerator:
         AlgoName = ['ILP', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' ]
-        AlgoName = ['Sequential QuRA', 'Parallel QuRA']
+        AlgoName = [ 'Parallel QuRA (CR)' ,  'Parallel QuRA' ,'EBSPA' , 'Sequential QuRA']
         leg = plt.legend(
             AlgoName,
             loc = 10,
@@ -227,7 +228,7 @@ class ChartGenerator:
         plt.xticks(x)
         plt.ylabel(Ylabel, fontsize = Ylabel_fontsize, labelpad = 10)
         plt.xlabel(Xlabel, fontsize = Xlabel_fontsize, labelpad = 10)
-        plt.locator_params(axis='x', nbins=9)  
+        plt.locator_params(axis='x', nbins=6)  
 
         # ax1.yaxis.set_label_coords(-0.3, 0.5)
         ax1.xaxis.set_label_coords(0.45, -0.2)
