@@ -24,12 +24,12 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 
 
 # run 25k
-# START_EPSILON_DECAYING = 15000
-# END_EPSILON_DECAYING = 20000
-# REPLAY_MEMORY_SIZE = 80000  # How many last steps to keep for model training
-# MIN_REPLAY_MEMORY_SIZE = 20000  # Minimum number of steps in a memory to start training
-# MINIBATCH_SIZE = 512  # How many steps (samples) to use for training
-# UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
+START_EPSILON_DECAYING = 12000
+END_EPSILON_DECAYING = 20000
+REPLAY_MEMORY_SIZE = 20000  # How many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 5000  # Minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 120  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 
 # for 5k local
 # START_EPSILON_DECAYING = 4000
@@ -48,12 +48,12 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 # UPDATE_TARGET_EVERY = 70  # Terminal states (end of episodes)
 
 #for 10k local
-START_EPSILON_DECAYING = 7500
-END_EPSILON_DECAYING = 14500
-REPLAY_MEMORY_SIZE = 7000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 40  # How many steps  to use for training
-UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
+# START_EPSILON_DECAYING = 7500
+# END_EPSILON_DECAYING = 14500
+# REPLAY_MEMORY_SIZE = 7000  # How many last steps to keep for model training
+# MIN_REPLAY_MEMORY_SIZE = 2000  # Minimum number of steps in a memory to start training
+# MINIBATCH_SIZE = 40  # How many steps  to use for training
+# UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 
 
 # for testing

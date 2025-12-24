@@ -308,10 +308,11 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 print('results from map ')
                 print('got results with conflicts' , sum([r[0] for r in results]))
                 node_matrix = self.get_ent_graph_matrix()
-                print('node_matrix after map ')
+                # print('node_matrix after map ')
+                tc = time.time()
                 try:
                     successReq = self.resolve_conflict( results , q_matrix , node_matrix.copy())
-                    print('got results after conflicts' , successReq)
+                    print('got results after conflicts' , successReq , ' time taken ' , time.time() - tc)
 
                 except Exception as e:
                     import traceback

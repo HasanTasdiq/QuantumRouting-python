@@ -883,8 +883,8 @@ class DQRLAgentDist:
             # # Push this TUPLE to replay memory (not a list of transitions)
             # self.update_replay_memory(transition, numsuccessReq)
         ############################################
-        if timeSlot % 2 == 0:
-            self.train_qmix(False)
+        # if timeSlot % 2 == 0:
+        self.train_qmix(False)
         # self.train(False )
         print('time train ' , time.time()-t5)
 
@@ -905,7 +905,7 @@ class DQRLAgentDist:
         # print('update_reward done in \n')
         # print('update_reward done in \n')
         # print('update_reward done in ' , time.time() - t1 , 'seconds\n')
-        if timeSlot % 2 == 0:
+        if timeSlot % 1 == 0:
             st = time.time()
             save_model_to_redis(self.model, self.model_name) 
             print('model saved to redis at time slot ' , timeSlot, 'time taken ' , time.time() - st)
