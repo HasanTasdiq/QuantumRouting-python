@@ -203,7 +203,7 @@ class REPSREP(AlgorithmBase):
         except:
             avgFidelity = 0  
 
-        print('------------going to get get max throughput from custom ILP ------------------' , self.timeSlot)
+        # print('------------going to get get max throughput from custom ILP ------------------' , self.timeSlot)
         
         # successReq = solve_max_throughput_ILP(self.topo.updatedG_ent() , [(req[0].id , req[1].id) for req in self.requests])
         # totalEntanglement += successReq

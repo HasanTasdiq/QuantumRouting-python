@@ -110,7 +110,7 @@ class Topo:
         self.preSwapFraction = 1/4
         self.tmpcount = 0
         self.entanglementLifetime = 10
-        self.requestTimeout = 1
+        self.requestTimeout = 5
         self.reward = {}
         self.reward_ent = {}
         self.reward_routing = {}
@@ -224,7 +224,7 @@ class Topo:
             # rand = int(random.random()*5+3) # 3~7
             # rand = int(random.random()*2+1) # 1~3
             # rand = int(random.random()*6+3) # 3-10
-            rand = 4
+            rand = 3
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
