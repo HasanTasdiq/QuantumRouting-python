@@ -53,8 +53,8 @@ while true; do
 
     echo "Starting dist_agent.py..."
     # sleep 5
-    python dist_agent.py &
-    # python3 dist_agent.py 
+    # python dist_agent.py &
+    python3 dist_agent.py 
     
     # echo "Waiting 60 minutes before next restart..."
     # sleep 20  # 3600 seconds = 60 minutes

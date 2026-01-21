@@ -31,9 +31,10 @@ import sys
 from objsize import get_deep_size
 
 
+
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 from dist_agent_helper import  schedule_routing_state_dist , process_actions , replay_memory, REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE, UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING, load_model_from_redis, save_model_to_redis
-
+from GNN import QRoutingGATFlat
 
 
 
@@ -165,6 +166,32 @@ class DQRLAgentDist:
         for r in model.get_weights():
             print(r)
     def create_model(self):
+        # Calculate the size of the flat input vector from your definition
+        # (128 + SIZE + 2 * SIZE^2)
+        flat_input_dim = self.OBSERVATION_SPACE_VALUES[0] * self.OBSERVATION_SPACE_VALUES[1]
+        
+        print('============== INITIALIZING GAT ADAPTER MODEL ==============')
+        print(f'Input Dim: {flat_input_dim} -> Reshaping to: {self.SIZE} Nodes')
+        
+        # Initialize the GAT Model
+        model = QRoutingGATFlat(
+            num_nodes=self.SIZE, 
+            input_flat_dim=flat_input_dim,
+            hidden_dim=64,   # Internal feature size per node
+            num_heads=4      # Number of attention heads
+        )
+        
+        # Build the model by passing a dummy input (required for Subclassed models)
+        # This initializes the weights so you can print summary or set weights
+        dummy_input = tf.zeros((1, flat_input_dim))
+        model(dummy_input)
+        
+        # Compile with your existing optimizer settings
+        model.compile(loss="mse", optimizer=Adam(learning_rate=lr, clipvalue=clip_value), metrics=['accuracy'])
+        
+        return model
+    
+    def create_model_old(self):
         # try:
         #     model = load_model(self.model_name)
         #     print('=====================================================model loaded from ',self.model_name,' =====================================')
