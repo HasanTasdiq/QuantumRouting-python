@@ -3,7 +3,7 @@
 echo "Starting auto-restart script for dist_agent.py (every _ minutes)..."
 # Find and kill any process using port 8000
 PORT_PID=$(lsof -t -i:8000)
-MEMORY_LIMIT_GB=20  # Set memory limit to 4GB
+MEMORY_LIMIT_GB=120  # Set memory limit to 4GB
 # TIME_LIMIT_SECONDS=$((60*3))  # 3 hours
 TIME_LIMIT_SECONDS=$((20*60*60))  # 20 hours
 
@@ -48,13 +48,13 @@ while true; do
         
         # Wait for system to reclaim memory
         echo "Waiting for memory to be reclaimed..."
-        sleep 5
+        sleep 2
     fi
 
     echo "Starting dist_agent.py..."
     # sleep 5
-    # python dist_agent.py &
-    python3 dist_agent.py 
+    python dist_agent.py &
+    # python3 dist_agent.py 
     
     # echo "Waiting 60 minutes before next restart..."
     # sleep 20  # 3600 seconds = 60 minutes
