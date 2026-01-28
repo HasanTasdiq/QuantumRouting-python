@@ -33,7 +33,7 @@ from REPS_rep import REPSREP
 # from DQRL import QuRA_DQRL
 from DQRL_dist1 import QuRA_DQRL_DIST
 # from Schedule import SCHEDULEGREEDY
-from ScheduleRoute import SCHEDULEROUTEGREEDY
+# from ScheduleRoute import SCHEDULEROUTEGREEDY
 
 # from ScheduleRoute_cache import SCHEDULEROUTEGREEDY_CACHE
 # from ScheduleRoute_cache_ps import SCHEDULEROUTEGREEDY_CACHE_PS
@@ -315,7 +315,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
 
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
-    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
+    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE' , param='ten'))
