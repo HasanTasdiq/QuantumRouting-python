@@ -16,7 +16,7 @@ class ChartGenerator:
             # Ylabel = '  Successful Request (%) '        
             Ylabel = 'Successful Requests'   
             Ylabel = 'Throughput'  
-            # Ylabel = '#Overbooking Conflicts'   
+            Ylabel = '#Overbooking Conflicts'   
         if Xlabel == '#RequestPerRound':
             Xlabel = '# Request Per Time Slot'
             # Xlabel = '#Nodes \n # Request Per Time Slot'
@@ -201,7 +201,8 @@ class ChartGenerator:
         AlgoName = ['ILP', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' ]
-        AlgoName = [ 'Parallel QuRA (CR)' ,  'Parallel QuRA' ,'EBSPA' , 'Sequential QuRA']
+        # AlgoName = ['Par QuRA (CR+QMIX)', 'Par QuRA (CR)' ,  'Par QuRA' ,'EBSPA' , 'Seq QuRA']
+        AlgoName = ['Par QuRA (CR+QMIX)', 'Par QuRA (CR)' ,  'Par QuRA' , 'Seq QuRA']
         leg = plt.legend(
             AlgoName,
             loc = 10,

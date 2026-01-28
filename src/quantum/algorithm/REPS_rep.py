@@ -603,6 +603,8 @@ class REPSREP(AlgorithmBase):
         # print('[REPS] LP2 end')
 
     def EPS(self):
+        if self.name == 'REPS_shortest':
+            return
         self.LP2()
         # initialize fki(u, v), tki
         numOfFlow = {SDpair : 1 for SDpair in self.srcDstPairs}

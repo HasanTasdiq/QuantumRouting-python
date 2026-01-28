@@ -33,7 +33,7 @@ from REPS_rep import REPSREP
 # from DQRL import QuRA_DQRL
 from DQRL_dist1 import QuRA_DQRL_DIST
 # from Schedule import SCHEDULEGREEDY
-# from ScheduleRoute import SCHEDULEROUTEGREEDY
+from ScheduleRoute import SCHEDULEROUTEGREEDY
 
 # from ScheduleRoute_cache import SCHEDULEROUTEGREEDY_CACHE
 # from ScheduleRoute_cache_ps import SCHEDULEROUTEGREEDY_CACHE_PS
@@ -86,11 +86,11 @@ run = ""
 # + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
 #     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 1000
+ttime = 10
 ttime2 = 500
 step = 500
 times = 1
-gridSize = 4 
+gridSize = 10 
 nodeNo = gridSize *gridSize
 # nodeNo = 50
 fixed = False
@@ -102,7 +102,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [4 ]
+numOfRequestPerRound = [1,2,3,5,7,10,15,20,25,30 ]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
 # numOfNodes = [20]
@@ -314,7 +314,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
 
 
     # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
-    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
+    algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE' , param='ten'))
@@ -323,7 +323,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE_PS(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE_preswap_multihop_distdqrl' , param='ten'))
     
 
-    algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
+    # algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
 
 
     gc.collect()

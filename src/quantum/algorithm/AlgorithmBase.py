@@ -83,6 +83,8 @@ class AlgorithmResult:
                 AvgResult.fidelityPerRound[i] += result.fidelityPerRound[i]
 
 
+        # AvgResult.successfulRequest /= len(results)
+
         AvgResult.algorithmRuntime /= len(results)
         AvgResult.waitingTime /= len(results)
         AvgResult.idleTime /= len(results)
@@ -103,7 +105,8 @@ class AlgorithmResult:
             AvgResult.fidelityPerRound[i] /= len(results)
 
         
-        AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100
+        AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100 #success rate
+        AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /AvgResult.algorithmRuntime
         AvgResult.usedLinks = (AvgResult.usedLinks /ttime) / len(topo.links) * 100
 
 

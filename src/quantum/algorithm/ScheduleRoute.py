@@ -50,6 +50,9 @@ class SCHEDULEROUTEGREEDY(AlgorithmBase):
         self.result.usedQubits = self.totalUsedQubits / self.totalRequest
         self.result.fidelityPerRound.append(0)
 
+        reward = 0
+        self.result.rewardPerRound.append(reward)
+
         
         # self.result.remainRequestPerRound.append(len(self.requests) / self.totalRequest)
         self.result.remainRequestPerRound.append(len(self.requests))
