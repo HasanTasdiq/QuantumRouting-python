@@ -52,6 +52,7 @@ class AlgorithmResult:
         return dic
     
     def Avg(results: list , requestPerRound = 0 , topo = None):
+        print('Calculating average result from ' , len(results) , ' runs.')
         AvgResult = AlgorithmResult()
 
         ttime = len(results[0].remainRequestPerRound)
@@ -61,6 +62,8 @@ class AlgorithmResult:
         AvgResult.rewardPerRound = [0 for _ in range(ttime)]
         AvgResult.fidelityPerRound = [0 for _ in range(ttime)]
         for result in results:
+            print('requestPerRound ' , result.successfulRequestPerRound)
+
             AvgResult.algorithmRuntime += result.algorithmRuntime
             AvgResult.waitingTime += result.waitingTime
             AvgResult.idleTime += result.idleTime
@@ -81,6 +84,8 @@ class AlgorithmResult:
                 # AvgResult.entanglementPerRound[i] += result.entanglementPerRound[i]
                 AvgResult.eps += result.entanglementPerRound[i]
                 AvgResult.fidelityPerRound[i] += result.fidelityPerRound[i]
+            print('avgrequestPerRound ' , AvgResult.successfulRequestPerRound)
+            
 
 
         # AvgResult.successfulRequest /= len(results)
@@ -103,11 +108,14 @@ class AlgorithmResult:
             AvgResult.successfulRequestPerRound[i] /= len(results)
             AvgResult.rewardPerRound[i] /= len(results)
             AvgResult.fidelityPerRound[i] /= len(results)
+        
+        print('avgrequestPerRound ' , AvgResult.successfulRequestPerRound)
 
         
-        AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100 #success rate
+        # AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100 #success rate
         AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /AvgResult.algorithmRuntime
         AvgResult.usedLinks = (AvgResult.usedLinks /ttime) / len(topo.links) * 100
+        print('AvgResult.successfulRequest ' , AvgResult.successfulRequest)
 
 
 

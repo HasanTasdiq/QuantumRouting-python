@@ -102,7 +102,8 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [1,2,3,5,7,10,15,20,25,30 ]
+numOfRequestPerRound = [1,2,3,5,7,10,15,20,25,30,40,60,80,100 ]
+# numOfRequestPerRound = [1,2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
 # numOfNodes = [20]
@@ -252,7 +253,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, 
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_randPFT'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_SPPFT'))
     
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
 
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_randPFT'))
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_SPPFT'))

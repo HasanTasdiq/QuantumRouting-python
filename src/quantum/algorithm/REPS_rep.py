@@ -188,16 +188,23 @@ class REPSREP(AlgorithmBase):
         # print('------------going to get get max throughput from custom ILP ------------------')
         # solve_max_throughput_ILP(self.topo.updatedG_ent() , [(req[0].id , req[1].id) for req in self.requests])
 
-        if len(self.srcDstPairs) > 0:
-            for i in range(4):
-                self.EPS()
-                t , s ,f  = self.ELS()
-                totalEntanglement += t
-                successReq += s
-                total_fidelity += f
-                print('=====---=====----=====----===== ' , self.timeSlot , i , t, s)
-                if not s:
-                    break
+        # if len(self.srcDstPairs) > 0:
+        #     for i in range(4):
+        #         self.EPS()
+        #         t , s ,f  = self.ELS()
+        #         totalEntanglement += t
+        #         successReq += s
+        #         total_fidelity += f
+        #         print('=====---=====----=====----===== ' , self.timeSlot , i , t, s)
+        #         if not s:
+        #             break
+
+        successReq += solve_max_throughput_ILP(self.topo.updatedG_ent() , [(req[0].id , req[1].id) for req in self.requests])
+        self.result.successfulRequest += successReq
+        totalEntanglement += successReq
+
+        print('=====---=====---ssss -=====----===== ' , self.timeSlot , successReq , totalEntanglement)
+
         try:
             avgFidelity = total_fidelity/successReq
         except:
@@ -205,10 +212,10 @@ class REPSREP(AlgorithmBase):
 
         # print('------------going to get get max throughput from custom ILP ------------------' , self.timeSlot)
         
-        # successReq = solve_max_throughput_ILP(self.topo.updatedG_ent() , [(req[0].id , req[1].id) for req in self.requests])
-        # totalEntanglement += successReq
+
         self.result.entanglementPerRound.append(totalEntanglement)
         self.result.successfulRequestPerRound.append(successReq)
+        print('[REPS] successfulRequest this round:' , self.result.successfulRequestPerRound)
         self.result.fidelityPerRound.append(avgFidelity)
         reward = 0
         self.result.rewardPerRound.append(reward)
