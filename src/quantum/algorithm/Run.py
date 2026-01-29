@@ -86,23 +86,23 @@ run = ""
 # + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
 #     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 10
+ttime = 50
 ttime2 = 500
 step = 500
-times = 1
+times = 2
 gridSize = 10 
 nodeNo = gridSize *gridSize
 # nodeNo = 50
 fixed = False
 
 # alpha_ = 0.0007
-# alpha_ = .0002
-alpha_ = 0
+alpha_ = .0002
+# alpha_ = 0
 degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [1,2,3,5,7,10,15,20,25,30,40,60,80,100 ]
+numOfRequestPerRound = [1,2,3,5,7,10,15,20,25,30,40,60,80,100,125,150,175,200] 
 # numOfRequestPerRound = [1,2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
@@ -204,7 +204,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
 
 
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = 1, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
 
     if topo == None:
         topo = Topo.generate(numOfNode, q, 5, alpha, 6 , int(math.sqrt(numOfNode)))

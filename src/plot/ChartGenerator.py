@@ -120,7 +120,7 @@ class ChartGenerator:
 
         for line in lines:
             line = line.replace('\n','')
-            data = line.split(' ')
+            data = line.split()
             numOfline = len(data)
             numOfData += 1
             for i in range(numOfline):
@@ -171,9 +171,9 @@ class ChartGenerator:
 
         marker = ['o', 's', 'v', 'x', 'd' , '1' , '<' , '*']
         markers_on = [i for i in range(len(x))]
-        if len(markers_on) > 5:
-            # print(markers_on)
-            markers_on = get_n_index(markers_on , 5)
+        # if len(markers_on) > 8:
+        #     # print(markers_on)
+        #     markers_on = get_n_index(markers_on , 8)
         for i in range(numOfAlgo):
             ax1.plot(x, y[i], color = color[i], markevery=markers_on, lw = 2.5, linestyle = "-", marker = marker[i], markersize = 10, markerfacecolor = "none", markeredgewidth = 2.5)
         # plt.show()
@@ -201,8 +201,8 @@ class ChartGenerator:
         AlgoName = ['ILP', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' , 'EBSPA']
         # AlgoName = ['RL-SCHEDULER', 'QuRA' ]
-        # AlgoName = ['Par QuRA (CR+QMIX)', 'Par QuRA (CR)' ,  'Par QuRA' ,'EBSPA' , 'Seq QuRA']
-        AlgoName = ['Par QuRA (CR+QMIX)', 'Par QuRA (CR)' ,  'Par QuRA' , 'Seq QuRA']
+        AlgoName = ['Par QuRA (CR+QMIX)', 'Par QuRA (CR)' ,  'Par QuRA' ,'EBSPA' , 'Seq QuRA']
+        # AlgoName = ['Par QuRA (CR+QMIX)', 'Par QuRA (CR)' ,  'Par QuRA' , 'Seq QuRA']
         leg = plt.legend(
             AlgoName,
             loc = 10,

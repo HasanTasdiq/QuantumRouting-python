@@ -163,10 +163,10 @@ class Topo:
         # Construct Node 
         #---------
         for _node in _nodes:
-            # self.nodes.append(Node(_node, _positions[_node], random.random()*5+10 , self))  # 10~14
-            # self.nodes.append(Node(_node, _positions[_node], random.random()*11+15 , self))  # 20-40
+            self.nodes.append(Node(_node, _positions[_node], random.random()*20+10 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], random.random()*20+20 , self))  # 20-40
             # self.nodes.append(Node(_node, _positions[_node], random.random()*6+4 , self)) 
-            self.nodes.append(Node(_node, _positions[_node], 10 , self))  # 10~14
+            # self.nodes.append(Node(_node, _positions[_node], 10 , self))  # 10~14
             # self.nodes.append(Node(_node, _positions[_node], 0 , self))  # 10~14
             usedNode = []
             usedNode.append(_node) 
@@ -223,8 +223,8 @@ class Topo:
             self.edges.append((self.nodes[_edge[0]], self.nodes[_edge[1]]))
             # rand = int(random.random()*5+3) # 3~7
             # rand = int(random.random()*2+1) # 1~3
-            # rand = int(random.random()*6+3) # 3-10
-            rand = 4
+            rand = int(random.random()*6+4) # 3-10
+            # rand = 4
             self.link_capacity[(_edge[0], _edge[1])] = rand
             self.link_capacity[(_edge[1], _edge[0])] = rand
 
