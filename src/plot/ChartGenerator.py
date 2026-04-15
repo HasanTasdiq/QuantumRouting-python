@@ -16,7 +16,8 @@ class ChartGenerator:
             # Ylabel = '  Successful Request (%) '        
             Ylabel = 'Successful Requests'   
             Ylabel = 'Throughput'  
-            Ylabel = '#Overbooking Conflicts'   
+            # Ylabel = '#Overbooking Conflicts'   
+            Ylabel = 'Log(Successful Rate)'
         if Xlabel == '#RequestPerRound':
             Xlabel = '# Request Per Time Slot'
             # Xlabel = '#Nodes \n # Request Per Time Slot'
@@ -74,7 +75,7 @@ class ChartGenerator:
         fontsize = 28
         Xlabel_fontsize = fontsize
         Ylabel_fontsize = fontsize
-        Xticks_fontsize = fontsize
+        Xticks_fontsize = 22
         Yticks_fontsize = 22
         legSize = fontsize-8
             
@@ -165,8 +166,8 @@ class ChartGenerator:
             Yinterval = int(math.ceil(Yinterval))
             Yend = int(Yend)
         else:
-            Yend = 1
-            Ystart = 0
+            Yend = 0
+            Ystart = -1
             Yinterval = 0.2
 
         marker = ['o', 's', 'v', 'x', 'd' , '1' , '<' , '*']
