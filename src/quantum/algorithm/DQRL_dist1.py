@@ -45,6 +45,11 @@ lock_manager = None
 
 
 class QuRA_DQRL_DIST(AlgorithmBase):
+    # Class-level counter: each algorithm instance gets its own worker index
+    # for round-robin training-worker assignment.
+    _instance_counter = 0
+    _WORKER_PORTS = [8000, 8001, 8002, 8003]   # mirrors dist_agent_helper.WORKER_PORTS
+
     def __init__(self, topo,param=None, name=''):
         super().__init__(topo)
         self.name = name
@@ -62,9 +67,14 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         self.w2 = 1 - self.w1
         self.maxTry = 2
         self.executor = None
-        self.tst = [] 
+        self.tst = []
         self.shared_memories = []
         self.executor_stats = []
+
+        # Assign this instance to a training worker (round-robin)
+        self._worker_id   = QuRA_DQRL_DIST._instance_counter % len(self._WORKER_PORTS)
+        self._worker_port = self._WORKER_PORTS[self._worker_id]
+        QuRA_DQRL_DIST._instance_counter += 1
 
 
 
@@ -286,8 +296,25 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 dist_matrix = self.dist_matrix()
                 q_matrix = self.q_matrix()
 
-            
-                args = [( node_matrix_info ,req_matrix_info, dist_matrix,q_matrix , reqState,node_locks) for reqState in self.requestState]
+                # ── Improvement 2: pre-fetch first-hop actions for all requests
+                # in a single batch call before spawning subprocesses.
+                # Each subprocess gets its precomputed action so it avoids the
+                # first (and most expensive) per-hop predict call.
+                try:
+                    ent_matrix_snap = self.get_ent_graph_matrix()
+                    req_matrix_snap = self.req_matrix()
+                    precomputed_actions = self.call_learn_and_predict_batch_api(
+                        self.requestState, ent_matrix_snap,
+                        req_matrix_snap, dist_matrix, self.timeSlot
+                    )
+                except Exception:
+                    import traceback; traceback.print_exc()
+                    precomputed_actions = {}
+
+                args = [(node_matrix_info, req_matrix_info, dist_matrix, q_matrix,
+                         reqState, node_locks,
+                         precomputed_actions.get(reqState[4], None))   # 7th element
+                        for reqState in self.requestState]
                 # self.topo.tst = Manager().list()
                 # for _ in range(10):
                 #     print('going to map route_schedule_single with args2:' , len(args), len(args[0]))
@@ -463,13 +490,12 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 for i in range(1 , len(path)):
                     node_matrix[path[i-1]][path[i]] -= 1
                     node_matrix[path[i]][path[i-1]] -= 1
-                t2 = time.time()
-                for req in self.requests:
-                    src = req[0]
-                    dst = req[1]
-                    if (src, dst) == (req[0], req[1]):
-                        # print('[REPS] finish time:', self.timeSlot - request[2])
-                        self.requests.remove(req)
+                # Remove the specific request that succeeded (not tautological first match)
+                req_to_remove = self.requestState[index]
+                target_src, target_dst = req_to_remove[0], req_to_remove[1]
+                for r in self.requests:
+                    if r[0] == target_src and r[1] == target_dst:
+                        self.requests.remove(r)
                         break
                 success_req += 1
 
@@ -651,7 +677,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             actionIds.append(actionId)
 
         t = time.time()
-        url = "http://127.0.0.1:8000/update_reward"
+        # Round-robin: each algorithm variant sends to its own training worker
+        url = f"http://127.0.0.1:{self._worker_port}/update_reward"
 
         batch_json = []
         # for param in actions:
@@ -746,6 +773,45 @@ class QuRA_DQRL_DIST(AlgorithmBase):
             print(f"Error calling batch API: {e}")
             return None
         
+    def call_learn_and_predict_batch_api(self, all_reqStates, ent_matrix,
+                                          req_matrix, dist_matrix, timeSlot):
+        """
+        Improvement 2 — Batch predict endpoint.
+
+        Uploads the shared matrices once, sends all reqIndices in a single
+        HTTP POST to /learn_predict_batch, and returns a dict:
+            {reqIndex (int): action (int)}
+
+        Falls back to {} on any error so callers can fall back to individual
+        per-hop predict calls.
+        """
+        batchId = str(uuid.uuid4())
+        try:
+            mpredis.set(f"batch_{batchId}_ent",  pickle.dumps(ent_matrix),  ex=120)
+            mpredis.set(f"batch_{batchId}_req",  pickle.dumps(req_matrix),  ex=120)
+            mpredis.set(f"batch_{batchId}_dist", pickle.dumps(dist_matrix), ex=120)
+        except Exception as e:
+            print(f"[batch_predict] Redis write error: {e}")
+            return {}
+
+        req_indices = [rs[4] for rs in all_reqStates]
+        payload = {"batchId": batchId, "reqIndices": req_indices,
+                   "timeSlot": timeSlot}
+        try:
+            t = time.time()
+            resp = requests.post("http://127.0.0.1:8080/learn_predict_batch",
+                                 json=payload, timeout=120)
+            resp.raise_for_status()
+            raw = resp.json().get("results", {})
+            # keys come back as strings — convert to int
+            results = {int(k): v[1] for k, v in raw.items() if v}
+            print(f"[batch_predict] {len(results)}/{len(req_indices)} actions "
+                  f"in {time.time()-t:.2f}s")
+            return results
+        except Exception as e:
+            print(f"[batch_predict] API error: {e}")
+            return {}
+
     def call_learn_and_predict_api(self , reqState, ent_matrix, req_matrix, dist_matrix, timeSlot):
 
         url = "http://127.0.0.1:8080/learn_predict"  # adjust host/port if needed
@@ -763,7 +829,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # print('Calling learn_predict API with payload ===')
         try:
             t = time.time()
-            response = requests.post(url, json=payload, timeout=5)
+            response = requests.post(url, json=payload, timeout=60)
             # print('Time for learn_predict API call:', time.time() - t)
             t = time.time()
             response.raise_for_status()  # raises error for HTTP issues
@@ -814,9 +880,13 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 return False
 
 
-    def route_schedule_single(self ,  args):
-        # print('route_schedule_single called with algo#############################################:')
-        node_matrix_info , req_matrix_info,dist_matrix , q_matrix, reqState, node_locks =  args
+    def route_schedule_single(self, args):
+        # Unpack — 7th element is the optional precomputed first-hop action
+        if len(args) == 7:
+            node_matrix_info, req_matrix_info, dist_matrix, q_matrix, reqState, node_locks, precomputed_action = args
+        else:
+            node_matrix_info, req_matrix_info, dist_matrix, q_matrix, reqState, node_locks = args
+            precomputed_action = None
 
         shm_name, shape, dtype = node_matrix_info
         shm = shared_memory.SharedMemory(name=shm_name)
@@ -857,6 +927,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         numtry = 0
         maxTry = self.maxTry
         fidelity = 1
+        total_fidelity = 0.0  # FIX: initialize before use in success branch
         actions = []
         tl = time.time()
         swappSuccess = False
@@ -864,28 +935,23 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         a_id = 0
 
         while good_to_search and not success and numtry <= maxTry:
-            # break
-            # Get next action for this request
-            # print('-------===----=-=-=-=-=going to get action ' , current_node_id , path , numtry)
             t = time.time()
-            # with agent_lock:
-            if True:
-                # print('-------===----=-=-=-=-=acquired agent lock ' , current_node_id , path , numtry, reqState)
-                # result = agent.learn_and_predict_next_req_node_single(reqState , ent_matrix, req_matrix,dist_matrix)
-                # print('**going to get action for req ' , current_node_id , next_node_id)
+            # ── Use precomputed batch action on the first hop, then fall back
+            # to individual predict calls for subsequent hops.
+            if precomputed_action is not None:
+                next_node_id_pre = precomputed_action
+                precomputed_action = None                   # consume once
+                result = (None, next_node_id_pre)          # state not needed here
+            else:
                 try:
-                    result = self.get_action(reqState , ent_matrix, req_matrix,dist_matrix, self.timeSlot)
+                    result = self.get_action(reqState, ent_matrix, req_matrix,
+                                             dist_matrix, self.timeSlot)
                 except Exception as e:
-                    import traceback
-                    traceback.print_exc()
-                    exit(1)
-                    # result = None
-                # result = None
-                action_time += time.time() - t
-                if result is None:
-                    # print('-------===----=-=-=-=-=no action found break' , current_node_id , path , numtry)
-                    break
-                # print('-------===----=-=-=-=-=got action ' , current_node_id ,next_node_id)
+                    import traceback; traceback.print_exc()
+                    result = None
+            action_time += time.time() - t
+            if result is None:
+                break
             # print('time to get action ' , time.time() - t)
             # result = agent.learn_and_predict_next_req_node_single(reqState)
             # if result is None:
@@ -909,7 +975,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 # print('++++++process id:', os.getpid() , 'entering for processing')
 
 
-            current_state, next_node_id = result
+            _state_from_result, next_node_id = result
+            # Always snapshot the live shared memory for the action record
             current_state = (ent_matrix.copy().tolist(), req_matrix.copy().tolist())
             # next_node = dill.loads(mpredis.get("node_" + str(next_node_id)))
 
@@ -1143,6 +1210,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         numtry = 0
         maxTry = self.maxTry
         fidelity = 1
+        total_fidelity = 0.0  # FIX: initialize before use in success branch
         actions = []
         tl = time.time()
         swappSuccess = False

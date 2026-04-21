@@ -11,16 +11,25 @@ import tensorflow as tf
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
 
 
-max_workers = 20
+TRAINING_MODE_WORKERS = "paper"   # matches TRAINING_MODE below; kept separate so workers start before block
+max_workers = 4 if TRAINING_MODE_WORKERS == "smoke" else 20
 executor = ProcessPoolExecutor(max_workers=max_workers)
 SIZE = 100
-# embedding_layer = Embedding(input_dim=20, output_dim=1)
-# attention_layer = Attention()
-dense_proj = Dense(64, activation='relu')
+dense_proj = Dense(64, activation='relu')         # request-level projection
+dense_neighbor = Dense(64, activation='relu')     # neighbor projection (shared, not per-call)
 mha = MultiHeadAttention(num_heads=4, key_dim=16)
 ln = LayerNormalization()
 
 mpredis = redis.Redis(host='localhost', port=6379, db=0)
+
+# ── Multi-worker FedAvg config ──────────────────────────────────────────────
+NUM_TRAINING_WORKERS = 4           # one training worker per algorithm variant
+WORKER_PORTS         = [8000, 8001, 8002, 8003]
+AGGREGATION_EVERY    = 5           # FedAvg every N timeslots
+MODEL_BASE_NAME      = "dqrl_model"
+GLOBAL_MODEL_NAME    = MODEL_BASE_NAME            # predict server reads this key
+def worker_model_name(worker_id: int) -> str:
+    return f"{MODEL_BASE_NAME}_worker{worker_id}"
 
 
 # run 25k
@@ -56,13 +65,28 @@ mpredis = redis.Redis(host='localhost', port=6379, db=0)
 # UPDATE_TARGET_EVERY = 50  # Terminal states (end of episodes)
 
 
-# for testing
-START_EPSILON_DECAYING = 100
-END_EPSILON_DECAYING = 200
-REPLAY_MEMORY_SIZE = 1000  # How many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 100  # Minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+# Training mode: "smoke" for quick testing, "paper" for paper-grade runs
+TRAINING_MODE = "paper"
+
+if TRAINING_MODE == "paper":
+    START_EPSILON_DECAYING = 10000
+    END_EPSILON_DECAYING = 20000
+    REPLAY_MEMORY_SIZE = 50000        # 50k transitions — fits easily in 200 GB
+    MIN_REPLAY_MEMORY_SIZE = 512      # start training after 512 transitions
+    MINIBATCH_SIZE = 512              # CPU-friendly (GPU would use 2048)
+    UPDATE_TARGET_EVERY = 100
+else:  # smoke — memory-safe values for local/Mac testing
+    START_EPSILON_DECAYING = 100
+    END_EPSILON_DECAYING = 200
+    REPLAY_MEMORY_SIZE = 200
+    MIN_REPLAY_MEMORY_SIZE = 20
+    MINIBATCH_SIZE = 8
+    UPDATE_TARGET_EVERY = 10
+
+# MAX_REQUESTS: cap on simultaneous requests in QMIX padded tensors
+# smoke = 15 (covers req counts 5, 10); paper = 100 (max req load)
+MAX_REQUESTS_SMOKE = 15
+MAX_REQUESTS_PAPER = 100
 
 
 
@@ -85,21 +109,55 @@ def load_model_from_redis( model, model_name="dqrl_model"):
         print(f"Error loading from Redis: {e}")
         return None
         
-def save_model_to_redis( model, model_name="dqrl_model"):
-    """Save model weights to Redis"""
+def save_model_to_redis(model, model_name="dqrl_model"):
+    """Save model weights to Redis (global key used by predict server)."""
     try:
         weights = model.get_weights()
         serialized = pickle.dumps(weights)
-            
-        # Store with version
         version = mpredis.incr(f"{model_name}_version")
-        mpredis.set(f"{model_name}_weights", serialized ,ex=60)  # expire in 60 seconds)
-            
+        mpredis.set(f"{model_name}_weights", serialized, ex=60 * 60 * 24)
         print(f"Model saved to Redis - version {version}")
         return version
     except Exception as e:
         print(f"Error saving to Redis: {e}")
         return None
+
+def save_worker_model_to_redis(model, worker_id: int):
+    """Save a training-worker's model weights under its private Redis key."""
+    wname = worker_model_name(worker_id)
+    return save_model_to_redis(model, model_name=wname)
+
+def fedavg_aggregate(num_workers: int = NUM_TRAINING_WORKERS,
+                     global_name: str = GLOBAL_MODEL_NAME) -> int | None:
+    """
+    FedAvg: read weights from all available workers, compute element-wise
+    mean, and write back as the global model that the predict server uses.
+
+    Returns the new global version number, or None if < 2 workers have
+    published weights yet.
+    """
+    all_weights = []
+    for wid in range(num_workers):
+        wname = worker_model_name(wid)
+        raw = mpredis.get(f"{wname}_weights")
+        if raw:
+            all_weights.append(pickle.loads(raw))
+
+    if len(all_weights) < 2:
+        print(f"[FedAvg] Only {len(all_weights)} worker(s) ready — skipping.")
+        return None
+
+    # Element-wise average across workers for every layer
+    avg_weights = [
+        np.mean(np.stack([w[li] for w in all_weights], axis=0), axis=0)
+        for li in range(len(all_weights[0]))
+    ]
+
+    serialized = pickle.dumps(avg_weights)
+    mpredis.set(f"{global_name}_weights", serialized, ex=60 * 60 * 24)
+    version = mpredis.incr(f"{global_name}_version")
+    print(f"[FedAvg] Aggregated {len(all_weights)} workers → global version {version}")
+    return version
 # def save_replay_memory():
 #     """Save replay memory with compression"""
 #     t1 = time.time()
@@ -368,17 +426,22 @@ def get_mask_one_req_schedule_route(reqState , ent_matrix=None, req_matrix=None)
 
         return np.array(mask)
     # === 2. Request embeddings ===
-def get_request_embeddings( req_matrix):
-        # print('get_request_embeddings called' , len(req_matrix)//2)
-        features = []
-        for req in req_matrix:
-            vec = [0] * SIZE
-            if not req[5]:  # if not completed
-                vec[req[0]] = 1  # current node
-                vec[req[1]] = 10  # destination
-            features.append(vec)
-        # print('get_request_embeddings before return')
-        return tf.convert_to_tensor(features, dtype=tf.float32)
+def get_request_embeddings(req_matrix):
+    """Build one-hot request feature vectors.  Casts indices to int so the
+    function works whether req_matrix comes from a numpy float32 array or a
+    plain Python list."""
+    features = []
+    for req in req_matrix:
+        vec = [0] * SIZE
+        if not req[5]:   # completed flag
+            src_idx = int(req[0])
+            dst_idx = int(req[1])
+            if 0 <= src_idx < SIZE:
+                vec[src_idx] = 1   # current node
+            if 0 <= dst_idx < SIZE:
+                vec[dst_idx] = 10  # destination
+        features.append(vec)
+    return tf.convert_to_tensor(features, dtype=tf.float32)
 
 
     # === 3. Request-level attention ===
@@ -400,19 +463,24 @@ def apply_request_attention( request_tensor):
         return tf.squeeze(output, axis=0)  # shape: [num_requests, 64]
 
     # === 4. Neighbor embedding ===
-def get_neighbor_embeddings( state_graph, current_node_id):
-        neighbors = state_graph[current_node_id]
-        neighbor_feats = []
-        for node_id, has_link in enumerate(neighbors):
-            if has_link > 0:
-                feat = [0] * SIZE
-                feat[node_id] = 1  # one-hot neighbor
-                vec = tf.convert_to_tensor(feat, dtype=tf.float32)
-                vec = tf.expand_dims(vec, axis=0)  # (1, SIZE)
-                vec = Dense(64, activation='relu')(vec)
-                vec = tf.squeeze(vec, axis=0)      # (64,)
-                neighbor_feats.append(vec)
-        return neighbor_feats
+def get_neighbor_embeddings(state_graph, current_node_id):
+    """Project each neighbor's one-hot vector to 64-D using the shared dense_neighbor layer.
+
+    BUG FIX: the original code called Dense(64)(vec) inside the loop which
+    created a brand-new (randomly initialised, untrained) layer on every
+    invocation.  We now use the module-level ``dense_neighbor`` layer so the
+    projection weights are consistent and learned.
+    """
+    neighbors = state_graph[current_node_id]
+    neighbor_feats = []
+    for node_id, has_link in enumerate(neighbors):
+        if has_link > 0:
+            feat = [0] * SIZE
+            feat[node_id] = 1
+            vec = tf.convert_to_tensor([feat], dtype=tf.float32)   # (1, SIZE)
+            vec = dense_neighbor(vec)                               # shared layer
+            neighbor_feats.append(tf.squeeze(vec, axis=0))         # (64,)
+    return neighbor_feats
 
 
 

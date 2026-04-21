@@ -12,7 +12,10 @@ import os
 app = FastAPI()
 agent = None  # global agent reference per worker
 import gc
-from dist_agent_helper import mpredis, executor, save_replay_memory, load_replay_memory
+from dist_agent_helper import (
+    mpredis, executor, save_replay_memory, load_replay_memory,
+    save_worker_model_to_redis, worker_model_name, WORKER_PORTS,
+)
 
 train_executor = ThreadPoolExecutor(max_workers=10)
 active_futures = set()
@@ -206,33 +209,33 @@ async def shutdown_event():
 async def startup_event():
     """Initialize per-worker agent and start memory tracing."""
     global agent
-    print(f"[Worker PID {os.getpid()}] Initializing agent...")
+    worker_id = int(os.environ.get("WORKER_ID", "0"))
+    print(f"[Worker {worker_id} | PID {os.getpid()}] Initializing agent...")
     tracemalloc.start()
-    # load_replay_memory()
 
-    agent = DQRLAgentDist()
+    agent = DQRLAgentDist(pid=worker_id)
     agent.initiate()
-    print(f"[Worker PID {os.getpid()}] Agent ready.")
+    # Override model_name so weights are saved to worker-specific Redis key
+    agent.model_name = worker_model_name(worker_id)
+    print(f"[Worker {worker_id}] model_name={agent.model_name}  Ready.")
 
 
 @app.get("/snapshot")
 def snapshot():
     snapshot = tracemalloc.take_snapshot()
-    # Group by traceback instead of just lineno
     top_stats = snapshot.statistics("traceback")
-
     report = []
-    for stat in top_stats[:10]:  # top 10 memory hogs
+    for stat in top_stats[:10]:
         block = {
             "size_MB": round(stat.size / 1024 / 1024, 2),
             "count": stat.count,
-            "traceback": stat.traceback.format()  # list of stack frames
+            "traceback": stat.traceback.format()
         }
         report.append(block)
-
     return {"top": report}
 
 if __name__ == "__main__":
-    # agent = DQRLAgentDist()
-    # agent.initiate()
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    worker_id = int(os.environ.get("WORKER_ID", "0"))
+    port      = WORKER_PORTS[worker_id] if worker_id < len(WORKER_PORTS) else 8000 + worker_id
+    print(f"Starting training worker {worker_id} on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)

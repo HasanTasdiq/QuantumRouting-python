@@ -113,7 +113,8 @@ class AlgorithmResult:
 
         
         # AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100 #success rate
-        AvgResult.successfulRequest = math.log((AvgResult.successfulRequest /ttime) /requestPerRound) #success rate
+        _sr_ratio = (AvgResult.successfulRequest / ttime) / requestPerRound
+        AvgResult.successfulRequest = math.log(max(_sr_ratio, 1e-9))  # guard against log(0)
         # AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /AvgResult.algorithmRuntime
         AvgResult.usedLinks = (AvgResult.usedLinks /ttime) / len(topo.links) * 100
         print('AvgResult.successfulRequest ' , AvgResult.successfulRequest)

@@ -31,7 +31,10 @@ from REPS_rep import REPSREP
 # from SEE2 import SEE2
 
 # from DQRL import QuRA_DQRL
-from DQRL_dist1 import QuRA_DQRL_DIST
+from DQRL_dist1 import QuRA_DQRL_DIST          # QuRA-Seq (distributed)
+from DQRL_Flock_dist import QuRA_Flock_DIST     # QuRA-Flock (distributed)
+from DQRL_Guard_dist import QuRA_Guard_DIST     # QuRA-Guard (distributed)
+from DQRL_Hive_dist import QuRA_Hive_DIST       # QuRA-Hive (distributed QMIX)
 # from Schedule import SCHEDULEGREEDY
 # from ScheduleRoute import SCHEDULEROUTEGREEDY
 
@@ -86,7 +89,7 @@ run = ""
 # + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
 #     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 50
+ttime = 500      # paper: 500 timeslots
 ttime2 = 500
 step = 500
 times = 1
@@ -102,7 +105,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [5,10,25,50,75,100,125,150,175,200] 
+numOfRequestPerRound = [5, 10, 25, 50, 75, 100]   # paper: 6 load points up to 100
 # numOfRequestPerRound = [1,2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
@@ -253,7 +256,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_,
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_randPFT'))
     # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_SPPFT'))
     
-    algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
+    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
 
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_randPFT'))
     # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_SPPFT'))
@@ -324,7 +327,10 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_,
     # algorithms.append(SCHEDULEROUTEGREEDY_CACHE_PS(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE_preswap_multihop_distdqrl' , param='ten'))
     
 
-    # algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo) , name = 'QuRA_DQRL_DIST'))
+    algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo), name='QuRA_Seq_DIST'))
+    algorithms.append(QuRA_Flock_DIST(copy.deepcopy(topo), name='QuRA_Flock_DIST'))
+    algorithms.append(QuRA_Guard_DIST(copy.deepcopy(topo), name='QuRA_Guard_DIST'))
+    algorithms.append(QuRA_Hive_DIST(copy.deepcopy(topo), name='QuRA_Hive_DIST'))
 
 
     gc.collect()

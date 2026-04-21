@@ -33,7 +33,15 @@ from objsize import get_deep_size
 
 
 from keras.layers import Embedding, Flatten, Attention, Dense, MultiHeadAttention, LayerNormalization
-from dist_agent_helper import  schedule_routing_state_dist , process_actions , replay_memory, REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE, UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING, load_model_from_redis, save_model_to_redis
+from dist_agent_helper import (
+    schedule_routing_state_dist, process_actions, replay_memory,
+    REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE,
+    UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING,
+    load_model_from_redis, save_model_to_redis, save_worker_model_to_redis,
+    TRAINING_MODE, MAX_REQUESTS_SMOKE, MAX_REQUESTS_PAPER,
+    SIZE, get_request_embeddings, apply_request_attention,
+    get_neighbor_embeddings, apply_neighbor_attention,
+)
 from GNN import QRoutingGATFlat
 
 
@@ -45,13 +53,15 @@ LEARNING_RATE = .8
 lr = .0001
 clip_value = .1
 
-
-
 GAMMA = 0.9
-# GAMMA = 5
 ALPHA = .9
 BETA = -.1
 DELTA = 0
+
+# Paper Eq. 9 reward weights: R = r·λ + N_success·μ + F_avg·ν
+REWARD_LAMBDA = 0.3
+REWARD_MU = 1.0
+REWARD_NU = 0.5
 
 ENTANGLEMENT_LIFETIME = 10
 # Exploration settings
@@ -139,27 +149,27 @@ class DQRLAgentDist:
         self.target_update_counter = 0
         self.last_action_table = []
         self.reqState_qs = {}
-        self.embedding_layer = Embedding(input_dim=20, output_dim=1)
-        self.attention_layer = Attention()
-
-        self.dense_proj = Dense(64, activation='relu')
-        self.mha = MultiHeadAttention(num_heads=4, key_dim=16)
-        self.ln = LayerNormalization()
         self.loaded_ts = set()
 
 
-        self.MAX_REQUESTS = 100 # Set this to the max expected requests per timeslot
+        # Mode-aware cap: smoke=15 (covers req 5,10), paper=200
+        self.MAX_REQUESTS = MAX_REQUESTS_SMOKE if TRAINING_MODE == "smoke" else MAX_REQUESTS_PAPER
         # --- QMIX Mixers ---
-        # We need the global state shape. Based on your code, it seems to be in self.OBSERVATION_SPACE_VALUES
-        # Note: Flatten the state shape for the mixer input if it's not already 1D
-        mixer_state_dim = self.OBSERVATION_SPACE_VALUES[0] * self.OBSERVATION_SPACE_VALUES[1]
-        
+        # Global state = flattened ent_matrix (SIZE×SIZE) + one-hot node vec (SIZE)
+        self.GLOBAL_STATE_DIM = self.SIZE * self.SIZE + self.SIZE   # e.g. 10100 for SIZE=100
+        mixer_state_dim = self.GLOBAL_STATE_DIM
+
         self.mixer = QMixer(self.MAX_REQUESTS, mixer_state_dim)
         self.target_mixer = QMixer(self.MAX_REQUESTS, mixer_state_dim)
-        
+
+        # Pre-build mixers with dummy data so @tf.function traces call() not __init__
+        _dummy_qs    = tf.zeros((1, self.MAX_REQUESTS), dtype=tf.float32)
+        _dummy_state = tf.zeros((1, mixer_state_dim),   dtype=tf.float32)
+        self.mixer((_dummy_qs, _dummy_state))
+        self.target_mixer((_dummy_qs, _dummy_state))
+
         # Optimizer specifically for QMIX training (trains both Agent and Mixer)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
-        self.GLOBAL_STATE_DIM = (self.SIZE * self.SIZE) + self.SIZE
 
 
     def print_weight(self , model):
@@ -374,8 +384,6 @@ class DQRLAgentDist:
             self.target_mixer.set_weights(self.mixer.get_weights())
             self.target_update_counter = 0
             # print(f"--- QMIX Loss: {loss:.4f} ---") # Optional Debug
-
-        tf.keras.backend.clear_session()
         # gc.collect() # Only enable if memory is tight, slows down loop
 
     def train_qmix2(self, terminal_state):
@@ -776,8 +784,127 @@ class DQRLAgentDist:
         # self.env.algo.action_count[action] += 1
 
         return [current_state.tolist() , int(action)]
-   
-    
+
+    # ── Improvement 1: skip MHA when caller already computed it ────────────
+    def predict_with_attn(self, reqIndex, ent_matrix, req_matrix, dist_matrix,
+                          timeSlot, attn_encoded):
+        """
+        Single-request predict reusing a pre-computed attention tensor.
+        Avoids redundant MHA computation when multiple requests share the same
+        req_matrix within a timeslot.
+
+        ``attn_encoded`` shape: (num_requests_padded, 64)
+        """
+        req = list(req_matrix[reqIndex][:6])
+        req[3] = req_matrix[reqIndex + len(req_matrix) // 2]
+        # Cast int fields (req_matrix is float32)
+        req[0] = int(req[0]); req[1] = int(req[1])
+        req[2] = int(req[2]); req[4] = int(req[4])
+        if req[5]:
+            return None
+
+        ent_arr = np.array(ent_matrix)
+        curr_emb = attn_encoded[reqIndex]                    # (64,) — pre-computed
+        neighbor_embs = get_neighbor_embeddings(ent_arr, req[2])
+        context_vec   = apply_neighbor_attention(curr_emb, neighbor_embs)
+
+        local = np.zeros(self.SIZE, dtype=np.float32)
+        local[req[2]] = 10.0
+        local[req[1]] = 10.0
+
+        current_state = np.concatenate([
+            curr_emb, context_vec, np.array(local, dtype=np.float32),
+            ent_arr.flatten(), np.array(dist_matrix).flatten()
+        ]).astype(np.float32)
+
+        qs   = self.get_qs(current_state)
+        mask = self.get_mask_one_req_schedule_route(req, ent_matrix, req_matrix)
+        valid_actions = np.where(mask == 1)[0]
+
+        epsilon = self.get_epsilon_linear(timeSlot)
+        if np.random.random() > epsilon:
+            action = int(np.argmax(np.where(mask == 1, qs, -np.inf)))
+        else:
+            action = int(np.random.choice(valid_actions))
+
+        return [current_state.tolist(), action]
+
+    # ── Improvement 2: batched predict (1 MHA pass + 1 forward pass) ───────
+    def batch_predict_all_requests(self, req_indices, ent_matrix, req_matrix,
+                                   dist_matrix, timeSlot):
+        """
+        Process *all* active requests in one shot:
+          • MHA attention computed ONCE for the shared req_matrix
+          • Single batched model.predict() call for all N states
+
+        Returns dict {reqIndex: [state_list, action_int]}.
+        Skipped (done) requests are not included.
+        """
+        # 1. Optionally refresh model weights
+        if timeSlot > 0 and timeSlot not in self.loaded_ts:
+            self.loaded_ts.add(timeSlot)
+            try:
+                load_model_from_redis(self.model, self.model_name)
+            except Exception:
+                print('batch_predict: no model in Redis, using current weights')
+
+        # 2. MHA ONCE for all requests
+        req_tensor = get_request_embeddings(req_matrix)
+        try:
+            attn_encoded = apply_request_attention(req_tensor).numpy()  # (N_pad, 64)
+        except Exception:
+            attn_encoded = np.zeros((len(req_matrix), 64), dtype=np.float32)
+
+        ent_arr   = np.array(ent_matrix,  dtype=np.float32)
+        dist_arr  = np.array(dist_matrix, dtype=np.float32)
+        ent_flat  = ent_arr.flatten()
+        dist_flat = dist_arr.flatten()
+
+        valid = []   # list of (req_idx, req_row, state_vector)
+        for req_idx in req_indices:
+            req = list(req_matrix[req_idx][:6])
+            req[3] = req_matrix[req_idx + len(req_matrix) // 2]
+            # Cast fields used as array indices to native int (req_matrix is float32)
+            req[0] = int(req[0])   # src
+            req[1] = int(req[1])   # dst
+            req[2] = int(req[2])   # current_node_id
+            req[4] = int(req[4])   # request index
+            if req[5]:             # done flag — truthy float works fine
+                continue
+            curr_emb      = attn_encoded[req_idx]
+            neighbor_embs = get_neighbor_embeddings(ent_arr, req[2])
+            context_vec   = apply_neighbor_attention(curr_emb, neighbor_embs)
+
+            local = np.zeros(self.SIZE, dtype=np.float32)
+            local[req[2]] = 10.0
+            local[req[1]] = 10.0
+
+            state = np.concatenate([curr_emb, context_vec, local,
+                                    ent_flat, dist_flat]).astype(np.float32)
+            valid.append((req_idx, req, state))
+
+        if not valid:
+            return {}
+
+        # 3. Single batched forward pass
+        states_batch = np.array([v[2] for v in valid], dtype=np.float32)  # (N,20228)
+        epsilon = self.get_epsilon_linear(timeSlot)
+        if np.random.random() > epsilon:
+            # Use model.predict with batch — faster than calling self.model N times
+            qs_batch = self.model(states_batch, training=False).numpy()    # (N, SIZE)
+        else:
+            qs_batch = np.random.rand(len(valid), self.SIZE).astype(np.float32)
+
+        # 4. Mask + argmax per request
+        results = {}
+        for i, (req_idx, req, state) in enumerate(valid):
+            mask = self.get_mask_one_req_schedule_route(req, ent_matrix, req_matrix)
+            qs   = qs_batch[i]
+            action = int(np.argmax(np.where(mask == 1, qs, -np.inf)))
+            results[req_idx] = [state.tolist(), action]
+
+        return results
+
     def decode_schdeule_route_action(self, action):
         request_index = math.floor(action / self.SIZE)
         next_node_id = action % self.SIZE
@@ -902,17 +1029,24 @@ class DQRLAgentDist:
         # (List of States, List of Actions, List of Rewards, List of Next States, Global State, Next Global State, Done)
         print('size of a_ids ' , len(a_ids) , a_ids)
         if len(a_ids) > 0:
+            # Per-action avg fidelity proxy: fraction of done actions with success reward
+            n_actions = sum(len(ts_rewards[aid]) for aid in a_ids)
+            n_success_actions = sum(
+                1 for aid in a_ids for r in ts_rewards[aid] if r >= 10
+            )
+            avg_fidelity = n_success_actions / max(n_actions, 1)
+
             for a_id in a_ids:
-                transition = (ts_states[a_id], ts_actions[a_id], ts_rewards[a_id], ts_next_states[a_id], global_state_proxy[a_id], next_global_state_proxy[a_id], False)
+                # Paper Eq. 9: R = r·λ + N_success·μ + F_avg·ν
+                raw_rewards = ts_rewards[a_id]
+                scaled_rewards = [
+                    r * REWARD_LAMBDA + numsuccessReq * REWARD_MU + avg_fidelity * REWARD_NU
+                    for r in raw_rewards
+                ]
+                transition = (ts_states[a_id], ts_actions[a_id], scaled_rewards, ts_next_states[a_id], global_state_proxy[a_id], next_global_state_proxy[a_id], False)
                 self.update_replay_memory(transition, numsuccessReq)
-            # transition = (ts_states, ts_actions, ts_rewards, ts_next_states, global_state_proxy, next_global_state_proxy, False)
-            
-            # # Push this TUPLE to replay memory (not a list of transitions)
-            # self.update_replay_memory(transition, numsuccessReq)
-        ############################################
-        # if timeSlot % 2 == 0:
+
         self.train_qmix(False)
-        # self.train(False )
         print('time train ' , time.time()-t5)
 
         # print('===---------size of model memory----------------===-' , get_deep_size(self.model)/1024/1024 , 'MB')

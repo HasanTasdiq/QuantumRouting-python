@@ -33,8 +33,8 @@ class Link:
         self.taken = False
         self.considered = False
 
-        # self.fidelity = F0*math.exp(-self.alpha * self.l)
-        self.fidelity = self.topo.initial_fidelity
+        # Paper Eq. 1: F0_uv = initial_fidelity * exp(-alpha * d_uv)
+        self.fidelity = self.topo.initial_fidelity * math.exp(-self.alpha * self.l)
         
         
         # print(self.n1.id, self.n2.id, self.p)
