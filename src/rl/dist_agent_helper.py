@@ -69,19 +69,20 @@ def worker_model_name(worker_id: int) -> str:
 TRAINING_MODE = "paper"
 
 if TRAINING_MODE == "paper":
-    START_EPSILON_DECAYING = 10000
-    END_EPSILON_DECAYING = 20000
-    REPLAY_MEMORY_SIZE = 50000        # 50k transitions — fits easily in 200 GB
-    MIN_REPLAY_MEMORY_SIZE = 512      # start training after 512 transitions
-    MINIBATCH_SIZE = 512              # CPU-friendly (GPU would use 2048)
-    UPDATE_TARGET_EVERY = 100
-else:  # smoke — memory-safe values for local/Mac testing
-    START_EPSILON_DECAYING = 100
-    END_EPSILON_DECAYING = 200
-    REPLAY_MEMORY_SIZE = 200
+    # 10k timeslots: explore 0-3k, decay 3k-8k, exploit 8k-10k
+    START_EPSILON_DECAYING = 3000
+    END_EPSILON_DECAYING   = 8000
+    REPLAY_MEMORY_SIZE     = 50000   # 50k transitions — fits easily in 200 GB
+    MIN_REPLAY_MEMORY_SIZE = 512
+    MINIBATCH_SIZE         = 512     # CPU-friendly (GPU would use 2048)
+    UPDATE_TARGET_EVERY    = 100
+else:  # smoke — 50 timeslots: explore 0-10, decay 10-40, exploit 40-50
+    START_EPSILON_DECAYING = 10
+    END_EPSILON_DECAYING   = 40
+    REPLAY_MEMORY_SIZE     = 500
     MIN_REPLAY_MEMORY_SIZE = 20
-    MINIBATCH_SIZE = 8
-    UPDATE_TARGET_EVERY = 10
+    MINIBATCH_SIZE         = 8
+    UPDATE_TARGET_EVERY    = 10
 
 # MAX_REQUESTS: cap on simultaneous requests in QMIX padded tensors
 # smoke = 15 (covers req counts 5, 10); paper = 100 (max req load)

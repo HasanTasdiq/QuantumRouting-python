@@ -89,9 +89,9 @@ run = ""
 # + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
 #     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 500      # paper: 500 timeslots
+ttime = 10000    # paper: 10000 timeslots  (smoke: 50)
 ttime2 = 500
-step = 500
+step = 1000      # paper: sample every 1000 TS → 10 x-axis points  (smoke: 10)
 times = 1
 gridSize = 10 
 nodeNo = gridSize *gridSize
@@ -105,7 +105,7 @@ degree = 1
 # numOfRequestPerRound = [1, 2, 3]
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [5, 10, 25, 50, 75, 100]   # paper: 6 load points up to 100
+numOfRequestPerRound = [5, 10, 25, 50, 75, 100]   # paper: 6 load points  (smoke: [5, 10])
 # numOfRequestPerRound = [1,2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
@@ -132,34 +132,31 @@ toRunLessAlgos = ['REPS','REPS_shortest','QuRA_Heuristic' ,'REPS_rep', 'REPSCACH
 # executor = Pool(processes=8)
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
-    # if '_qrl' in algo.name:
-    #     agent = Agent(algo , pid)
-    # if '_dqrl' in algo.name:
-    #     agent = DQNAgent(algo , pid)
-    # if '_distdqrl' in algo.name:
-    #     agent = DQNAgentDist(algo , pid)
-    # if '_DIST' in algo.name:
-    #     algo.executor = executor
-    # if '_entdqrl' in algo.name:
-    #     algo.entAgent = DQNAgentDistEnt(algo, pid)
-    # if '_2entdqrl' in algo.name:
-    #     algo.entAgent = DQNAgentDistEnt_2(algo, pid)
-    # algo.routingAgent = DQRLAgent(algo , 0)
-    # algo.schedulerAgent = SchedulerAgent(algo , pid)
-    
     timeSlot = ttime
     global ttime2
     global executor
     if algo.name in toRunLessAlgos:
         timeSlot = min(ttime2,ttime)
 
-    for i in range(timeSlot):
-        # if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
-        #     agent.learn_and_predict()
+    # ── Real-time progress CSV ───────────────────────────────────────────────
+    # Written after every timeslot so you can tail -f it during long runs.
+    # Columns: timeslot, successful_requests, reward
+    _log_dir = "/tmp/qrouting_logs"
+    os.makedirs(_log_dir, exist_ok=True)
+    _req_count = algo.topo.numOfRequestPerRound
+    _csv_path  = os.path.join(_log_dir, f"progress_{algo.name}_req{_req_count}.csv")
+    _csv_file  = open(_csv_path, "w", buffering=1)   # line-buffered
+    _csv_file.write("timeslot,successful_requests,reward\n")
 
-        # print([(r[0].id, r[1].id) for r in requests[i]])
-        
+    for i in range(timeSlot):
         result = algo.work(requests[i], i)
+
+        # Log per-timeslot metrics in real time
+        _succ = result.successfulRequestPerRound[i] if i < len(result.successfulRequestPerRound) else 0
+        _rew  = result.rewardPerRound[i]             if i < len(result.rewardPerRound)             else 0
+        _csv_file.write(f"{i},{_succ},{_rew}\n")
+
+    _csv_file.close()
 
     #     if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
     #         agent.update_reward()
