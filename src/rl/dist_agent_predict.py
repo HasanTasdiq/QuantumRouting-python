@@ -223,4 +223,6 @@ async def startup_event():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    import os as _os
+    _port = int(_os.environ.get("PREDICT_PORT", "8080"))
+    uvicorn.run(app, host="0.0.0.0", port=_port)

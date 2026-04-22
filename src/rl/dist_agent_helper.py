@@ -20,11 +20,23 @@ dense_neighbor = Dense(64, activation='relu')     # neighbor projection (shared,
 mha = MultiHeadAttention(num_heads=4, key_dim=16)
 ln = LayerNormalization()
 
-mpredis = redis.Redis(host='localhost', port=6379, db=0)
+# ── Parallel-experiment isolation via env vars ──────────────────────────────
+# Each parallel experiment (one per request load) gets its own:
+#   REDIS_DB          : separate Redis database (0-15)  default=0
+#   BASE_WORKER_PORT  : worker ports BASE..BASE+3        default=8000
+#   PREDICT_PORT      : predict server port              default=8080
+# This lets N experiments run simultaneously without interfering.
+REDIS_DB         = int(os.environ.get("REDIS_DB",          "0"))
+BASE_WORKER_PORT = int(os.environ.get("BASE_WORKER_PORT",  "8000"))
+PREDICT_PORT     = int(os.environ.get("PREDICT_PORT",      "8080"))
+
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
+mpredis = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
 
 # ── Multi-worker FedAvg config ──────────────────────────────────────────────
 NUM_TRAINING_WORKERS = 4           # one training worker per algorithm variant
-WORKER_PORTS         = [8000, 8001, 8002, 8003]
+WORKER_PORTS         = [BASE_WORKER_PORT + i for i in range(NUM_TRAINING_WORKERS)]
 AGGREGATION_EVERY    = 5           # FedAvg every N timeslots
 MODEL_BASE_NAME      = "dqrl_model"
 GLOBAL_MODEL_NAME    = MODEL_BASE_NAME            # predict server reads this key

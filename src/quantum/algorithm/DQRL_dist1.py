@@ -48,7 +48,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
     # Class-level counter: each algorithm instance gets its own worker index
     # for round-robin training-worker assignment.
     _instance_counter = 0
-    _WORKER_PORTS = [8000, 8001, 8002, 8003]   # mirrors dist_agent_helper.WORKER_PORTS
+    _WORKER_PORTS = None   # set at first instantiation from dist_agent_helper.WORKER_PORTS
 
     def __init__(self, topo,param=None, name=''):
         super().__init__(topo)
@@ -70,6 +70,15 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         self.tst = []
         self.shared_memories = []
         self.executor_stats = []
+
+        # Lazily load WORKER_PORTS from helper (picks up BASE_WORKER_PORT env var)
+        if QuRA_DQRL_DIST._WORKER_PORTS is None:
+            import sys as _sys
+            _rl_path = os.path.join(os.path.dirname(__file__), '..', '..', 'rl')
+            if _rl_path not in _sys.path:
+                _sys.path.insert(0, _rl_path)
+            from dist_agent_helper import WORKER_PORTS as _WP
+            QuRA_DQRL_DIST._WORKER_PORTS = _WP
 
         # Assign this instance to a training worker (round-robin)
         self._worker_id   = QuRA_DQRL_DIST._instance_counter % len(self._WORKER_PORTS)
@@ -799,7 +808,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                    "timeSlot": timeSlot}
         try:
             t = time.time()
-            resp = requests.post("http://127.0.0.1:8080/learn_predict_batch",
+            _predict_port = int(os.environ.get("PREDICT_PORT", "8080"))
+            resp = requests.post(f"http://127.0.0.1:{_predict_port}/learn_predict_batch",
                                  json=payload, timeout=120)
             resp.raise_for_status()
             raw = resp.json().get("results", {})
@@ -814,7 +824,8 @@ class QuRA_DQRL_DIST(AlgorithmBase):
 
     def call_learn_and_predict_api(self , reqState, ent_matrix, req_matrix, dist_matrix, timeSlot):
 
-        url = "http://127.0.0.1:8080/learn_predict"  # adjust host/port if needed
+        _predict_port = int(os.environ.get("PREDICT_PORT", "8080"))
+        url = f"http://127.0.0.1:{_predict_port}/learn_predict"
         reqId = str(uuid.uuid4())
         mpredis.set(f"reqId_{reqId}_ent_matrix", pickle.dumps(ent_matrix) , ex=300)  # expire in 5 minutes
         mpredis.set(f"reqId_{reqId}_req_matrix", pickle.dumps(req_matrix), ex=300)  # expire in 5 minutes

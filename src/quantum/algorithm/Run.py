@@ -49,6 +49,7 @@ from topo.mp_helper import executor as executor
 from random import sample
 import numpy as np
 import time
+import os
 import os.path
 import multiprocessing.context as ctx
 from multiprocessing import Pool
@@ -106,6 +107,10 @@ degree = 1
 # numOfRequestPerRound = [15 , 20 , 25]
 # numOfRequestPerRound = [25,30,35]
 numOfRequestPerRound = [5, 10, 25, 50, 75, 100]   # paper: 6 load points  (smoke: [5, 10])
+# Override via env var for parallel experiments: REQ_LOADS=50 or REQ_LOADS=75,100
+_req_env = os.environ.get("REQ_LOADS", "")
+if _req_env:
+    numOfRequestPerRound = [int(x.strip()) for x in _req_env.split(",")]
 # numOfRequestPerRound = [1,2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
