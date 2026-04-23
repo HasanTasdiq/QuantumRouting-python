@@ -36,7 +36,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ALGO_DIR="$(cd "${SCRIPT_DIR}/../../quantum/algorithm" && pwd)"
+ALGO_DIR="$(cd "${SCRIPT_DIR}/../quantum/algorithm" && pwd)"
 LOG_BASE="/tmp/qrouting_logs"
 PID_BASE="${LOG_BASE}/pids"
 PYTHON="${PYTHON:-python3}"
@@ -252,10 +252,10 @@ for exp_def in "${EXPERIMENTS[@]}"; do
         nohup "${PYTHON}" -u "${SCRIPT_DIR}/dist_agent_aggregator.py" > "$alog" 2>&1 &
     echo $! > "${pid_dir}/aggregator.pid"
 
-    # Start Run.py
+    # Start Run.py (must run from its own dir for relative imports)
     rlog="${log_dir}/run.log"; > "$rlog"
-    env $EXP_ENV REQ_LOADS=${req} OMP_NUM_THREADS=4 \
-        nohup "${PYTHON}" -u "${ALGO_DIR}/Run.py" > "$rlog" 2>&1 &
+    ( cd "${ALGO_DIR}" && env $EXP_ENV REQ_LOADS=${req} OMP_NUM_THREADS=4 \
+        nohup "${PYTHON}" -u Run.py > "$rlog" 2>&1 ) &
     echo $! > "${pid_dir}/run.pid"
 
     log "  Run.py launched (req=${req})"

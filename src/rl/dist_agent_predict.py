@@ -37,6 +37,7 @@ from DQRLAgentDist_API import DQRLAgentDist
 from dist_agent_helper import (
     mpredis, executor, save_replay_memory, load_replay_memory,
     get_request_embeddings, apply_request_attention,
+    INFERENCE_MODE, load_model_from_disk, load_model_from_redis, GLOBAL_MODEL_NAME,
 )
 
 app = FastAPI()
@@ -214,11 +215,23 @@ async def shutdown_event():
 @app.on_event("startup")
 async def startup_event():
     global agent
-    print(f"[Predict PID {os.getpid()}] Initializing agent...")
+    mode_tag = "INFERENCE" if INFERENCE_MODE else "TRAINING"
+    print(f"[Predict PID {os.getpid()}] Initializing agent ({mode_tag} mode)...")
     tracemalloc.start()
     agent = DQRLAgentDist()
     agent.initiate()
     # Predict server always reads the global (FedAvg-aggregated) model
+    if INFERENCE_MODE:
+        # In inference mode: load the best trained model once and freeze.
+        # Try disk first (most reliable across sessions), fall back to Redis.
+        loaded = load_model_from_disk(agent.model)
+        if not loaded:
+            print("[Predict] No disk weights — trying Redis...")
+            loaded = (load_model_from_redis(agent.model, GLOBAL_MODEL_NAME) is not None)
+        if not loaded:
+            print("[Predict] WARNING: running with random weights in inference mode!")
+        print(f"[Predict] INFERENCE mode active — epsilon=0, model frozen, "
+              f"weights_loaded={loaded}")
     print(f"[Predict PID {os.getpid()}] Agent ready  model_name={agent.model_name}")
 
 

@@ -23,7 +23,7 @@ from multiprocessing import shared_memory, Manager
 
 import numpy as np
 
-from DQRL_dist1 import QuRA_DQRL_DIST
+from DQRL_dist1 import QuRA_DQRL_DIST, _INFERENCE_MODE
 from topo.mp_helper import node_locks
 
 MU_GUARD = 0.5  # balances Q-value vs path-length urgency; tune in [0, 1]
@@ -194,7 +194,8 @@ class QuRA_Guard_DIST(QuRA_DQRL_DIST):
         self.filterReqeuest()
         self.printResult()
 
-        if self.timeSlot < 100000:
+        if self.timeSlot < 100000 and not _INFERENCE_MODE:
+            # Skip training calls in inference mode — model is frozen.
             try:
                 self.run_async_in_thread(self.call_update_reward(
                     successful_requests=self.result.successfulRequestPerRound[-1],

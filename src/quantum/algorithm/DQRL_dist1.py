@@ -40,6 +40,13 @@ from objsize import get_deep_size
 sys.path.insert(0, "../../rl")
 active_futures = set()
 lock_manager = None
+
+# Import inference flag — loaded lazily so the module can be imported
+# before the RL path is on sys.path (Run.py adds it at startup).
+try:
+    from dist_agent_helper import INFERENCE_MODE as _INFERENCE_MODE
+except ImportError:
+    _INFERENCE_MODE = False
 # lock = Lock()
 # lock1 = Lock()
 
@@ -411,9 +418,9 @@ class QuRA_DQRL_DIST(AlgorithmBase):
         # self.entAgent.update_reward()
         reward = 0
         if not 'greedy_only' in self.name:
-            if self.timeSlot < 100000:
+            if self.timeSlot < 100000 and not _INFERENCE_MODE:
+                # Skip training calls in inference mode — model is frozen.
                 t = time.time()
-                
                 print('going to call update_reward with ')
                 try:
                     self.run_async_in_thread(self.call_update_reward(
@@ -424,7 +431,7 @@ class QuRA_DQRL_DIST(AlgorithmBase):
                 except Exception as e:
                     import traceback
                     traceback.print_exc()
-         
+
                 reward = 0
                 print('time for update_reward ======== ' , time.time() - t)
 

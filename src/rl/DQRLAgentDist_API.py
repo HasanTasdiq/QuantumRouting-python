@@ -38,7 +38,8 @@ from dist_agent_helper import (
     REPLAY_MEMORY_SIZE, MIN_REPLAY_MEMORY_SIZE, MINIBATCH_SIZE,
     UPDATE_TARGET_EVERY, START_EPSILON_DECAYING, END_EPSILON_DECAYING,
     load_model_from_redis, save_model_to_redis, save_worker_model_to_redis,
-    TRAINING_MODE, MAX_REQUESTS_SMOKE, MAX_REQUESTS_PAPER,
+    save_model_to_disk,
+    TRAINING_MODE, INFERENCE_MODE, MAX_REQUESTS_SMOKE, MAX_REQUESTS_PAPER,
     SIZE, get_request_embeddings, apply_request_attention,
     get_neighbor_embeddings, apply_neighbor_attention,
 )
@@ -729,6 +730,9 @@ class DQRLAgentDist:
 
         return np.array(mask)
     def get_epsilon_linear(self , timeSlot, eps_start=EPSILON_):
+        # Inference mode: always exploit (no exploration)
+        if INFERENCE_MODE:
+            return 0
         if timeSlot < START_EPSILON_DECAYING:
             return eps_start
         if timeSlot >= END_EPSILON_DECAYING:
@@ -739,7 +743,7 @@ class DQRLAgentDist:
 
     
     def learn_and_predict_next_req_node_single(self, reqIndex, ent_matrix , req_matrix,dist_matrix,timeSlot):
-        if timeSlot > 0:
+        if not INFERENCE_MODE and timeSlot > 0:
             if timeSlot not in self.loaded_ts:
                 self.loaded_ts.add(timeSlot)
                 try:
@@ -840,8 +844,9 @@ class DQRLAgentDist:
         Returns dict {reqIndex: [state_list, action_int]}.
         Skipped (done) requests are not included.
         """
-        # 1. Optionally refresh model weights
-        if timeSlot > 0 and timeSlot not in self.loaded_ts:
+        # 1. Optionally refresh model weights (training mode only; inference
+        #    uses the frozen model loaded at startup).
+        if not INFERENCE_MODE and timeSlot > 0 and timeSlot not in self.loaded_ts:
             self.loaded_ts.add(timeSlot)
             try:
                 load_model_from_redis(self.model, self.model_name)
@@ -1068,8 +1073,12 @@ class DQRLAgentDist:
         # print('update_reward done in ' , time.time() - t1 , 'seconds\n')
         if timeSlot % 1 == 0:
             st = time.time()
-            save_model_to_redis(self.model, self.model_name) 
+            save_model_to_redis(self.model, self.model_name)
             print('model saved to redis at time slot ' , timeSlot, 'time taken ' , time.time() - st)
+            # Also persist to disk every 500 timeslots so inference can load it
+            # even if Redis is restarted between training and inference phases.
+            if timeSlot % 500 == 0 and timeSlot > 0:
+                save_model_to_disk(self.model)
         print('======!=======!==== total update reward done in ' , time.time() - t1 , 'seconds\n')
         return total_reward
 

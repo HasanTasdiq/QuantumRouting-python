@@ -34,6 +34,17 @@ REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 mpredis = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
 
+# ── Training vs Inference mode ──────────────────────────────────────────────
+# INFERENCE_MODE=1 → skip training, epsilon=0, no update_reward calls.
+# Training produces the global model; inference loads it and evaluates on
+# all request loads without any further weight updates.
+INFERENCE_MODE = os.environ.get("INFERENCE_MODE", "0") == "1"
+
+# Disk path used to save / load the trained model weights (for cross-session
+# persistence independent of Redis TTL).
+MODEL_SAVE_PATH = os.environ.get("MODEL_SAVE_PATH",
+                                  "/tmp/qrouting_model/trained_weights.pkl")
+
 # ── Multi-worker FedAvg config ──────────────────────────────────────────────
 NUM_TRAINING_WORKERS = 4           # one training worker per algorithm variant
 WORKER_PORTS         = [BASE_WORKER_PORT + i for i in range(NUM_TRAINING_WORKERS)]
@@ -122,6 +133,33 @@ def load_model_from_redis( model, model_name="dqrl_model"):
         print(f"Error loading from Redis: {e}")
         return None
         
+def save_model_to_disk(model, path: str = MODEL_SAVE_PATH):
+    """Persist model weights to disk so inference can load them later."""
+    import gzip as _gz
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    weights = model.get_weights()
+    with _gz.open(path, "wb") as f:
+        pickle.dump(weights, f, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"[save_model_to_disk] Saved weights → {path}")
+
+
+def load_model_from_disk(model, path: str = MODEL_SAVE_PATH) -> bool:
+    """Load model weights from disk. Returns True on success."""
+    import gzip as _gz
+    if not os.path.exists(path):
+        print(f"[load_model_from_disk] No file at {path}")
+        return False
+    try:
+        with _gz.open(path, "rb") as f:
+            weights = pickle.load(f)
+        model.set_weights(weights)
+        print(f"[load_model_from_disk] Loaded weights from {path}")
+        return True
+    except Exception as e:
+        print(f"[load_model_from_disk] Error: {e}")
+        return False
+
+
 def save_model_to_redis(model, model_name="dqrl_model"):
     """Save model weights to Redis (global key used by predict server)."""
     try:

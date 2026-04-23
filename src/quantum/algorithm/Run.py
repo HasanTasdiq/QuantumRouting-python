@@ -90,27 +90,39 @@ run = ""
 # + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
 #     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
 batchdescription = "le .0005"
-ttime = 10000    # paper: 10000 timeslots  (smoke: 50)
+
+# ── Run configuration (all overridable via env vars) ─────────────────────────
+# INFERENCE_MODE=1  → evaluate frozen trained model across all loads (no training)
+# INFERENCE_MODE=0  → train on TRAIN_LOAD, single load point
+INFERENCE_MODE = os.environ.get("INFERENCE_MODE", "0") == "1"
+
+ttime = int(os.environ.get("TTIME",  "10000"))  # total timeslots
 ttime2 = 500
-step = 1000      # paper: sample every 1000 TS → 10 x-axis points  (smoke: 10)
-times = 1
-gridSize = 10 
-nodeNo = gridSize *gridSize
-# nodeNo = 50
+step  = int(os.environ.get("STEP",   "1000"))   # CSV sample stride
+times = int(os.environ.get("TIMES",  "1"))      # independent repetitions (for averaging)
+gridSize = 10
+nodeNo = gridSize * gridSize
 fixed = False
 
-# alpha_ = 0.0007
 alpha_ = .0002
-# alpha_ = 0
 degree = 1
-# numOfRequestPerRound = [1, 2, 3]
-# numOfRequestPerRound = [15 , 20 , 25]
-# numOfRequestPerRound = [25,30,35]
-numOfRequestPerRound = [5, 10, 25, 50, 75, 100]   # paper: 6 load points  (smoke: [5, 10])
-# Override via env var for parallel experiments: REQ_LOADS=50 or REQ_LOADS=75,100
+
+# Request loads
+# Training:   single load (TRAIN_LOAD, default 100) — model learns on the hardest case
+# Inference:  all 6 loads (or override with REQ_LOADS env var)
+TRAIN_LOAD = int(os.environ.get("TRAIN_LOAD", "100"))
+_INFER_LOADS_DEFAULT = [5, 10, 25, 50, 75, 100]
+
 _req_env = os.environ.get("REQ_LOADS", "")
 if _req_env:
     numOfRequestPerRound = [int(x.strip()) for x in _req_env.split(",")]
+elif INFERENCE_MODE:
+    numOfRequestPerRound = _INFER_LOADS_DEFAULT   # eval on all 6 loads
+else:
+    numOfRequestPerRound = [TRAIN_LOAD]            # train on single hardest load
+
+print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}  "
+      f"ttime={ttime}  step={step}  times={times}  loads={numOfRequestPerRound}")
 # numOfRequestPerRound = [1,2]
 totalRequest = [10, 20, 30, 40, 50]
 numOfNodes = [49 , 64 , 81 , 100 ]
