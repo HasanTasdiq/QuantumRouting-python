@@ -31,10 +31,11 @@ from REPS_rep import REPSREP
 # from SEE2 import SEE2
 
 # from DQRL import QuRA_DQRL
-from DQRL_dist1 import QuRA_DQRL_DIST          # QuRA-Seq (distributed)
-from DQRL_Flock_dist import QuRA_Flock_DIST     # QuRA-Flock (distributed)
-from DQRL_Guard_dist import QuRA_Guard_DIST     # QuRA-Guard (distributed)
-from DQRL_Hive_dist import QuRA_Hive_DIST       # QuRA-Hive (distributed QMIX)
+from DQRL_dist1_pt import QuRA_DQRL_DIST        # QuRA-Seq (PyTorch, distributed)
+from DQRL_dist2_pt import QuRA_Flock_DIST       # QuRA-Flock (PyTorch, distributed)
+from DQRL_dist3_pt import QuRA_Guard_DIST       # QuRA-Guard (PyTorch, distributed)
+from DQRL_dist4_pt import QuRA_Hive_DIST        # QuRA-Hive (PyTorch, distributed QMIX)
+from RELiQ_Adapter import RELiQ_Adapter         # RELiQ baseline
 # from Schedule import SCHEDULEGREEDY
 # from ScheduleRoute import SCHEDULEROUTEGREEDY
 
@@ -345,6 +346,7 @@ def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_,
     algorithms.append(QuRA_Flock_DIST(copy.deepcopy(topo), name='QuRA_Flock_DIST'))
     algorithms.append(QuRA_Guard_DIST(copy.deepcopy(topo), name='QuRA_Guard_DIST'))
     algorithms.append(QuRA_Hive_DIST(copy.deepcopy(topo), name='QuRA_Hive_DIST'))
+    algorithms.append(RELiQ_Adapter(copy.deepcopy(topo), name='RELiQ'))
 
 
     gc.collect()
