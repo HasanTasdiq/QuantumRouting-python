@@ -4,3 +4,9 @@ pdf/
 __pycache__
 status.txt
 *.keras
+.DS_Store
+*.pdf
+src/rl/DQRL_dist_*/
+/tmp/
+*.log
+.claude/
