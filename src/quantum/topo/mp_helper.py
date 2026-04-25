@@ -15,7 +15,8 @@ from gurobipy import GRB
 import random
 
 # mpredis = redis.Redis()
-mpredis = redis.Redis(host='localhost', port=6379, db=0)
+mpredis = redis.Redis(host='localhost', port=6379,
+                      db=int(os.environ.get("REDIS_DB", "0")))
 lock1 = None
 agent_lock = None
 reward_lock = None

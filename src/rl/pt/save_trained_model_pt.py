@@ -7,14 +7,15 @@ Called at the end of training phase in smoke_test.sh / deploy_full.sh.
 import os, sys
 
 _rl_pt_dir = os.path.dirname(os.path.abspath(__file__))
-if _rl_pt_dir not in sys.path:
-    sys.path.insert(0, _rl_pt_dir)
+_rl_dir    = os.path.dirname(_rl_pt_dir)
+if _rl_pt_dir not in sys.path: sys.path.insert(0, _rl_pt_dir)
+if _rl_dir    not in sys.path: sys.path.insert(0, _rl_dir)
 
-from agent    import DQRLAgentDist
+from pt.agent import DQRLAgentDist
 from redis_io import get_redis, load_model_from_redis, save_model_to_disk, \
-                      MODEL_SAVE_PATH, GLOBAL_MODEL_NAME as _DEFAULT_NAME
+                      MODEL_SAVE_PATH
 
-GLOBAL_MODEL_NAME = os.environ.get("GLOBAL_MODEL_NAME", _DEFAULT_NAME)
+GLOBAL_MODEL_NAME = os.environ.get("GLOBAL_MODEL_NAME", "dqrl_model")
 
 def main():
     r = get_redis()

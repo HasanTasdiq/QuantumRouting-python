@@ -43,7 +43,7 @@ _rl_dir    = os.path.dirname(_rl_pt_dir)
 if _rl_dir    not in sys.path: sys.path.insert(0, _rl_dir)
 if _rl_pt_dir not in sys.path: sys.path.insert(0, _rl_pt_dir)
 
-from agent   import DQRLAgentDist
+from pt.agent import DQRLAgentDist
 from helpers import (
     get_request_embeddings, apply_request_attention,
     get_neighbor_embeddings, apply_neighbor_attention,
@@ -68,9 +68,10 @@ AGG_INTERVAL_S    = int(os.environ.get("AGG_INTERVAL_S", "30"))
 TRAINING_MODE     = os.environ.get("TRAINING_MODE", "paper")
 
 # Training steps between replay calls
-STEP_BETWEEN_TRAIN = 5 if TRAINING_MODE == "smoke" else 200
+STEP_BETWEEN_TRAIN = 5   if TRAINING_MODE in ("smoke", "mid") else 200
 # How many replay steps before pushing worker weights to Redis for FedAvg
-FEDAVG_PUSH_EVERY  = 50 if TRAINING_MODE == "smoke" else 500
+FEDAVG_PUSH_EVERY  = 20  if TRAINING_MODE == "mid"   else \
+                     50  if TRAINING_MODE == "smoke"  else 500
 
 IS_PREDICT_SERVER = (WORKER_ID == -1)
 
@@ -87,6 +88,7 @@ _attn_lock = asyncio.Lock()
 _train_step_counter: int = 0
 _replay_call_counter: int = 0
 _loss_history: List[float] = []
+_replay_lock = asyncio.Lock()   # serialise backward passes (prevents graph corruption)
 
 
 # ── Pydantic models ──────────────────────────────────────────────────────────
@@ -278,8 +280,9 @@ def _process_transitions(action_ids: List[str]) -> int:
     """
     Read action tuples from Redis, push to replay buffer.
     Action tuple format (set by DQRL_dist1.py route_schedule_single2):
-      [index, curr_node_id, next_node_id, curr_state, done_episode,
-       timeSlot, reward, (ent_matrix, req_matrix), dist_matrix, a_id]
+      [index, curr_node_id, next_node_id, (ent_m, req_m), done_episode,
+       timeSlot, reward, (ent_m_next, req_m_next), dist_matrix, a_id]
+    data[3] and data[7] are both (ent_matrix, req_matrix) tuples, not flat arrays.
     """
     pushed = 0
     for action_id in action_ids:
@@ -288,22 +291,28 @@ def _process_transitions(action_ids: List[str]) -> int:
             continue
         try:
             data = pickle.loads(raw)
-            req_idx    = int(data[0])
-            next_node  = int(data[2])           # action = next node id
-            curr_state = np.array(data[3], dtype=np.float32)
-            done       = bool(data[4])
-            reward     = float(data[6])
+            req_idx   = int(data[0])
+            next_node = int(data[2])
+            done      = bool(data[4])
+            reward    = float(data[6])
+            dist_m    = data[8]
 
-            # Reconstruct next state from saved matrices
+            # Reconstruct curr_state from matrices stored at data[3]
+            ent_m_curr, req_m_curr = data[3]
+            curr_req_curr = req_m_curr[req_idx][:6]
+            curr_req_curr[3] = req_m_curr[req_idx + len(req_m_curr) // 2]
+            curr_state = schedule_routing_state_dist(
+                curr_req_curr, ent_m_curr, req_m_curr, dist_m)
+
+            # Reconstruct next_state from matrices stored at data[7]
             try:
-                ent_m, req_m = data[7]
-                dist_m       = data[8]
-                curr_req     = req_m[req_idx][:6]
-                curr_req[3]  = req_m[req_idx + len(req_m) // 2]
-                next_state   = schedule_routing_state_dist(
-                    curr_req, ent_m, req_m, dist_m)
+                ent_m_next, req_m_next = data[7]
+                curr_req_next = req_m_next[req_idx][:6]
+                curr_req_next[3] = req_m_next[req_idx + len(req_m_next) // 2]
+                next_state = schedule_routing_state_dist(
+                    curr_req_next, ent_m_next, req_m_next, dist_m)
             except Exception:
-                next_state = curr_state   # fallback
+                next_state = curr_state
 
             agent.remember(curr_state, next_node, reward, next_state, done)
             pushed += 1
@@ -325,7 +334,8 @@ async def update_reward(data: UpdateRewardRequest):
     loss: Optional[float] = None
     if _train_step_counter >= STEP_BETWEEN_TRAIN:
         _train_step_counter = 0
-        loss = await asyncio.to_thread(agent.replay)
+        async with _replay_lock:
+            loss = await asyncio.to_thread(agent.replay)
         if loss is not None:
             _loss_history.append(loss)
             _replay_call_counter += 1
@@ -335,9 +345,12 @@ async def update_reward(data: UpdateRewardRequest):
 
         # Push worker model to Redis for FedAvg
         if not IS_PREDICT_SERVER and _replay_call_counter % FEDAVG_PUSH_EVERY == 0:
+            print(f"[worker{WORKER_ID}] pushing weights to Redis "
+                  f"(replay#{_replay_call_counter}, every {FEDAVG_PUSH_EVERY})")
             await asyncio.to_thread(
                 save_worker_model_to_redis, agent.model, WORKER_ID,
                 GLOBAL_MODEL_NAME, _r)
+            print(f"[worker{WORKER_ID}] weights pushed ok")
 
     return {"status": "ok", "pushed": pushed, "loss": loss}
 
@@ -414,7 +427,10 @@ async def startup_event():
     agent = DQRLAgentDist()
     role  = "PREDICT" if IS_PREDICT_SERVER else f"WORKER-{WORKER_ID}"
     mode  = "INFERENCE" if INFERENCE_MODE else "TRAINING"
-    print(f"[PT server PID {os.getpid()}] {role} ({mode}) initializing...")
+    print(f"[PT server PID {os.getpid()}] {role} ({mode}) initializing... "
+          f"TRAINING_MODE={TRAINING_MODE} "
+          f"FEDAVG_PUSH_EVERY={FEDAVG_PUSH_EVERY} "
+          f"STEP_BETWEEN_TRAIN={STEP_BETWEEN_TRAIN}")
 
     if INFERENCE_MODE:
         loaded = load_model_from_disk(agent.model)
