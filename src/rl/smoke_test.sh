@@ -32,18 +32,26 @@ PID_DIR="${LOG_DIR}/pids"
 PYTHON="${PYTHON:-python3}"
 MODE="${1:-all}"
 
-# ── Smoke config ──────────────────────────────────────────────────────────────
-NUM_WORKERS=2
-TRAIN_LOAD=10
-TTIME=50
-STEP=5
-TIMES=2
-INFER_LOADS="5,10,25"
-PREDICT_PORT=8080
-BASE_WORKER_PORT=8000
-REDIS_DB=1                      # DB=1 keeps smoke isolated from paper run (DB=0)
-AGG_INTERVAL_S=10
-TRAINING_MODE=smoke
+# ── Config — override any of these via env before calling the script ──────────
+# Quick smoke (default):
+#   bash smoke_test.sh
+# Medium run (~10 min on a server):
+#   NUM_WORKERS=4 TRAIN_LOAD=50 TTIME=2000 STEP=200 TIMES=3 \
+#   TRAINING_MODE=mid RELIQ_STEPS=50000 bash smoke_test.sh
+# Full-scale (mirrors deploy_full.sh):
+#   see deploy_full.sh
+NUM_WORKERS="${NUM_WORKERS:-2}"
+TRAIN_LOAD="${TRAIN_LOAD:-10}"
+TTIME="${TTIME:-50}"
+STEP="${STEP:-5}"
+TIMES="${TIMES:-2}"
+INFER_LOADS="${INFER_LOADS:-5,10,25}"
+PREDICT_PORT="${PREDICT_PORT:-8080}"
+BASE_WORKER_PORT="${BASE_WORKER_PORT:-8000}"
+REDIS_DB="${REDIS_DB:-1}"        # DB=1 keeps smoke isolated from paper run (DB=0)
+AGG_INTERVAL_S="${AGG_INTERVAL_S:-10}"
+TRAINING_MODE="${TRAINING_MODE:-smoke}"
+RELIQ_STEPS="${RELIQ_STEPS:-5000}"
 
 BASE_ENV="REDIS_DB=${REDIS_DB} \
 BASE_WORKER_PORT=${BASE_WORKER_PORT} \
@@ -136,18 +144,31 @@ verify_results() {
         done
     done
 
-    # Check learning happened: loss should be non-zero after training
+    # Check learning happened on EVERY worker: each algo round-robins to its
+    # own worker, so all NUM_WORKERS logs must show replay steps.
     echo ""
-    local worker0_log="${LOG_DIR}/worker0.log"
-    if [[ -f "$worker0_log" ]]; then
-        local replay_lines; replay_lines=$(grep -c "replay#" "$worker0_log" 2>/dev/null || true)
+    for (( wid=0; wid<NUM_WORKERS; wid++ )); do
+        local wlog="${LOG_DIR}/worker${wid}.log"
+        if [[ ! -f "$wlog" ]]; then
+            echo "  [WARN]    Worker-${wid} log missing"
+            continue
+        fi
+        local replay_lines; replay_lines=$(grep -c "replay#" "$wlog" 2>/dev/null || echo 0)
         if (( replay_lines > 0 )); then
-            echo "  [PASS]    Worker-0 ran ${replay_lines} replay steps (learning confirmed)"
+            echo "  [PASS]    Worker-${wid} ran ${replay_lines} QMIX replay steps"
             (( ok++ )) || true
         else
-            echo "  [WARN]    Worker-0 log shows no replay steps — training may not have fired"
-            echo "            (buffer needs ${MIN_REPLAY_SIZE:-20} samples before first replay)"
+            echo "  [WARN]    Worker-${wid} log shows no replay steps — training may not have fired"
         fi
+    done
+
+    # RELiQ baseline checkpoint
+    local reliq_model="${SCRIPT_DIR}/../../runs_quantum/RELiQ_QuRAPhysics/model.pt"
+    if [[ -f "$reliq_model" ]]; then
+        echo "  [PASS]    RELiQ checkpoint present at ${reliq_model}"
+        (( ok++ )) || true
+    else
+        echo "  [WARN]    RELiQ checkpoint missing — adapter ran in greedy fallback"
     fi
 
     echo ""
@@ -224,6 +245,22 @@ if [[ "$MODE" == "all" || "$MODE" == "train" ]]; then
     env $BASE_ENV "${PYTHON}" -u "${PT_DIR}/save_trained_model_pt.py" \
         > "$save_log" 2>&1 || true
     cat "$save_log"
+
+    # Train (or skip if already present) the RELiQ baseline.
+    RELIQ_MODEL="${SCRIPT_DIR}/../../runs_quantum/RELiQ_QuRAPhysics/model.pt"
+    if [[ -f "${RELIQ_MODEL}" ]]; then
+        log "  RELiQ checkpoint already at ${RELIQ_MODEL} — skipping smoke RELiQ train"
+    else
+        rlog="${LOG_DIR}/reliq_train.log"; > "$rlog"
+        log "  Training RELiQ baseline (${RELIQ_STEPS} steps) — see ${rlog}"
+        ( cd "${SCRIPT_DIR}/../.." && \
+          "${PYTHON}" -u -m src.reliq.train \
+            --total-steps "${RELIQ_STEPS}" \
+            --output-dir runs_quantum \
+            --device cpu \
+            --comment RELiQ_QuRAPhysics ) > "$rlog" 2>&1 || \
+          log "  WARNING: RELiQ smoke train failed — adapter will run greedy fallback."
+    fi
 fi
 
 # =============================================================================

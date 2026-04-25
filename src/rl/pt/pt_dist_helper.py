@@ -22,8 +22,16 @@ INFERENCE_MODE = os.environ.get("INFERENCE_MODE", "0") == "1"
 
 TRAINING_MODE = os.environ.get("TRAINING_MODE", "paper")
 
-NUM_TRAINING_WORKERS = 4
+# NUM_WORKERS controls both how many worker servers are launched and how
+# many WORKER_PORTS are available for the round-robin assignment in
+# DQRL_dist1.QuRA_DQRL_DIST. Deploy scripts must pass the same value or
+# round-robin will hit dead ports.
+NUM_TRAINING_WORKERS = int(os.environ.get("NUM_WORKERS", "4"))
 WORKER_PORTS = [BASE_WORKER_PORT + i for i in range(NUM_TRAINING_WORKERS)]
+
+# Sentinel used by DQRL_dist*_pt.py to detect that this TF-free helper is
+# already loaded into sys.modules['dist_agent_helper'] and avoid re-patching.
+_is_pt = True
 
 MODEL_SAVE_PATH  = os.environ.get("MODEL_SAVE_PATH",
                                   "/tmp/qrouting_model/trained_weights_pt.pkl")

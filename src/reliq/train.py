@@ -30,23 +30,33 @@ def main():
     p.add_argument("--comment",      type=str, default="RELiQ_QuRAPhysics")
     args = p.parse_args()
 
+    # NetMon (graph message-passing) is intentionally disabled because the
+    # QuRA adapter at inference time does not have access to the per-node
+    # graph observations / RNN state propagation that NetMon trains against.
+    # A plain DQN over per-request observations gives an inference-compatible
+    # checkpoint and matches the obs format the adapter constructs.
+    #
+    # `--neighbors=6` matches RELiQ_Adapter._NEIGHBOR_COUNT so the per-agent
+    # observation dim (`MAX_REQ + 3 + neighbors*9 = 157`) and action space size
+    # (`neighbors = 6`, no idle with --no-idle-action) line up with inference.
+    step_before = max(1000, min(10000, args.total_steps // 10))
+    step_between = max(50, args.total_steps // 250)
     cmd = [
         sys.executable, "-u",
         os.path.join(_this_dir, "main.py"),
         "--use-future-rewards",
-        "--netmon-agg-type=sage",
         "--no-idle-action",
         "--request-based-observation",
         "--fixed-requests",
         "--action-mask",
         "--disable-progressbar",
         f"--total-steps={args.total_steps}",
-        "--step-between-train=200",
-        "--step-before-train=10000",
-        "--netmon",
+        f"--step-between-train={step_between}",
+        f"--step-before-train={step_before}",
+        "--neighbors=6",
         "--model=dqn",
         f"--device={args.device}",
-        "--capacity=50000",
+        f"--capacity={min(50000, max(2000, args.total_steps // 4))}",
         "--min-path-length=1",
         f"--output-dir={args.output_dir}",
         f"--comment={args.comment}",

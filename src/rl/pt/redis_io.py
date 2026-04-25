@@ -106,9 +106,11 @@ def fedavg_aggregate(num_workers: int = 4,
             buf = io.BytesIO(raw)
             all_states.append(torch.load(buf, map_location="cpu", weights_only=True))
 
-    if len(all_states) < num_workers:
-        print(f"[FedAvg] only {len(all_states)}/{num_workers} worker(s) ready — skipping")
+    if len(all_states) < 2:
+        print(f"[FedAvg] only {len(all_states)}/{num_workers} worker(s) ready — skipping (need >=2)")
         return None
+    if len(all_states) < num_workers:
+        print(f"[FedAvg] proceeding with {len(all_states)}/{num_workers} worker(s) ready")
 
     import torch as _t
     avg = {}

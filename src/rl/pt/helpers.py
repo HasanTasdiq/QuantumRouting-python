@@ -37,17 +37,22 @@ ln_req.eval()
 
 
 # ── epsilon schedule ─────────────────────────────────────────────────────────
-def get_epsilon_linear(timeSlot: int,
-                       eps_start: float = 1.0,
-                       start_decay: int = 3000,
-                       end_decay:   int = 8000) -> float:
+def get_epsilon_linear(timeSlot: int, eps_start: float = 1.0) -> float:
     if os.environ.get("INFERENCE_MODE", "0") == "1":
         return 0.0
+    training_mode = os.environ.get("TRAINING_MODE", "paper")
+    if training_mode == "paper":
+        start_decay, end_decay = 3000, 8000
+    elif training_mode == "mid":
+        start_decay, end_decay = 200, 1500
+    else:   # smoke
+        start_decay, end_decay = 10, 40
     if timeSlot < start_decay:
         return eps_start
     if timeSlot >= end_decay:
         return 0.0
-    return max(0.0, eps_start - eps_start * (timeSlot / end_decay))
+    ratio = (timeSlot - start_decay) / (end_decay - start_decay)
+    return max(0.0, eps_start * (1.0 - ratio))
 
 
 # ── Request embeddings ────────────────────────────────────────────────────────

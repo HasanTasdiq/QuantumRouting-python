@@ -26,6 +26,7 @@ import gc
 import os
 import pickle
 import time
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Optional
 
@@ -43,7 +44,10 @@ _rl_dir    = os.path.dirname(_rl_pt_dir)
 if _rl_dir    not in sys.path: sys.path.insert(0, _rl_dir)
 if _rl_pt_dir not in sys.path: sys.path.insert(0, _rl_pt_dir)
 
-from pt.agent import DQRLAgentDist
+from pt.agent import (
+    DQRLAgentDist,
+    REWARD_LAMBDA, REWARD_MU, REWARD_NU,
+)
 from helpers import (
     get_request_embeddings, apply_request_attention,
     get_neighbor_embeddings, apply_neighbor_attention,
@@ -276,15 +280,24 @@ async def call_learn_and_predict_batch(data: BatchPredictRequest):
 
 
 # ── Training receiver (/update_reward) ──────────────────────────────────────
-def _process_transitions(action_ids: List[str]) -> int:
+def _process_transitions(action_ids: List[str], num_success_req: int) -> int:
     """
-    Read action tuples from Redis, push to replay buffer.
+    Read action tuples from Redis, group by a_id (per-hop index) within this
+    timeslot batch, apply paper Eq. 9 reward shaping, and push one joint
+    transition per a_id into the QMIX episode buffer.
+
     Action tuple format (set by DQRL_dist1.py route_schedule_single2):
       [index, curr_node_id, next_node_id, (ent_m, req_m), done_episode,
        timeSlot, reward, (ent_m_next, req_m_next), dist_matrix, a_id]
-    data[3] and data[7] are both (ent_matrix, req_matrix) tuples, not flat arrays.
+    data[3] and data[7] are both (ent_matrix, req_matrix) tuples.
+
+    Mirrors DQRLAgentDist_API.update_reward() so all four QuRA variants
+    (Seq/Flock/Guard/Hive) train via the same QMIX pipeline as the original
+    TF implementation.
     """
-    pushed = 0
+    # Stage 1: parse all entries and reconstruct states.
+    parsed = []   # list of (a_id, curr_state, next_node, reward, next_state,
+                  #          global_state, next_global_state, done)
     for action_id in action_ids:
         raw = _r.get(f"action_{action_id}")
         if raw is None:
@@ -296,6 +309,7 @@ def _process_transitions(action_ids: List[str]) -> int:
             done      = bool(data[4])
             reward    = float(data[6])
             dist_m    = data[8]
+            a_id      = int(data[9])
 
             # Reconstruct curr_state from matrices stored at data[3]
             ent_m_curr, req_m_curr = data[3]
@@ -303,6 +317,7 @@ def _process_transitions(action_ids: List[str]) -> int:
             curr_req_curr[3] = req_m_curr[req_idx + len(req_m_curr) // 2]
             curr_state = schedule_routing_state_dist(
                 curr_req_curr, ent_m_curr, req_m_curr, dist_m)
+            global_state = get_global_state_vector(ent_m_curr, req_m_curr)
 
             # Reconstruct next_state from matrices stored at data[7]
             try:
@@ -311,13 +326,50 @@ def _process_transitions(action_ids: List[str]) -> int:
                 curr_req_next[3] = req_m_next[req_idx + len(req_m_next) // 2]
                 next_state = schedule_routing_state_dist(
                     curr_req_next, ent_m_next, req_m_next, dist_m)
+                next_global_state = get_global_state_vector(
+                    ent_m_next, req_m_next)
             except Exception:
                 next_state = curr_state
+                next_global_state = global_state
 
-            agent.remember(curr_state, next_node, reward, next_state, done)
-            pushed += 1
+            parsed.append((a_id, curr_state, next_node, reward, next_state,
+                           global_state, next_global_state, done))
         except Exception:
             import traceback; traceback.print_exc()
+
+    if not parsed:
+        return 0
+
+    # Stage 2: average-fidelity proxy per paper Eq. 9.
+    n_success = sum(1 for p in parsed if p[3] >= 10)
+    avg_fidelity = n_success / max(len(parsed), 1)
+
+    # Stage 3: group by a_id and push one joint transition per group.
+    groups = defaultdict(list)
+    for entry in parsed:
+        groups[entry[0]].append(entry)
+
+    pushed = 0
+    for a_id, entries in groups.items():
+        ts_states, ts_actions, ts_rewards, ts_next_states = [], [], [], []
+        gs, ngs = None, None
+        for (_, curr_state, next_node, reward, next_state,
+             global_state, next_global_state, _done) in entries:
+            ts_states.append(curr_state)
+            ts_actions.append(next_node)
+            scaled = (reward * REWARD_LAMBDA
+                      + num_success_req * REWARD_MU
+                      + avg_fidelity * REWARD_NU)
+            ts_rewards.append(scaled)
+            ts_next_states.append(next_state)
+            if gs is None:
+                gs = global_state
+            ngs = next_global_state
+        agent.push_qmix_transition(
+            ts_states, ts_actions, ts_rewards, ts_next_states,
+            gs, ngs, False)
+        pushed += 1
+
     return pushed
 
 
@@ -328,20 +380,21 @@ async def update_reward(data: UpdateRewardRequest):
     if INFERENCE_MODE:
         return {"status": "inference_mode"}
 
-    pushed = await asyncio.to_thread(_process_transitions, data.actionIds)
+    pushed = await asyncio.to_thread(
+        _process_transitions, data.actionIds, int(data.successfulRequest))
     _train_step_counter += pushed
 
     loss: Optional[float] = None
     if _train_step_counter >= STEP_BETWEEN_TRAIN:
         _train_step_counter = 0
         async with _replay_lock:
-            loss = await asyncio.to_thread(agent.replay)
+            loss = await asyncio.to_thread(agent.qmix_train_step)
         if loss is not None:
             _loss_history.append(loss)
             _replay_call_counter += 1
             print(f"[worker{WORKER_ID}] ts={data.timeSlot}"
                   f"  replay#{_replay_call_counter}  loss={loss:.5f}"
-                  f"  buf={len(agent.single_replay)}")
+                  f"  qmix_buf={len(agent.qmix_replay)}")
 
         # Push worker model to Redis for FedAvg
         if not IS_PREDICT_SERVER and _replay_call_counter % FEDAVG_PUSH_EVERY == 0:
@@ -361,7 +414,7 @@ def health():
     return {
         "status":    "ok",
         "worker_id": WORKER_ID,
-        "buf_size":  len(agent.single_replay) if agent else 0,
+        "qmix_buf":  len(agent.qmix_replay) if agent else 0,
         "replays":   _replay_call_counter,
     }
 
@@ -405,7 +458,10 @@ async def _fedavg_loop():
 
 # ── Background global model sync (workers) ───────────────────────────────────
 async def _sync_global_loop():
-    """Workers periodically pull the FedAvg global model."""
+    """Workers periodically pull the FedAvg global model.
+    Mixer params are local to each worker (FedAvg only averages the agent
+    network), so target_mixer is re-synced from the local mixer to keep the
+    target chain consistent after the agent net is overwritten."""
     await asyncio.sleep(AGG_INTERVAL_S * 2)
     while True:
         try:
@@ -413,6 +469,7 @@ async def _sync_global_loop():
                 load_model_from_redis, agent.model, GLOBAL_MODEL_NAME, _r)
             if version:
                 agent.target_model.load_state_dict(agent.model.state_dict())
+                agent.target_mixer.load_state_dict(agent.mixer.state_dict())
                 print(f"[worker{WORKER_ID}] synced global model v{version}")
         except Exception as e:
             print(f"[worker{WORKER_ID}] sync error: {e}")

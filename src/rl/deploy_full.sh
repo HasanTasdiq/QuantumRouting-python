@@ -51,9 +51,14 @@ CORES_PER_WORKER=$(( TOTAL_CORES / (NUM_WORKERS + 4) ))
 CORES_PER_WORKER=$(( CORES_PER_WORKER < 2 ? 2 : CORES_PER_WORKER ))
 
 PT_SERVER="${SCRIPT_DIR}/pt/server.py"
+SAVE_MODEL_SCRIPT="${SCRIPT_DIR}/pt/save_trained_model_pt.py"
+RELIQ_TRAIN_STEPS="${RELIQ_TRAIN_STEPS:-200000}"
 
 BASE_ENV="REDIS_DB=${REDIS_DB} BASE_WORKER_PORT=${BASE_WORKER_PORT} \
 PREDICT_PORT=${PREDICT_PORT} \
+NUM_WORKERS=${NUM_WORKERS} \
+AGG_INTERVAL_S=${AGG_INTERVAL} \
+TRAINING_MODE=paper \
 TTIME=${TTIME} STEP=${STEP} TIMES=${TIMES}"
 
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
@@ -93,7 +98,6 @@ wait_for_log() {
 stop_all() {
     log "Stopping all processes..."
     kill_by_pid_file "${PID_DIR}/run_train.pid"
-    kill_by_pid_file "${PID_DIR}/aggregator.pid"
     kill_by_pid_file "${PID_DIR}/predict.pid"
     for (( wid=0; wid<NUM_WORKERS; wid++ )); do
         kill_by_pid_file "${PID_DIR}/worker${wid}.pid"
@@ -102,9 +106,6 @@ stop_all() {
         kill_by_pid_file "${PID_DIR}/run_infer_req${load}.pid"
     done
     pkill -f "pt/server.py"             2>/dev/null || true
-    pkill -f "dist_agent_aggregator.py" 2>/dev/null || true
-    pkill -f "dist_agent_predict.py"    2>/dev/null || true
-    pkill -f "dist_agent.py"            2>/dev/null || true
     pkill -f "Run.py"                   2>/dev/null || true
     sleep 2; log "Done."
 }
@@ -197,12 +198,9 @@ if [[ "$MODE" == "all" || "$MODE" == "train" ]]; then
     wait_for_log "$plog" "Application startup complete" 180 "Predict server"
     log "  Predict server ready (training mode)"
 
-    # Start FedAvg aggregator
-    alog="${LOG_BASE}/aggregator.log"; > "$alog"
-    env $BASE_ENV NUM_WORKERS=${NUM_WORKERS} AGGREGATION_EVERY_S=${AGG_INTERVAL} \
-        nohup "${PYTHON}" -u "${SCRIPT_DIR}/dist_agent_aggregator.py" > "$alog" 2>&1 &
-    echo $! > "${PID_DIR}/aggregator.pid"
-    log "  Aggregator started (FedAvg every ${AGG_INTERVAL}s)"
+    # FedAvg aggregation runs inside the predict server's _fedavg_loop, so no
+    # standalone aggregator is needed (the legacy dist_agent_aggregator.py
+    # imports TF and would race the in-process loop).
 
     # Run training (blocks until complete)
     rlog="${LOG_BASE}/run_train.log"; > "$rlog"
@@ -216,8 +214,7 @@ if [[ "$MODE" == "all" || "$MODE" == "train" ]]; then
     wait_for_log "$rlog" "EXIT" $(( TTIME * 60 )) "Training run"
     log "  Training complete"
 
-    # Stop aggregator and workers (no longer needed)
-    kill_by_pid_file "${PID_DIR}/aggregator.pid"
+    # Stop workers (no longer needed after Run.py exited)
     for (( wid=0; wid<NUM_WORKERS; wid++ )); do
         kill_by_pid_file "${PID_DIR}/worker${wid}.pid"
     done
@@ -225,10 +222,27 @@ if [[ "$MODE" == "all" || "$MODE" == "train" ]]; then
     kill_by_pid_file "${PID_DIR}/predict.pid"
     sleep 2
 
-    # Persist final model from Redis to disk
+    # Persist final model from Redis to disk (PyTorch path)
     log "  Saving trained model to disk..."
     env $BASE_ENV PYTHONPATH="${SCRIPT_DIR}" \
-        "${PYTHON}" -u "${SCRIPT_DIR}/save_trained_model.py" | tee "${LOG_BASE}/save_model.log"
+        "${PYTHON}" -u "${SAVE_MODEL_SCRIPT}" | tee "${LOG_BASE}/save_model.log"
+
+    # Train the RELiQ baseline (standalone — no Redis / FedAvg involved).
+    # Only train if a checkpoint isn't already present, so re-runs are cheap.
+    RELIQ_MODEL="${SCRIPT_DIR}/../../runs_quantum/RELiQ_QuRAPhysics/model.pt"
+    if [[ -f "${RELIQ_MODEL}" ]]; then
+        log "  RELiQ model already at ${RELIQ_MODEL} — skipping training"
+    else
+        rlog="${LOG_BASE}/reliq_train.log"; > "$rlog"
+        log "  Training RELiQ baseline (${RELIQ_TRAIN_STEPS} steps) — see ${rlog}"
+        ( cd "${SCRIPT_DIR}/../.." && \
+          "${PYTHON}" -u -m src.reliq.train \
+            --total-steps "${RELIQ_TRAIN_STEPS}" \
+            --output-dir runs_quantum \
+            --device cpu \
+            --comment RELiQ_QuRAPhysics ) > "$rlog" 2>&1 || \
+          log "  WARNING: RELiQ training failed — adapter will fall back to greedy."
+    fi
 fi
 
 # =============================================================================

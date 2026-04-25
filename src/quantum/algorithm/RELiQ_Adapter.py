@@ -10,15 +10,12 @@ p4() is overridden to use RELiQ's trained DQN for per-request routing decisions.
 Physics: QuRA's Werner swap model is patched into RELiQ's QuantumLink at import
 time (via entanglement_lifetime=10 and Werner formula — see quantum_network.py).
 
-Observation format built here matches --request-based-observation --netmon
---netmon-agg-type=sage training used in src/reliq/train.py.
+Observation format matches --request-based-observation --no-idle-action
+--neighbors=6 training in src/reliq/train.py (plain DQN, no NetMon).
 """
 
 import os
 import sys
-import json
-import copy
-import random
 
 import numpy as np
 
@@ -26,22 +23,28 @@ import numpy as np
 _algo_dir = os.path.dirname(os.path.abspath(__file__))
 _src_dir  = os.path.dirname(_algo_dir)
 for _p in [_algo_dir, _src_dir,
-           os.path.join(_src_dir, 'reliq'),
-           os.path.join(_algo_dir, '..', '..', 'rl', 'pt')]:
+           os.path.join(_src_dir, 'reliq')]:
     _ap = os.path.abspath(_p)
     if _ap not in sys.path:
         sys.path.insert(0, _ap)
 
 from AlgorithmBase import AlgorithmBase, AlgorithmResult
 
+# ── Default model path (absolute, relative to this file) ─────────────────────
+_adapter_dir  = os.path.dirname(os.path.abspath(__file__))   # src/quantum/algorithm
+_project_root = os.path.normpath(os.path.join(_adapter_dir, '../../..'))
+_DEFAULT_MODEL_PATH = os.path.join(
+    _project_root, 'runs_quantum', 'RELiQ_QuRAPhysics', 'model.pt'
+)
+
 # ── Obs constants (must match training config in src/reliq/train.py) ──────────
-_MAX_REQUESTS  = int(os.environ.get("MAX_REQUESTS",  "100"))
+_MAX_REQUESTS   = int(os.environ.get("MAX_REQUESTS",   "100"))
 _NEIGHBOR_COUNT = int(os.environ.get("NEIGHBOR_COUNT", "6"))
-# per-neighbor features: swap_prob + avail_links + top_fidelity + one_hot(dest_state,6)
-_NEIGH_FEAT   = 9
+# per-neighbor features: swap_prob + avail_links + top_fidelity + one_hot(dest_state, 6)
+_NEIGH_FEAT = 9
 # base features: one_hot(id, MAX_REQ) + link_fid + path_len + n_ent_at_target
-_BASE_FEAT    = _MAX_REQUESTS + 3
-_OBS_SIZE     = _BASE_FEAT + _NEIGHBOR_COUNT * _NEIGH_FEAT  # per-request feature dim
+_BASE_FEAT  = _MAX_REQUESTS + 3
+_OBS_SIZE   = _BASE_FEAT + _NEIGHBOR_COUNT * _NEIGH_FEAT
 
 
 def _one_hot(idx: int, size: int) -> list:
@@ -77,83 +80,76 @@ class RELiQ_Adapter(AlgorithmBase):
 
     def __init__(self, topo, param=None,
                  name='RELiQ',
-                 model_path='runs_quantum/RELiQ_QuRAPhysics/model.pt'):
+                 model_path=None):
         super().__init__(topo)
         self.name  = name
-        self.requests      = []
-        self.totalRequest  = 0
+        self.requests         = []
+        self.totalRequest     = 0
         self.totalWaitingTime = 0
-        self.totalUsedQubits = 0
+        self.totalUsedQubits  = 0
 
-        self._policy = None
-        self._model_path = model_path
+        self._policy    = None
+        self._model_path = model_path if model_path is not None else _DEFAULT_MODEL_PATH
         self._load_policy()
 
     # ── Model loading ─────────────────────────────────────────────────────────
     def _load_policy(self):
         import torch
+        import torch.nn as nn
 
         if not os.path.exists(self._model_path):
             print(f"[RELiQ_Adapter] WARNING: no model at {self._model_path}"
                   " — using greedy-fidelity fallback.")
             return
 
-        # Load args saved alongside the model (args.json in same dir)
-        args_path = os.path.join(os.path.dirname(self._model_path), "args.json")
-        model_args = {}
-        if os.path.exists(args_path):
-            with open(args_path) as f:
-                model_args = json.load(f)
-
         try:
-            from reliq.model import DQN, NetMon
-            import torch.nn as nn
+            from reliq.model import DQN
 
-            # Reconstruct model from saved checkpoint
             checkpoint = torch.load(self._model_path, map_location="cpu",
                                     weights_only=False)
 
-            # Detect model type and rebuild
-            if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
-                state_dict = checkpoint["model_state_dict"]
-                arch = checkpoint.get("arch", "netmon")
+            # Checkpoint format from reliq/util.py get_state_dict:
+            #   {"type": "DQN", "state_dict": model.state_dict(), "args": args_dict}
+            if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+                state_dict  = checkpoint["state_dict"]
+                model_type  = checkpoint.get("type", "DQN")
+                if model_type != "DQN":
+                    print(f"[RELiQ_Adapter] WARNING: checkpoint type is '{model_type}', "
+                          f"expected 'DQN' — attempting DQN load anyway.")
             else:
+                # Bare state_dict (legacy plain torch.save(model.state_dict(), ...))
                 state_dict = checkpoint
-                arch = model_args.get("model", "dqn")
 
-            # Build model with matching dimensions
-            in_feats  = model_args.get("in_features",  _OBS_SIZE)
-            n_actions = model_args.get("num_actions",  _NEIGHBOR_COUNT)
-            hidden    = model_args.get("hidden",        64)
+            # Infer architecture from weight shapes rather than relying on saved args.
+            # This is robust across different training runs.
+            enc_weight_keys = sorted(
+                k for k in state_dict if "encoder.linear_layers" in k and k.endswith(".weight")
+            )
+            in_feats  = state_dict[enc_weight_keys[0]].shape[1] if enc_weight_keys else _OBS_SIZE
+            mlp_units = tuple(state_dict[k].shape[0] for k in enc_weight_keys)
+            q_key     = next((k for k in state_dict if "q_net.fc.weight" in k), None)
+            n_actions = state_dict[q_key].shape[0] if q_key else _NEIGHBOR_COUNT
 
-            if arch == "netmon" or "netmon" in arch:
-                agg_type   = model_args.get("netmon_agg_type", "sage")
-                iterations = model_args.get("netmon_iterations", 2)
-                model = NetMon(
-                    in_features=in_feats,
-                    hidden_features=hidden,
-                    encoder_units=(hidden,),
-                    iterations=iterations,
-                    activation_fn=nn.ReLU(),
-                    rnn_type="none",
-                    agg_type=agg_type,
-                )
-            else:
-                mlp_units = model_args.get("mlp_units", (hidden, hidden))
-                model = DQN(
-                    in_features=in_feats,
-                    mlp_units=mlp_units,
-                    num_actions=n_actions,
-                    activation_fn=nn.ReLU(),
-                )
+            if in_feats != _OBS_SIZE:
+                print(f"[RELiQ_Adapter] WARNING: checkpoint in_features={in_feats}, "
+                      f"expected {_OBS_SIZE}. Obs mismatch — results may be noisy.")
 
-            # Load weights (ignore missing/unexpected keys gracefully)
+            model = DQN(
+                in_features=in_feats,
+                mlp_units=mlp_units,
+                num_actions=n_actions,
+                activation_fn=nn.ReLU(),
+            )
             missing, unexpected = model.load_state_dict(state_dict, strict=False)
             if missing:
-                print(f"[RELiQ_Adapter] missing keys: {missing[:3]}...")
+                print(f"[RELiQ_Adapter] missing keys ({len(missing)}): {missing[:3]}")
+            if unexpected:
+                print(f"[RELiQ_Adapter] unexpected keys ({len(unexpected)}): {unexpected[:3]}")
             model.eval()
-            self._policy = model
-            print(f"[RELiQ_Adapter] loaded policy from {self._model_path}")
+            self._policy   = model
+            self._n_actions = n_actions
+            print(f"[RELiQ_Adapter] loaded DQN({in_feats}→{mlp_units}→{n_actions})"
+                  f" from {self._model_path}")
 
         except Exception as e:
             import traceback; traceback.print_exc()
@@ -161,21 +157,18 @@ class RELiQ_Adapter(AlgorithmBase):
             self._policy = None
 
     # ── Observation construction ──────────────────────────────────────────────
-    def _build_obs(self, req_idx: int) -> np.ndarray:
+    def _build_obs(self, req_idx: int, ent_matrix: np.ndarray) -> np.ndarray:
         """
         Build per-request observation matching --request-based-observation format.
         Returns float32 array of shape (_OBS_SIZE,).
+        ent_matrix must be the shared, already-decremented matrix from p4().
         """
-        req   = self.requestState[req_idx]
-        src   = req[0]          # Node object
-        dst   = req[1]          # Node object
-        curr_id = int(req[2])   # current node id
-        path  = req[3]          # tuple of visited node ids
-        done  = req[5]
-
-        visited = set(path)
-        start_id = src.id
-        target_id = dst.id
+        req      = self.requestState[req_idx]
+        curr_id  = int(req[2])
+        path     = req[3]
+        target_id = req[1].id
+        start_id  = req[0].id
+        visited   = set(path)
 
         ob = []
 
@@ -185,31 +178,28 @@ class RELiQ_Adapter(AlgorithmBase):
         # 2. Current link fidelity (1.0 at beginning of hop)
         ob.append(1.0)
 
-        # 3. Path hops completed (normalised by TTL)
+        # 3. Path hops completed
         ob.append(float(len(path) - 1))
 
-        # 4. Entanglements at target (approximation from ent_matrix)
-        ent_matrix = self.get_ent_graph_matrix()
-        n_ent_target = int(ent_matrix[target_id].sum())
-        ob.append(float(n_ent_target))
+        # 4. Entanglements at target
+        ob.append(float(ent_matrix[target_id].sum()))
 
-        # 5. Per-neighbor features (up to _NEIGHBOR_COUNT)
+        # 5. Per-neighbor features (iterate nodes in order → matches training env)
         nodes_seen = 0
         for node in self.topo.nodes:
             if nodes_seen >= _NEIGHBOR_COUNT:
                 break
-            # Only neighbours with entanglement to current node
             if ent_matrix[curr_id][node.id] >= 1:
-                swap_prob  = float(node.q)
-                avail      = int(ent_matrix[curr_id][node.id])
-                top_fid    = self._best_link_fidelity(curr_id, node.id)
-                dest_oh    = _dest_state_oh(node.id, visited, start_id, target_id)
-                ob += [swap_prob, float(avail), top_fid] + dest_oh
+                swap_prob = float(node.q)
+                avail     = float(ent_matrix[curr_id][node.id])
+                top_fid   = self._best_link_fidelity(curr_id, node.id)
+                dest_oh   = _dest_state_oh(node.id, visited, start_id, target_id)
+                ob += [swap_prob, avail, top_fid] + dest_oh
                 nodes_seen += 1
 
-        # Pad missing neighbours
+        # Pad missing neighbours with all-zeros (matches training env padding)
         for _ in range(_NEIGHBOR_COUNT - nodes_seen):
-            ob += [0.0, 0.0, 0.0] + _one_hot(1, 6)  # dest_state=1 → visited
+            ob += [0.0] * _NEIGH_FEAT
 
         return np.array(ob, dtype=np.float32)
 
@@ -239,52 +229,49 @@ class RELiQ_Adapter(AlgorithmBase):
         """
         Returns the next-hop node id (or None if no valid hop).
         Uses RELiQ policy if loaded, else greedy fidelity.
+        ent_matrix is the shared matrix maintained in p4(); must NOT be re-fetched here.
         """
-        curr_id  = int(req_state[2])
-        visited  = set(req_state[3])
+        curr_id   = int(req_state[2])
+        visited   = set(req_state[3])
         target_id = req_state[1].id
 
-        # Build neighbour list (nodes with entanglement to curr)
+        # Candidate neighbours: entangled, unvisited, not self
         neighbours = [
             n.id for n in self.topo.nodes
-            if ent_matrix[curr_id][n.id] >= 1 and n.id not in visited
+            if ent_matrix[curr_id][n.id] >= 1
+            and n.id not in visited
             and n.id != curr_id
         ]
         if not neighbours:
             return None
 
+        # Route directly to destination when adjacent
         if target_id in neighbours:
-            return target_id  # route directly to destination if adjacent
+            return target_id
 
         if self._policy is None:
-            # Greedy fallback: pick neighbour with highest fidelity link
-            best_n = max(neighbours,
-                         key=lambda n: self._best_link_fidelity(curr_id, n))
-            return best_n
+            return max(neighbours, key=lambda n: self._best_link_fidelity(curr_id, n))
 
         import torch
-        obs = self._build_obs(req_idx)                  # (_OBS_SIZE,)
-        t   = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        # shape: (1, 1, _OBS_SIZE)
+        obs = self._build_obs(req_idx, ent_matrix)          # (_OBS_SIZE,)
+        x   = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        # x shape: (1, 1, _OBS_SIZE) — matches DQN.forward(x, mask) signature
 
         with torch.no_grad():
-            try:
-                adj = torch.zeros(1, 1, 1, dtype=torch.float32)  # dummy adj
-                q_values = self._policy(t, adj)                   # (1,1,n_actions)
-                q_values = q_values.squeeze().numpy()              # (n_actions,)
-            except Exception:
-                # Model signature mismatch — fall back to greedy
-                return max(neighbours,
-                           key=lambda n: self._best_link_fidelity(curr_id, n))
+            q_values = self._policy(x, x.new_zeros(1, 1, 1))  # mask unused by DQN
+            q_values = q_values.squeeze().cpu().numpy()         # (_n_actions,)
 
-        # Map Q-values over available neighbours (sorted by node id as in training)
-        neigh_sorted = sorted(neighbours)[:_NEIGHBOR_COUNT]
-        if len(q_values.shape) == 0:
-            q_values = np.array([float(q_values)])
-        best_idx = int(np.argmax(q_values[:len(neigh_sorted)]))
-        if best_idx < len(neigh_sorted):
-            return neigh_sorted[best_idx]
-        return neigh_sorted[0]
+        if q_values.ndim == 0:
+            q_values = q_values.reshape(1)
+
+        # Action i → the i-th neighbour in self.topo.nodes iteration order, which
+        # must match _build_obs exactly so the Q-value indices line up correctly.
+        neigh_set     = set(neighbours)
+        neigh_ordered = [n.id for n in self.topo.nodes
+                         if n.id in neigh_set][:_NEIGHBOR_COUNT]
+        n_avail       = len(neigh_ordered)
+        best_idx      = int(np.argmax(q_values[:n_avail]))
+        return neigh_ordered[best_idx]
 
     # ── AlgorithmBase interface ───────────────────────────────────────────────
     def AddNewSDpairs(self):
@@ -322,22 +309,26 @@ class RELiQ_Adapter(AlgorithmBase):
 
     def p4(self):
         successReq = 0
-        ent_matrix = self.get_ent_graph_matrix()
 
-        routed_links = set()  # conflict resolution: first-come-first-serve by request idx
+        # Build the entanglement matrix once and maintain it in-place throughout
+        # p4(). After each committed hop (curr→next), we decrement the count so
+        # subsequent hops and requests see the correct availability without having
+        # to re-query topo (which won't reflect un-consumed links mid-timeslot).
+        ent_matrix  = self.get_ent_graph_matrix()
+        routed_links = set()   # conflict resolution: first-come-first-serve
 
         for req_idx, req_state in enumerate(self.requestState):
             if req_state[5]:   # already done
                 continue
 
-            src, dst = req_state[0], req_state[1]
-            current   = req_state[2]
-            visited   = set(req_state[3])
+            dst     = req_state[1]
+            current = int(req_state[2])
+            visited = set(req_state[3])
 
-            hops = 0
+            hops     = 0
             max_hops = 25
-            fidelity  = 1.0
-            routed    = False
+            fidelity = 1.0
+            routed   = False
 
             while hops < max_hops:
                 next_hop = self._select_next_hop(req_idx, ent_matrix, req_state)
@@ -346,39 +337,37 @@ class RELiQ_Adapter(AlgorithmBase):
 
                 link_key = (min(current, next_hop), max(current, next_hop))
                 if link_key in routed_links:
-                    # RELiQ paper conflict resolution: drop lower-priority request
                     break
                 routed_links.add(link_key)
 
-                # Apply Werner swap fidelity along path
-                hop_fid = self._best_link_fidelity(current, next_hop)
+                # Consume one entanglement on this link in the shared matrix
+                ent_matrix[current][next_hop] = max(0.0, ent_matrix[current][next_hop] - 1)
+                ent_matrix[next_hop][current] = max(0.0, ent_matrix[next_hop][current] - 1)
+
+                # Accumulate Werner-swap fidelity along the path
+                hop_fid  = self._best_link_fidelity(current, next_hop)
                 fidelity = fidelity * hop_fid + (1 - fidelity) * (1 - hop_fid) / 3.0
 
-                # Update request state
                 visited.add(next_hop)
                 req_state[2] = next_hop
                 req_state[3] = tuple(visited)
-                current = next_hop
-                hops += 1
+                current  = next_hop
+                hops    += 1
 
                 if current == dst.id:
                     routed = True
                     break
 
-                ent_matrix = self.get_ent_graph_matrix()
-
             if routed:
-                successReq += 1
-                req_state[5] = True
+                successReq   += 1
+                req_state[5]  = True
 
-        # Remove completed/expired requests
-        self.requests = [
-            r for i, r in enumerate(self.requests)
-            if not self.requestState[i][5]
-        ]
+        # Remove completed requests
+        self.requests     = [r for i, r in enumerate(self.requests)
+                             if not self.requestState[i][5]]
         self.requestState = [s for s in self.requestState if not s[5]]
 
-        self.result.successfulRequest        += successReq
+        self.result.successfulRequest            += successReq
         self.result.successfulRequestPerRound.append(successReq)
         self.result.entanglementPerRound.append(successReq)
         self.result.fidelityPerRound.append(0)
