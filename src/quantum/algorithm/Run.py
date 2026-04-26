@@ -1,724 +1,218 @@
-import multiprocessing
-import gc
-import sys
-sys.setrecursionlimit(2000) # Increase limit to 2000
+"""
+Main experiment runner.
+
+Algorithms:
+  QuRA_DQRL_DIST  (Seq)   — in-process DQN routing
+  QuRA_Flock_DIST         — in-process DQN routing
+  QuRA_Guard_DIST         — in-process DQN routing
+  QuRA_Hive_DIST          — in-process QMIX routing
+  RELiQ_Adapter           — pre-trained RELiQ DQN baseline
+  ShortestPath            — BFS entanglement-graph baseline
+
+Environment variables
+---------------------
+  INFERENCE_MODE=1        evaluate frozen weights across all loads (no training)
+  TTIME=N                 total timeslots (default 10000)
+  STEP=N                  CSV sample stride (default 1000)
+  TIMES=N                 independent repetitions (default 1)
+  TRAIN_LOAD=N            request load used during training (default 100)
+  REQ_LOADS=5,10,25       comma-separated loads for inference (default: 6 paper loads)
+  TRAINING_MODE=smoke|mid|paper
+  MODEL_DIR=/path         where QuRA weights are saved/loaded (default /tmp/qrouting_model)
+"""
 import copy
-sys.path.append("../..")
-# from AlgorithmBase import AlgorithmBase
+import gc
+import math
+import multiprocessing
+import multiprocessing.context as ctx
+import os
+import sys
+import time
+from random import sample
+
+import numpy as np
+
+sys.setrecursionlimit(2000)
+ctx._force_start_method('spawn')
+
+# ── Path setup: make src/rl/pt importable ─────────────────────────────────────
+_algo_dir = os.path.dirname(os.path.abspath(__file__))   # src/quantum/algorithm
+_src_dir  = os.path.normpath(os.path.join(_algo_dir, '../..'))   # src
+_rl_dir   = os.path.join(_src_dir, 'rl')                         # src/rl
+
+# Add src/rl (not src/rl/pt) so local_trainer's relative imports resolve correctly
+# inside the `pt` package (from .agent import ..., from .replay import ..., etc.)
+for _p in [_algo_dir, _src_dir, _rl_dir]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 from AlgorithmBase import AlgorithmResult
-# from MyAlgorithm import MyAlgorithm
-# from OnlineAlgorithm import OnlineAlgorithm
-# from GreedyGeographicRouting import GreedyGeographicRouting
-# from GreedyHopRouting import GreedyHopRouting
-
-# from REPS import REPS
-from REPS_rep import REPSREP
-
-# from MERR import MERR
-# from REPS_cache import REPSCACHE
-# from REPS_cache2 import REPSCACHE2
-# from REPS_cache4 import REPSCACHE5
-# from REPS_cache4_3 import REPSCACHE5_3
-# from REPS_ent_dqrl import REPS_ENT_DQRL
-# from REPS_cache_ent_dqrl import REPSCACHEENT_DQRL
-# from REPS_cache_ent_dqrl_proswap import REPSCACHEENT_DQRL_PSWAP
-# from SEER_cache import SEERCACHE
-# from SEER_cache2 import SEERCACHE2
-# from SEER_cache3 import SEERCACHE3
-# from SEER_cache3_3 import SEERCACHE3_3
-# from SEER_ent_dqrl import SEER_ENT_DQRL
-# from SEE import SEE
-# from SEE2 import SEE2
-
-# from DQRL import QuRA_DQRL
-from DQRL_dist1_pt import QuRA_DQRL_DIST        # QuRA-Seq (PyTorch, distributed)
-from DQRL_dist2_pt import QuRA_Flock_DIST       # QuRA-Flock (PyTorch, distributed)
-from DQRL_dist3_pt import QuRA_Guard_DIST       # QuRA-Guard (PyTorch, distributed)
-from DQRL_dist4_pt import QuRA_Hive_DIST        # QuRA-Hive (PyTorch, distributed QMIX)
-from RELiQ_Adapter import RELiQ_Adapter         # RELiQ baseline
-# from Schedule import SCHEDULEGREEDY
-# from ScheduleRoute import SCHEDULEROUTEGREEDY
-
-# from ScheduleRoute_cache import SCHEDULEROUTEGREEDY_CACHE
-# from ScheduleRoute_cache_ps import SCHEDULEROUTEGREEDY_CACHE_PS
-# from Heuristic import QuRA_Heuristic
-# from CachedEntanglement import CachedEntanglement
+from pt.local_trainer import (
+    QuRA_DQRL_DIST,
+    QuRA_Flock_DIST,
+    QuRA_Guard_DIST,
+    QuRA_Hive_DIST,
+    ShortestPath,
+)
+from RELiQ_Adapter import RELiQ_Adapter
 from topo.Topo import Topo
 from topo.mp_helper import executor as executor
 
-
-from random import sample
-import numpy as np
-import time
-import os
-import os.path
-import multiprocessing.context as ctx
-from multiprocessing import Pool
-
-import math
-ctx._force_start_method('spawn')  # Ensure fork start method is used
-# multiprocessing.set_start_method('fork')
-
-# sys.path.insert(0, "/home/tasdiqul/Documents/Quantum Network/Projects/QuantumRouting-python/src/rl")
-sys.path.insert(0, "../../rl")
-
-# sys.path.insert(0, "/Users/tasdiqulislam/Documents/Quantum Network/Routing/QuantumRouting-python/src/rl") #for my mac
-# sys.path.insert(0, "/users/Tasdiq/QuantumRouting-python/src/rl") #for cloudlab
-# from agent import Agent    #for ubuntu
-# # from agent import Agent   #for mac
-
-
-# from DQNAgent import DQNAgent   
-# from DQNAgentDist import DQNAgentDist
-# from DQRLAgent import ALPHA, BETA,GAMMA,LEARNING_RATE,DISCOUNT,UPDATE_TARGET_EVERY, FAILURE_REWARD,clip_value
-# from DQRLAgent import lr,START_EPSILON_DECAYING,SKIP_REWAD,MINIBATCH_SIZE,REPLAY_MEMORY_SIZE,DELTA
-
-
-
-
-
-# from DQNAgentDistEnt import DQNAgentDistEnt
-# from DQNAgentDistEnt_2 import DQNAgentDistEnt_2
-# from DQRLAgent import DQRLAgent
-# from SchedulerAgent import SchedulerAgent
-
-run = ""
-# run = "ALPHA = " + str(ALPHA) + " BETA = " +str(BETA) + " GAMMA = "+str(GAMMA) + " DELTA = "+ str(DELTA) + " lr "+str(LEARNING_RATE)\
-# +" discount "+str(DISCOUNT)+" failure reward = "+str(FAILURE_REWARD)\
-# +", then done implemented+ skip link  rand 3 req 5 gs ute "\
-# +str(UPDATE_TARGET_EVERY)+" skip for no targetpath alr= " + str(lr) + "clip_value " + str(clip_value) \
-# + " START_EPSILON_DECAYING " + str(START_EPSILON_DECAYING) + "SKIP REWARD "\
-# + str(SKIP_REWAD) + ' MINIBATCH_SIZE ' + str(MINIBATCH_SIZE) \
-#     +'REPLAY_MEMORY_SIZE' + str(REPLAY_MEMORY_SIZE)+ " reward/10 as recursive -1/e 10 -10 input without q in state+= 3 8 waxman .9q try 3"
-batchdescription = "le .0005"
-
-# ── Run configuration (all overridable via env vars) ─────────────────────────
-# INFERENCE_MODE=1  → evaluate frozen trained model across all loads (no training)
-# INFERENCE_MODE=0  → train on TRAIN_LOAD, single load point
+# ── Run configuration ─────────────────────────────────────────────────────────
 INFERENCE_MODE = os.environ.get("INFERENCE_MODE", "0") == "1"
 
-ttime = int(os.environ.get("TTIME",  "10000"))  # total timeslots
-ttime2 = 500
-step  = int(os.environ.get("STEP",   "1000"))   # CSV sample stride
-times = int(os.environ.get("TIMES",  "1"))      # independent repetitions (for averaging)
+ttime    = int(os.environ.get("TTIME",  "10000"))
+step     = int(os.environ.get("STEP",   "1000"))
+times    = int(os.environ.get("TIMES",  "1"))
 gridSize = 10
-nodeNo = gridSize * gridSize
-fixed = False
+nodeNo   = gridSize * gridSize
 
-alpha_ = .0002
-degree = 1
+alpha_  = 0.0002
+degree  = 1
 
-# Request loads
-# Training:   single load (TRAIN_LOAD, default 100) — model learns on the hardest case
-# Inference:  all 6 loads (or override with REQ_LOADS env var)
-TRAIN_LOAD = int(os.environ.get("TRAIN_LOAD", "100"))
+TRAIN_LOAD           = int(os.environ.get("TRAIN_LOAD", "100"))
 _INFER_LOADS_DEFAULT = [5, 10, 25, 50, 75, 100]
 
 _req_env = os.environ.get("REQ_LOADS", "")
 if _req_env:
     numOfRequestPerRound = [int(x.strip()) for x in _req_env.split(",")]
 elif INFERENCE_MODE:
-    numOfRequestPerRound = _INFER_LOADS_DEFAULT   # eval on all 6 loads
+    numOfRequestPerRound = _INFER_LOADS_DEFAULT
 else:
-    numOfRequestPerRound = [TRAIN_LOAD]            # train on single hardest load
+    numOfRequestPerRound = [TRAIN_LOAD]
 
-print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}  "
-      f"ttime={ttime}  step={step}  times={times}  loads={numOfRequestPerRound}")
-# numOfRequestPerRound = [1,2]
-totalRequest = [10, 20, 30, 40, 50]
-numOfNodes = [49 , 64 , 81 , 100 ]
-# numOfNodes = [20]
-r = [0, 2, 4, 6, 8, 10]
-q = [0.7, 0.8, 0.9]
-alpha = [0.0001 , 0.0002 , 0.0003]
-fidelity = [ .5, .6 , .7  ,.8 ]
-# fidelity = [ .5  ]
-# alpha = [0.001 , 0.0015 , 0.002 , 0.0025, 0.003 , 0.0035 ]
-SocialNetworkDensity = [0.25, 0.5, 0.75, 1]
-preSwapFraction = [0.4,  0.6,  0.8 ,  1]
-# preSwapFraction = [0.2, 0.3]
-entanglementLifetimes = [1]
-requestTimeouts = [100,200,300]
-preSwapCapacity = [0.2 , 0.4, 0.5, 0.6, 0.8]
-skipXlabel = [ 1,2,  3 ,4,5 , 6 ,7,8 , 9]
-runLabel = [0]
-Xlabels = ["#RequestPerRound", "totalRequest", "#nodes", "r", "swapProbability", "alpha", "SocialNetworkDensity" , "preSwapFraction" , 'entanglementLifetime' , 'requestTimeout' , "preSwapCapacity" , 'fidelityThreshold']
-toRunLessAlgos = ['REPS','REPS_shortest','QuRA_Heuristic' ,'REPS_rep', 'REPSCACHE' , 'REPSCACHE2' , 'REPS_preswap_1hop_dqrl','QuRA_DQRL_entdqrl_greedy_only', 'RANDSCHEDULEGREEDY','RANDSCHEDULEROUTEGREEDY']
+print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}"
+      f"  ttime={ttime}  step={step}  times={times}"
+      f"  loads={numOfRequestPerRound}")
 
 
-# executor = ProcessPoolExecutor(max_workers=8)
-# executor = Pool(processes=8)
+# ── Per-algorithm thread ───────────────────────────────────────────────────────
 
-def runThread(algo, requests, algoIndex, ttime, pid, resultDict , shared_data):
-    timeSlot = ttime
-    global ttime2
-    global executor
-    if algo.name in toRunLessAlgos:
-        timeSlot = min(ttime2,ttime)
-
-    # ── Real-time progress CSV ───────────────────────────────────────────────
-    # Written after every timeslot so you can tail -f it during long runs.
-    # Columns: timeslot, successful_requests, reward
+def runThread(algo, requests, algoIndex, ttime, pid, resultDict, shared_data):
     _log_dir = "/tmp/qrouting_logs"
     os.makedirs(_log_dir, exist_ok=True)
     _req_count = algo.topo.numOfRequestPerRound
     _csv_path  = os.path.join(_log_dir, f"progress_{algo.name}_req{_req_count}.csv")
-    _csv_file  = open(_csv_path, "w", buffering=1)   # line-buffered
-    _csv_file.write("timeslot,successful_requests,reward\n")
 
-    for i in range(timeSlot):
-        result = algo.work(requests[i], i)
+    with open(_csv_path, "w", buffering=1) as _csv:
+        _csv.write("timeslot,successful_requests,reward\n")
+        for i in range(ttime):
+            result = algo.work(requests[i], i)
+            _succ = result.successfulRequestPerRound[i] \
+                    if i < len(result.successfulRequestPerRound) else 0
+            _rew  = result.rewardPerRound[i] \
+                    if i < len(result.rewardPerRound) else 0
+            _csv.write(f"{i},{_succ},{_rew}\n")
 
-        # Log per-timeslot metrics in real time
-        _succ = result.successfulRequestPerRound[i] if i < len(result.successfulRequestPerRound) else 0
-        _rew  = result.rewardPerRound[i]             if i < len(result.rewardPerRound)             else 0
-        _csv_file.write(f"{i},{_succ},{_rew}\n")
+    # Save trained weights to disk after training run
+    if not INFERENCE_MODE and hasattr(algo, '_save_weights'):
+        algo._save_weights()
 
-    _csv_file.close()
-
-    #     if '_qrl' in algo.name or '_dqrl' in algo.name or '_distdqrl' in algo.name:
-    #         agent.update_reward()
-
-    if algo.name == "My" or 'SEER' in algo.name:
-        print('============ in runThread', algo.name)
-        for req in algo.requestState:
-            if algo.requestState[req].state == 2:
-                algo.requestState[req].intermediate.clearIntermediate()
     resultDict[pid] = result
 
     if executor is not None:
         executor.shutdown(wait=True)
 
-    success_req = 0
-    
-    for i in range(timeSlot):
-        success_req += result.successfulRequestPerRound[i]
-    max_success = algo.name + str(len(algo.topo.nodes))+str(algo.topo.alpha)+str(algo.topo.q)+ 'max_success'
-
-    print('====================================================')
-    print('====================================================')
-    print('pid: ' , pid , 'success_req: ' , success_req)
-    print('pid: ' , pid , 'max_success rate : ' , shared_data[max_success] / timeSlot)
-    print('====================================================')
-    print('====================================================')
-    
-    if ('_entdqrl' in algo.name or '_2entdqrl' in algo.name ) and success_req > shared_data[max_success]:
-        print('going to save the ent model ' , success_req)
-        # algo.entAgent.save_model()
-        if hasattr(algo , 'routingAgent' ) and algo.routingAgent is not None:
-            try:
-                algo.routingAgent.save_model()
-                print('going to save the routing model ' , success_req)
-            except:
-                print('couldnt save model')
-
-        shared_data[max_success] = success_req
-    if hasattr(algo , 'routingAgent' ) and algo.routingAgent is not None:
-        try:
-            algo.routingAgent.save_model()
-            print('going to save the routing model ' , success_req)
-        except:
-            print('couldnt save model')
+    success_req = sum(result.successfulRequestPerRound[:ttime])
+    print(f"{'=' * 52}")
+    print(f"  pid={pid}  algo={algo.name}  success={success_req}")
+    print(f"{'=' * 52}")
 
 
+# ── Main Run function ─────────────────────────────────────────────────────────
 
-def Run(numOfRequestPerRound = 20, numOfNode = 0, r = 7, q = .9, alpha = alpha_, SocialNetworkDensity = 0.5, rtime = ttime, topo = None, FixedRequests = None , results=[]):
+def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
+        alpha=alpha_, SocialNetworkDensity=0.5,
+        rtime=ttime, topo=None, FixedRequests=None, results=[]):
 
-    if topo == None:
-        topo = Topo.generate(numOfNode, q, 5, alpha, 6 , int(math.sqrt(numOfNode)))
+    if topo is None:
+        topo = Topo.generate(numOfNode, q, 5, alpha, 6, int(math.sqrt(numOfNode)))
     numOfNode = len(topo.nodes)
-    # numOfRequestPerRound = numOfNode
     topo.setQ(q)
     topo.setAlpha(alpha)
     topo.setNumOfRequestPerRound(numOfRequestPerRound)
 
-
-    # topo.setQ(1)
-    # topo.setAlpha(0)
-
-    # make copy
-    algorithms = []
-
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo)))
-    # algorithms.append(SEERCACHE(copy.deepcopy(topo), param = 'ten', name='SEERCACHE'))
-
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop'))
-    # # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_qrl'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_dqrl'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_1hop_distdqrl'))
-
-    # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop'))
-    # # # # # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_qrl'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_dqrl'))
-    # algorithms.append(SEERCACHE3_3(copy.deepcopy(topo), param = 'ten', name='SEER_preswap_multihop_distdqrl'))
-
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo) , name='SEER_entdqrl'))
-
-    #with pre entanglement
-    # algorithms.append(MyAlgorithm(copy.deepcopy(topo),preEnt=True))
-    # algorithms.append(GreedyHopRouting(copy.deepcopy(topo)))
-    # algorithms.append(GreedyGeographicRouting(copy.deepcopy(topo)))
-
-
-    # algorithms.append(OnlineAlgorithm(copy.deepcopy(topo)))
-    # algorithms.append(CachedEntanglement(copy.deepcopy(topo)))
-
-    # #with pre entanglement
-    # algorithms.append(CachedEntanglement(copy.deepcopy(topo),preEnt=True))
-    
-
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS'))
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_randPFT'))
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS_SPPFT'))
-    
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep'))
-
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_randPFT'))
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_rep_SPPFT'))
-    # algorithms.append(REPSREP(copy.deepcopy(topo) , name = 'REPS_shortest'))
-    # algorithms.append(REPS(copy.deepcopy(topo) , name = 'REPS', param = 'reps_ten'))
-    # algorithms.append(REPSCACHE(copy.deepcopy(topo),param='ten',name='REPSCACHE2'))
-
-    # algorithms.append(MERR(copy.deepcopy(topo) , name = 'MERR'))
-    
-
-    # # # # # algorithms.append(REPSCACHE2(copy.deepcopy(topo),param='ten',name='REPSCACHE3'))
-    # # # # # # # # algorithms.append(REPSCACHE5(copy.deepcopy(topo),param='ten',name='REPSCACHE5'))
-
-    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop'))
-    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop_qrl'))
-    # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPS_preswap_1hop_dqrl'))
-    
-    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop'))
-    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_qrl'))
-    # # algorithms.append(REPSCACHE5_3(copy.deepcopy(topo),param='ten',name='REPSCACHE5_preswap_multihop_dqrl')) #working
-    
-    
-    # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl'))
-    # # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_entdqrl_no_repeat'))
-    # # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl'))
-    # # algorithms.append(REPS_ENT_DQRL(copy.deepcopy(topo) , name='REPS_2entdqrl_no_repeat'))
-
-    # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl'))
-    
-    # # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_entdqrl_no_repeat'))
-    # # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl'))
-    # # algorithms.append(REPSCACHEENT_DQRL(copy.deepcopy(topo),param='ten',name='REPSCACHE_2entdqrl_no_repeat'))
-
-    # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_entdqrl_1hop_distdqrl'))
-    
-    # # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_entdqrl_no_repeat_1hop_distdqrl'))
-    # # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_2entdqrl_1hop_distdqrl'))
-    # # algorithms.append(REPSCACHEENT_DQRL_PSWAP(copy.deepcopy(topo),param='ten',name='REPSCACHE_DQRL_PSWAP_2entdqrl_no_repeat_1hop_distdqrl'))
-
-    
-    # algorithms.append(SEE(copy.deepcopy(topo)))
-
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl'))
-
-    # algorithms.append(QuRA_DQRL(copy.deepcopy(topo) , name = 'QuRA_DQRL_entdqrl_greedy_only' , param = 'greedy_only'))
-   
-    # algorithms.append(QuRA_Heuristic(copy.deepcopy(topo) , name = 'QuRA_Heuristic'))
-
-   
-    print('======================before append', Topo.print_memory_usage())
-   
-    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY'))
-    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEGREEDY_prob'))
-    # algorithms.append(SCHEDULEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEGREEDY'))
-
-
-
-
-
-
-    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY'))
-    # algorithms.append(SCHEDULEROUTEGREEDY(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY'))
-
-    # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
-    # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE' , param='ten'))
-    
-    # algorithms.append(SCHEDULEROUTEGREEDY_CACHE(copy.deepcopy(topo) , name = 'SCHEDULEROUTEGREEDY_CACHE' , param='ten'))
-    # algorithms.append(SCHEDULEROUTEGREEDY_CACHE_PS(copy.deepcopy(topo) , name = 'RANDSCHEDULEROUTEGREEDY_CACHE_preswap_multihop_distdqrl' , param='ten'))
-    
-
-    algorithms.append(QuRA_DQRL_DIST(copy.deepcopy(topo), name='QuRA_Seq_DIST'))
-    algorithms.append(QuRA_Flock_DIST(copy.deepcopy(topo), name='QuRA_Flock_DIST'))
-    algorithms.append(QuRA_Guard_DIST(copy.deepcopy(topo), name='QuRA_Guard_DIST'))
-    algorithms.append(QuRA_Hive_DIST(copy.deepcopy(topo), name='QuRA_Hive_DIST'))
-    algorithms.append(RELiQ_Adapter(copy.deepcopy(topo), name='RELiQ'))
-
+    algorithms = [
+        QuRA_DQRL_DIST(copy.deepcopy(topo),  name='QuRA_Seq_DIST'),
+        QuRA_Flock_DIST(copy.deepcopy(topo),  name='QuRA_Flock_DIST'),
+        QuRA_Guard_DIST(copy.deepcopy(topo),  name='QuRA_Guard_DIST'),
+        QuRA_Hive_DIST(copy.deepcopy(topo),   name='QuRA_Hive_DIST'),
+        RELiQ_Adapter(copy.deepcopy(topo),    name='RELiQ'),
+        ShortestPath(copy.deepcopy(topo),     name='ShortestPath'),
+    ]
 
     gc.collect()
-    print('======================after append', Topo.print_memory_usage())
-    
-
-
-    algorithms[0].r = r
-    algorithms[0].density = SocialNetworkDensity
+    print(f"  algorithms: {[a.name for a in algorithms]}")
 
     global times
-    # times = 10
-    results = [[] for _ in range(len(algorithms))]
-    ttime = rtime
-    rtime = ttime
+    results      = [[] for _ in range(len(algorithms))]
+    rtime        = ttime
+    resultDicts  = [multiprocessing.Manager().dict() for _ in algorithms]
+    shared_data  = multiprocessing.Manager().dict()
 
-    resultDicts = [multiprocessing.Manager().dict() for _ in algorithms]
-    shared_data = multiprocessing.Manager().dict()
-   
     for algo in algorithms:
-        max_success = algo.name + str(len(algo.topo.nodes))+str(algo.topo.alpha)+str(algo.topo.q)+ 'max_success'
-        shared_data[max_success] = 0
-    
-    jobs = []
+        key = algo.name + str(len(algo.topo.nodes)) + str(algo.topo.alpha) + str(algo.topo.q) + 'max_success'
+        shared_data[key] = 0
 
-
-    bias_weights = [x%10==0 for x in range(numOfNode)]
+    bias_weights = [x % 10 == 0 for x in range(numOfNode)]
     prob = np.array(bias_weights) / np.sum(bias_weights)
 
+    jobs = []
+    pid  = 0
 
-    pid = 0
     for _ in range(times):
-        ids = {i : [] for i in range(ttime)}
-        if FixedRequests != None:
+        ids = {i: [] for i in range(ttime)}
+        if FixedRequests is not None:
             ids = FixedRequests
         else:
             for i in range(ttime):
                 if i < rtime:
-                    if fixed:
-                        ids[i] = topo.generateRequest(numOfRequestPerRound)
-                    else:
-                        for _ in range(numOfRequestPerRound):
+                    for _ in range(numOfRequestPerRound):
+                        while True:
+                            a = sample(list(range(numOfNode)), 2)
+                            if (a[0], a[1]) not in ids[i]:
+                                break
+                        ids[i].append((a[0], a[1]))
 
-                            while True:
-                                a = sample([i for i in range(numOfNode)], 2)
-                                if (a[0], a[1]) not in ids[i]:
-                                    break
-
-
-                            # a = [2 , 25]
-
-                            # a = np.random.choice(len(prob), size=2, replace=False, p=prob)
-                            # print('req: ' , a)
-                            # for _ in range(int(random.random()*3+1)):
-                            ids[i].append((a[0], a[1]))
-        print('##############going to append jobs ###############  ')
-        # print('----------size(ids)----------------', get_deep_size(ids)/1000000)
-        # print('----------size(algorithms)----------------', get_deep_size(algorithms)/1000000)
-
-        
         for algoIndex in range(len(algorithms)):
             algo = copy.deepcopy(algorithms[algoIndex])
-
-            requests = {i : [] for i in range(ttime)}
+            requests = {i: [] for i in range(ttime)}
             for i in range(rtime):
                 for (src, dst) in ids[i]:
-                    # print(src, dst)
                     requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
-            
             pid += 1
-            job = multiprocessing.Process(target = runThread, args = (algo, requests, algoIndex, ttime, pid, resultDicts[algoIndex] , shared_data))
+            job = multiprocessing.Process(
+                target=runThread,
+                args=(algo, requests, algoIndex, ttime, pid,
+                      resultDicts[algoIndex], shared_data))
             jobs.append(job)
 
     for job in jobs:
         job.start()
-        # time.sleep(1)
-
     for job in jobs:
-        # job.join()
-        job.join()  # Wait for 60 seconds
-        # if job.is_alive():
-        #     print(f"Process {job.pid} is still running. Terminating...")
-        #     job.terminate()
-        #     job.join()
+        job.join()
 
-    # print(resultDicts)
     for algoIndex in range(len(algorithms)):
-        results[algoIndex] = AlgorithmResult.Avg(resultDicts[algoIndex].values(), numOfRequestPerRound , algorithms[0].topo)
-
-
-    # results[0] = result of GreedyHopRouting = a AlgorithmResult
-    # results[1] = result of MyAlgorithm
-    # results[2] = result of GreedyGeographicRouting
-    # results[3] = result of OnlineAlgorithm
-    # results[4] = result of REPS
+        results[algoIndex] = AlgorithmResult.Avg(
+            resultDicts[algoIndex].values(),
+            numOfRequestPerRound,
+            algorithms[0].topo,
+        )
 
     return results
-    
-def mainThreadReqPerTime(Xparam , topo, result):
-    result.extend(Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo)))
-def mainThreadNumOfNode(Xparam , result):
-    result.extend(Run(numOfNode = Xparam))
-def mainThreadSwapProb(Xparam , topo , result):
-    result.extend(Run(q = Xparam , topo=copy.deepcopy(topo)))
-def mainThreadAlpha(Xparam , topo , result):
-    result.extend(Run(alpha = Xparam, topo = copy.deepcopy(topo)))
-def mainThreadSwapFrac(Xparam , topo , result):
-    topo.preSwapFraction = Xparam
-    result.extend(Run(topo = copy.deepcopy(topo)))
-def mainThreadEntanglementLifetime(Xparam , topo , result):
-    topo.entanglementLifetime = Xparam
-    result.extend(Run(topo = copy.deepcopy(topo)))
-def mainThreadRequestTimeout(Xparam , topo , result):
-    topo.requestTimeout = Xparam
-    result.extend(Run(topo = copy.deepcopy(topo)))
-def mainThreadPreSwapCapacity(Xparam , topo , result):
-    topo.preswap_capacity = Xparam
-    result.extend(Run(topo = copy.deepcopy(topo)))
-def mainThreadFidelityThreshold(Xparam , topo , result):
-    topo.fidelity_threshold = Xparam
-    result.extend(Run(topo = copy.deepcopy(topo)))
 
 
-
-
+# ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    print("start Run and Generate data.txt")
-    print("runrunrunrun " , run)
+    print("[Run.py] starting")
     t1 = time.time()
-    targetFilePath = "../../plot/data/"
-    temp = AlgorithmResult()
-    Ylabels = temp.Ylabels # Ylabels = ["algorithmRuntime", "waitingTime", "idleTime", "usedQubits", "temporaryRatio"]
-    
 
+    topo = Topo.generate(nodeNo, 0.9, 5, alpha_, degree, gridSize=gridSize)
 
-    # mapSize = [(1, 2), (100, 100), (50, 200), (10, 1000)]
-
-    Xparameters = [numOfRequestPerRound, totalRequest, numOfNodes, r, q, alpha, SocialNetworkDensity, preSwapFraction, entanglementLifetimes , requestTimeouts , preSwapCapacity , fidelity]
-
-    print('--------calling topo.generate() ---------------')
-    topo = Topo.generate(nodeNo, 0.9, 5,alpha_, degree, gridSize=gridSize)
-    jobs = []
-
-    tmp_ids = {i : [] for i in range(200)}
-    for i in range(200):
-        if i < 20:
-            for _ in range(5):
-                a = sample([i for i in range(100)], 2)
-                tmp_ids[i].append((a[0], a[1]))
-               
-    output = ''
-    for XlabelIndex in range(len(Xlabels)):
-        # continue
-        Xlabel = Xlabels[XlabelIndex]
-        Ydata = []
-        jobs = []
-        results = {Xparam : multiprocessing.Manager().list() for Xparam in Xparameters[XlabelIndex]}
-        pid = 0
-        # if XlabelIndex in skipXlabel:
-        #     continue
-        if XlabelIndex not in runLabel:
-            continue
-        for Xparam in Xparameters[XlabelIndex]:
-            # results[Xparam] = None
-            
-            # check schedule
-            # statusFile = open("status.txt", "w")
-            # print(Xlabel + str(Xparam), file = statusFile)
-            # statusFile.flush()
-            # statusFile.close()
-            # ------
-            if XlabelIndex == 0: # #RequestPerRound
-                # result =[]
-                job = multiprocessing.Process(target = mainThreadReqPerTime, args = (Xparam , topo , results[Xparam] ))
-                jobs.append(job)
-                # result = Run(numOfRequestPerRound = Xparam, topo = copy.deepcopy(topo))
-            # if XlabelIndex == 1: # totalRequest
-            #     result = Run(numOfRequestPerRound = Xparam, rtime = 1, topo = copy.deepcopy(topo))
-            if XlabelIndex == 2: # #nodes
-                # result = Run(numOfNode = Xparam)
-                job = multiprocessing.Process(target = mainThreadNumOfNode, args = (Xparam  , results[Xparam] ))
-                jobs.append(job)
-            # if XlabelIndex == 3: # r
-            #     result = Run(r = Xparam, topo = copy.deepcopy(topo), FixedRequests = tmp_ids)
-            if XlabelIndex == 4: # swapProbability
-                # result = Run(q = Xparam, topo = copy.deepcopy(topo))
-                job = multiprocessing.Process(target = mainThreadSwapProb, args = (Xparam , topo , results[Xparam] ))
-                jobs.append(job)
-            if XlabelIndex == 5: # alpha
-                # result = Run(alpha = Xparam, topo = copy.deepcopy(topo))
-                job = multiprocessing.Process(target = mainThreadAlpha, args = (Xparam , topo , results[Xparam] ))
-                jobs.append(job)
-
-            # if XlabelIndex == 6: # SocialNetworkDensity
-            #     result = Run(SocialNetworkDensity = Xparam, topo = copy.deepcopy(topo))
-
-            if XlabelIndex == 7: # pre swap fraction
-                job = multiprocessing.Process(target = mainThreadSwapFrac, args = (Xparam , topo , results[Xparam] ))
-                jobs.append(job)
-            
-            if XlabelIndex == 8: # entanglement lifetime
-                job = multiprocessing.Process(target = mainThreadEntanglementLifetime, args = (Xparam , topo , results[Xparam] ))
-                jobs.append(job)
-            if XlabelIndex == 9: # request timeout
-                job = multiprocessing.Process(target = mainThreadRequestTimeout, args = (Xparam , topo , results[Xparam] ))
-                jobs.append(job)
-            if XlabelIndex == 10: # pre swap capacity
-                job = multiprocessing.Process(target = mainThreadPreSwapCapacity, args = (Xparam , topo , results[Xparam] ))
-                jobs.append(job)
-            if XlabelIndex == 11: # pre swap capacity
-                job = multiprocessing.Process(target = mainThreadFidelityThreshold, args = (Xparam , topo , results[Xparam] ))
-                jobs.append(job)
-
-            # if XlabelIndex == 7:
-            #     result = Run(mapSize = Xparam)
-            # Ydata.append(result)
-
-        for job in jobs:
-            job.start()
-            # time.sleep(1)
-
-        for job in jobs:
-            job.join()
-        
-        for Xparam in Xparameters[XlabelIndex]:
-            result = results[Xparam]
-            # print('--------------printing results ---------------')
-            # print(result)
-            Ydata.append(result)
-
-
-        print(run)
-        for i in range(len(Xparameters[XlabelIndex])):
-            Xparam = Xparameters[XlabelIndex][i]
-            filename = "Timeslot" + "_" + "#successRequest"+ str(Xparam) + ".txt"
-            sampleRounds = [s for s in range(0 , ttime , step)]
-            print(filename)
-            output += filename + '\n'
-
-
-            F = open(targetFilePath + filename, "w")
-            for roundIndex in sampleRounds:
-                Xaxis = str(roundIndex)
-                # Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
-                Yaxis = []
-                # try:
-                #     Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
-                # except:
-                for result in Ydata[i]:
-                    try:
-                        Yaxis.append(sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step)
-                    except:
-                        Yaxis.append(0)
-                # print('Yaxis ' , roundIndex , Yaxis1)
-                Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-                print(Xaxis + Yaxis.replace( "\n" , ""))
-                output += Xaxis + Yaxis + '\n'
-
-                F.write(Xaxis + Yaxis)
-            F.close()
-
-        filename = "Timeslot" + "_" + "reward" + ".txt"
-        sampleRounds = [i for i in range(0 , ttime , step)]
-        print(filename)
-        output += filename + '\n'
-
-
-        F = open(targetFilePath + filename, "w")
-        for roundIndex in sampleRounds:
-            Xaxis = str(roundIndex)
-            Yaxis = []
-
-            for result in Ydata[0]:
-                try:
-                    Yaxis.append(sum(result.rewardPerRound[roundIndex:roundIndex+step])/step)
-                except:
-                    Yaxis.append(0)
-            # print('Yaxis ' , roundIndex , Yaxis1)
-            Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-            print(Xaxis + Yaxis.replace( "\n" , ""))
-            output += Xaxis + Yaxis + '\n'
-
-            F.write(Xaxis + Yaxis)
-        F.close()
-
-        for i in range(len(Xparameters[XlabelIndex])):
-            Xparam = Xparameters[XlabelIndex][i]
-            filename = "Timeslot" + "_" + "fidelity"+ str(Xparam) + ".txt"
-            sampleRounds = [s for s in range(0 , ttime , step)]
-            print(filename)
-            output += filename + '\n'
-            F = open(targetFilePath + filename, "w")
-            for roundIndex in sampleRounds:
-                Xaxis = str(roundIndex)
-                # Yaxis1 = [result.successfulRequestPerRound[roundIndex] for result in Ydata[0]]
-                Yaxis = []
-                # try:
-                #     Yaxis = [sum(result.successfulRequestPerRound[roundIndex:roundIndex+step])/step for result in Ydata[0]]
-                # except:
-                for result in Ydata[i]:
-                    try:
-                        Yaxis.append(sum(result.fidelityPerRound[roundIndex:roundIndex+step])/step)
-                    except:
-                        Yaxis.append(0)
-                # print('Yaxis ' , roundIndex , Yaxis1)
-                Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-                print(Xaxis + Yaxis.replace( "\n" , ""))
-                output += Xaxis + Yaxis + '\n'
-
-                F.write(Xaxis + Yaxis)
-            F.close()
-
-        for Ylabel in Ylabels:
-            filename = Xlabel + "_" + Ylabel + ".txt"
-            print(filename)
-            output += filename + '\n'
-
-
-            if os.path.isfile(targetFilePath + filename):
-                F = open(targetFilePath + filename, "w")
-            else:
-                F = open(targetFilePath + filename, "a")
-            for i in range(len(Xparameters[XlabelIndex])):
-                Xaxis = str(Xparameters[XlabelIndex][i])
-                Yaxis = [algoResult.toDict()[Ylabel] for algoResult in Ydata[i]]
-                Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-                print(Xaxis + Yaxis.replace( "\n" , ""))
-                output += Xaxis + Yaxis + '\n'
-
-                F.write(Xaxis + Yaxis)
-            F.close()
+    for load in numOfRequestPerRound:
+        print(f"\n[Run.py] load={load}")
+        Run(numOfRequestPerRound=load, topo=copy.deepcopy(topo), rtime=ttime)
 
     t2 = time.time()
-    output += run
-    print(output)
-    print('-----EXIT----- total time taken: ' , (t2-t1)/3600 , ' hours')
-    print(batchdescription)
-
-    exit(0)
-    # write remainRequestPerRound
-    rtime = 101
-    print('starting.. ')
-    # sampleRounds = [0, 2, 4, 6, 8, 10]
-    sampleRounds = [i for i in range(0 , rtime , int(rtime/5))]
-    print(sampleRounds)
-    results = Run(numOfRequestPerRound = 20, numOfNode=100, rtime = rtime) # algo1Result algo2Result ...
-    for result in results:
-        result.remainRequestPerRound.insert(0, 1)
-        result.entanglementPerRound.insert(0, 1)
-    
-    # sampleRounds = [0, 5, 10, 15, 20, 25]
-
-    filename = "Timeslot" + "_" + "#remainRequest" + ".txt"
-    F = open(targetFilePath + filename, "w")
-    for roundIndex in sampleRounds:
-        Xaxis = str(roundIndex)
-        Yaxis = [result.remainRequestPerRound[roundIndex] for result in results]
-        Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-        F.write(Xaxis + Yaxis)
-    F.close()
-
-
-
-    # filename = "Timeslot" + "_" + "#entanglement" + ".txt"
-    # F = open(targetFilePath + filename, "w")
-    # for roundIndex in sampleRounds:
-    #     Xaxis = str(roundIndex)
-    #     Yaxis = [result.entanglementPerRound[roundIndex] for result in results]
-    #     Yaxis = str(Yaxis).replace("[", " ").replace("]", "\n").replace(",", "")
-    #     F.write(Xaxis + Yaxis)
-    # F.close()
-
-    print('--DONE--')
-
+    print(f"\n[Run.py] done  elapsed={(t2 - t1) / 3600:.2f}h")

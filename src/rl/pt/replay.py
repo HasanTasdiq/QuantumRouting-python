@@ -5,16 +5,13 @@ Two classes:
   ReplayBuffer        — single-agent transitions (Seq / Flock / Guard)
   QMixEpisodeBuffer   — joint timeslot transitions (Hive / QMIX)
 
-Both use the same REPLAY_MEMORY_SIZE / MINIBATCH_SIZE constants
-as the original TF helper so training dynamics are preserved.
+MINIBATCH_SIZE for paper mode is 32 (not 512) to keep QMIX tensors
+well within RAM:  32 × actual_N × 20228 × 4B ≈ 50-130 MB  vs  8+ GB.
 """
 import random
 from collections import deque
 
 import numpy as np
-
-
-# ── Constants (mirror dist_agent_helper.py) ─────────────────────────────────
 import os
 
 TRAINING_MODE = os.environ.get("TRAINING_MODE", "paper")
@@ -24,8 +21,9 @@ if TRAINING_MODE == "paper":
     END_EPSILON_DECAYING   = 8000
     REPLAY_MEMORY_SIZE     = 50_000
     MIN_REPLAY_MEMORY_SIZE = 512
-    MINIBATCH_SIZE         = 512
+    MINIBATCH_SIZE         = 32      # was 512 — reduced to prevent OOM on QMIX tensors
     UPDATE_TARGET_EVERY    = 100
+    STEP_BETWEEN_TRAIN     = 200
 elif TRAINING_MODE == "mid":
     START_EPSILON_DECAYING = 200
     END_EPSILON_DECAYING   = 1500
@@ -33,6 +31,7 @@ elif TRAINING_MODE == "mid":
     MIN_REPLAY_MEMORY_SIZE = 128
     MINIBATCH_SIZE         = 64
     UPDATE_TARGET_EVERY    = 20
+    STEP_BETWEEN_TRAIN     = 10
 else:  # smoke
     START_EPSILON_DECAYING = 10
     END_EPSILON_DECAYING   = 40
@@ -40,6 +39,7 @@ else:  # smoke
     MIN_REPLAY_MEMORY_SIZE = 20
     MINIBATCH_SIZE         = 8
     UPDATE_TARGET_EVERY    = 10
+    STEP_BETWEEN_TRAIN     = 5
 
 MAX_REQUESTS_SMOKE = 15
 MAX_REQUESTS_PAPER = 100
@@ -78,14 +78,11 @@ class ReplayBuffer:
 # ── Joint timeslot replay (Hive / QMIX) ─────────────────────────────────────
 class QMixEpisodeBuffer:
     """
-    Stores one joint transition per timeslot, matching the structure used
-    by DQRLAgentDist.train_qmix():
+    Stores one joint transition per timeslot group.
 
-        (ts_states, ts_actions, scaled_rewards, ts_next_states,
-         global_state, next_global_state, done)
-
-    ts_states / ts_actions / ts_next_states are lists of per-request arrays.
-    global_state / next_global_state are flat numpy arrays.
+    sample() pads only to the actual maximum request count in the sampled
+    batch, not the global MAX_REQUESTS constant.  This is the primary OOM
+    fix: allocation is O(B × actual_N × state_dim) not O(B × 100 × state_dim).
     """
     def __init__(self, capacity: int = REPLAY_MEMORY_SIZE):
         self._buf = deque(maxlen=capacity)
@@ -104,11 +101,16 @@ class QMixEpisodeBuffer:
 
     def sample(self, batch_size: int, max_requests: int, state_dim: int):
         """
-        Returns padded numpy arrays ready for the QMIX train step:
-          padded_states      (B, max_requests, state_dim)
-          padded_actions     (B, max_requests)
-          mask               (B, max_requests)
-          padded_next_states (B, max_requests, state_dim)
+        Returns padded numpy arrays ready for qmix_train_step.
+
+        MR (max requests) is the actual maximum in this batch, capped at
+        max_requests.  agent.py reads MR from ps.shape[1], not from a constant.
+
+        Returns:
+          padded_states      (B, MR, state_dim)
+          padded_actions     (B, MR)
+          mask               (B, MR)
+          padded_next_states (B, MR, state_dim)
           global_states      (B, g_dim)
           next_global_states (B, g_dim)
           rewards            (B, 1)
@@ -117,19 +119,23 @@ class QMixEpisodeBuffer:
         batch = random.sample(self._buf, batch_size)
         B = batch_size
 
+        # Dynamic padding: allocate only as large as the actual batch needs
+        actual_max = max(len(ss) for ss, *_ in batch)
+        MR = min(actual_max, max_requests)
+
         g_dim = batch[0][4].shape[0]
 
-        ps       = np.zeros((B, max_requests, state_dim), dtype=np.float32)
-        pa       = np.zeros((B, max_requests),            dtype=np.int64)
-        mask     = np.zeros((B, max_requests),            dtype=np.float32)
-        pns      = np.zeros((B, max_requests, state_dim), dtype=np.float32)
-        gs       = np.zeros((B, g_dim),                   dtype=np.float32)
-        ngs      = np.zeros((B, g_dim),                   dtype=np.float32)
-        rewards  = np.zeros((B, 1),                       dtype=np.float32)
-        dones    = np.zeros((B, 1),                       dtype=np.float32)
+        ps      = np.zeros((B, MR, state_dim), dtype=np.float32)
+        pa      = np.zeros((B, MR),            dtype=np.int64)
+        mask    = np.zeros((B, MR),            dtype=np.float32)
+        pns     = np.zeros((B, MR, state_dim), dtype=np.float32)
+        gs      = np.zeros((B, g_dim),         dtype=np.float32)
+        ngs     = np.zeros((B, g_dim),         dtype=np.float32)
+        rewards = np.zeros((B, 1),             dtype=np.float32)
+        dones   = np.zeros((B, 1),             dtype=np.float32)
 
         for i, (ss, aa, rr, ns, g, ng, d) in enumerate(batch):
-            n = min(len(ss), max_requests)
+            n = min(len(ss), MR)
             if n > 0:
                 ps[i,  :n] = np.stack(ss[:n]).astype(np.float32)
                 pa[i,  :n] = np.array(aa[:n], dtype=np.int64)
