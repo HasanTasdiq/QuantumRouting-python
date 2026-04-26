@@ -39,6 +39,11 @@ def main():
     # `--neighbors=6` matches RELiQ_Adapter._NEIGHBOR_COUNT so the per-agent
     # observation dim (`MAX_REQ + 3 + neighbors*9 = 157`) and action space size
     # (`neighbors = 6`, no idle with --no-idle-action) line up with inference.
+    # Resolve output_dir to absolute NOW (relative to caller's cwd, not src/reliq/).
+    # main.py runs with cwd=src/reliq/, so without this the model would be written
+    # to src/reliq/<output_dir>/ instead of the expected project-root/<output_dir>/.
+    output_dir_abs = os.path.abspath(args.output_dir)
+
     step_before = max(1000, min(10000, args.total_steps // 10))
     step_between = max(50, args.total_steps // 250)
     cmd = [
@@ -58,7 +63,7 @@ def main():
         f"--device={args.device}",
         f"--capacity={min(50000, max(2000, args.total_steps // 4))}",
         "--min-path-length=1",
-        f"--output-dir={args.output_dir}",
+        f"--output-dir={output_dir_abs}",
         f"--comment={args.comment}",
     ]
 
@@ -68,12 +73,12 @@ def main():
         print(f"[reliq/train.py] ERROR: main.py exited with code {result.returncode}")
         sys.exit(result.returncode)
 
-    # Locate the checkpoint and copy to a stable path
+    # Locate the checkpoint and copy to a stable path (all paths absolute now)
     import glob, shutil
-    pattern = os.path.join(args.output_dir, f"*{args.comment}*", "model.pt")
+    pattern = os.path.join(output_dir_abs, f"*{args.comment}*", "model.pt")
     matches = sorted(glob.glob(pattern))
     if matches:
-        stable = os.path.join(args.output_dir, "RELiQ_QuRAPhysics", "model.pt")
+        stable = os.path.join(output_dir_abs, "RELiQ_QuRAPhysics", "model.pt")
         os.makedirs(os.path.dirname(stable), exist_ok=True)
         if matches[-1] != stable:
             shutil.copy2(matches[-1], stable)

@@ -92,21 +92,39 @@ def apply_request_attention(req_feats: np.ndarray) -> np.ndarray:
 
 
 # ── Neighbor embeddings ───────────────────────────────────────────────────────
+
 @torch.no_grad()
-def get_neighbor_embeddings(state_graph, current_node_id: int):
+def precompute_all_node_embeddings() -> np.ndarray:
+    """
+    Batch all SIZE node embeddings in a single forward pass. Call once per
+    timeslot and pass the result to get_neighbor_embeddings() as node_emb_cache.
+    Returns (SIZE, 64).
+    """
+    eye = torch.eye(SIZE, dtype=torch.float32)   # (SIZE, SIZE)
+    return dense_neighbor(eye).numpy()            # (SIZE, 64)
+
+
+@torch.no_grad()
+def get_neighbor_embeddings(state_graph, current_node_id: int,
+                             node_emb_cache: np.ndarray | None = None):
     """
     For each neighbour of current_node_id (has_link > 0):
-    build one-hot (SIZE,) → dense_neighbor → (64,).
-    Returns list of 64-D numpy arrays.
+    returns list of 64-D numpy arrays.
+
+    node_emb_cache: (SIZE, 64) from precompute_all_node_embeddings().
+    When provided, avoids per-neighbour PyTorch calls (major speedup).
     """
     neighbors = state_graph[current_node_id]
     results = []
     for node_id, has_link in enumerate(neighbors):
         if has_link > 0:
-            feat = np.zeros(SIZE, dtype=np.float32)
-            feat[node_id] = 1.0
-            t = torch.tensor(feat, dtype=torch.float32).unsqueeze(0)  # (1, SIZE)
-            results.append(dense_neighbor(t).squeeze(0).numpy())       # (64,)
+            if node_emb_cache is not None:
+                results.append(node_emb_cache[node_id])
+            else:
+                feat = np.zeros(SIZE, dtype=np.float32)
+                feat[node_id] = 1.0
+                t = torch.tensor(feat, dtype=torch.float32).unsqueeze(0)
+                results.append(dense_neighbor(t).squeeze(0).numpy())
     return results
 
 

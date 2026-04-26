@@ -48,6 +48,7 @@ from .helpers import (
     apply_neighbor_attention,
     get_global_state_vector,
     get_epsilon_linear,
+    precompute_all_node_embeddings,
 )
 from .replay import STEP_BETWEEN_TRAIN
 
@@ -63,28 +64,32 @@ MODEL_DIR = os.environ.get("MODEL_DIR", "/tmp/qrouting_model")
 
 # ── State construction (attention-cached) ────────────────────────────────────
 
-def _build_state(curr_req, attn_feats: np.ndarray,
-                 ent_arr: np.ndarray, dist_arr: np.ndarray) -> np.ndarray:
+def _build_state(dst_id: int, curr_id: int, req_idx: int,
+                 attn_feats: np.ndarray,
+                 ent_arr: np.ndarray, dist_flat: np.ndarray,
+                 node_emb_cache: np.ndarray | None = None) -> np.ndarray:
     """
-    Build 20228-dim state vector using pre-computed per-timeslot attn_feats.
-    Avoids repeating the MHA forward pass for every hop of every request.
+    Build 20228-dim state vector.
 
-    curr_req: [src_id, dst_id, curr_node_id, path_vec(SIZE,), index, done]
-    attn_feats: (2*N, 64) output of apply_request_attention() — index by req[4]
+    Uses pre-computed attn_feats (one MHA pass per timeslot) and
+    node_emb_cache (one batched dense_neighbor call per timeslot) to avoid
+    repeated PyTorch calls in the inner routing loop.
+
+    dst_id / curr_id / req_idx: scalars extracted from requestState.
+    dist_flat: pre-flattened (SIZE*SIZE,) fidelity snapshot — fixed per timeslot.
     """
-    curr_index = int(curr_req[4])
-    curr_emb   = attn_feats[curr_index]                          # (64,)
-    neigh_embs = get_neighbor_embeddings(ent_arr, int(curr_req[2]))
-    context    = apply_neighbor_attention(curr_emb, neigh_embs)  # (64,)
+    curr_emb   = attn_feats[req_idx]                                        # (64,)
+    neigh_embs = get_neighbor_embeddings(ent_arr, curr_id, node_emb_cache)
+    context    = apply_neighbor_attention(curr_emb, neigh_embs)             # (64,)
 
     local = np.zeros(SIZE, dtype=np.float32)
-    local[int(curr_req[2])] = 10.0
-    local[int(curr_req[1])] = 10.0
+    local[curr_id] = 1.0   # current-node indicator (scale 1.0, not 10.0)
+    local[dst_id]  = 1.0   # destination indicator
 
     return np.concatenate([
         curr_emb, context, local,
         ent_arr.flatten(),
-        dist_arr.flatten(),
+        dist_flat,
     ]).astype(np.float32)   # 64+64+100+10000+10000 = 20228
 
 
@@ -172,21 +177,16 @@ class QuRA_Local(AlgorithmBase):
 
     # ── Matrix helpers ────────────────────────────────────────────────────────
 
-    def _get_ent_matrix(self) -> np.ndarray:
-        m = np.zeros((SIZE, SIZE), dtype=np.float32)
+    def _get_matrices(self) -> tuple[np.ndarray, np.ndarray]:
+        """Single pass over links → (ent_matrix, dist_matrix). Replaces two loops."""
+        ent  = np.zeros((SIZE, SIZE), dtype=np.float32)
+        dist = np.zeros((SIZE, SIZE), dtype=np.float32)
         for link in self.topo.links:
             if link.isEntangled(self.timeSlot) and link.notSwapped() and not link.taken:
-                m[link.n1.id][link.n2.id] += 1
-                m[link.n2.id][link.n1.id] += 1
-        return m
-
-    def _get_dist_matrix(self) -> np.ndarray:
-        m = np.zeros((SIZE, SIZE), dtype=np.float32)
-        for link in self.topo.links:
-            if link.isEntangled(self.timeSlot) and link.notSwapped() and not link.taken:
-                m[link.n1.id][link.n2.id] = link.fidelity
-                m[link.n2.id][link.n1.id] = link.fidelity
-        return m
+                i, j = link.n1.id, link.n2.id
+                ent[i][j] += 1;        ent[j][i] += 1
+                dist[i][j] = link.fidelity; dist[j][i] = link.fidelity
+        return ent, dist
 
     def _get_req_matrix(self) -> np.ndarray:
         """
@@ -212,21 +212,6 @@ class QuRA_Local(AlgorithmBase):
             return np.zeros((0, SIZE), dtype=np.float32)
         return np.vstack(rows + paths).astype(np.float32)
 
-    def _make_curr_req(self, req_state) -> list:
-        """Convert a requestState entry to the curr_req format for _build_state."""
-        path_vec = np.zeros(SIZE, dtype=np.float32)
-        for nid in req_state[3]:
-            if 0 <= nid < SIZE:
-                path_vec[nid] = 1.0
-        return [
-            req_state[0].id,    # src id
-            req_state[1].id,    # dst id
-            int(req_state[2]),  # current node id
-            path_vec,           # path vector (SIZE,)
-            int(req_state[4]),  # index into req_matrix rows
-            req_state[5],       # done flag
-        ]
-
     # ── Routing + training ────────────────────────────────────────────────────
 
     def p4(self):
@@ -239,16 +224,19 @@ class QuRA_Local(AlgorithmBase):
             self.printResult()
             return self.result
 
-        ent_arr  = self._get_ent_matrix()    # (SIZE, SIZE) — updated in-place during routing
-        dist_arr = self._get_dist_matrix()   # (SIZE, SIZE) — fixed snapshot for whole timeslot
-        req_m    = self._get_req_matrix()    # (2*N, SIZE)
-        eps      = get_epsilon_linear(self.timeSlot)
+        # ── Per-timeslot pre-computation (amortised over all requests/hops) ───
+        ent_arr, dist_arr = self._get_matrices()  # single link pass for both matrices
+        dist_flat         = dist_arr.flatten()    # pre-flatten; dist is fixed this timeslot
+        req_m             = self._get_req_matrix()
 
-        # Compute attention ONCE for all requests in this timeslot.
-        # This is the main speedup: O(1) MHA forward passes instead of O(N*hops).
-        req_feats  = get_request_embeddings(req_m)     # (2*N, 64)
-        attn_feats = apply_request_attention(req_feats) # (2*N, 64)
+        # One MHA pass for all requests (was: one pass per hop per request)
+        req_feats  = get_request_embeddings(req_m)
+        attn_feats = apply_request_attention(req_feats)
 
+        # One batched dense_neighbor call for all nodes (was: one call per neighbor per hop)
+        node_emb_cache = precompute_all_node_embeddings()   # (SIZE, 64)
+
+        eps            = get_epsilon_linear(self.timeSlot)
         success_req    = 0
         total_fidelity = 0.0
         transitions    = []         # (state, action, raw_reward, next_state, done, req_idx)
@@ -272,8 +260,8 @@ class QuRA_Local(AlgorithmBase):
                 if not neighbors:
                     break
 
-                curr_req = self._make_curr_req(req_state)
-                state    = _build_state(curr_req, attn_feats, ent_arr, dist_arr)
+                state = _build_state(dst_id, curr, req_idx,
+                                     attn_feats, ent_arr, dist_flat, node_emb_cache)
 
                 # Masked action selection: only valid neighbors are eligible
                 if dst_id in neighbors:
@@ -301,9 +289,9 @@ class QuRA_Local(AlgorithmBase):
                 req_state[3] = tuple(visited | {action})
                 curr = action
 
-                done          = (curr == dst_id)
-                next_curr_req = self._make_curr_req(req_state)
-                next_state    = _build_state(next_curr_req, attn_feats, ent_arr, dist_arr)
+                done       = (curr == dst_id)
+                next_state = _build_state(dst_id, curr, req_idx,
+                                          attn_feats, ent_arr, dist_flat, node_emb_cache)
 
                 raw_r = 10.0 if done else -0.1
                 transitions.append((state, action, raw_r, next_state, done, req_idx))
