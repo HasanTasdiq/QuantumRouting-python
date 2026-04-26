@@ -48,6 +48,7 @@ from .helpers import (
     get_global_state_vector,
     get_epsilon_linear,
     precompute_all_node_embeddings,
+    dense_proj, dense_neighbor, mha, ln_req,
 )
 from .replay import STEP_BETWEEN_TRAIN
 
@@ -125,7 +126,15 @@ class QuRA_Local(AlgorithmBase):
     def _save_weights(self) -> None:
         import torch
         os.makedirs(MODEL_DIR, exist_ok=True)
-        torch.save(self.agent.model.state_dict(), self._model_path)
+        # Save Q-network + shared embedding layers together so inference mode
+        # reproduces the exact same state representation as training.
+        torch.save({
+            "model":        self.agent.model.state_dict(),
+            "dense_proj":   dense_proj.state_dict(),
+            "dense_neighbor": dense_neighbor.state_dict(),
+            "mha":          mha.state_dict(),
+            "ln_req":       ln_req.state_dict(),
+        }, self._model_path)
         print(f"[{self.name}] weights saved → {self._model_path}")
 
     def _load_weights(self) -> bool:
@@ -133,8 +142,16 @@ class QuRA_Local(AlgorithmBase):
         if not os.path.exists(self._model_path):
             print(f"[{self.name}] no checkpoint at {self._model_path} — random policy")
             return False
-        self.agent.model.load_state_dict(
-            torch.load(self._model_path, map_location="cpu", weights_only=True))
+        ckpt = torch.load(self._model_path, map_location="cpu", weights_only=True)
+        if isinstance(ckpt, dict) and "model" in ckpt:
+            self.agent.model.load_state_dict(ckpt["model"])
+            if "dense_proj"     in ckpt: dense_proj.load_state_dict(ckpt["dense_proj"])
+            if "dense_neighbor" in ckpt: dense_neighbor.load_state_dict(ckpt["dense_neighbor"])
+            if "mha"            in ckpt: mha.load_state_dict(ckpt["mha"])
+            if "ln_req"         in ckpt: ln_req.load_state_dict(ckpt["ln_req"])
+        else:
+            # legacy: bare model state_dict (no embedding layers saved)
+            self.agent.model.load_state_dict(ckpt)
         self.agent.target_model.load_state_dict(self.agent.model.state_dict())
         print(f"[{self.name}] weights loaded from {self._model_path}")
         return True

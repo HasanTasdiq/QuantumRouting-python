@@ -77,7 +77,8 @@ def evaluate(
         if isinstance(env.get(), EntanglementEnv) and output_dir is not None:
             if env.get().render_episode >= 0:
                 env.get().figure_path = os.path.join(output_dir, "video")
-            Path(env.get().figure_path).mkdir(exist_ok=True, parents=True)
+            if env.get().figure_path is not None:
+                Path(env.get().figure_path).mkdir(exist_ok=True, parents=True)
 
             env.get().network.random_neighbors = False
             env.get().network.eval = True

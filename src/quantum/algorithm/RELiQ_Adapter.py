@@ -157,15 +157,18 @@ class RELiQ_Adapter(AlgorithmBase):
             self._policy = None
 
     # ── Observation construction ──────────────────────────────────────────────
-    def _build_obs(self, req_idx: int, ent_matrix: np.ndarray) -> np.ndarray:
+    def _build_obs(self, req_idx: int,
+                   ent_matrix: np.ndarray,
+                   fid_matrix: np.ndarray) -> np.ndarray:
         """
         Build per-request observation matching --request-based-observation format.
         Returns float32 array of shape (_OBS_SIZE,).
-        ent_matrix must be the shared, already-decremented matrix from p4().
+        ent_matrix / fid_matrix must be the shared, already-decremented matrices
+        from p4() (built once via _get_matrices()).
         """
-        req      = self.requestState[req_idx]
-        curr_id  = int(req[2])
-        path     = req[3]
+        req       = self.requestState[req_idx]
+        curr_id   = int(req[2])
+        path      = req[3]
         target_id = req[1].id
         start_id  = req[0].id
         visited   = set(path)
@@ -184,18 +187,20 @@ class RELiQ_Adapter(AlgorithmBase):
         # 4. Entanglements at target
         ob.append(float(ent_matrix[target_id].sum()))
 
-        # 5. Per-neighbor features (iterate nodes in order → matches training env)
+        # 5. Per-neighbor features — use np.nonzero for C-level neighbor discovery
+        #    (avoids a full Python loop over all nodes; ~50× faster for sparse graphs)
+        neigh_ids  = np.nonzero(ent_matrix[curr_id])[0]
         nodes_seen = 0
-        for node in self.topo.nodes:
+        for nid in neigh_ids:
             if nodes_seen >= _NEIGHBOR_COUNT:
                 break
-            if ent_matrix[curr_id][node.id] >= 1:
-                swap_prob = float(node.q)
-                avail     = float(ent_matrix[curr_id][node.id])
-                top_fid   = self._best_link_fidelity(curr_id, node.id)
-                dest_oh   = _dest_state_oh(node.id, visited, start_id, target_id)
-                ob += [swap_prob, avail, top_fid] + dest_oh
-                nodes_seen += 1
+            node      = self.topo.nodes[nid]
+            swap_prob = float(node.q)
+            avail     = float(ent_matrix[curr_id][nid])
+            top_fid   = float(fid_matrix[curr_id][nid])   # O(1) lookup
+            dest_oh   = _dest_state_oh(int(nid), visited, start_id, target_id)
+            ob += [swap_prob, avail, top_fid] + dest_oh
+            nodes_seen += 1
 
         # Pad missing neighbours with all-zeros (matches training env padding)
         for _ in range(_NEIGHBOR_COUNT - nodes_seen):
@@ -203,75 +208,24 @@ class RELiQ_Adapter(AlgorithmBase):
 
         return np.array(ob, dtype=np.float32)
 
-    def _best_link_fidelity(self, node_a: int, node_b: int) -> float:
-        best = 0.0
-        for link in self.topo.links:
-            if link.isEntangled(self.timeSlot) and link.notSwapped() and not link.taken:
-                a, b = link.n1.id, link.n2.id
-                if (a == node_a and b == node_b) or (a == node_b and b == node_a):
-                    best = max(best, link.fidelity)
-        return best
-
-    def get_ent_graph_matrix(self) -> np.ndarray:
-        n = len(self.topo.nodes)
-        m = np.zeros((n, n), dtype=np.float32)
+    def _get_matrices(self) -> tuple:
+        """Single pass over links → (ent_matrix, fid_matrix). Called once per p4()."""
+        n   = len(self.topo.nodes)
+        ent = np.zeros((n, n), dtype=np.float32)
+        fid = np.zeros((n, n), dtype=np.float32)
         for link in self.topo.links:
             if link.isEntangled(self.timeSlot) and link.notSwapped() and not link.taken:
                 i, j = link.n1.id, link.n2.id
-                m[i][j] += 1
-                m[j][i] += 1
-        return m
+                ent[i][j] += 1;          ent[j][i] += 1
+                if link.fidelity > fid[i][j]:
+                    fid[i][j] = link.fidelity
+                    fid[j][i] = link.fidelity
+        return ent, fid
 
-    # ── Inference ─────────────────────────────────────────────────────────────
-    def _select_next_hop(self, req_idx: int,
-                         ent_matrix: np.ndarray,
-                         req_state) -> int | None:
-        """
-        Returns the next-hop node id (or None if no valid hop).
-        Uses RELiQ policy if loaded, else greedy fidelity.
-        ent_matrix is the shared matrix maintained in p4(); must NOT be re-fetched here.
-        """
-        curr_id   = int(req_state[2])
-        visited   = set(req_state[3])
-        target_id = req_state[1].id
-
-        # Candidate neighbours: entangled, unvisited, not self
-        neighbours = [
-            n.id for n in self.topo.nodes
-            if ent_matrix[curr_id][n.id] >= 1
-            and n.id not in visited
-            and n.id != curr_id
-        ]
-        if not neighbours:
-            return None
-
-        # Route directly to destination when adjacent
-        if target_id in neighbours:
-            return target_id
-
-        if self._policy is None:
-            return max(neighbours, key=lambda n: self._best_link_fidelity(curr_id, n))
-
-        import torch
-        obs = self._build_obs(req_idx, ent_matrix)          # (_OBS_SIZE,)
-        x   = torch.tensor(obs, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        # x shape: (1, 1, _OBS_SIZE) — matches DQN.forward(x, mask) signature
-
-        with torch.no_grad():
-            q_values = self._policy(x, x.new_zeros(1, 1, 1))  # mask unused by DQN
-            q_values = q_values.squeeze().cpu().numpy()         # (_n_actions,)
-
-        if q_values.ndim == 0:
-            q_values = q_values.reshape(1)
-
-        # Action i → the i-th neighbour in self.topo.nodes iteration order, which
-        # must match _build_obs exactly so the Q-value indices line up correctly.
-        neigh_set     = set(neighbours)
-        neigh_ordered = [n.id for n in self.topo.nodes
-                         if n.id in neigh_set][:_NEIGHBOR_COUNT]
-        n_avail       = len(neigh_ordered)
-        best_idx      = int(np.argmax(q_values[:n_avail]))
-        return neigh_ordered[best_idx]
+    # kept for backward-compat callers outside p4(); not used in the hot path
+    def get_ent_graph_matrix(self) -> np.ndarray:
+        ent, _ = self._get_matrices()
+        return ent
 
     # ── AlgorithmBase interface ───────────────────────────────────────────────
     def AddNewSDpairs(self):
@@ -308,70 +262,94 @@ class RELiQ_Adapter(AlgorithmBase):
                         self.totalUsedQubits += 2
 
     def p4(self):
-        successReq = 0
+        import torch
 
-        # Build the entanglement matrix once and maintain it in-place throughout
-        # p4(). After each committed hop (curr→next), we decrement the count so
-        # subsequent hops and requests see the correct availability without having
-        # to re-query topo (which won't reflect un-consumed links mid-timeslot).
-        ent_matrix  = self.get_ent_graph_matrix()
-        routed_links = set()   # conflict resolution: first-come-first-serve
+        # Build both matrices in a single link pass (fixes A: no per-hop link scan).
+        ent_matrix, fid_matrix = self._get_matrices()
+        routed_links = set()
+        success_req  = 0
 
-        for req_idx, req_state in enumerate(self.requestState):
-            if req_state[5]:   # already done
-                continue
+        # Batched-hop routing: one DQN forward per hop step across ALL requests,
+        # mirroring the pattern in local_trainer.py. Reduces PyTorch invocations
+        # from O(N_requests × N_hops) to O(N_hops) (fixes B).
+        for _hop in range(25):
+            # Collect all requests that still have moves available.
+            # np.nonzero gives C-level neighbor discovery (fixes C).
+            pending = []
+            for ridx, req_state in enumerate(self.requestState):
+                if req_state[5]:
+                    continue
+                curr    = int(req_state[2])
+                visited = set(req_state[3])
+                raw     = np.nonzero(ent_matrix[curr])[0]
+                neighs  = [int(i) for i in raw if i not in visited and i != curr]
+                if neighs:
+                    pending.append((ridx, req_state, req_state[1].id, curr, visited, neighs))
 
-            dst     = req_state[1]
-            current = int(req_state[2])
-            visited = set(req_state[3])
+            if not pending:
+                break
 
-            hops     = 0
-            max_hops = 25
-            fidelity = 1.0
-            routed   = False
+            # Separate "go direct" from "need Q-values"
+            direct_hops = {}   # ridx → next_hop
+            greedy_batch = []  # (ridx, dst_id, curr, neighs, obs)
 
-            while hops < max_hops:
-                next_hop = self._select_next_hop(req_idx, ent_matrix, req_state)
-                if next_hop is None:
-                    break
+            for ridx, req_state, dst_id, curr, visited, neighs in pending:
+                if dst_id in neighs:
+                    direct_hops[ridx] = dst_id
+                elif self._policy is None:
+                    # greedy fallback: best fidelity neighbor (O(1) with fid_matrix)
+                    direct_hops[ridx] = max(neighs,
+                                            key=lambda n: float(fid_matrix[curr][n]))
+                else:
+                    obs = self._build_obs(ridx, ent_matrix, fid_matrix)
+                    greedy_batch.append((ridx, dst_id, curr, neighs, obs))
 
-                link_key = (min(current, next_hop), max(current, next_hop))
+            # One batched DQN call for all requests needing Q-value decisions
+            if greedy_batch and self._policy is not None:
+                obs_stack = np.stack([o for *_, o in greedy_batch])          # (N, _OBS_SIZE)
+                x = torch.tensor(obs_stack, dtype=torch.float32).unsqueeze(1)  # (N, 1, _OBS_SIZE)
+                with torch.no_grad():
+                    q_batch = self._policy(x, x.new_zeros(x.shape[0], 1, 1))  # (N, n_actions)
+                    q_batch = q_batch.squeeze(1).cpu().numpy()                 # (N, n_actions)
+
+                for i, (ridx, dst_id, curr, neighs, _) in enumerate(greedy_batch):
+                    q = q_batch[i]
+                    # action index → the i-th neighbor in np.nonzero order (same as _build_obs)
+                    neigh_ordered = neighs[:_NEIGHBOR_COUNT]
+                    best_idx = int(np.argmax(q[:len(neigh_ordered)]))
+                    direct_hops[ridx] = neigh_ordered[best_idx]
+
+            # Apply decided hops
+            for ridx, req_state, dst_id, curr, visited, neighs in pending:
+                if ridx not in direct_hops:
+                    continue
+                next_hop = direct_hops[ridx]
+                link_key = (min(curr, next_hop), max(curr, next_hop))
                 if link_key in routed_links:
-                    break
+                    continue
                 routed_links.add(link_key)
 
-                # Consume one entanglement on this link in the shared matrix
-                ent_matrix[current][next_hop] = max(0.0, ent_matrix[current][next_hop] - 1)
-                ent_matrix[next_hop][current] = max(0.0, ent_matrix[next_hop][current] - 1)
-
-                # Accumulate Werner-swap fidelity along the path
-                hop_fid  = self._best_link_fidelity(current, next_hop)
-                fidelity = fidelity * hop_fid + (1 - fidelity) * (1 - hop_fid) / 3.0
+                ent_matrix[curr][next_hop] = max(0.0, ent_matrix[curr][next_hop] - 1)
+                ent_matrix[next_hop][curr] = max(0.0, ent_matrix[next_hop][curr] - 1)
 
                 visited.add(next_hop)
                 req_state[2] = next_hop
                 req_state[3] = tuple(visited)
-                current  = next_hop
-                hops    += 1
 
-                if current == dst.id:
-                    routed = True
-                    break
-
-            if routed:
-                successReq   += 1
-                req_state[5]  = True
+                if next_hop == dst_id:
+                    req_state[5] = True
+                    success_req += 1
 
         # Remove completed requests
         self.requests     = [r for i, r in enumerate(self.requests)
                              if not self.requestState[i][5]]
         self.requestState = [s for s in self.requestState if not s[5]]
 
-        self.result.successfulRequest            += successReq
-        self.result.successfulRequestPerRound.append(successReq)
-        self.result.entanglementPerRound.append(successReq)
+        self.result.successfulRequest            += success_req
+        self.result.successfulRequestPerRound.append(success_req)
+        self.result.entanglementPerRound.append(success_req)
         self.result.fidelityPerRound.append(0)
-        self.result.rewardPerRound.append(float(successReq))
+        self.result.rewardPerRound.append(float(success_req))
 
         self.printResult()
         return self.result

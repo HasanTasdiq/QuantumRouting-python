@@ -55,6 +55,9 @@ def main():
         "--fixed-requests",
         "--action-mask",
         "--disable-progressbar",
+        "--n-data=100",           # must match _MAX_REQUESTS=100 in RELiQ_Adapter
+        "--n-router=100",         # 100-node graph matches QuRA experiment topology
+        "--eval-episodes=10",     # keep end-of-run eval cheap (default=100 × 1000 steps is ~60s)
         f"--total-steps={args.total_steps}",
         f"--step-between-train={step_between}",
         f"--step-before-train={step_before}",
@@ -73,18 +76,35 @@ def main():
         print(f"[reliq/train.py] ERROR: main.py exited with code {result.returncode}")
         sys.exit(result.returncode)
 
-    # Locate the checkpoint and copy to a stable path (all paths absolute now)
+    # Locate the checkpoint and copy to a stable path (all paths absolute now).
+    # main.py saves the final checkpoint as model_last.pt directly in output_dir;
+    # model_best.pt is also saved there if any improvement was observed.
     import glob, shutil
-    pattern = os.path.join(output_dir_abs, f"*{args.comment}*", "model.pt")
-    matches = sorted(glob.glob(pattern))
-    if matches:
-        stable = os.path.join(output_dir_abs, "RELiQ_QuRAPhysics", "model.pt")
-        os.makedirs(os.path.dirname(stable), exist_ok=True)
-        if matches[-1] != stable:
-            shutil.copy2(matches[-1], stable)
-        print(f"[reliq/train.py] model saved → {stable}")
+    stable = os.path.join(output_dir_abs, "RELiQ_QuRAPhysics", "model.pt")
+    os.makedirs(os.path.dirname(stable), exist_ok=True)
+
+    # Prefer best, fall back to last.
+    src = None
+    for candidate in ["model_best.pt", "model_last.pt"]:
+        path = os.path.join(output_dir_abs, candidate)
+        if os.path.exists(path):
+            src = path
+            break
+
+    if src is None:
+        # legacy: sub-directory layout (output-dir was not used as the log dir)
+        pattern = os.path.join(output_dir_abs, f"*{args.comment}*", "model_last.pt")
+        matches = sorted(glob.glob(pattern))
+        if matches:
+            src = matches[-1]
+
+    if src and src != stable:
+        shutil.copy2(src, stable)
+        print(f"[reliq/train.py] model saved → {stable}  (from {src})")
+    elif src == stable:
+        print(f"[reliq/train.py] model already at {stable}")
     else:
-        print(f"[reliq/train.py] WARNING: no model.pt found under {pattern}")
+        print(f"[reliq/train.py] WARNING: no checkpoint found in {output_dir_abs}")
 
 if __name__ == "__main__":
     main()

@@ -156,10 +156,14 @@ class AlgorithmBase:
             link.tryEntanglement(self.timeSlot, self.param)
         for segment in self.topo.segments:
             entangled = segment.tryEntanglement(self.timeSlot, self.param)
-        
-        print('[=================== '+self.name+'========================] total entangled link ' , len([l for l in self.topo.links if l.entangled]) , '   out of: ' , len([l for l in self.topo.links]))
 
-        print('[=================== '+self.name+'========================] virtuak entangled link ' , len([l for l in self.topo.links if l.isVirtualLink]) , '   out of: ' , len([l for l in self.topo.links]))
+        if self.timeSlot % 100 == 0:
+            n_ent     = sum(1 for l in self.topo.links if l.entangled)
+            n_virtual = sum(1 for l in self.topo.links if l.isVirtualLink)
+            n_total   = len(self.topo.links)
+            print(f'[{self.name}] ts={self.timeSlot}'
+                  f'  entangled={n_ent}/{n_total}'
+                  f'  virtual={n_virtual}/{n_total}')
             
     # def tryEntanglement(self):
     #     for segment in self.topo.segments:
@@ -798,50 +802,28 @@ class AlgorithmBase:
         # start = time.time()
 
         self.p2()
-        print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken for p2 : ' , time.time() - t1)
 
-        
-        # if not ('preswap' in self.name):
         self.tryEntanglement()
 
-        # t2 = time.time()
         start = time.time()
         t2 = process_time()
-        print('going to p4 ' , self.name)
         res = self.p4()
-        print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken for p4 : ' , time.time() - t2)
-
         end = time.time()
 
         self.stats()
-        # if self.preEnt:
-        #     self.updateCacheTable()
-
-        # end   
-        # end = process_time()
 
         self.srcDstPairs.clear()
         self.resetNodeSwaps()
         self.resetNeedLinksDict()
-        print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time calculate : ' , time.time() - t2 , 'p_time: ' , res.p_time)
 
-        # if self.name == 'QuRA_DQRL_entdqrl':
-        #     # res.totalRuntime += res.p_time
-        #     res.totalRuntime += time.time() - t2
-
-        # else:
-        #     # res.totalRuntime += (end - start)
-        #     res.totalRuntime += time.time() - t2
-        res.totalRuntime = end-start
+        res.totalRuntime = end - start
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
-        tot = 0
-        if time_ %100 == 0:
-            print('[' , self.name , ']' , 'requests at time:' , time_)
-            for k in self.topo.pair_dict:
-                print('[' , self.name , ']' , 'requests at time:' , time_ , ': ' , k , self.topo.pair_dict[k])
-                tot += self.topo.pair_dict[k]
-            print(tot)
-        print('[[[[[[[' + self.name +']]]]]]]]]' , time_ , 'time taken: ' , time.time() - t1)
+
+        if time_ % 100 == 0:
+            tot = sum(self.topo.pair_dict.values())
+            print(f'[{self.name}] ts={time_}  p4={end - start:.3f}s'
+                  f'  wall={time.time() - t1:.3f}s  pair_types={len(self.topo.pair_dict)}'
+                  f'  total_pairs={tot}')
         self.postProcess()
         return res
 

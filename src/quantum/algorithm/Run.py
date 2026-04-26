@@ -26,6 +26,7 @@ import math
 import multiprocessing
 import multiprocessing.context as ctx
 import os
+import subprocess
 import sys
 import time
 from random import sample
@@ -56,10 +57,32 @@ from pt.local_trainer import (
 )
 from RELiQ_Adapter import RELiQ_Adapter
 from topo.Topo import Topo
+
+# ── Auto-train RELiQ if checkpoint is missing ─────────────────────────────────
+_project_root    = os.path.normpath(os.path.join(_algo_dir, '../../..'))
+_RELIQ_MODEL     = os.path.join(_project_root, 'runs_quantum',
+                                'RELiQ_QuRAPhysics', 'model.pt')
+if not os.path.exists(_RELIQ_MODEL):
+    _reliq_steps = int(os.environ.get("RELIQ_STEPS", "500000"))
+    print(f"[Run.py] RELiQ checkpoint not found — training ({_reliq_steps} steps)…")
+    _rc = subprocess.run(
+        [sys.executable, "-m", "src.reliq.train",
+         f"--total-steps={_reliq_steps}",
+         "--output-dir=runs_quantum"],
+        cwd=_project_root,
+    ).returncode
+    if _rc != 0:
+        print(f"[Run.py] WARNING: RELiQ training exited rc={_rc}; will use greedy fallback")
 from topo.mp_helper import executor as executor
 
 # ── Run configuration ─────────────────────────────────────────────────────────
-INFERENCE_MODE = os.environ.get("INFERENCE_MODE", "0") == "1"
+INFERENCE_MODE  = os.environ.get("INFERENCE_MODE",  "0")    == "1"
+
+# TRAINING_MODE controls the QuRA replay/epsilon schedule (paper | mid | smoke).
+# Must be set BEFORE importing local_trainer so replay.py reads the right values.
+# Expose a default so the child processes (spawn) see the same value.
+_tmode = os.environ.get("TRAINING_MODE", "paper")
+os.environ["TRAINING_MODE"] = _tmode   # propagate to spawned child processes
 
 ttime    = int(os.environ.get("TTIME",  "10000"))
 step     = int(os.environ.get("STEP",   "1000"))
@@ -82,6 +105,7 @@ else:
     numOfRequestPerRound = [TRAIN_LOAD]
 
 print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}"
+      f"  training_mode={_tmode}"
       f"  ttime={ttime}  step={step}  times={times}"
       f"  loads={numOfRequestPerRound}")
 
@@ -89,6 +113,18 @@ print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}"
 # ── Per-algorithm thread ───────────────────────────────────────────────────────
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict, shared_data):
+    # Cap PyTorch/OpenMP threads per worker process.  With 6 algorithms running
+    # in parallel, the default (all cores) causes severe CPU contention on macOS.
+    _n_threads = int(os.environ.get("TORCH_THREADS", "2"))
+    try:
+        import torch
+        torch.set_num_threads(_n_threads)
+    except ImportError:
+        pass
+    os.environ.setdefault("OMP_NUM_THREADS",  str(_n_threads))
+    os.environ.setdefault("MKL_NUM_THREADS",  str(_n_threads))
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", str(_n_threads))
+
     _log_dir = "/tmp/qrouting_logs"
     os.makedirs(_log_dir, exist_ok=True)
     _req_count = algo.topo.numOfRequestPerRound

@@ -29,6 +29,7 @@ from .replay  import (
     MAX_REQUESTS_SMOKE, MAX_REQUESTS_PAPER,
     TRAINING_MODE,
 )
+from . import helpers as _helpers
 
 LR          = 1e-4
 CLIP_VALUE  = 0.1
@@ -71,8 +72,18 @@ class DQRLAgentDist:
         self.mixer        = QMixer(self.MAX_REQUESTS, self.global_state_dim, EMBED_DIM)
         self.target_mixer = copy.deepcopy(self.mixer)
 
+        # Include the shared embedding layers so the state representation is
+        # trained alongside the Q-network (previously they stayed at random init).
+        _embed_params = (
+            list(_helpers.dense_proj.parameters()) +
+            list(_helpers.dense_neighbor.parameters()) +
+            list(_helpers.mha.parameters()) +
+            list(_helpers.ln_req.parameters())
+        )
         self.optimizer = torch.optim.Adam(
-            list(self.model.parameters()) + list(self.mixer.parameters()),
+            list(self.model.parameters()) +
+            list(self.mixer.parameters()) +
+            _embed_params,
             lr=LR,
         )
 
@@ -128,6 +139,18 @@ class DQRLAgentDist:
         if not INFERENCE_MODE:
             self.single_replay.push(state, action, reward, next_state, done)
 
+    def _embed_train(self):
+        _helpers.dense_proj.train()
+        _helpers.dense_neighbor.train()
+        _helpers.mha.train()
+        _helpers.ln_req.train()
+
+    def _embed_eval(self):
+        _helpers.dense_proj.eval()
+        _helpers.dense_neighbor.eval()
+        _helpers.mha.eval()
+        _helpers.ln_req.eval()
+
     def replay(self, batch_size: int = MINIBATCH_SIZE) -> float | None:
         if INFERENCE_MODE:
             return None
@@ -143,6 +166,9 @@ class DQRLAgentDist:
         nst = torch.tensor(next_states, dtype=torch.float32)
         d   = torch.tensor(dones,       dtype=torch.float32)
 
+        self._embed_train()
+        self.model.train()
+
         with torch.no_grad():
             online_next = self.model(nst)
             best_a = online_next.argmax(dim=1, keepdim=True)
@@ -154,9 +180,18 @@ class DQRLAgentDist:
 
         self.optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm_(self.model.parameters(), CLIP_VALUE)
+        nn.utils.clip_grad_norm_(
+            list(self.model.parameters()) +
+            list(_helpers.dense_proj.parameters()) +
+            list(_helpers.dense_neighbor.parameters()) +
+            list(_helpers.mha.parameters()) +
+            list(_helpers.ln_req.parameters()),
+            CLIP_VALUE,
+        )
         self.optimizer.step()
 
+        self.model.eval()
+        self._embed_eval()
         self._maybe_update_target()
         return loss.item()
 
@@ -176,6 +211,9 @@ class DQRLAgentDist:
             return None
         if len(self.qmix_replay) < MIN_REPLAY_MEMORY_SIZE:
             return None
+
+        self._embed_train()
+        self.model.train()
 
         (ps, pa, mask, pns, gs, ngs, rewards, dones) = \
             self.qmix_replay.sample(
@@ -228,11 +266,18 @@ class DQRLAgentDist:
         self.optimizer.zero_grad()
         loss.backward()
         nn.utils.clip_grad_norm_(
-            list(self.model.parameters()) + list(self.mixer.parameters()),
+            list(self.model.parameters()) +
+            list(self.mixer.parameters()) +
+            list(_helpers.dense_proj.parameters()) +
+            list(_helpers.dense_neighbor.parameters()) +
+            list(_helpers.mha.parameters()) +
+            list(_helpers.ln_req.parameters()),
             CLIP_VALUE,
         )
         self.optimizer.step()
 
+        self.model.eval()
+        self._embed_eval()
         self._maybe_update_target()
         return loss.item()
 

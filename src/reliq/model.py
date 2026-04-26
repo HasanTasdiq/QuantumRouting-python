@@ -3,13 +3,23 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, SAGEConv, AntiSymmetricConv, GraphSAGE
-from torch_geometric.utils import dense_to_sparse
-from torch_geometric.nn.summary import summary
+
+try:
+    from torch_geometric.nn import GCNConv, SAGEConv, AntiSymmetricConv, GraphSAGE
+    from torch_geometric.utils import dense_to_sparse
+    from torch_geometric.nn.summary import summary
+    _HAS_TORCH_GEOMETRIC = True
+except ImportError:
+    _HAS_TORCH_GEOMETRIC = False
 
 # from torch_geometric_temporal import DyGrEncoder
 
-from layernormlstm import LayerNormLSTMCell
+try:
+    from layernormlstm import LayerNormLSTMCell
+    _HAS_LAYERNORM_LSTM = True
+except ImportError:
+    _HAS_LAYERNORM_LSTM = False
+    LayerNormLSTMCell = None
 
 
 class MLP(nn.Module):

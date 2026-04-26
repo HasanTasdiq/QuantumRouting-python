@@ -1569,7 +1569,7 @@ finally:
                 Path(writer.get_logdir()) / "eval",
                 args.eval_output_detailed,
                 args.output_node_state_aux,
-                args.detailed_eval_logs,
+                detailed_eval=args.detailed_eval_logs,
             )
             print(json.dumps(metrics, indent=4, sort_keys=True, default=str))
             writer.add_hparams(
