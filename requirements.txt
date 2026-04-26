@@ -16,3 +16,5 @@ redis>=5.0
 
 # ── Optional: plotting / analysis only ────────────────────────────────────────
 pandas>=2.0             # used only in src/reliq/sl.py (supervised-learning helper)
+topohub
+geopy
