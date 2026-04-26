@@ -12,36 +12,30 @@ import os
 import sys
 
 # Ensure src/reliq/ is importable as a package
-_this_dir = os.path.dirname(os.path.abspath(__file__))
-if _this_dir not in sys.path:
-    sys.path.insert(0, _this_dir)
-_src_dir = os.path.dirname(_this_dir)
-if _src_dir not in sys.path:
-    sys.path.insert(0, _src_dir)
+_this_dir    = os.path.dirname(os.path.abspath(__file__))          # src/reliq
+_src_dir     = os.path.dirname(_this_dir)                          # src
+_project_dir = os.path.dirname(_src_dir)                           # project root
+for _p in [_this_dir, _src_dir]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import subprocess, shlex
+
+# Default output dir anchored to the project root so the model ends up at the
+# path Run.py and RELiQ_Adapter both expect, regardless of the caller's CWD.
+_DEFAULT_OUTPUT_DIR = os.path.join(_project_dir, "runs_quantum")
 
 def main():
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--total-steps",  type=int, default=500_000)
-    p.add_argument("--output-dir",   type=str, default="runs_quantum")
+    p.add_argument("--output-dir",   type=str, default=_DEFAULT_OUTPUT_DIR)
     p.add_argument("--device",       type=str, default="cpu")
     p.add_argument("--comment",      type=str, default="RELiQ_QuRAPhysics")
     args = p.parse_args()
 
-    # NetMon (graph message-passing) is intentionally disabled because the
-    # QuRA adapter at inference time does not have access to the per-node
-    # graph observations / RNN state propagation that NetMon trains against.
-    # A plain DQN over per-request observations gives an inference-compatible
-    # checkpoint and matches the obs format the adapter constructs.
-    #
-    # `--neighbors=6` matches RELiQ_Adapter._NEIGHBOR_COUNT so the per-agent
-    # observation dim (`MAX_REQ + 3 + neighbors*9 = 157`) and action space size
-    # (`neighbors = 6`, no idle with --no-idle-action) line up with inference.
-    # Resolve output_dir to absolute NOW (relative to caller's cwd, not src/reliq/).
-    # main.py runs with cwd=src/reliq/, so without this the model would be written
-    # to src/reliq/<output_dir>/ instead of the expected project-root/<output_dir>/.
+    # Resolve to absolute. If the caller passed a relative path it is resolved
+    # against their CWD; the default is already absolute so it is unchanged.
     output_dir_abs = os.path.abspath(args.output_dir)
 
     step_before = max(1000, min(10000, args.total_steps // 10))
@@ -62,6 +56,9 @@ def main():
         f"--step-between-train={step_between}",
         f"--step-before-train={step_before}",
         "--neighbors=6",
+        "--swap-prob=0.9",        # match QuRA q=0.9
+        "--swap-prob-std=0.0",    # QuRA uses a fixed q, no variance
+        "--initial-fidelity=0.9", # match QuRA Link.initial_fidelity=0.9
         "--model=dqn",
         f"--device={args.device}",
         f"--capacity={min(50000, max(2000, args.total_steps // 4))}",
@@ -80,7 +77,7 @@ def main():
     # main.py saves the final checkpoint as model_last.pt directly in output_dir;
     # model_best.pt is also saved there if any improvement was observed.
     import glob, shutil
-    stable = os.path.join(output_dir_abs, "RELiQ_QuRAPhysics", "model.pt")
+    stable = os.path.join(output_dir_abs, args.comment, "model.pt")
     os.makedirs(os.path.dirname(stable), exist_ok=True)
 
     # Prefer best, fall back to last.

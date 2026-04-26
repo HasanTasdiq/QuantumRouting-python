@@ -60,15 +60,18 @@ from topo.Topo import Topo
 
 # ── Auto-train RELiQ if checkpoint is missing ─────────────────────────────────
 _project_root    = os.path.normpath(os.path.join(_algo_dir, '../../..'))
+_RELIQ_COMMENT   = "RELiQ_QuRAPhysics"   # must match train.py --comment default
+                                          # and RELiQ_Adapter._DEFAULT_MODEL_PATH
 _RELIQ_MODEL     = os.path.join(_project_root, 'runs_quantum',
-                                'RELiQ_QuRAPhysics', 'model.pt')
+                                _RELIQ_COMMENT, 'model.pt')
 if not os.path.exists(_RELIQ_MODEL):
     _reliq_steps = int(os.environ.get("RELIQ_STEPS", "500000"))
     print(f"[Run.py] RELiQ checkpoint not found — training ({_reliq_steps} steps)…")
     _rc = subprocess.run(
         [sys.executable, "-m", "src.reliq.train",
          f"--total-steps={_reliq_steps}",
-         "--output-dir=runs_quantum"],
+         "--output-dir=runs_quantum",
+         f"--comment={_RELIQ_COMMENT}"],   # explicit: ties save path to adapter path
         cwd=_project_root,
     ).returncode
     if _rc != 0:
@@ -113,6 +116,7 @@ print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}"
 # ── Per-algorithm thread ───────────────────────────────────────────────────────
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict, shared_data):
+    _t_start = time.time()
     # Cap PyTorch/OpenMP threads per worker process.  With 6 algorithms running
     # in parallel, the default (all cores) causes severe CPU contention on macOS.
     _n_threads = int(os.environ.get("TORCH_THREADS", "2"))
@@ -150,8 +154,9 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict, shared_data):
         executor.shutdown(wait=True)
 
     success_req = sum(result.successfulRequestPerRound[:ttime])
+    _wall = time.time() - _t_start
     print(f"{'=' * 52}")
-    print(f"  pid={pid}  algo={algo.name}  success={success_req}")
+    print(f"  pid={pid}  algo={algo.name}  success={success_req}  wall={_wall:.1f}s")
     print(f"{'=' * 52}")
 
 

@@ -423,9 +423,6 @@ class QuRA_Local(AlgorithmBase):
             self.result.waitingTime = self.totalWaitingTime / self.totalRequest
             self.result.usedQubits  = self.totalUsedQubits  / self.totalRequest
         self.result.remainRequestPerRound.append(len(self.requests))
-        print(f"[{self.name}] ts={self.timeSlot}"
-              f"  success={self.result.successfulRequest}"
-              f"  remain={len(self.requests)}")
 
 
 # ── Named QuRA variants ───────────────────────────────────────────────────────
@@ -558,6 +555,3 @@ class ShortestPath(AlgorithmBase):
             self.result.waitingTime = self.totalWaitingTime / self.totalRequest
             self.result.usedQubits  = self.totalUsedQubits  / self.totalRequest
         self.result.remainRequestPerRound.append(len(self.requests))
-        print(f"[{self.name}] ts={self.timeSlot}"
-              f"  success={self.result.successfulRequest}"
-              f"  remain={len(self.requests)}")

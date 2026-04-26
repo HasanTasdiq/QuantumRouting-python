@@ -52,7 +52,6 @@ class AlgorithmResult:
         return dic
     
     def Avg(results: list , requestPerRound = 0 , topo = None):
-        print('Calculating average result from ' , len(results) , ' runs.')
         AvgResult = AlgorithmResult()
 
         ttime = len(results[0].remainRequestPerRound)
@@ -62,7 +61,6 @@ class AlgorithmResult:
         AvgResult.rewardPerRound = [0 for _ in range(ttime)]
         AvgResult.fidelityPerRound = [0 for _ in range(ttime)]
         for result in results:
-            print('requestPerRound ' , result.successfulRequestPerRound)
 
             AvgResult.algorithmRuntime += result.algorithmRuntime
             AvgResult.waitingTime += result.waitingTime
@@ -84,10 +82,6 @@ class AlgorithmResult:
                 # AvgResult.entanglementPerRound[i] += result.entanglementPerRound[i]
                 AvgResult.eps += result.entanglementPerRound[i]
                 AvgResult.fidelityPerRound[i] += result.fidelityPerRound[i]
-            print('avgrequestPerRound ' , AvgResult.successfulRequestPerRound)
-            
-
-
         # AvgResult.successfulRequest /= len(results)
 
         AvgResult.algorithmRuntime /= len(results)
@@ -109,15 +103,10 @@ class AlgorithmResult:
             AvgResult.rewardPerRound[i] /= len(results)
             AvgResult.fidelityPerRound[i] /= len(results)
         
-        print('avgrequestPerRound ' , AvgResult.successfulRequestPerRound)
-
-        
         # AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /requestPerRound * 100 #success rate
         _sr_ratio = (AvgResult.successfulRequest / ttime) / requestPerRound
         AvgResult.successfulRequest = math.log(max(_sr_ratio, 1e-9))  # guard against log(0)
-        # AvgResult.successfulRequest = (AvgResult.successfulRequest /ttime) /AvgResult.algorithmRuntime
         AvgResult.usedLinks = (AvgResult.usedLinks /ttime) / len(topo.links) * 100
-        print('AvgResult.successfulRequest ' , AvgResult.successfulRequest)
 
 
 
@@ -761,15 +750,7 @@ class AlgorithmBase:
                 taken += 1
             if link.isVirtualLink:
                 vlink += 1
-        print('=============================================================')
-        print('[ ' , self.name ,' ] remaining qubit at ' , self.timeSlot , totalqbit + ent*2 , 'ent: ' , ent)
-        print('[ ' , self.name ,' ] qubit set  ' , self.timeSlot , qubits)
-        print('[ ' , self.name ,' ] #taken links: ' , self.timeSlot , taken)
-        print('[ ' , self.name ,' ] #virtual links: ' , self.timeSlot , vlink)
-        print('=============================================================')
-        if self.timeSlot %50 == 0:
-            for action in self.action_count:
-                print(action , ': ' , self.action_count[action])
+        pass
     
     def fidelityAfterSwap(self, f1 , f2):
         fid = f1*f2+(1-f1)*(1-f2)/3
@@ -805,10 +786,9 @@ class AlgorithmBase:
 
         self.tryEntanglement()
 
-        start = time.time()
-        t2 = process_time()
+        p4_start = time.time()
         res = self.p4()
-        end = time.time()
+        p4_end = time.time()
 
         self.stats()
 
@@ -816,14 +796,16 @@ class AlgorithmBase:
         self.resetNodeSwaps()
         self.resetNeedLinksDict()
 
-        res.totalRuntime = end - start
+        slot_wall = p4_end - t1
+        res.totalRuntime = p4_end - p4_start
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
 
-        if time_ % 100 == 0:
-            tot = sum(self.topo.pair_dict.values())
-            print(f'[{self.name}] ts={time_}  p4={end - start:.3f}s'
-                  f'  wall={time.time() - t1:.3f}s  pair_types={len(self.topo.pair_dict)}'
-                  f'  total_pairs={tot}')
+        # Per-slot timing line — compact, one line per timeslot
+        succ  = res.successfulRequestPerRound[time_] if time_ < len(res.successfulRequestPerRound) else 0
+        remain = res.remainRequestPerRound[time_]    if time_ < len(res.remainRequestPerRound)     else 0
+        print(f'[{self.name}] ts={time_:>5}  succ={succ:>4}  remain={remain:>4}'
+              f'  slot={slot_wall:.3f}s  p4={p4_end - p4_start:.3f}s')
+
         self.postProcess()
         return res
 

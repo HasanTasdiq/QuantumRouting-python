@@ -313,11 +313,7 @@ class Topo:
             self.get_k_shortest_path_edge_dict(k=5)
         except:
             print('error in k shortest path')    
-        print('****** len seg' , len(self.segments))
-        print('****** len links' , len(self.links))
-        print('****** len edge' , len(self.edges))
-        print('****** edgenum' , edgenum)
-        print('****** self.req len' , len(self.requests))
+        pass
 
 
 
@@ -529,9 +525,7 @@ class Topo:
             # G = nx.read_gml(file)
 
             # G = Topo.create_custom_graph()
-            print('leeeen ' , len(G.edges))
-            # traceback.print_exc()
-            traceback.print_stack()
+            pass
             # try:
             #     a =1/0
             # except:
