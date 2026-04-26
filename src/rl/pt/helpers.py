@@ -97,23 +97,41 @@ def apply_request_attention(req_feats: np.ndarray) -> np.ndarray:
 def precompute_all_node_embeddings() -> np.ndarray:
     """
     Batch all SIZE node embeddings in a single forward pass. Call once per
-    timeslot and pass the result to get_neighbor_embeddings() as node_emb_cache.
+    timeslot and pass the result to get_neighbor_context() as node_emb_cache.
     Returns (SIZE, 64).
     """
     eye = torch.eye(SIZE, dtype=torch.float32)   # (SIZE, SIZE)
     return dense_neighbor(eye).numpy()            # (SIZE, 64)
 
 
+def get_neighbor_context(ent_row: np.ndarray, curr_emb: np.ndarray,
+                          node_emb_cache: np.ndarray) -> np.ndarray:
+    """
+    Combined replacement for get_neighbor_embeddings + apply_neighbor_attention.
+
+    Uses np.nonzero (C-level) instead of a Python for-loop over SIZE nodes to
+    find valid neighbours. For SIZE=100 this is ~50x faster than the loop.
+
+    ent_row       : (SIZE,) row of ent_arr for current node
+    curr_emb      : (64,)   request attention embedding
+    node_emb_cache: (SIZE, 64) from precompute_all_node_embeddings()
+    Returns       : (64,) context vector
+    """
+    neighbor_ids = np.nonzero(ent_row)[0]                  # C-level, ~100 ns
+    if len(neighbor_ids) == 0:
+        return np.zeros(64, dtype=np.float32)
+    stack  = node_emb_cache[neighbor_ids]                  # (K, 64) — fancy index
+    scores = (curr_emb @ stack.T) * 0.125                  # 1/sqrt(64) = 0.125
+    scores -= scores.max()
+    weights = np.exp(scores)
+    weights /= weights.sum()
+    return (weights @ stack).astype(np.float32)            # (64,)
+
+
 @torch.no_grad()
 def get_neighbor_embeddings(state_graph, current_node_id: int,
                              node_emb_cache: np.ndarray | None = None):
-    """
-    For each neighbour of current_node_id (has_link > 0):
-    returns list of 64-D numpy arrays.
-
-    node_emb_cache: (SIZE, 64) from precompute_all_node_embeddings().
-    When provided, avoids per-neighbour PyTorch calls (major speedup).
-    """
+    """Legacy interface kept for external callers. Prefer get_neighbor_context."""
     neighbors = state_graph[current_node_id]
     results = []
     for node_id, has_link in enumerate(neighbors):
