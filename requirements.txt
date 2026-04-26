@@ -1,0 +1,18 @@
+# ── Core (required to run Run.py and all algorithms) ──────────────────────────
+torch>=2.4.1
+numpy>=1.26,<2.0
+networkx>=3.0
+gymnasium>=1.0
+dill>=0.3
+tqdm>=4.60
+tensorboard>=2.14       # used by RELiQ training (SummaryWriter)
+matplotlib>=3.7
+scipy>=1.11
+psutil>=5.9
+
+# ── Optional: multi-process coordination ──────────────────────────────────────
+# Only needed if mp_helper redis mode is enabled (default is ProcessPoolExecutor).
+redis>=5.0
+
+# ── Optional: plotting / analysis only ────────────────────────────────────────
+pandas>=2.0             # used only in src/reliq/sl.py (supervised-learning helper)
