@@ -69,7 +69,7 @@ verify_results() {
 
     # Check per-algorithm CSVs
     local algos=("QuRA_Seq_DIST" "QuRA_Flock_DIST" "QuRA_Guard_DIST"
-                 "QuRA_Hive_DIST" "RELiQ" "ShortestPath")
+                 "QuRA_Hive_DIST" "RELiQ" "EBSPA" "ShortestPath")
 
     for load in $(echo "${INFER_LOADS}" | tr ',' ' '); do
         for algo in "${algos[@]}"; do

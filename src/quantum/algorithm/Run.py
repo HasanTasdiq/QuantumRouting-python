@@ -2,12 +2,13 @@
 Main experiment runner.
 
 Algorithms:
-  QuRA_DQRL_DIST  (Seq)   — in-process DQN routing
-  QuRA_Flock_DIST         — in-process DQN routing
-  QuRA_Guard_DIST         — in-process DQN routing
-  QuRA_Hive_DIST          — in-process QMIX routing
-  RELiQ_Adapter           — pre-trained RELiQ DQN baseline
-  ShortestPath            — BFS entanglement-graph baseline
+  QuRA_DQRL_DIST  (Seq)   — in-process DQN routing     (v2: GAT + edge-score Q)
+  QuRA_Flock_DIST         — parallel DQN routing
+  QuRA_Guard_DIST         — parallel DQN + b-matching
+  QuRA_Hive_DIST          — parallel DQN + b-matching + QMIX
+  RELiQ_Adapter           — pre-trained RELiQ DQN baseline (F_min gated)
+  EBSPA                   — Dijkstra on -log(fidelity), deterministic baseline
+  ShortestPath            — BFS hop-count baseline
 
 Environment variables
 ---------------------
@@ -48,7 +49,7 @@ for _p in [_algo_dir, _src_dir, _rl_dir]:
         sys.path.insert(0, _p)
 
 from AlgorithmBase import AlgorithmResult
-from pt.local_trainer import (
+from pt.local_trainer_v2 import (
     QuRA_DQRL_DIST,
     QuRA_Flock_DIST,
     QuRA_Guard_DIST,
@@ -56,6 +57,7 @@ from pt.local_trainer import (
     ShortestPath,
 )
 from RELiQ_Adapter import RELiQ_Adapter
+from pt.ebspa import EBSPA
 from topo.Topo import Topo
 
 # ── Auto-train RELiQ if checkpoint is missing ─────────────────────────────────
@@ -179,6 +181,7 @@ def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
         QuRA_Guard_DIST(copy.deepcopy(topo),  name='QuRA_Guard_DIST'),
         QuRA_Hive_DIST(copy.deepcopy(topo),   name='QuRA_Hive_DIST'),
         RELiQ_Adapter(copy.deepcopy(topo),    name='RELiQ'),
+        EBSPA(copy.deepcopy(topo),            name='EBSPA'),
         ShortestPath(copy.deepcopy(topo),     name='ShortestPath'),
     ]
 

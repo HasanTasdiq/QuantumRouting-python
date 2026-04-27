@@ -246,8 +246,8 @@ class RELiQ_Adapter(AlgorithmBase):
         self.AddNewSDpairs()
         self.totalWaitingTime += len(self.requests)
         self.result.idleTime  += len(self.requests)
+        self.result.numOfTimeslot += 1
         if len(self.srcDstPairs) > 0:
-            self.result.numOfTimeslot += 1
             self.randPFT()
 
     def randPFT(self):
@@ -264,9 +264,11 @@ class RELiQ_Adapter(AlgorithmBase):
     def p4(self):
         import torch
 
-        # Discard requests older than 1 timeslot (TTL=1). Filter both lists by
-        # the same index so they stay in sync (requestState doesn't store arrival time).
-        keep = [i for i, r in enumerate(self.requests) if self.timeSlot - r[2] < 1]
+        _TTL_W = int(os.environ.get("TTL_W", "75"))
+        _F_MIN = float(os.environ.get("F_MIN", "0.7"))
+
+        # TTL=W (was TTL=1 which caused near-zero success rate)
+        keep = [i for i, r in enumerate(self.requests) if self.timeSlot - r[2] < _TTL_W]
         self.requests     = [self.requests[i]     for i in keep]
         self.requestState = [self.requestState[i] for i in keep]
 
@@ -274,6 +276,9 @@ class RELiQ_Adapter(AlgorithmBase):
         ent_matrix, fid_matrix = self._get_matrices()
         routed_links = set()
         success_req  = 0
+
+        # Werner fidelity tracking (initialised to 1.0 for active requests)
+        fidelity_track = {i: 1.0 for i in range(len(self.requestState))}
 
         # Batched-hop routing: one DQN forward per hop step across ALL requests,
         # mirroring the pattern in local_trainer.py. Reduces PyTorch invocations
@@ -338,13 +343,21 @@ class RELiQ_Adapter(AlgorithmBase):
                 ent_matrix[curr][next_hop] = max(0.0, ent_matrix[curr][next_hop] - 1)
                 ent_matrix[next_hop][curr] = max(0.0, ent_matrix[next_hop][curr] - 1)
 
+                # Werner-swap fidelity update
+                f_hop = float(fid_matrix[curr][next_hop])
+                f_old = fidelity_track.get(ridx, 1.0)
+                f_new = f_old * f_hop + (1.0 - f_old) * (1.0 - f_hop) / 3.0
+                fidelity_track[ridx] = f_new
+
                 visited.add(next_hop)
                 req_state[2] = next_hop
                 req_state[3] = tuple(visited)
 
                 if next_hop == dst_id:
                     req_state[5] = True
-                    success_req += 1
+                    # F_min gate: only count as success if fidelity meets threshold
+                    if f_new >= _F_MIN:
+                        success_req += 1
 
         # Remove completed requests
         self.requests     = [r for i, r in enumerate(self.requests)
