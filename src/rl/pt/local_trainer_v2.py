@@ -58,8 +58,9 @@ R_FAIL_FMIN    = -5.0   # reached dst but fidelity below F_min
 R_HOP          = -0.01  # small step cost (encourages shorter paths)
 R_TTL          = -1.0   # request timed out
 
-# Training log interval
-LOG_EVERY      = int(os.environ.get("LOG_EVERY", "200"))
+# Training log interval: env-override or ~10 checkpoints across TTIME
+_ttime_env = int(os.environ.get("TTIME", "10000"))
+LOG_EVERY  = int(os.environ.get("LOG_EVERY", str(max(1, _ttime_env // 10))))
 
 
 def _werner_swap(f1: float, f2: float) -> float:
@@ -110,6 +111,7 @@ class QuRA_Local_v2(AlgorithmBase):
         self._push_ctr     = 0
         self._loss_log: list[float] = []
 
+        self._suppress_base_log = True   # AlgorithmBase.work() skips its per-slot print
         self.agent = DQRLAgentV2(pid=0, num_nodes=SIZE, use_qmix=self.use_qmix)
         self._model_path = os.path.join(
             MODEL_DIR, f"{name.lower().replace(' ', '_').replace('-', '_')}.pt.gz")
@@ -414,13 +416,6 @@ class QuRA_Local_v2(AlgorithmBase):
                     loss = self.agent.train_dqn(nf, af, ac)
                 if loss is not None:
                     self._loss_log.append(loss)
-                    if self.timeSlot % LOG_EVERY == 0:
-                        avg_loss = float(np.mean(self._loss_log[-50:]))
-                        print(f"[{self.name}] ts={self.timeSlot}"
-                              f"  succ={success_req}"
-                              f"  fid≥{F_MIN}={success_fid}"
-                              f"  loss={avg_loss:.5f}"
-                              f"  eps={eps:.3f}")
 
         # ── Cleanup ───────────────────────────────────────────────────────────
         self.requests     = [r for i, r in enumerate(self.requests)
@@ -429,7 +424,15 @@ class QuRA_Local_v2(AlgorithmBase):
 
         wall_ms = (time.perf_counter() - t0) * 1000.0
         if self.timeSlot % LOG_EVERY == 0:
-            print(f"[{self.name}] ts={self.timeSlot}  wall={wall_ms:.1f}ms")
+            avg_loss_str = ""
+            if self._loss_log:
+                avg_loss = float(np.mean(self._loss_log[-50:]))
+                avg_loss_str = f"  loss={avg_loss:.5f}  eps={eps:.3f}"
+            print(f"[{self.name}] ts={self.timeSlot:5d}"
+                  f"  succ={success_req:3d}"
+                  f"  remain={len(self.requests):4d}"
+                  f"{avg_loss_str}"
+                  f"  wall={wall_ms:.1f}ms")
 
         self.result.successfulRequest  += success_req
         self.result.successfulRequestPerRound.append(success_req)

@@ -800,11 +800,12 @@ class AlgorithmBase:
         res.totalRuntime = p4_end - p4_start
         res.algorithmRuntime = res.totalRuntime / res.numOfTimeslot
 
-        # Per-slot timing line — compact, one line per timeslot
-        succ  = res.successfulRequestPerRound[time_] if time_ < len(res.successfulRequestPerRound) else 0
-        remain = res.remainRequestPerRound[time_]    if time_ < len(res.remainRequestPerRound)     else 0
-        print(f'[{self.name}] ts={time_:>5}  succ={succ:>4}  remain={remain:>4}'
-              f'  slot={slot_wall:.3f}s  p4={p4_end - p4_start:.3f}s')
+        # Per-slot timing line (skipped for subclasses that handle their own logging)
+        if not getattr(self, '_suppress_base_log', False):
+            succ   = res.successfulRequestPerRound[time_] if time_ < len(res.successfulRequestPerRound) else 0
+            remain = res.remainRequestPerRound[time_]     if time_ < len(res.remainRequestPerRound)     else 0
+            print(f'[{self.name}] ts={time_:>5}  succ={succ:>4}  remain={remain:>4}'
+                  f'  slot={slot_wall:.3f}s  p4={p4_end - p4_start:.3f}s')
 
         self.postProcess()
         return res
