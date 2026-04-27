@@ -45,19 +45,19 @@ RELIQ_STEPS="${RELIQ_STEPS:-500000}"
 
 case "${CONFIG}" in
   small)
-    TTIME=5000; TRAIN_LOAD=10
+    TTIME=8000; TRAIN_LOAD=10       # theory: need ≥2000 slots (mid mode)
     REQ_LOADS="5,10,15,20,25,30,40,50"
     TRAINING_MODE="mid"; TTL_W=25
     LABEL="small_16n"
     ;;
   medium)
-    TTIME=8000; TRAIN_LOAD=25
+    TTIME=8000; TRAIN_LOAD=25       # theory: need ≥7550 slots (mid mode)
     REQ_LOADS="5,10,15,20,25,30,40,50"
     TRAINING_MODE="mid"; TTL_W=50
     LABEL="medium_25n"
     ;;
   paper)
-    TTIME=10000; TRAIN_LOAD=100
+    TTIME=15000; TRAIN_LOAD=100     # theory: need ≥15101 slots (paper mode)
     REQ_LOADS="5,10,25,50,75,100"
     TRAINING_MODE="paper"; TTL_W=75
     LABEL="paper_100n"

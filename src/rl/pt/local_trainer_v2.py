@@ -52,11 +52,14 @@ F_MIN          = float(os.environ.get("F_MIN", "0.7"))
 _SHAPING_COEFF = float(os.environ.get("SHAPING_COEFF", "0.5"))
 _MAX_HOPS      = float(SIZE)   # conservative upper bound
 
-# Reward magnitudes
+# Reward magnitudes.
+# R_TTL=-0.1 (was -1.0): with drop-all, ~9 out of 10 requests are dropped each
+# slot → R_TTL dominated the buffer at SNR≈0.34:1.  Scaling to -0.1 gives
+# SNR≈3.4:1 so positive transitions outweigh the drop penalty in expected value.
 R_SUCCESS      = 10.0
-R_FAIL_FMIN    = -5.0   # reached dst but fidelity below F_min
+R_FAIL_FMIN    = -2.0   # reached dst but fidelity below F_min
 R_HOP          = -0.01  # small step cost (encourages shorter paths)
-R_TTL          = -1.0   # request timed out
+R_TTL          = -0.1   # request dropped at slot end
 
 # Training log interval: env-override or ~10 checkpoints across TTIME
 _ttime_env = int(os.environ.get("TTIME", "10000"))
@@ -69,15 +72,20 @@ def _werner_swap(f1: float, f2: float) -> float:
 
 
 def _epsilon(ts: int) -> float:
-    """Linear epsilon decay schedule (same logic as helpers.py but self-contained)."""
+    """Linear epsilon decay.  Windows sized so the model accumulates enough
+    positive transitions before exploitation begins.
+      smoke : 322 slots needed → decay 50→2000  (1950-slot window, TTIME=2000)
+      mid   : 2517 slots needed → decay 500→5000 (4500-slot window, TTIME=8000)
+      paper : 5034 slots needed → decay 3000→12000 (9000-slot window, TTIME=15000)
+    """
     if INFERENCE_MODE:
         return 0.0
     if TRAINING_MODE == "paper":
-        s, e = 3000, 8000
+        s, e = 3000, 12000
     elif TRAINING_MODE == "mid":
-        s, e = 200, 1500
+        s, e = 500, 5000
     else:   # smoke
-        s, e = 10, 40
+        s, e = 50, 2000
     if ts < s:
         return 1.0
     if ts >= e:

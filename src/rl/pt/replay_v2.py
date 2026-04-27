@@ -18,27 +18,31 @@ import numpy as np
 import os
 TRAINING_MODE = os.environ.get("TRAINING_MODE", "paper")
 
+# N_STEP=6 matches E[path length] on a 10×10 grid (≈6 hops), so the SUCCESS
+# reward at the final hop propagates all the way back to the routing decision
+# that started the path.  N_STEP=3 only covered 50% of the path; credit was
+# lost for the first half of every trajectory.
 if TRAINING_MODE == "smoke":
-    CAPACITY             = 5_000
-    MIN_REPLAY           = 64
-    MINIBATCH_SIZE       = 32
-    STEP_BETWEEN_TRAIN   = 4
-    N_STEP               = 3
-    GAMMA                = 0.9
-elif TRAINING_MODE == "mid":
-    CAPACITY             = 50_000
-    MIN_REPLAY           = 500
+    CAPACITY             = 20_000
+    MIN_REPLAY           = 256
     MINIBATCH_SIZE       = 64
-    STEP_BETWEEN_TRAIN   = 8
-    N_STEP               = 3
-    GAMMA                = 0.9
-else:   # paper
-    CAPACITY             = 200_000
+    STEP_BETWEEN_TRAIN   = 4
+    N_STEP               = 6
+    GAMMA                = 0.95
+elif TRAINING_MODE == "mid":
+    CAPACITY             = 100_000
     MIN_REPLAY           = 1_000
     MINIBATCH_SIZE       = 128
+    STEP_BETWEEN_TRAIN   = 8
+    N_STEP               = 6
+    GAMMA                = 0.95
+else:   # paper
+    CAPACITY             = 500_000
+    MIN_REPLAY           = 2_000
+    MINIBATCH_SIZE       = 256
     STEP_BETWEEN_TRAIN   = 10
-    N_STEP               = 3
-    GAMMA                = 0.9
+    N_STEP               = 6
+    GAMMA                = 0.95
 
 UPDATE_TARGET_EVERY  = 200
 PER_ALPHA            = 0.6   # priority exponent

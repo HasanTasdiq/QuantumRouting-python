@@ -32,9 +32,9 @@ MODE="${1:-all}"
 
 # ── Config (all overridable via env) ─────────────────────────────────────────
 TRAIN_LOAD="${TRAIN_LOAD:-10}"
-TTIME="${TTIME:-50}"
-STEP="${STEP:-5}"
-TIMES="${TIMES:-2}"
+TTIME="${TTIME:-2000}"        # theory: need ≥322 slots for enough +ve transitions
+STEP="${STEP:-200}"
+TIMES="${TIMES:-1}"
 INFER_LOADS="${INFER_LOADS:-5,10,25}"
 TRAINING_MODE="${TRAINING_MODE:-smoke}"
 RELIQ_STEPS="${RELIQ_STEPS:-5000}"
