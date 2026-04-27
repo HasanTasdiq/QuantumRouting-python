@@ -264,6 +264,10 @@ class RELiQ_Adapter(AlgorithmBase):
     def p4(self):
         import torch
 
+        # Discard requests older than 1 timeslot (TTL=1)
+        self.requests = [r for r in self.requests if self.timeSlot - r[2] < 1]
+        self.requestState = [s for s in self.requestState if self.timeSlot - s[0].id < 1]
+
         # Build both matrices in a single link pass (fixes A: no per-hop link scan).
         ent_matrix, fid_matrix = self._get_matrices()
         routed_links = set()
