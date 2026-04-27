@@ -264,13 +264,7 @@ class RELiQ_Adapter(AlgorithmBase):
     def p4(self):
         import torch
 
-        _TTL_W = int(os.environ.get("TTL_W", "75"))
         _F_MIN = float(os.environ.get("F_MIN", "0.7"))
-
-        # TTL=W (was TTL=1 which caused near-zero success rate)
-        keep = [i for i, r in enumerate(self.requests) if self.timeSlot - r[2] < _TTL_W]
-        self.requests     = [self.requests[i]     for i in keep]
-        self.requestState = [self.requestState[i] for i in keep]
 
         # Build both matrices in a single link pass (fixes A: no per-hop link scan).
         ent_matrix, fid_matrix = self._get_matrices()
@@ -359,10 +353,9 @@ class RELiQ_Adapter(AlgorithmBase):
                     if f_new >= _F_MIN:
                         success_req += 1
 
-        # Remove completed requests
-        self.requests     = [r for i, r in enumerate(self.requests)
-                             if not self.requestState[i][5]]
-        self.requestState = [s for s in self.requestState if not s[5]]
+        # Drop all requests: served ones are done, unserved ones are dropped (no carryover)
+        self.requests     = []
+        self.requestState = []
 
         self.result.successfulRequest            += success_req
         self.result.successfulRequestPerRound.append(success_req)

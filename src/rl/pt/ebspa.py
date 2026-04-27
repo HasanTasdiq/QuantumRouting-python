@@ -86,11 +86,6 @@ class EBSPA(AlgorithmBase):
         return ent, dist, cap
 
     def p4(self):
-        keep = [i for i, r in enumerate(self.requests)
-                if self.timeSlot - r[2] < TTL_W]
-        self.requests     = [self.requests[i]     for i in keep]
-        self.requestState = [self.requestState[i] for i in keep]
-
         ent, dist, cap = self._build_matrices()
         avail_cap = dict(cap)
 
@@ -120,9 +115,8 @@ class EBSPA(AlgorithmBase):
                 success_fid += 1
                 total_fid   += path_fid
 
-        self.requests     = [r for i, r in enumerate(self.requests)
-                             if not self.requestState[i][5]]
-        self.requestState = [s for s in self.requestState if not s[5]]
+        self.requests     = []
+        self.requestState = []
 
         self.result.successfulRequest += success_req
         self.result.successfulRequestPerRound.append(success_req)

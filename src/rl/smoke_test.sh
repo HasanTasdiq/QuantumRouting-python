@@ -44,7 +44,7 @@ BASE_ENV="TRAINING_MODE=${TRAINING_MODE} TTIME=${TTIME} STEP=${STEP} \
 TIMES=${TIMES} MODEL_DIR=${MODEL_DIR}"
 
 ALGOS=("QuRA_Seq_DIST" "QuRA_Flock_DIST" "QuRA_Guard_DIST"
-       "QuRA_Hive_DIST" "RELiQ" "EBSPA" "ShortestPath")
+       "QuRA_Hive_DIST" "RELiQ" "EBSPA")
 
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 

@@ -142,7 +142,7 @@ run_cmd "(cd '${ALGO_DIR}' && env ${BASE_ENV} \
 log ""
 log "── RESULTS ───────────────────────────────────────────────────────"
 
-ALGOS="QuRA_Seq_DIST QuRA_Flock_DIST QuRA_Guard_DIST QuRA_Hive_DIST RELiQ EBSPA ShortestPath"
+ALGOS="QuRA_Seq_DIST QuRA_Flock_DIST QuRA_Guard_DIST QuRA_Hive_DIST RELiQ EBSPA"
 RESULT_DIR_FULL="${RESULTS_DIR}/${LABEL}"
 mkdir -p "${RESULT_DIR_FULL}"
 

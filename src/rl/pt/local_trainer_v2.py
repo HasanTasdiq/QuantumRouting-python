@@ -245,11 +245,8 @@ class QuRA_Local_v2(AlgorithmBase):
     def p4(self):
         t0 = time.perf_counter()
 
-        # TTL filter: drop requests older than W timeslots
-        keep = [i for i, r in enumerate(self.requests)
-                if self.timeSlot - r[2] < TTL_W]
-        self.requests     = [self.requests[i]     for i in keep]
-        self.requestState = [self.requestState[i] for i in keep]
+        # No carryover: requests that were not served last slot were already dropped.
+        # self.requests contains only requests that arrived this timeslot.
 
         if not self.requestState:
             for lst in (self.result.successfulRequestPerRound,
@@ -380,16 +377,14 @@ class QuRA_Local_v2(AlgorithmBase):
                     np.concatenate([H[curr].detach().numpy(),
                                     H[dst_id].detach().numpy()]))
 
-        # TTL expiry: penalise requests that ran out of time this timeslot
+        # Drop penalty: every request not served this slot is penalised and dropped.
         for ridx, rs in enumerate(self.requestState):
             if not rs[5]:
-                arr_ts = self.requests[ridx][2]
-                if self.timeSlot - arr_ts >= TTL_W - 1:
-                    transitions.append((
-                        np.zeros(3 * OUT_DIM + 3, dtype=np.float32),
-                        0, R_TTL,
-                        np.zeros(3 * OUT_DIM + 3, dtype=np.float32),
-                        True))
+                transitions.append((
+                    np.zeros(3 * OUT_DIM + 3, dtype=np.float32),
+                    0, R_TTL,
+                    np.zeros(3 * OUT_DIM + 3, dtype=np.float32),
+                    True))
 
         # ── Training ──────────────────────────────────────────────────────────
         if not INFERENCE_MODE and transitions:
@@ -417,10 +412,9 @@ class QuRA_Local_v2(AlgorithmBase):
                 if loss is not None:
                     self._loss_log.append(loss)
 
-        # ── Cleanup ───────────────────────────────────────────────────────────
-        self.requests     = [r for i, r in enumerate(self.requests)
-                             if not self.requestState[i][5]]
-        self.requestState = [s for s in self.requestState if not s[5]]
+        # ── Cleanup: drop ALL remaining requests (no carryover to next slot) ────
+        self.requests     = []
+        self.requestState = []
 
         wall_ms = (time.perf_counter() - t0) * 1000.0
         if self.timeSlot % LOG_EVERY == 0:

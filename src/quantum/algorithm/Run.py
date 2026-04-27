@@ -8,7 +8,6 @@ Algorithms:
   QuRA_Hive_DIST          — parallel DQN + b-matching + QMIX
   RELiQ_Adapter           — pre-trained RELiQ DQN baseline (F_min gated)
   EBSPA                   — Dijkstra on -log(fidelity), deterministic baseline
-  ShortestPath            — BFS hop-count baseline
 
 Environment variables
 ---------------------
@@ -55,7 +54,6 @@ from pt.local_trainer_v2 import (
     QuRA_Flock_DIST,
     QuRA_Guard_DIST,
     QuRA_Hive_DIST,
-    ShortestPath,
 )
 from RELiQ_Adapter import RELiQ_Adapter
 from pt.ebspa import EBSPA
@@ -194,7 +192,6 @@ def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
         QuRA_Hive_DIST(copy.deepcopy(topo),   name='QuRA_Hive_DIST'),
         RELiQ_Adapter(copy.deepcopy(topo),    name='RELiQ'),
         EBSPA(copy.deepcopy(topo),            name='EBSPA'),
-        ShortestPath(copy.deepcopy(topo),     name='ShortestPath'),
     ]
 
     gc.collect()
