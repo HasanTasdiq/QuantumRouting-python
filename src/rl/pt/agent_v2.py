@@ -27,7 +27,13 @@ from .replay_v2 import (
 )
 
 INFERENCE_MODE  = os.environ.get("INFERENCE_MODE", "0") == "1"
-LR              = 3e-4
+# Cosine-annealed LR: 5e-4 → 1e-5 over total expected gradient updates.
+# Anneal lets early training learn fast, late training fine-tune the policy.
+LR              = 5e-4
+LR_MIN          = 1e-5
+# Number of grad updates to anneal over: scales with TTIME via STEP_BETWEEN_TRAIN.
+# 100k is a good default that covers paper-mode (~100k grad updates by ts=20000).
+LR_ANNEAL_STEPS = int(os.environ.get("LR_ANNEAL_STEPS", "100000"))
 CLIP_NORM       = 1.0
 GLOBAL_STATE_DIM = 2 * OUT_DIM   # mean_pool + max_pool of node embeddings = 64
 
@@ -69,6 +75,9 @@ class DQRLAgentV2:
             params += list(self.mixer.parameters())
 
         self.optimizer = torch.optim.Adam(params, lr=LR)
+        # Cosine annealing 5e-4 → 1e-5 over LR_ANNEAL_STEPS gradient updates
+        self.lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self.optimizer, T_max=LR_ANNEAL_STEPS, eta_min=LR_MIN)
 
         self.single_replay  = NStepPERBuffer()
         self.qmix_replay    = QMixEpisodicBuffer()
@@ -187,6 +196,7 @@ class DQRLAgentV2:
             list(self.encoder.parameters()) + list(self.qnet.parameters()),
             CLIP_NORM)
         self.optimizer.step()
+        self.lr_scheduler.step()
 
         self.encoder.eval()
         self.qnet.eval()
@@ -248,6 +258,7 @@ class DQRLAgentV2:
             list(self.mixer.parameters()),
             CLIP_NORM)
         self.optimizer.step()
+        self.lr_scheduler.step()
 
         self.encoder.eval()
         self.qnet.eval()

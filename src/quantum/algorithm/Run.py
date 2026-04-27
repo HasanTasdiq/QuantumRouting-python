@@ -97,16 +97,17 @@ nodeNo   = gridSize * gridSize
 alpha_  = 0.0002
 degree  = 1
 
-TRAIN_LOAD           = int(os.environ.get("TRAIN_LOAD", "100"))
+# TRAIN_LOAD=25 is the max-feasible training load: at LOAD=100 the network
+# saturates (162 entangled links / 4.2 hops/req ≈ 38 req/slot capacity), so
+# p_complete≈0 and the model sees no positive transitions.  Train at 25 (where
+# p_complete≈0.8%) and let the load-agnostic state representation generalise
+# to higher inference loads.
+TRAIN_LOAD           = int(os.environ.get("TRAIN_LOAD", "25"))
 _INFER_LOADS_DEFAULT = [5, 10, 25, 50, 75, 100]
 
-# Curriculum: during training each timeslot gets a random load in
-# [TRAIN_LOAD_MIN, TRAIN_LOAD].  This forces the model to handle sparse
-# and dense scenarios with the same weights, so inference at any lower
-# load generalises without re-training.
-# Default min = 10% of max load (e.g. 10 when TRAIN_LOAD=100).
-TRAIN_LOAD_MIN = int(os.environ.get("TRAIN_LOAD_MIN",
-                                     str(max(5, TRAIN_LOAD // 10))))
+# Curriculum: each training timeslot gets a random load in [TRAIN_LOAD_MIN,
+# TRAIN_LOAD].  Default min=5 (always trains on at least the lowest infer load).
+TRAIN_LOAD_MIN = int(os.environ.get("TRAIN_LOAD_MIN", "5"))
 
 _req_env = os.environ.get("REQ_LOADS", "")
 if _req_env:

@@ -49,17 +49,21 @@ F_MIN          = float(os.environ.get("F_MIN", "0.7"))
 
 # Potential-based shaping coefficient (Ng et al.)
 # Φ(curr, dst) = -dist(curr, dst) / MAX_HOPS
-_SHAPING_COEFF = float(os.environ.get("SHAPING_COEFF", "0.5"))
+# Shaping coefficient: each step contributes ±SHAPING_COEFF/MAX_HOPS to reward.
+# Want shaping magnitude ~1× R_HOP (−0.01) so it nudges, not dominates.
+# At MAX_HOPS=100, COEFF=0.1 → per-step shaping ≈ ±0.001, ratio ≈ 0.1× R_HOP.
+_SHAPING_COEFF = float(os.environ.get("SHAPING_COEFF", "0.1"))
 _MAX_HOPS      = float(SIZE)   # conservative upper bound
 
-# Reward magnitudes.
-# R_TTL=-0.1 (was -1.0): with drop-all, ~9 out of 10 requests are dropped each
-# slot → R_TTL dominated the buffer at SNR≈0.34:1.  Scaling to -0.1 gives
-# SNR≈3.4:1 so positive transitions outweigh the drop penalty in expected value.
+# Reward magnitudes.  Scaled so SNR (positive vs negative buffer mass) ≥ 6:1
+# at TRAIN_LOAD=25 (the max-feasible training load given network capacity).
+#   discounted R_SUCCESS at start of E[h]=4.2 path: γ^4.2 × 10 = 9.59
+#   per-step R_HOP × E[h] = -0.042  (small, won't dominate)
+#   R_TTL=-0.05: with drop-all at 24 R_TTL/slot, total -1.2 vs +R_SUCCESS contribution
 R_SUCCESS      = 10.0
 R_FAIL_FMIN    = -2.0   # reached dst but fidelity below F_min
 R_HOP          = -0.01  # small step cost (encourages shorter paths)
-R_TTL          = -0.1   # request dropped at slot end
+R_TTL          = -0.05  # request dropped at slot end (less penalty noise)
 
 # Training log interval: env-override or ~10 checkpoints across TTIME
 _ttime_env = int(os.environ.get("TTIME", "10000"))
@@ -72,20 +76,20 @@ def _werner_swap(f1: float, f2: float) -> float:
 
 
 def _epsilon(ts: int) -> float:
-    """Linear epsilon decay.  Windows sized so the model accumulates enough
-    positive transitions before exploitation begins.
-      smoke : 322 slots needed → decay 50→2000  (1950-slot window, TTIME=2000)
-      mid   : 2517 slots needed → decay 500→5000 (4500-slot window, TTIME=8000)
-      paper : 5034 slots needed → decay 3000→12000 (9000-slot window, TTIME=15000)
+    """Linear epsilon decay using Mnih (2015) 20%/60%/20% split:
+      Phase                 paper(20k)   mid(8k)    smoke(2k)
+      Warmup    (eps=1)     0    →4000   0  →1600    0  →400
+      Decay     (1→0)       4000→16000   1600→6400   400→1600
+      Exploit   (eps=0)    16000→20000   6400→8000  1600→2000
     """
     if INFERENCE_MODE:
         return 0.0
     if TRAINING_MODE == "paper":
-        s, e = 3000, 12000
+        s, e = 4000, 16000
     elif TRAINING_MODE == "mid":
-        s, e = 500, 5000
+        s, e = 1600, 6400
     else:   # smoke
-        s, e = 50, 2000
+        s, e = 400, 1600
     if ts < s:
         return 1.0
     if ts >= e:

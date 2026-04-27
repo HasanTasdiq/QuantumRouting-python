@@ -45,20 +45,20 @@ RELIQ_STEPS="${RELIQ_STEPS:-500000}"
 
 case "${CONFIG}" in
   small)
-    TTIME=8000; TRAIN_LOAD=10       # theory: need ≥2000 slots (mid mode)
+    TTIME=8000; TRAIN_LOAD=10       # network capacity ≈ 38; train at 10 for high p_complete
     REQ_LOADS="5,10,15,20,25,30,40,50"
     TRAINING_MODE="mid"; TTL_W=25
     LABEL="small_16n"
     ;;
   medium)
-    TTIME=8000; TRAIN_LOAD=25       # theory: need ≥7550 slots (mid mode)
+    TTIME=8000; TRAIN_LOAD=15       # train under capacity for positive signal
     REQ_LOADS="5,10,15,20,25,30,40,50"
     TRAINING_MODE="mid"; TTL_W=50
     LABEL="medium_25n"
     ;;
   paper)
-    TTIME=15000; TRAIN_LOAD=100     # theory: need ≥15101 slots (paper mode)
-    REQ_LOADS="5,10,25,50,75,100"
+    TTIME=20000; TRAIN_LOAD=25      # max-feasible training load (network saturates ~38)
+    REQ_LOADS="5,10,25,50,75,100"   # eval generalises to congested loads
     TRAINING_MODE="paper"; TTL_W=75
     LABEL="paper_100n"
     ;;
@@ -69,7 +69,7 @@ case "${CONFIG}" in
 esac
 
 STEP=$((TTIME / 100))   # 100 CSV checkpoints per run
-TIMES=3                   # 3 independent seeds → averaged
+TIMES=5                   # 5 seeds for statistical significance (mean ± std)
 
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 
