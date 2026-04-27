@@ -53,10 +53,18 @@ elif TRAINING_MODE == "mid":
     UPDATE_TARGET_EVERY = 500
 else:
     UPDATE_TARGET_EVERY = 1000
-PER_ALPHA            = 0.6   # priority exponent
-PER_BETA_START       = 0.4
-PER_BETA_END         = 1.0
-PER_BETA_STEPS       = 50_000
+PER_ALPHA      = 0.6   # priority exponent
+PER_BETA_START = 0.4
+PER_BETA_END   = 1.0
+# Anneal beta from 0.4 → 1.0 over the first ~half of expected gradient updates.
+# Expected grad updates per mode (WHILE loop, 111/60/35 trans/slot ÷ STEP_BETWEEN_TRAIN):
+#   paper (~221k total) → 110k    mid (~60k) → 30k    smoke (~14k) → 7k
+if TRAINING_MODE == "smoke":
+    PER_BETA_STEPS = 7_000
+elif TRAINING_MODE == "mid":
+    PER_BETA_STEPS = 30_000
+else:   # paper
+    PER_BETA_STEPS = 110_000
 
 
 class NStepPERBuffer:
@@ -128,6 +136,26 @@ class NStepPERBuffer:
                 self._nstep[-1][4],
             )
             self._nstep.popleft()
+
+    def push_sequence(self, transitions: list) -> None:
+        """
+        Push one request's trajectory as an isolated n-step sequence.
+
+        Clears the shared deque first so cross-request contamination is
+        impossible — each call is a fresh episode.
+
+        transitions: list of (state, action, reward, next_state, done)
+        """
+        self._nstep.clear()
+        for (s, a, r, ns, done) in transitions:
+            self._nstep.append((s, a, r, ns, done))
+            if len(self._nstep) >= N_STEP or done:
+                self._flush_nstep(
+                    self._nstep[-1][3],
+                    self._nstep[-1][4],
+                )
+                self._nstep.popleft()
+        self.flush_episode()
 
     def sample(self, batch_size: int, beta: float = PER_BETA_START
                ) -> tuple:

@@ -7,12 +7,13 @@ Variants (controlled by `variant` param):
   guard — parallel routing + greedy b-matching conflict resolution
   hive  — guard + QMIX joint training
 
-Key fixes vs v1:
-  - State: graph-structured (node embeddings from GAT), NOT 20228-dim flat
-  - Action: relative neighbor index, not absolute node index
-  - TTL: W timeslots (default 75), not 1
-  - F_min gate: Werner fidelity < F_min counts as failure
-  - Gradient flow: encoder/q-net/mixer all in optimizer, no @torch.no_grad wrapping
+Fixes vs previous version:
+  - n-step buffer: per-request push_sequence, no cross-request contamination
+  - Bellman target: next_state = argmax_Q candidate edge, not first neighbor
+  - Encoder removed: edge states use hand-crafted features (degree, BFS,
+    request density) — no frozen/random GAT embeddings
+  - Drop transitions: R_TTL attached to last real hop, not zero-vector phantom
+  - flush_episode called automatically via push_sequence
 """
 from __future__ import annotations
 
@@ -24,7 +25,7 @@ import time
 import numpy as np
 import torch
 
-# ── Path setup (mirrors local_trainer.py) ────────────────────────────────────
+# ── Path setup ────────────────────────────────────────────────────────────────
 _here     = os.path.dirname(os.path.abspath(__file__))
 _src_dir  = os.path.normpath(os.path.join(_here, '../..'))
 _algo_dir = os.path.join(_src_dir, 'quantum', 'algorithm')
@@ -33,55 +34,37 @@ for _p in [_algo_dir, _src_dir]:
         sys.path.insert(0, _p)
 
 from AlgorithmBase import AlgorithmBase
-
-from .agent_v2  import DQRLAgentV2, _compact_global, GLOBAL_STATE_DIM
-from .encoder   import build_graph_tensors, OUT_DIM
+from .agent_v2  import DQRLAgentV2
 from .matching  import bmatching_nodes
 from .replay_v2 import STEP_BETWEEN_TRAIN, MIN_REPLAY, TRAINING_MODE, GAMMA
+from .qnet_v2   import STATE_DIM, QMIX_REQ_DIM, QMIX_GLOBAL_DIM
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 SIZE           = int(os.environ.get("SIZE", "100"))
 INFERENCE_MODE = os.environ.get("INFERENCE_MODE", "0") == "1"
 MODEL_DIR      = os.environ.get("MODEL_DIR", "/tmp/qrouting_model")
 
-TTL_W          = int(os.environ.get("TTL_W", "75"))   # routing window W
-F_MIN          = float(os.environ.get("F_MIN", "0.7"))
+TTL_W = int(os.environ.get("TTL_W", "75"))
+F_MIN = float(os.environ.get("F_MIN", "0.7"))
 
-# Potential-based shaping coefficient (Ng et al.)
-# Φ(curr, dst) = -dist(curr, dst) / MAX_HOPS
-# Shaping coefficient: each step contributes ±SHAPING_COEFF/MAX_HOPS to reward.
-# Want shaping magnitude ~1× R_HOP (−0.01) so it nudges, not dominates.
-# At MAX_HOPS=100, COEFF=0.1 → per-step shaping ≈ ±0.001, ratio ≈ 0.1× R_HOP.
 _SHAPING_COEFF = float(os.environ.get("SHAPING_COEFF", "0.1"))
-_MAX_HOPS      = float(SIZE)   # conservative upper bound
+_MAX_HOPS      = float(SIZE)
 
-# Reward magnitudes.  Scaled so SNR (positive vs negative buffer mass) ≥ 6:1
-# at TRAIN_LOAD=25 (the max-feasible training load given network capacity).
-#   discounted R_SUCCESS at start of E[h]=4.2 path: γ^4.2 × 10 = 9.59
-#   per-step R_HOP × E[h] = -0.042  (small, won't dominate)
-#   R_TTL=-0.05: with drop-all at 24 R_TTL/slot, total -1.2 vs +R_SUCCESS contribution
-R_SUCCESS      = 10.0
-R_FAIL_FMIN    = -2.0   # reached dst but fidelity below F_min
-R_HOP          = -0.01  # small step cost (encourages shorter paths)
-R_TTL          = -0.05  # request dropped at slot end (less penalty noise)
+R_SUCCESS   = 10.0
+R_FAIL_FMIN = -2.0
+R_HOP       = -0.01
+R_TTL       = -0.05
 
-# Training log interval: env-override or ~10 checkpoints across TTIME
 _ttime_env = int(os.environ.get("TTIME", "10000"))
 LOG_EVERY  = int(os.environ.get("LOG_EVERY", str(max(1, _ttime_env // 10))))
 
 
 def _werner_swap(f1: float, f2: float) -> float:
-    """Werner-state fidelity after a single entanglement swap."""
     return f1 * f2 + (1.0 - f1) * (1.0 - f2) / 3.0
 
 
 def _epsilon(ts: int) -> float:
-    """Linear epsilon decay using Mnih (2015) 20%/60%/20% split:
-      Phase                 paper(20k)   mid(8k)    smoke(2k)
-      Warmup    (eps=1)     0    →4000   0  →1600    0  →400
-      Decay     (1→0)       4000→16000   1600→6400   400→1600
-      Exploit   (eps=0)    16000→20000   6400→8000  1600→2000
-    """
+    """Linear ε decay: warmup (ε=1) → decay (1→0) → exploit (ε=0)."""
     if INFERENCE_MODE:
         return 0.0
     if TRAINING_MODE == "paper":
@@ -102,31 +85,27 @@ class QuRA_Local_v2(AlgorithmBase):
     Single class implementing all four QuRA-v2 variants.
 
     variant : 'seq' | 'flock' | 'guard' | 'hive'
-      seq   — iterate requests one-by-one; greedy hop-by-hop
-      flock — all requests choose in parallel; no deconfliction
-      guard — flock + greedy b-matching after each parallel hop
-      hive  — guard + QMIX joint training
     """
 
-    def __init__(self, topo, param=None, name='QuRA_v2',
-                 variant: str = 'guard'):
+    def __init__(self, topo, param=None, name='QuRA_v2', variant: str = 'guard'):
         super().__init__(topo)
         self.name     = name
         self.variant  = variant
         self.use_qmix = (variant == 'hive')
 
-        self.requests      = []   # list of (src_node, dst_node, arrival_ts)
-        self.requestState  = []   # list of [src, dst, curr_id, path_set, idx, done]
+        self.requests      = []
+        self.requestState  = []
         self.totalRequest  = 0
         self.totalWaiting  = 0
         self.totalQubits   = 0
         self._push_ctr     = 0
         self._loss_log: list[float] = []
 
-        self._suppress_base_log = True   # AlgorithmBase.work() skips its per-slot print
+        self._suppress_base_log = True
         self.agent = DQRLAgentV2(pid=0, num_nodes=SIZE, use_qmix=self.use_qmix)
         self._model_path = os.path.join(
-            MODEL_DIR, f"{name.lower().replace(' ', '_').replace('-', '_')}.pt.gz")
+            MODEL_DIR,
+            f"{name.lower().replace(' ', '_').replace('-', '_')}.pt.gz")
 
         if INFERENCE_MODE:
             self._load_weights()
@@ -153,7 +132,6 @@ class QuRA_Local_v2(AlgorithmBase):
             self.requests.append((src, dst, self.timeSlot))
         self.srcDstPairs = []
 
-        # Cap queue: at most 5× per-round load (prevents unbounded growth)
         _max_q = max(self.topo.numOfRequestPerRound * 5, 50)
         if len(self.requests) > _max_q:
             self.requests = self.requests[-_max_q:]
@@ -162,13 +140,11 @@ class QuRA_Local_v2(AlgorithmBase):
         for idx, (src, dst, _) in enumerate(self.requests):
             self.requestState.append(
                 [src, dst, src.id, frozenset({src.id}), idx, False, 1.0])
-            # fields: [src_node, dst_node, curr_id, visited, idx, done, fid_accum]
 
     def p2(self):
         self.AddNewSDpairs()
         self.totalWaiting += len(self.requests)
         self.result.idleTime += len(self.requests)
-        # Always count as an active timeslot (avoids /0 in AlgorithmBase)
         self.result.numOfTimeslot += 1
         if self.requests:
             self._randPFT()
@@ -187,7 +163,6 @@ class QuRA_Local_v2(AlgorithmBase):
     # ── Graph helpers ─────────────────────────────────────────────────────────
 
     def _build_matrices(self):
-        """Single link-pass → (ent_matrix, dist_matrix, link_capacity_dict)."""
         ent  = np.zeros((SIZE, SIZE), dtype=np.float32)
         dist = np.zeros((SIZE, SIZE), dtype=np.float32)
         cap  = {}
@@ -207,34 +182,54 @@ class QuRA_Local_v2(AlgorithmBase):
                 dens[int(rs[2])] += 1.0
         return dens
 
+    def _compute_global_state(self, ent: np.ndarray,
+                               dist: np.ndarray,
+                               req_dens: np.ndarray) -> np.ndarray:
+        """4-dim global state for QMIX: [mean_deg, max_deg, mean_fid, req_load]."""
+        degrees  = np.sum(ent > 0, axis=1)
+        link_fids = dist[ent > 0]
+        return np.array([
+            float(degrees.mean()) / max(SIZE, 1),
+            float(degrees.max())  / max(SIZE, 1),
+            float(link_fids.mean()) if link_fids.size > 0 else 0.0,
+            float(req_dens.sum())  / max(SIZE, 1),
+        ], dtype=np.float32)
+
     # ── Edge-score state vector ───────────────────────────────────────────────
 
     @staticmethod
-    def _edge_state(H: torch.Tensor, curr: int, dst: int,
-                    nbr: int, fid_uv: float, fid_so_far: float,
+    def _edge_state(ent: np.ndarray, dist: np.ndarray,
+                    req_dens: np.ndarray, bfs_dists: dict,
+                    curr: int, dst: int, nbr: int,
+                    fid_uv: float, fid_so_far: float,
                     hops_used: int) -> np.ndarray:
         """
-        Build 3*D+3 edge-score input vector for one (request, candidate) pair.
-        D = OUT_DIM = 32  →  total = 99 dims (< 500 ✓)
+        Build STATE_DIM=12 edge-state vector.
+
+        3 nodes × (norm_degree, norm_req_density, norm_bfs_to_dst) + fid_uv + fid_so_far + hops_frac
+
+        BFS distance uses the graph at the START of the timeslot (precomputed).
+        Degree and req_density are the live values (updated as links are consumed).
         """
-        D = OUT_DIM
-        x = np.empty(3 * D + 3, dtype=np.float32)
-        x[:D]        = H[curr].detach().numpy()
-        x[D:2*D]     = H[dst].detach().numpy()
-        x[2*D:3*D]   = H[nbr].detach().numpy()
-        x[3*D]       = fid_uv
-        x[3*D + 1]   = fid_so_far
-        x[3*D + 2]   = min(hops_used / TTL_W, 1.0)
-        return x
+        bfs_d      = bfs_dists.get(dst, {})
+        total_dens = max(float(req_dens.sum()), 1.0)
+
+        def node_feat(nid: int) -> list:
+            deg  = float(np.sum(ent[nid] > 0)) / max(SIZE, 1)
+            dens = float(req_dens[nid]) / total_dens
+            bfs  = float(bfs_d.get(nid, SIZE)) / SIZE
+            return [deg, dens, bfs]
+
+        return np.array(
+            node_feat(curr) + node_feat(dst) + node_feat(nbr) +
+            [fid_uv, fid_so_far, min(float(hops_used) / TTL_W, 1.0)],
+            dtype=np.float32
+        )
 
     # ── Potential-based shaping ───────────────────────────────────────────────
 
     @staticmethod
     def _precompute_bfs(G_nx, dsts: set) -> dict:
-        """
-        BFS distance from each destination to all reachable nodes.
-        Returns {dst: {node: distance}}.  Done once per timeslot.
-        """
         import networkx as nx
         result = {}
         for d in dsts:
@@ -246,7 +241,6 @@ class QuRA_Local_v2(AlgorithmBase):
 
     @staticmethod
     def _phi_cache(bfs: dict, curr: int, dst: int) -> float:
-        """Φ(s) = -d(curr, dst)/MAX_HOPS using precomputed BFS distances."""
         if curr == dst:
             return 0.0
         d = bfs.get(dst, {}).get(curr, _MAX_HOPS)
@@ -256,9 +250,6 @@ class QuRA_Local_v2(AlgorithmBase):
 
     def p4(self):
         t0 = time.perf_counter()
-
-        # No carryover: requests that were not served last slot were already dropped.
-        # self.requests contains only requests that arrived this timeslot.
 
         if not self.requestState:
             for lst in (self.result.successfulRequestPerRound,
@@ -271,26 +262,22 @@ class QuRA_Local_v2(AlgorithmBase):
 
         ent, dist, cap = self._build_matrices()
         req_dens        = self._req_density()
-        nf, af, ac      = build_graph_tensors(ent, dist, req_dens, SIZE)
 
-        # Encode graph — no_grad during inference; training path keeps grad enabled
-        H = self.agent.encode(nf, af, ac, training=False)
+        gs_vec = self._compute_global_state(ent, dist, req_dens) if self.use_qmix else None
 
-        # Global state for QMIX
-        gs_vec = _compact_global(H).detach().numpy()   # (2D,)
+        eps         = _epsilon(self.timeSlot)
+        success_req = 0
+        success_fid = 0
+        total_fid   = 0.0
 
-        eps          = _epsilon(self.timeSlot)
-        success_req  = 0
-        success_fid  = 0
-        total_fid    = 0.0
-        transitions  = []   # (state_vec, nbr_rel_idx, reward, next_state_vec, done)
-        qmix_req_feats = []  # per-request: (state_vec, action, reward, next_state_vec)
-        qmix_rf_vecs   = []  # per-request: concat(emb_curr, emb_dst) for QMixerV2
+        # Per-request transition lists: ridx → [(s, a, r, ns, done), ...]
+        req_transitions: dict[int, list] = {
+            ridx: [] for ridx in range(len(self.requestState))
+        }
+        qmix_states: list = []   # flat list of (s, a, r, ns, rf_vec) for Hive
 
-        # Mutable capacity for Guard/Hive deconfliction (copy of cap)
         avail_cap = dict(cap)
 
-        # Build networkx graph + precompute BFS distances once per timeslot
         import networkx as nx
         G_nx = nx.Graph()
         G_nx.add_nodes_from(range(SIZE))
@@ -298,25 +285,21 @@ class QuRA_Local_v2(AlgorithmBase):
             if c > 0:
                 G_nx.add_edge(u, v)
         unique_dsts = {int(rs[1].id) for rs in self.requestState if not rs[5]}
-        _bfs = self._precompute_bfs(G_nx, unique_dsts)
+        bfs_dists   = self._precompute_bfs(G_nx, unique_dsts)
 
-        # ── Routing (all variants share this loop, differ in hop_strategy) ───
         MAX_HOPS_PER_REQ = min(15, TTL_W)
-
-        # Per-request hop state (hop count per active request)
         hop_counts = [0] * len(self.requestState)
 
         for _hop in range(MAX_HOPS_PER_REQ):
-            # Collect active requests with valid moves
             pending = []
             for ridx, rs in enumerate(self.requestState):
                 if rs[5]:
                     continue
-                curr     = int(rs[2])
-                dst_id   = rs[1].id
-                visited  = rs[3]
-                nbrs     = [n for n in np.nonzero(ent[curr])[0]
-                            if n not in visited and n != curr]
+                curr    = int(rs[2])
+                dst_id  = rs[1].id
+                visited = rs[3]
+                nbrs    = [n for n in np.nonzero(ent[curr])[0]
+                           if n not in visited and n != curr]
                 if nbrs:
                     pending.append((ridx, rs, curr, dst_id, visited, nbrs))
 
@@ -324,26 +307,24 @@ class QuRA_Local_v2(AlgorithmBase):
                 break
 
             if self.variant == 'seq':
-                chosen = self._route_seq(H, pending, eps, ent, dist, hop_counts, avail_cap)
+                chosen = self._route_seq(
+                    pending, eps, ent, dist, req_dens, bfs_dists, hop_counts, avail_cap)
             else:
-                chosen = self._route_parallel(H, pending, eps, ent, dist, hop_counts, avail_cap,
-                                              deconflict=(self.variant in ('guard', 'hive')))
+                chosen = self._route_parallel(
+                    pending, eps, ent, dist, req_dens, bfs_dists, hop_counts, avail_cap,
+                    deconflict=(self.variant in ('guard', 'hive')))
 
-            # Apply chosen actions
-            for ridx, nbr_id, state_v, fid_uv_val in chosen:
-                rs = self.requestState[ridx]
+            for ridx, nbr_id, state_v in chosen:
+                rs     = self.requestState[ridx]
                 curr   = int(rs[2])
                 dst_id = rs[1].id
 
-                lk = (min(curr, nbr_id), max(curr, nbr_id))
+                lk     = (min(curr, nbr_id), max(curr, nbr_id))
+                f_hop  = float(dist[curr][nbr_id])
+                f_old  = float(rs[6])
+                f_new  = _werner_swap(f_old, f_hop)
+                rs[6]  = f_new
 
-                # Werner-swap fidelity update
-                f_hop          = float(dist[curr][nbr_id])
-                f_old          = float(rs[6])
-                f_new          = _werner_swap(f_old, f_hop)
-                rs[6]          = f_new
-
-                # Consume entanglement (update ent and avail_cap)
                 ent[curr][nbr_id]  = max(0.0, ent[curr][nbr_id]  - 1)
                 ent[nbr_id][curr]  = max(0.0, ent[nbr_id][curr]  - 1)
                 avail_cap[lk]      = max(0, avail_cap.get(lk, 0) - 1)
@@ -353,9 +334,8 @@ class QuRA_Local_v2(AlgorithmBase):
                 hop_counts[ridx]+= 1
                 done            = (nbr_id == dst_id)
 
-                # Potential-based shaped reward (precomputed BFS distances)
-                phi_s   = self._phi_cache(_bfs, curr,   dst_id)
-                phi_ns  = self._phi_cache(_bfs, nbr_id, dst_id)
+                phi_s   = self._phi_cache(bfs_dists, curr,   dst_id)
+                phi_ns  = self._phi_cache(bfs_dists, nbr_id, dst_id)
                 shaping = _SHAPING_COEFF * (GAMMA * phi_ns - phi_s)
 
                 if done:
@@ -366,65 +346,76 @@ class QuRA_Local_v2(AlgorithmBase):
                         success_fid += 1
                         total_fid   += f_new
                     else:
-                        raw_r = R_FAIL_FMIN   # reached dst but fidelity too low
+                        raw_r = R_FAIL_FMIN
                 else:
                     raw_r = R_HOP
 
                 reward = raw_r + shaping
 
-                # Next state for the edge that was taken
+                # ── Bellman target: next_state = argmax Q candidate ───────────
                 next_nbrs = [n for n in np.nonzero(ent[nbr_id])[0]
                              if n not in rs[3] and n != nbr_id]
-                if next_nbrs:
+                if done or not next_nbrs:
+                    next_state_v = state_v   # terminal: done flag zeroes bootstrap
+                elif len(next_nbrs) == 1:
                     next_state_v = self._edge_state(
-                        H, nbr_id, dst_id, next_nbrs[0],
-                        float(dist[nbr_id][next_nbrs[0]]),
-                        float(rs[6]), hop_counts[ridx])
+                        ent, dist, req_dens, bfs_dists, nbr_id, dst_id,
+                        next_nbrs[0], float(dist[nbr_id][next_nbrs[0]]),
+                        f_new, hop_counts[ridx])
                 else:
-                    next_state_v = state_v   # terminal / no moves
+                    nxt_vecs = np.stack([
+                        self._edge_state(
+                            ent, dist, req_dens, bfs_dists, nbr_id, dst_id, n,
+                            float(dist[nbr_id][n]), f_new, hop_counts[ridx])
+                        for n in next_nbrs
+                    ])
+                    best_idx     = int(np.argmax(self.agent.score_neighbors_v(nxt_vecs)))
+                    next_state_v = nxt_vecs[best_idx]
 
-                transitions.append((state_v, 0, reward, next_state_v, done))
-                qmix_req_feats.append((state_v, 0, reward, next_state_v))
-                qmix_rf_vecs.append(
-                    np.concatenate([H[curr].detach().numpy(),
-                                    H[dst_id].detach().numpy()]))
+                req_transitions[ridx].append((state_v, 0, reward, next_state_v, done))
 
-        # Drop penalty: every request not served this slot is penalised and dropped.
-        for ridx, rs in enumerate(self.requestState):
-            if not rs[5]:
-                transitions.append((
-                    np.zeros(3 * OUT_DIM + 3, dtype=np.float32),
-                    0, R_TTL,
-                    np.zeros(3 * OUT_DIM + 3, dtype=np.float32),
-                    True))
+                if self.use_qmix:
+                    rf_vec = np.array([
+                        bfs_dists.get(dst_id, {}).get(curr,   SIZE) / SIZE,
+                        bfs_dists.get(dst_id, {}).get(nbr_id, SIZE) / SIZE,
+                        float(np.sum(ent[curr]   > 0)) / SIZE,
+                        float(np.sum(ent[dst_id] > 0)) / SIZE,
+                    ], dtype=np.float32)
+                    qmix_states.append((state_v, 0, reward, next_state_v, rf_vec))
 
         # ── Training ──────────────────────────────────────────────────────────
-        if not INFERENCE_MODE and transitions:
-            for (sv, a, r, nsv, d) in transitions:
-                self.agent.remember(sv, a, r, nsv, d)
-                self._push_ctr += 1
+        if not INFERENCE_MODE:
+            for ridx, t_list in req_transitions.items():
+                if not t_list:
+                    continue   # request never got a hop — skip
+                rs = self.requestState[ridx]
+                if not rs[5]:
+                    # Request dropped: attach R_TTL to last real transition
+                    s, a, r, ns, _ = t_list[-1]
+                    t_list[-1] = (s, a, r + R_TTL, ns, True)
+                self.agent.single_replay.push_sequence(t_list)
+                self._push_ctr += len(t_list)
 
-            if self.use_qmix and qmix_req_feats:
-                ep_states = [t[0] for t in qmix_req_feats]
-                ep_acts   = [t[1] for t in qmix_req_feats]
-                ep_rews   = [t[2] for t in qmix_req_feats]
-                ep_nstates= [t[3] for t in qmix_req_feats]
+            if self.use_qmix and qmix_states:
+                ep_states  = [t[0] for t in qmix_states]
+                ep_acts    = [t[1] for t in qmix_states]
+                ep_rews    = [t[2] for t in qmix_states]
+                ep_nstates = [t[3] for t in qmix_states]
+                ep_rf      = [t[4] for t in qmix_states]
                 self.agent.qmix_replay.push(
                     ep_states, ep_acts, ep_rews, ep_nstates,
-                    qmix_rf_vecs, gs_vec, gs_vec,
-                    done=False,
-                )
+                    ep_rf, gs_vec, gs_vec, done=False)
 
-            if self._push_ctr >= STEP_BETWEEN_TRAIN:
-                self._push_ctr = 0
+            while self._push_ctr >= STEP_BETWEEN_TRAIN:
+                self._push_ctr -= STEP_BETWEEN_TRAIN
                 if self.use_qmix:
                     loss = self.agent.train_qmix()
                 else:
-                    loss = self.agent.train_dqn(nf, af, ac)
+                    loss = self.agent.train_dqn()
                 if loss is not None:
                     self._loss_log.append(loss)
 
-        # ── Cleanup: drop ALL remaining requests (no carryover to next slot) ────
+        # ── Cleanup: drop all remaining requests (no carryover) ───────────────
         self.requests     = []
         self.requestState = []
 
@@ -436,7 +427,6 @@ class QuRA_Local_v2(AlgorithmBase):
                 avg_loss_str = f"  loss={avg_loss:.5f}  eps={eps:.3f}"
             print(f"[{self.name}] ts={self.timeSlot:5d}"
                   f"  succ={success_req:3d}"
-                  f"  remain={len(self.requests):4d}"
                   f"{avg_loss_str}"
                   f"  wall={wall_ms:.1f}ms")
 
@@ -452,123 +442,112 @@ class QuRA_Local_v2(AlgorithmBase):
 
     # ── Routing strategies ────────────────────────────────────────────────────
 
-    def _route_seq(self, H, pending, eps, ent, dist, hop_counts, avail_cap):
+    def _route_seq(self, pending, eps, ent, dist, req_dens, bfs_dists,
+                   hop_counts, avail_cap):
         """
-        Sequential: process one request at a time; each request immediately
-        consumes its link before the next request decides.
-        Returns list of (ridx, chosen_nbr_id, state_v, fid_uv).
+        Sequential: each request consumes its link before the next decides.
+        Returns list of (ridx, chosen_nbr_id, state_v).
         """
-        chosen = []
-        local_cap = dict(avail_cap)   # local copy to track within this hop step
+        chosen    = []
+        local_cap = dict(avail_cap)
 
         for ridx, rs, curr, dst_id, visited, nbrs in pending:
-            # Filter by available capacity
             avail_nbrs = [n for n in nbrs
                           if local_cap.get((min(curr, n), max(curr, n)), 0) > 0]
             if not avail_nbrs:
                 continue
-
-            nbr, state_v, fid_uv_val = self._pick_action(
-                H, curr, dst_id, avail_nbrs, dist, rs, hop_counts[ridx], eps)
-
+            nbr, state_v = self._pick_action(
+                ent, dist, req_dens, bfs_dists,
+                curr, dst_id, avail_nbrs, rs, hop_counts[ridx], eps)
             lk = (min(curr, nbr), max(curr, nbr))
             local_cap[lk] = max(0, local_cap.get(lk, 0) - 1)
-            chosen.append((ridx, nbr, state_v, fid_uv_val))
+            chosen.append((ridx, nbr, state_v))
 
-        # Update avail_cap in-place to reflect seq consumption
         avail_cap.update(local_cap)
         return chosen
 
-    def _route_parallel(self, H, pending, eps, ent, dist, hop_counts, avail_cap,
-                         deconflict: bool):
+    def _route_parallel(self, pending, eps, ent, dist, req_dens, bfs_dists,
+                         hop_counts, avail_cap, deconflict: bool):
         """
         Parallel: all requests choose simultaneously; optional b-matching deconflict.
+        Returns list of (ridx, chosen_nbr_id, state_v).
         """
-        # Step 1: each request selects its preferred neighbor
         raw = []
         for ridx, rs, curr, dst_id, visited, nbrs in pending:
-            nbr, state_v, fid_uv_val = self._pick_action(
-                H, curr, dst_id, nbrs, dist, rs, hop_counts[ridx], eps)
-            raw.append((ridx, curr, nbr, state_v, fid_uv_val))
+            nbr, state_v = self._pick_action(
+                ent, dist, req_dens, bfs_dists,
+                curr, dst_id, nbrs, rs, hop_counts[ridx], eps)
+            raw.append((ridx, curr, nbr, state_v))
 
         if not deconflict:
-            # Flock: accept all choices even if they conflict
-            # Filter by actual capacity (first-come-first-served by list order)
-            chosen = []
+            chosen    = []
             local_cap = dict(avail_cap)
-            for ridx, curr, nbr, state_v, fid_uv_val in raw:
+            for ridx, curr, nbr, state_v in raw:
                 lk = (min(curr, nbr), max(curr, nbr))
                 if local_cap.get(lk, 0) > 0:
                     local_cap[lk] -= 1
-                    chosen.append((ridx, nbr, state_v, fid_uv_val))
+                    chosen.append((ridx, nbr, state_v))
             avail_cap.update(local_cap)
             return chosen
 
         # Guard / Hive: greedy b-matching
-        # Batch ALL (ridx, curr, nbr) pairs into a single Q-net forward pass
-        # instead of one call per pair (removes ~5000 individual torch calls/slot).
-        if raw:
-            D = OUT_DIM
-            H_np = H.detach().numpy()   # (N, D) numpy once
-            batch_rows = []
-            for ridx, curr, nbr, state_v, fid_uv_val in raw:
-                rs2       = self.requestState[ridx]
-                dst_id2   = int(rs2[1].id)
-                fid_sf    = float(rs2[6])
-                hops_f    = min(hop_counts[ridx] / TTL_W, 1.0)
-                fid_uv2   = float(dist[curr][nbr])
-                row = np.empty(3 * D + 3, dtype=np.float32)
-                row[:D]      = H_np[curr]
-                row[D:2*D]   = H_np[dst_id2]
-                row[2*D:3*D] = H_np[nbr]
-                row[3*D]     = fid_uv2
-                row[3*D+1]   = fid_sf
-                row[3*D+2]   = hops_f
-                batch_rows.append(row)
-            batch_t = torch.tensor(np.stack(batch_rows), dtype=torch.float32)
-            self.agent.qnet.eval()
-            with torch.no_grad():
-                scores_np = self.agent.qnet.net(batch_t).squeeze(1).numpy()
-            candidates = [(ridx, curr, nbr, float(scores_np[i]))
-                          for i, (ridx, curr, nbr, _, _) in enumerate(raw)]
-        else:
-            candidates = []
+        if not raw:
+            return []
 
-        matched = bmatching_nodes(candidates, dict(avail_cap))
+        # Use each request's state_v (already computed for chosen nbr) as score input
+        batch_rows = [state_v for (_, _, _, state_v) in raw]
+        batch_t    = torch.tensor(np.stack(batch_rows), dtype=torch.float32)
+        self.agent.qnet.eval()
+        with torch.no_grad():
+            scores_np = self.agent.qnet.net(batch_t).squeeze(1).numpy()
 
-        # Update avail_cap
+        candidates = [(ridx, curr, nbr, float(scores_np[i]))
+                      for i, (ridx, curr, nbr, _) in enumerate(raw)]
+        matched    = bmatching_nodes(candidates, dict(avail_cap))
+
         for ridx, curr, nbr, _ in candidates:
             if ridx in matched:
                 lk = (min(curr, nbr), max(curr, nbr))
                 avail_cap[lk] = max(0, avail_cap.get(lk, 0) - 1)
 
-        chosen = []
-        raw_dict = {ridx: (curr, nbr, state_v, fid_uv_val)
-                    for ridx, curr, nbr, state_v, fid_uv_val in raw}
+        raw_dict = {ridx: (curr, nbr, state_v) for ridx, curr, nbr, state_v in raw}
+        chosen   = []
         for ridx, nbr_id in matched.items():
-            curr, _, state_v, fid_uv_val = raw_dict[ridx]
-            chosen.append((ridx, nbr_id, state_v, fid_uv_val))
+            _, _, state_v = raw_dict[ridx]
+            chosen.append((ridx, nbr_id, state_v))
 
         return chosen
 
-    def _pick_action(self, H, curr, dst_id, nbrs, dist, rs, hops_used, eps):
-        """Pick a neighbor via ε-greedy Q-scoring. Returns (nbr, state_v, fid_uv)."""
-        # Always go direct if destination is reachable
+    def _pick_action(self, ent, dist, req_dens, bfs_dists,
+                     curr: int, dst_id: int, nbrs: list,
+                     rs, hops_used: int, eps: float):
+        """
+        Pick a neighbor via ε-greedy Q-scoring.
+        Returns (nbr_id, state_v).
+        """
         if dst_id in nbrs:
             nbr = dst_id
         elif _rng.random() < eps:
             nbr = _rng.choice(nbrs)
         else:
-            fid_uv = [float(dist[curr][n]) for n in nbrs]
-            scores  = self.agent.score_neighbors(
-                H, curr, dst_id, nbrs, fid_uv,
-                float(rs[6]), min(hops_used / TTL_W, 1.0))
-            nbr = nbrs[int(np.argmax(scores))]
+            state_vecs = np.stack([
+                self._edge_state(
+                    ent, dist, req_dens, bfs_dists,
+                    curr, dst_id, n, float(dist[curr][n]),
+                    float(rs[6]), hops_used)
+                for n in nbrs
+            ])
+            scores  = self.agent.score_neighbors_v(state_vecs)
+            best_i  = int(np.argmax(scores))
+            nbr     = nbrs[best_i]
+            state_v = state_vecs[best_i]
+            return nbr, state_v
 
-        fid_uv_val = float(dist[curr][nbr])
-        state_v    = self._edge_state(
-            H, curr, dst_id, nbr, fid_uv_val, float(rs[6]), hops_used)
-        return nbr, state_v, fid_uv_val
+        state_v = self._edge_state(
+            ent, dist, req_dens, bfs_dists,
+            curr, dst_id, nbr, float(dist[curr][nbr]),
+            float(rs[6]), hops_used)
+        return nbr, state_v
 
     # ── AlgorithmBase bookkeeping ─────────────────────────────────────────────
 
@@ -602,7 +581,7 @@ class QuRA_Hive_DIST(QuRA_Local_v2):
         super().__init__(topo, param, name, variant='hive')
 
 
-# ── ShortestPath baseline (unchanged from v1) ──────────────────────────────────
+# ── ShortestPath baseline (unchanged) ─────────────────────────────────────────
 
 import networkx as nx
 
