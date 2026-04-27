@@ -242,9 +242,11 @@ class QuRA_Local(AlgorithmBase):
     # ── Routing + training ────────────────────────────────────────────────────
 
     def p4(self):
-        # Discard requests older than 1 timeslot (TTL=1)
-        self.requests = [r for r in self.requests if self.timeSlot - r[2] < 1]
-        self.requestState = [s for s in self.requestState if self.timeSlot - s[0].id < 1]
+        # Discard requests older than 1 timeslot (TTL=1). Filter both lists by
+        # the same index so they stay in sync (requestState doesn't store arrival time).
+        keep = [i for i, r in enumerate(self.requests) if self.timeSlot - r[2] < 1]
+        self.requests     = [self.requests[i]     for i in keep]
+        self.requestState = [self.requestState[i] for i in keep]
 
         if not self.requestState:
             for lst in (self.result.successfulRequestPerRound,
@@ -503,9 +505,11 @@ class ShortestPath(AlgorithmBase):
                         self.totalUsedQubits += 2
 
     def p4(self):
-        # Discard requests older than 1 timeslot (TTL=1)
-        self.requests = [r for r in self.requests if self.timeSlot - r[2] < 1]
-        self.requestState = [s for s in self.requestState if self.timeSlot - s[0].id < 1]
+        # Discard requests older than 1 timeslot (TTL=1). Filter both lists by
+        # the same index so they stay in sync (requestState doesn't store arrival time).
+        keep = [i for i, r in enumerate(self.requests) if self.timeSlot - r[2] < 1]
+        self.requests     = [self.requests[i]     for i in keep]
+        self.requestState = [self.requestState[i] for i in keep]
 
         # Build entanglement graph and track available link counts
         G = nx.Graph()
