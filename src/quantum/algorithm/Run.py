@@ -30,6 +30,7 @@ import os
 import subprocess
 import sys
 import time
+import random as _random
 from random import sample
 
 import numpy as np
@@ -101,6 +102,14 @@ degree  = 1
 TRAIN_LOAD           = int(os.environ.get("TRAIN_LOAD", "100"))
 _INFER_LOADS_DEFAULT = [5, 10, 25, 50, 75, 100]
 
+# Curriculum: during training each timeslot gets a random load in
+# [TRAIN_LOAD_MIN, TRAIN_LOAD].  This forces the model to handle sparse
+# and dense scenarios with the same weights, so inference at any lower
+# load generalises without re-training.
+# Default min = 10% of max load (e.g. 10 when TRAIN_LOAD=100).
+TRAIN_LOAD_MIN = int(os.environ.get("TRAIN_LOAD_MIN",
+                                     str(max(5, TRAIN_LOAD // 10))))
+
 _req_env = os.environ.get("REQ_LOADS", "")
 if _req_env:
     numOfRequestPerRound = [int(x.strip()) for x in _req_env.split(",")]
@@ -112,7 +121,8 @@ else:
 print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}"
       f"  training_mode={_tmode}"
       f"  ttime={ttime}  step={step}  times={times}"
-      f"  loads={numOfRequestPerRound}")
+      f"  loads={numOfRequestPerRound}"
+      + (f"  curriculum=[{TRAIN_LOAD_MIN},{TRAIN_LOAD}]" if not INFERENCE_MODE else ""))
 
 
 # ── Per-algorithm thread ───────────────────────────────────────────────────────
@@ -137,14 +147,16 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict, shared_data):
     _csv_path  = os.path.join(_log_dir, f"progress_{algo.name}_req{_req_count}.csv")
 
     with open(_csv_path, "w", buffering=1) as _csv:
-        _csv.write("timeslot,successful_requests,reward\n")
+        _csv.write("timeslot,successful_requests,reward,wall_ms\n")
         for i in range(ttime):
+            _t0    = time.perf_counter()
             result = algo.work(requests[i], i)
+            _wall_ms = (time.perf_counter() - _t0) * 1000.0
             _succ = result.successfulRequestPerRound[i] \
                     if i < len(result.successfulRequestPerRound) else 0
             _rew  = result.rewardPerRound[i] \
                     if i < len(result.rewardPerRound) else 0
-            _csv.write(f"{i},{_succ},{_rew}\n")
+            _csv.write(f"{i},{_succ},{_rew},{_wall_ms:.1f}\n")
 
     # Save trained weights to disk after training run
     if not INFERENCE_MODE and hasattr(algo, '_save_weights'):
@@ -211,7 +223,16 @@ def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
         else:
             for i in range(ttime):
                 if i < rtime:
-                    for _ in range(numOfRequestPerRound):
+                    # Curriculum: randomly pick a load this timeslot so the
+                    # model sees all traffic levels during training.
+                    # In inference mode INFERENCE_MODE is True and
+                    # numOfRequestPerRound is fixed to the evaluation load.
+                    if INFERENCE_MODE:
+                        slot_load = numOfRequestPerRound
+                    else:
+                        slot_load = _random.randint(TRAIN_LOAD_MIN,
+                                                    numOfRequestPerRound)
+                    for _ in range(slot_load):
                         while True:
                             a = sample(list(range(numOfNode)), 2)
                             if (a[0], a[1]) not in ids[i]:
