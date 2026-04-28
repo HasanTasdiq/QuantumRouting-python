@@ -92,8 +92,10 @@ log "  MODEL_DIR=${MODEL_DIR}"
 log "  RESULTS_DIR=${RESULTS_DIR}"
 log "══════════════════════════════════════════════════════"
 
-# ── RELiQ pre-training ────────────────────────────────────────────────────────
-if [[ -f "${RELIQ_CKPT}" ]]; then
+# ── RELiQ pre-training (skipped during train-only phase) ─────────────────────
+if [[ "${PHASE}" == "train" ]]; then
+  log "RELiQ pre-training skipped (train-only phase)."
+elif [[ -f "${RELIQ_CKPT}" ]]; then
   log "RELiQ checkpoint found — skipping pre-training."
 else
   log "Pre-training RELiQ (${RELIQ_STEPS} steps)…"
