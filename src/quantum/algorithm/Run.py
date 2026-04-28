@@ -74,8 +74,8 @@ os.environ["TRAINING_MODE"] = _tmode   # propagate to spawned child processes
 ttime    = int(os.environ.get("TTIME",  "10000"))
 step     = int(os.environ.get("STEP",   "1000"))
 times    = int(os.environ.get("TIMES",  "1"))
-gridSize = 10
-nodeNo   = gridSize * gridSize
+nodeNo   = int(os.environ.get("SIZE",   "100"))
+gridSize = int(math.sqrt(nodeNo))
 
 alpha_  = 0.0002
 degree  = 1

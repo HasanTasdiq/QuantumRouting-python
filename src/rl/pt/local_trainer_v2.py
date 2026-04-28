@@ -163,8 +163,9 @@ class QuRA_Local_v2(AlgorithmBase):
     # ── Graph helpers ─────────────────────────────────────────────────────────
 
     def _build_matrices(self):
-        ent  = np.zeros((SIZE, SIZE), dtype=np.float32)
-        dist = np.zeros((SIZE, SIZE), dtype=np.float32)
+        n    = len(self.topo.nodes)
+        ent  = np.zeros((n, n), dtype=np.float32)
+        dist = np.zeros((n, n), dtype=np.float32)
         cap  = {}
         for link in self.topo.links:
             if link.isEntangled(self.timeSlot) and link.notSwapped() and not link.taken:
@@ -176,7 +177,8 @@ class QuRA_Local_v2(AlgorithmBase):
         return ent, dist, cap
 
     def _req_density(self) -> np.ndarray:
-        dens = np.zeros(SIZE, dtype=np.float32)
+        n    = len(self.topo.nodes)
+        dens = np.zeros(n, dtype=np.float32)
         for rs in self.requestState:
             if not rs[5]:
                 dens[int(rs[2])] += 1.0
@@ -280,7 +282,7 @@ class QuRA_Local_v2(AlgorithmBase):
 
         import networkx as nx
         G_nx = nx.Graph()
-        G_nx.add_nodes_from(range(SIZE))
+        G_nx.add_nodes_from(range(len(self.topo.nodes)))
         for (u, v), c in cap.items():
             if c > 0:
                 G_nx.add_edge(u, v)
@@ -629,7 +631,7 @@ class ShortestPath(AlgorithmBase):
         self.requestState = [self.requestState[i] for i in keep]
 
         G = nx.Graph()
-        G.add_nodes_from(range(SIZE))
+        G.add_nodes_from(range(len(self.topo.nodes)))
         ent_avail: dict = {}
         for link in self.topo.links:
             if link.isEntangled(self.timeSlot) and link.notSwapped() and not link.taken:

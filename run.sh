@@ -106,21 +106,14 @@ else
       --comment RELiQ_QuRAPhysics)"
 fi
 
-# ── Shared env for Run.py ─────────────────────────────────────────────────────
-BASE_ENV="\
-TRAINING_MODE=${TRAINING_MODE} \
-TTIME=${TTIME} STEP=${STEP} \
-TTL_W=${TTL_W} SIZE=${SIZE} \
-MODEL_DIR=${MODEL_DIR} \
-TORCH_THREADS=${TORCH_THREADS}"
+# ── Shared env for Run.py (exported so subshells inherit, handles spaces in paths)
+export TRAINING_MODE TTIME STEP TTL_W SIZE MODEL_DIR TORCH_THREADS
 
 # ── Phase 1: Training ─────────────────────────────────────────────────────────
 if [[ "${PHASE}" == "train" || "${PHASE}" == "both" ]]; then
   log ""
   log "── PHASE 1: TRAINING  load=${TRAIN_LOAD}  TIMES=${TIMES} ──"
-  run_cmd "(cd '${ALGO_DIR}' && env ${BASE_ENV} \
-      TIMES=${TIMES} \
-      REQ_LOADS=${TRAIN_LOAD} \
+  run_cmd "(cd '${ALGO_DIR}' && TIMES=${TIMES} REQ_LOADS=${TRAIN_LOAD} \
       '${PYTHON}' -u Run.py)" \
     2>&1 | tee "${RESULTS_DIR}/train_${LABEL}.log"
   log "Training complete — weights in ${MODEL_DIR}"
@@ -130,10 +123,7 @@ fi
 if [[ "${PHASE}" == "infer" || "${PHASE}" == "both" ]]; then
   log ""
   log "── PHASE 2: INFERENCE  loads=${REQ_LOADS_INFER}  TIMES=${TIMES} ──"
-  run_cmd "(cd '${ALGO_DIR}' && env ${BASE_ENV} \
-      INFERENCE_MODE=1 \
-      TIMES=${TIMES} \
-      REQ_LOADS=${REQ_LOADS_INFER} \
+  run_cmd "(cd '${ALGO_DIR}' && INFERENCE_MODE=1 TIMES=${TIMES} REQ_LOADS=${REQ_LOADS_INFER} \
       '${PYTHON}' -u Run.py)" \
     2>&1 | tee "${RESULTS_DIR}/infer_${LABEL}.log"
 fi
