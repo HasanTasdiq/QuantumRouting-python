@@ -399,23 +399,45 @@ class QuRA_Local_v2(AlgorithmBase):
                 self._push_ctr += len(t_list)
 
             if self.use_qmix and qmix_states:
-                ep_states  = [t[0] for t in qmix_states]
-                ep_acts    = [t[1] for t in qmix_states]
-                ep_rews    = [t[2] for t in qmix_states]
-                ep_nstates = [t[3] for t in qmix_states]
-                ep_rf      = [t[4] for t in qmix_states]
-                self.agent.qmix_replay.push(
-                    ep_states, ep_acts, ep_rews, ep_nstates,
-                    ep_rf, gs_vec, gs_vec, done=False)
+                # One QMIX episode = one decision per active request this timeslot.
+                # Collect only the FIRST hop decision for each request (index 0),
+                # so episode length == number of active requests (not total hops).
+                seen = set()
+                ep_states, ep_acts, ep_rews, ep_nstates, ep_rf = [], [], [], [], []
+                any_done = False
+                for ridx in range(len(self.requestState) + len(req_transitions)):
+                    t_list = req_transitions.get(ridx)
+                    if not t_list or ridx in seen:
+                        continue
+                    seen.add(ridx)
+                    s, a, r, ns, done = t_list[0]
+                    ep_states.append(s); ep_acts.append(a)
+                    ep_rews.append(r);   ep_nstates.append(ns)
+                    ep_rf.append(qmix_states[len(ep_states)-1][4]
+                                 if len(ep_states)-1 < len(qmix_states)
+                                 else np.zeros(QMIX_REQ_DIM, dtype=np.float32))
+                    if done:
+                        any_done = True
+
+                # Compute next global state after this timeslot's hops
+                ent_next, dist_next, _ = self._build_matrices()
+                gs_next = self._compute_global_state(
+                    ent_next, dist_next, self._req_density())
+
+                if ep_states:
+                    self.agent.qmix_replay.push(
+                        ep_states, ep_acts, ep_rews, ep_nstates,
+                        ep_rf, gs_vec, gs_next, done=any_done)
 
             while self._push_ctr >= STEP_BETWEEN_TRAIN:
                 self._push_ctr -= STEP_BETWEEN_TRAIN
-                if self.use_qmix:
-                    loss = self.agent.train_qmix()
-                else:
-                    loss = self.agent.train_dqn()
+                # DQN always: gives qnet a stable per-hop signal
+                loss = self.agent.train_dqn()
                 if loss is not None:
                     self._loss_log.append(loss)
+                # QMIX additionally for Hive: joint coordination on top of DQN
+                if self.use_qmix:
+                    self.agent.train_qmix()
 
         # ── Cleanup: drop all remaining requests (no carryover) ───────────────
         self.requests     = []
