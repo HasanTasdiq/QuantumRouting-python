@@ -25,21 +25,47 @@ import subprocess, shlex
 # path Run.py and RELiQ_Adapter both expect, regardless of the caller's CWD.
 _DEFAULT_OUTPUT_DIR = os.path.join(_project_dir, "runs_quantum")
 
+def _best_device(requested: str) -> str:
+    """Return best device supported by RELiQ main.py (cpu | cuda only)."""
+    if requested in ("cpu", "cuda"):
+        return requested
+    # auto or mps: RELiQ main.py only accepts cpu/cuda, so map accordingly
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return "cuda"
+    except Exception:
+        pass
+    return "cpu"
+
+
 def main():
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--total-steps",  type=int, default=500_000)
     p.add_argument("--output-dir",   type=str, default=_DEFAULT_OUTPUT_DIR)
-    p.add_argument("--device",       type=str, default="cpu")
+    p.add_argument("--device",       type=str, default="auto",
+                   help="Compute device: cpu | mps | cuda | auto (default: auto)")
     p.add_argument("--comment",      type=str, default="RELiQ_QuRAPhysics")
     args = p.parse_args()
+
+    device = _best_device(args.device)
+    print(f"[reliq/train.py] device={device}")
 
     # Resolve to absolute. If the caller passed a relative path it is resolved
     # against their CWD; the default is already absolute so it is unchanged.
     output_dir_abs = os.path.abspath(args.output_dir)
 
-    step_before = max(1000, min(10000, args.total_steps // 10))
-    step_between = max(50, args.total_steps // 250)
+    # Paper-correct hyperparameters (Meuser et al., IEEE Trans. Commun. 2026):
+    #   step_before_train = 100,000  (replay warm-up)
+    #   step_between_train = 200     (train frequency)
+    #   capacity           = 100,000 (replay buffer)
+    # These are fixed regardless of total_steps so the buffer and update
+    # frequency always match the paper regime.
+    step_before  = min(100_000, max(1_000, args.total_steps // 5))
+    step_between = 200   # paper value — do NOT scale with total_steps
+    capacity     = min(100_000, max(2_000, args.total_steps // 2))
+    batch_size   = 128 if device in ("mps", "cuda") else 32
     cmd = [
         sys.executable, "-u",
         os.path.join(_this_dir, "main.py"),
@@ -51,17 +77,18 @@ def main():
         "--disable-progressbar",
         "--n-data=100",           # must match _MAX_REQUESTS=100 in RELiQ_Adapter
         "--n-router=100",         # 100-node graph matches QuRA experiment topology
-        "--eval-episodes=10",     # keep end-of-run eval cheap (default=100 × 1000 steps is ~60s)
+        "--eval-episodes=5",      # keep end-of-run eval cheap
         f"--total-steps={args.total_steps}",
         f"--step-between-train={step_between}",
         f"--step-before-train={step_before}",
+        f"--mini-batch-size={batch_size}",
         "--neighbors=6",
         "--swap-prob=0.9",        # match QuRA q=0.9
         "--swap-prob-std=0.0",    # QuRA uses a fixed q, no variance
         "--initial-fidelity=0.9", # match QuRA Link.initial_fidelity=0.9
         "--model=dqn",
-        f"--device={args.device}",
-        f"--capacity={min(50000, max(2000, args.total_steps // 4))}",
+        f"--device={device}",
+        f"--capacity={capacity}",
         "--min-path-length=1",
         f"--output-dir={output_dir_abs}",
         f"--comment={args.comment}",
