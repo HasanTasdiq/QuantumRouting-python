@@ -59,24 +59,7 @@ from RELiQ_Adapter import RELiQ_Adapter
 from pt.ebspa import EBSPA
 from topo.Topo import Topo
 
-# ── Auto-train RELiQ if checkpoint is missing ─────────────────────────────────
-_project_root    = os.path.normpath(os.path.join(_algo_dir, '../../..'))
-_RELIQ_COMMENT   = "RELiQ_QuRAPhysics"   # must match train.py --comment default
-                                          # and RELiQ_Adapter._DEFAULT_MODEL_PATH
-_RELIQ_MODEL     = os.path.join(_project_root, 'runs_quantum',
-                                _RELIQ_COMMENT, 'model.pt')
-if not os.path.exists(_RELIQ_MODEL):
-    _reliq_steps = int(os.environ.get("RELIQ_STEPS", "500000"))
-    print(f"[Run.py] RELiQ checkpoint not found — training ({_reliq_steps} steps)…")
-    _rc = subprocess.run(
-        [sys.executable, "-m", "src.reliq.train",
-         f"--total-steps={_reliq_steps}",
-         "--output-dir=runs_quantum",
-         f"--comment={_RELIQ_COMMENT}"],   # explicit: ties save path to adapter path
-        cwd=_project_root,
-    ).returncode
-    if _rc != 0:
-        print(f"[Run.py] WARNING: RELiQ training exited rc={_rc}; will use greedy fallback")
+_project_root = os.path.normpath(os.path.join(_algo_dir, '../../..'))
 from topo.mp_helper import executor as executor
 
 # ── Run configuration ─────────────────────────────────────────────────────────
