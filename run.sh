@@ -32,7 +32,6 @@
 #   MODEL_DIR=/path    where trained weights are saved  (default: runs_quantum/models)
 #   RESULTS_DIR=/path  where CSV outputs land           (default: runs_quantum/results)
 #   TORCH_THREADS=N    PyTorch threads per worker       (default: 2)
-#   RELIQ_STEPS=N      RELiQ pre-training steps        (default: 500000)
 #   TIMES=N            number of independent seeds      (default: 5)
 # =============================================================================
 set -euo pipefail
@@ -78,8 +77,6 @@ TIMES="${TIMES:-5}"
 MODEL_DIR="${MODEL_DIR:-${ROOT}/runs_quantum/models/${LABEL}}"
 RESULTS_DIR="${RESULTS_DIR:-${ROOT}/runs_quantum/results/${LABEL}}"
 TORCH_THREADS="${TORCH_THREADS:-2}"
-RELIQ_STEPS="${RELIQ_STEPS:-500000}"
-
 RELIQ_CKPT="${ROOT}/runs_quantum/RELiQ_QuRAPhysics/model.pt"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -98,18 +95,13 @@ log "  MODEL_DIR=${MODEL_DIR}"
 log "  RESULTS_DIR=${RESULTS_DIR}"
 log "══════════════════════════════════════════════════════"
 
-# ── RELiQ pre-training (skipped during train-only phase) ─────────────────────
-if [[ "${PHASE}" == "train" ]]; then
-  log "RELiQ pre-training skipped (train-only phase)."
-elif [[ -f "${RELIQ_CKPT}" ]]; then
-  log "RELiQ checkpoint found — skipping pre-training."
+# ── RELiQ checkpoint check (never trained from here — use train_reliq_parallel.sh) ──
+if [[ -f "${RELIQ_CKPT}" ]]; then
+  log "RELiQ checkpoint found: ${RELIQ_CKPT}"
 else
-  log "Pre-training RELiQ (${RELIQ_STEPS} steps)…"
-  run_cmd "(cd '${ROOT}' && \
-      '${PYTHON}' -m src.reliq.train \
-      --total-steps '${RELIQ_STEPS}' \
-      --output-dir runs_quantum \
-      --comment RELiQ_QuRAPhysics)"
+  log "WARNING: RELiQ checkpoint not found at ${RELIQ_CKPT}"
+  log "         RELiQ_Adapter will run with random weights."
+  log "         Train separately:  bash train_reliq_parallel.sh"
 fi
 
 # ── Shared env for Run.py (exported so subshells inherit, handles spaces in paths)
