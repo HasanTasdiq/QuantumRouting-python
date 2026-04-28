@@ -37,7 +37,15 @@ elif TRAINING_MODE == "mid":
     STEP_BETWEEN_TRAIN   = 8
     N_STEP               = 8
     GAMMA                = 0.99
-else:   # paper
+elif TRAINING_MODE == "long":
+    # 1M timeslots × ~111 trans/slot ÷ 50 = ~2.2M grad updates
+    CAPACITY             = 1_000_000
+    MIN_REPLAY           = 5_000
+    MINIBATCH_SIZE       = 256
+    STEP_BETWEEN_TRAIN   = 50
+    N_STEP               = 8
+    GAMMA                = 0.99
+else:   # paper (20k timeslots)
     CAPACITY             = 1_000_000
     MIN_REPLAY           = 5_000
     MINIBATCH_SIZE       = 256
@@ -46,23 +54,27 @@ else:   # paper
     GAMMA                = 0.99
 
 # Target network update frequency (Mnih 2015 rule: ~0.1% of total gradient updates).
-# At paper scale (1M updates) → C=1000.  At smoke (~1k updates) → C=100.
+# At paper scale (~220k updates) → C=1000.  At long (~2.2M updates) → C=3000.
 if TRAINING_MODE == "smoke":
     UPDATE_TARGET_EVERY = 100
 elif TRAINING_MODE == "mid":
     UPDATE_TARGET_EVERY = 500
+elif TRAINING_MODE == "long":
+    UPDATE_TARGET_EVERY = 3_000
 else:
-    UPDATE_TARGET_EVERY = 1000
+    UPDATE_TARGET_EVERY = 1_000
 PER_ALPHA      = 0.6   # priority exponent
 PER_BETA_START = 0.4
 PER_BETA_END   = 1.0
 # Anneal beta from 0.4 → 1.0 over the first ~half of expected gradient updates.
 # Expected grad updates per mode (WHILE loop, 111/60/35 trans/slot ÷ STEP_BETWEEN_TRAIN):
-#   paper (~221k total) → 110k    mid (~60k) → 30k    smoke (~14k) → 7k
+#   long (~2.2M) → 1.1M    paper (~221k) → 110k    mid (~60k) → 30k    smoke (~14k) → 7k
 if TRAINING_MODE == "smoke":
     PER_BETA_STEPS = 7_000
 elif TRAINING_MODE == "mid":
     PER_BETA_STEPS = 30_000
+elif TRAINING_MODE == "long":
+    PER_BETA_STEPS = 1_100_000
 else:   # paper
     PER_BETA_STEPS = 110_000
 

@@ -67,12 +67,14 @@ def _epsilon(ts: int) -> float:
     """Linear ε decay: warmup (ε=1) → decay (1→0) → exploit (ε=0)."""
     if INFERENCE_MODE:
         return 0.0
-    if TRAINING_MODE == "paper":
-        s, e = 4000, 16000
+    if TRAINING_MODE == "long":
+        s, e = 200_000, 800_000
+    elif TRAINING_MODE == "paper":
+        s, e = 4_000, 16_000
     elif TRAINING_MODE == "mid":
-        s, e = 1600, 6400
+        s, e = 1_600, 6_400
     else:   # smoke
-        s, e = 400, 1600
+        s, e = 400, 1_600
     if ts < s:
         return 1.0
     if ts >= e:

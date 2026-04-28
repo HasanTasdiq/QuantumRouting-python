@@ -39,11 +39,13 @@ from .replay_v2 import TRAINING_MODE as _TMODE
 if os.environ.get("LR_ANNEAL_STEPS"):
     LR_ANNEAL_STEPS = int(os.environ["LR_ANNEAL_STEPS"])
 elif _TMODE == "smoke":
-    LR_ANNEAL_STEPS = 14_000   # 2000 slots × ~7 trains/slot
+    LR_ANNEAL_STEPS = 14_000      # 2000 slots × ~7 trains/slot
 elif _TMODE == "mid":
-    LR_ANNEAL_STEPS = 60_000   # 8000 slots × ~7.5 trains/slot
+    LR_ANNEAL_STEPS = 60_000      # 8000 slots × ~7.5 trains/slot
+elif _TMODE == "long":
+    LR_ANNEAL_STEPS = 2_200_000   # 1M slots × ~111 trans/slot ÷ 50 STEP_BETWEEN_TRAIN
 else:   # paper
-    LR_ANNEAL_STEPS = 220_000  # 20000 slots × ~11 trains/slot
+    LR_ANNEAL_STEPS = 220_000     # 20000 slots × ~11 trains/slot
 
 
 class DQRLAgentV2:

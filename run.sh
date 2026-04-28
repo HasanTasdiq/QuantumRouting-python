@@ -14,15 +14,16 @@
 #
 # Configs
 # -------
-#   paper  : 100 nodes, 10×10 grid, TTIME=20000  (full reproduction)
-#   mid    : 25 nodes,  5×5  grid,  TTIME=8000   (medium quality, ~30 min)
-#   smoke  : 25 nodes,  5×5  grid,  TTIME=2000   (quick sanity check, ~5 min)
+#   long   : 100 nodes, 10×10 grid, TTIME=1000000 (full 1M-slot training, server)
+#   paper  : 100 nodes, 10×10 grid, TTIME=20000   (paper reproduction)
+#   mid    : 25 nodes,  5×5  grid,  TTIME=8000    (medium quality, ~30 min)
+#   smoke  : 25 nodes,  5×5  grid,  TTIME=2000    (quick sanity check, ~5 min)
 #
 # Usage
 # -----
 #   bash run.sh [config] [phase] [--dry-run]
 #
-#   config  : paper | mid | smoke   (default: paper)
+#   config  : long | paper | mid | smoke   (default: paper)
 #   phase   : train | infer | both  (default: both)
 #   --dry-run: print commands without executing
 #
@@ -49,22 +50,27 @@ for arg in "$@"; do [[ "$arg" == "--dry-run" ]] && DRY_RUN=1; done
 # ── Per-config settings ───────────────────────────────────────────────────────
 case "${CONFIG}" in
   smoke)
-    TTIME=2000;  TRAIN_LOAD=10; TRAINING_MODE=smoke; TTL_W=25; SIZE=25
+    TTIME=2000;    TRAIN_LOAD=10; TRAINING_MODE=smoke; TTL_W=25; SIZE=25
     REQ_LOADS_INFER="5,10,15,20"
     LABEL="smoke_25n"
     ;;
   mid)
-    TTIME=8000;  TRAIN_LOAD=15; TRAINING_MODE=mid;   TTL_W=50; SIZE=25
+    TTIME=8000;    TRAIN_LOAD=15; TRAINING_MODE=mid;   TTL_W=50; SIZE=25
     REQ_LOADS_INFER="5,10,15,20,25,30"
     LABEL="mid_25n"
     ;;
   paper)
-    TTIME=20000; TRAIN_LOAD=25; TRAINING_MODE=paper; TTL_W=75; SIZE=100
+    TTIME=20000;   TRAIN_LOAD=25; TRAINING_MODE=paper; TTL_W=75; SIZE=100
     REQ_LOADS_INFER="5,10,25,50,75,100"
     LABEL="paper_100n"
     ;;
+  long)
+    TTIME=1000000; TRAIN_LOAD=25; TRAINING_MODE=long;  TTL_W=75; SIZE=100
+    REQ_LOADS_INFER="5,10,25,50,75,100"
+    LABEL="long_100n"
+    ;;
   *)
-    echo "Unknown config: ${CONFIG}. Use smoke|mid|paper." >&2; exit 1 ;;
+    echo "Unknown config: ${CONFIG}. Use smoke|mid|paper|long." >&2; exit 1 ;;
 esac
 
 STEP=$((TTIME / 100))
