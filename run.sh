@@ -77,6 +77,7 @@ TIMES="${TIMES:-5}"
 MODEL_DIR="${MODEL_DIR:-${ROOT}/runs_quantum/models/${LABEL}}"
 RESULTS_DIR="${RESULTS_DIR:-${ROOT}/runs_quantum/results/${LABEL}}"
 TORCH_THREADS="${TORCH_THREADS:-2}"
+TOTAL_REQUESTS="${TOTAL_REQUESTS:-0}"
 RELIQ_CKPT="${ROOT}/runs_quantum/RELiQ_QuRAPhysics/model.pt"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -91,6 +92,7 @@ log "═════════════════════════
 log "  config=${CONFIG}  phase=${PHASE}  TTIME=${TTIME}"
 log "  TRAIN_LOAD=${TRAIN_LOAD}  SIZE=${SIZE}  TIMES=${TIMES}"
 log "  TTL_W=${TTL_W}  TRAINING_MODE=${TRAINING_MODE}"
+[[ "${TOTAL_REQUESTS}" != "0" ]] && log "  TOTAL_REQUESTS=${TOTAL_REQUESTS}"
 log "  MODEL_DIR=${MODEL_DIR}"
 log "  RESULTS_DIR=${RESULTS_DIR}"
 log "══════════════════════════════════════════════════════"
@@ -105,7 +107,7 @@ else
 fi
 
 # ── Shared env for Run.py (exported so subshells inherit, handles spaces in paths)
-export TRAINING_MODE TTIME STEP TTL_W SIZE MODEL_DIR TORCH_THREADS
+export TRAINING_MODE TTIME STEP TTL_W SIZE MODEL_DIR TORCH_THREADS TOTAL_REQUESTS
 
 # ── Phase 1: Training ─────────────────────────────────────────────────────────
 if [[ "${PHASE}" == "train" || "${PHASE}" == "both" ]]; then
@@ -147,6 +149,12 @@ for load in $(echo "${COLLECT_LOADS}" | tr ',' ' '); do
       log "  saved: ${algo}  req=${load}"
     else
       log "  MISSING: ${algo}  req=${load}"
+    fi
+    src_summary="/tmp/qrouting_logs/summary_${algo}_req${load}.csv"
+    dst_summary="${RESULTS_DIR}/summary_${algo}_req${load}.csv"
+    if [[ -f "${src_summary}" ]]; then
+      run_cmd "cp '${src_summary}' '${dst_summary}'"
+      log "  summary: ${algo}  req=${load}"
     fi
   done
 done

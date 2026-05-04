@@ -40,6 +40,8 @@ _DEFAULT_MODEL_PATH = os.path.join(
 # ── Obs constants (must match training config in src/reliq/train.py) ──────────
 _MAX_REQUESTS   = int(os.environ.get("MAX_REQUESTS",   "100"))
 _NEIGHBOR_COUNT = int(os.environ.get("NEIGHBOR_COUNT", "6"))
+_RELIQ_TTL      = int(os.environ.get("RELIQ_TTL",      "20"))
+_ZERO_PACKET_ID = os.environ.get("RELIQ_ZERO_PACKET_ID", "1") == "1"
 # per-neighbor features: swap_prob + avail_links + top_fidelity + one_hot(dest_state, 6)
 _NEIGH_FEAT = 9
 # base features: one_hot(id, MAX_REQ) + link_fid + path_len + n_ent_at_target
@@ -90,6 +92,8 @@ class RELiQ_Adapter(AlgorithmBase):
 
         self._policy    = None
         self._model_path = model_path if model_path is not None else _DEFAULT_MODEL_PATH
+        self._pair_to_packet_id = {}
+        self._next_packet_id    = 0
         self._load_policy()
 
     # ── Model loading ─────────────────────────────────────────────────────────
@@ -157,9 +161,54 @@ class RELiQ_Adapter(AlgorithmBase):
             self._policy = None
 
     # ── Observation construction ──────────────────────────────────────────────
+    def _packet_id_for(self, start_id: int, target_id: int) -> int:
+        """
+        RELiQ was trained with fixed persistent packet IDs.  QuRA generates
+        requests without such identities, so by default we zero the ID slot
+        instead of injecting a misleading per-timeslot index.  Set
+        RELIQ_ZERO_PACKET_ID=0 to use a stable first-seen pair mapping.
+        """
+        if _ZERO_PACKET_ID:
+            return -1
+        key = (int(start_id), int(target_id))
+        if key not in self._pair_to_packet_id:
+            self._pair_to_packet_id[key] = self._next_packet_id % _MAX_REQUESTS
+            self._next_packet_id += 1
+        return self._pair_to_packet_id[key]
+
+    def _neighbor_slots(self, curr_id: int,
+                        ent_matrix: np.ndarray,
+                        fid_matrix: np.ndarray) -> list:
+        """
+        Return RELiQ-style neighbor slots in physical node.links order.
+
+        Original RELiQ observations iterate node.edges, not sorted node IDs.
+        QuRA has one Link object per elementary link, so collapse duplicates
+        while preserving insertion order.  Each slot is
+        (neighbor_id, available_entanglements, top_fidelity).
+        """
+        slots = []
+        seen = set()
+        curr_node = self.topo.nodes[curr_id]
+        for link in curr_node.links:
+            other = link.theOtherEndOf(curr_node)
+            nid = int(other.id)
+            if nid in seen:
+                continue
+            seen.add(nid)
+            slots.append((
+                nid,
+                float(ent_matrix[curr_id][nid]),
+                float(fid_matrix[curr_id][nid]),
+            ))
+            if len(slots) >= _NEIGHBOR_COUNT:
+                break
+        return slots
+
     def _build_obs(self, req_idx: int,
                    ent_matrix: np.ndarray,
-                   fid_matrix: np.ndarray) -> np.ndarray:
+                   fid_matrix: np.ndarray,
+                   current_fidelity: float) -> tuple[np.ndarray, list]:
         """
         Build per-request observation matching --request-based-observation format.
         Returns float32 array of shape (_OBS_SIZE,).
@@ -175,38 +224,33 @@ class RELiQ_Adapter(AlgorithmBase):
 
         ob = []
 
-        # 1. Packet one-hot ID
-        ob += _one_hot(req_idx, _MAX_REQUESTS)
+        # 1. Packet one-hot ID.  See _packet_id_for for why this is usually zero.
+        ob += _one_hot(self._packet_id_for(start_id, target_id), _MAX_REQUESTS)
 
-        # 2. Current link fidelity (1.0 at beginning of hop)
-        ob.append(1.0)
+        # 2. Current request/link fidelity.
+        ob.append(float(current_fidelity))
 
-        # 3. Path hops completed
-        ob.append(float(len(path) - 1))
+        # 3. Hops since last breakpoint in original RELiQ; no breakpoints in
+        #    QuRA adapter, so use clamped path hops.
+        ob.append(float(min(len(path) - 1, _RELIQ_TTL)))
 
         # 4. Entanglements at target
         ob.append(float(ent_matrix[target_id].sum()))
 
-        # 5. Per-neighbor features — use np.nonzero for C-level neighbor discovery
-        #    (avoids a full Python loop over all nodes; ~50× faster for sparse graphs)
-        neigh_ids  = np.nonzero(ent_matrix[curr_id])[0]
-        nodes_seen = 0
-        for nid in neigh_ids:
-            if nodes_seen >= _NEIGHBOR_COUNT:
-                break
+        # 5. Per-neighbor features in RELiQ's edge-slot order.
+        neighbor_slots = self._neighbor_slots(curr_id, ent_matrix, fid_matrix)
+        for nid, avail, top_fid in neighbor_slots:
             node      = self.topo.nodes[nid]
             swap_prob = float(node.q)
-            avail     = float(ent_matrix[curr_id][nid])
-            top_fid   = float(fid_matrix[curr_id][nid])   # O(1) lookup
             dest_oh   = _dest_state_oh(int(nid), visited, start_id, target_id)
             ob += [swap_prob, avail, top_fid] + dest_oh
-            nodes_seen += 1
 
-        # Pad missing neighbours with all-zeros (matches training env padding)
-        for _ in range(_NEIGHBOR_COUNT - nodes_seen):
-            ob += [0.0] * _NEIGH_FEAT
+        # Pad missing neighbours exactly like RELiQ training:
+        # [0, 0, 0] + one_hot(dest_state=1, 6)
+        for _ in range(_NEIGHBOR_COUNT - len(neighbor_slots)):
+            ob += [0.0, 0.0, 0.0] + _one_hot(1, 6)
 
-        return np.array(ob, dtype=np.float32)
+        return np.array(ob, dtype=np.float32), neighbor_slots
 
     def _get_matrices(self) -> tuple:
         """Single pass over links → (ent_matrix, fid_matrix). Called once per p4()."""
@@ -270,6 +314,8 @@ class RELiQ_Adapter(AlgorithmBase):
         ent_matrix, fid_matrix = self._get_matrices()
         routed_links = set()
         success_req  = 0
+        success_fid  = 0
+        total_fid    = 0.0
 
         # Werner fidelity tracking (initialised to 1.0 for active requests)
         fidelity_track = {i: 1.0 for i in range(len(self.requestState))}
@@ -306,23 +352,32 @@ class RELiQ_Adapter(AlgorithmBase):
                     direct_hops[ridx] = max(neighs,
                                             key=lambda n: float(fid_matrix[curr][n]))
                 else:
-                    obs = self._build_obs(ridx, ent_matrix, fid_matrix)
-                    greedy_batch.append((ridx, dst_id, curr, neighs, obs))
+                    obs, slots = self._build_obs(
+                        ridx, ent_matrix, fid_matrix,
+                        fidelity_track.get(ridx, 1.0))
+                    greedy_batch.append((ridx, dst_id, curr, neighs, obs, slots))
 
             # One batched DQN call for all requests needing Q-value decisions
             if greedy_batch and self._policy is not None:
-                obs_stack = np.stack([o for *_, o in greedy_batch])          # (N, _OBS_SIZE)
+                obs_stack = np.stack([item[4] for item in greedy_batch])      # (N, _OBS_SIZE)
                 x = torch.tensor(obs_stack, dtype=torch.float32).unsqueeze(1)  # (N, 1, _OBS_SIZE)
                 with torch.no_grad():
                     q_batch = self._policy(x, x.new_zeros(x.shape[0], 1, 1))  # (N, n_actions)
                     q_batch = q_batch.squeeze(1).cpu().numpy()                 # (N, n_actions)
 
-                for i, (ridx, dst_id, curr, neighs, _) in enumerate(greedy_batch):
+                for i, (ridx, dst_id, curr, neighs, _, slots) in enumerate(greedy_batch):
                     q = q_batch[i]
-                    # action index → the i-th neighbor in np.nonzero order (same as _build_obs)
-                    neigh_ordered = neighs[:_NEIGHBOR_COUNT]
-                    best_idx = int(np.argmax(q[:len(neigh_ordered)]))
-                    direct_hops[ridx] = neigh_ordered[best_idx]
+                    # Action index → RELiQ neighbor slot.  Apply an inference
+                    # action mask so invalid/empty slots cannot be chosen.
+                    valid = []
+                    valid_set = set(neighs)
+                    for action_idx, (nid, avail, _) in enumerate(slots):
+                        if nid in valid_set and avail > 0:
+                            valid.append((action_idx, nid))
+                    if not valid:
+                        continue
+                    _, best_nid = max(valid, key=lambda item: q[item[0]])
+                    direct_hops[ridx] = best_nid
 
             # Apply decided hops
             for ridx, req_state, dst_id, curr, visited, neighs in pending:
@@ -352,6 +407,8 @@ class RELiQ_Adapter(AlgorithmBase):
                     # F_min gate: only count as success if fidelity meets threshold
                     if f_new >= _F_MIN:
                         success_req += 1
+                        success_fid += 1
+                        total_fid   += f_new
 
         # Drop all requests: served ones are done, unserved ones are dropped (no carryover)
         self.requests     = []
@@ -360,7 +417,8 @@ class RELiQ_Adapter(AlgorithmBase):
         self.result.successfulRequest            += success_req
         self.result.successfulRequestPerRound.append(success_req)
         self.result.entanglementPerRound.append(success_req)
-        self.result.fidelityPerRound.append(0)
+        avg_fid = total_fid / max(success_fid, 1)
+        self.result.fidelityPerRound.append(avg_fid)
         self.result.rewardPerRound.append(float(success_req))
 
         self.printResult()

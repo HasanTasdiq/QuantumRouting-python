@@ -13,11 +13,14 @@ Environment variables
 ---------------------
   INFERENCE_MODE=1        evaluate frozen weights across all loads (no training)
   TTIME=N                 total timeslots (default 10000)
+  TOTAL_REQUESTS=N        optional fixed request budget per load
   STEP=N                  CSV sample stride (default 1000)
   TIMES=N                 independent repetitions (default 1)
   TRAIN_LOAD=N            request load used during training (default 100)
   REQ_LOADS=5,10,25       comma-separated loads for inference (default: 6 paper loads)
+  RUN_ALGOS=A,B           optional comma-separated algorithm-name filter
   TRAINING_MODE=smoke|mid|paper
+  SEED=N                  optional reproducibility seed
   MODEL_DIR=/path         where QuRA weights are saved/loaded (default /tmp/qrouting_model)
 """
 import copy
@@ -64,6 +67,20 @@ from topo.mp_helper import executor as executor
 
 # ── Run configuration ─────────────────────────────────────────────────────────
 INFERENCE_MODE  = os.environ.get("INFERENCE_MODE",  "0")    == "1"
+SEED_ENV = os.environ.get("SEED")
+BASE_SEED = int(SEED_ENV) if SEED_ENV is not None else None
+
+def _seed_everything(seed: int) -> None:
+    _random.seed(seed)
+    np.random.seed(seed)
+    try:
+        import torch
+        torch.manual_seed(seed)
+    except ImportError:
+        pass
+
+if BASE_SEED is not None:
+    _seed_everything(BASE_SEED)
 
 # TRAINING_MODE controls the QuRA replay/epsilon schedule (paper | mid | smoke).
 # Must be set BEFORE importing local_trainer so replay.py reads the right values.
@@ -72,12 +89,14 @@ _tmode = os.environ.get("TRAINING_MODE", "paper")
 os.environ["TRAINING_MODE"] = _tmode   # propagate to spawned child processes
 
 ttime    = int(os.environ.get("TTIME",  "10000"))
+TOTAL_REQUESTS = int(os.environ.get("TOTAL_REQUESTS", "0"))
 step     = int(os.environ.get("STEP",   "1000"))
 times    = int(os.environ.get("TIMES",  "1"))
 nodeNo   = int(os.environ.get("SIZE",   "100"))
 gridSize = int(math.sqrt(nodeNo))
 
-alpha_  = 0.0002
+alpha_  = float(os.environ.get("ALPHA", "0.0002"))
+SWAP_PROB = float(os.environ.get("SWAP_PROB", os.environ.get("Q", "0.9")))
 degree  = 1
 
 # TRAIN_LOAD=25 is the max-feasible training load: at LOAD=100 the network
@@ -91,6 +110,8 @@ _INFER_LOADS_DEFAULT = [5, 10, 25, 50, 75, 100]
 # Curriculum: each training timeslot gets a random load in [TRAIN_LOAD_MIN,
 # TRAIN_LOAD].  Default min=5 (always trains on at least the lowest infer load).
 TRAIN_LOAD_MIN = int(os.environ.get("TRAIN_LOAD_MIN", "5"))
+_algos_env = os.environ.get("RUN_ALGOS", "").strip()
+RUN_ALGOS = {x.strip() for x in _algos_env.split(",") if x.strip()}
 
 _req_env = os.environ.get("REQ_LOADS", "")
 if _req_env:
@@ -103,7 +124,14 @@ else:
 print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}"
       f"  training_mode={_tmode}"
       f"  ttime={ttime}  step={step}  times={times}"
-      f"  loads={numOfRequestPerRound}"
+      f"  q={SWAP_PROB:g}  alpha={alpha_:g}"
+      + (f"  seed={BASE_SEED}" if BASE_SEED is not None else "")
+      + (f"  F_MIN={os.environ['F_MIN']}" if "F_MIN" in os.environ else "")
+      + (f"  EPS_MIN={os.environ['EPS_MIN']}" if "EPS_MIN" in os.environ else "")
+      + (f"  EPS_WARMUP={os.environ['EPS_WARMUP']}" if "EPS_WARMUP" in os.environ else "")
+      + (f"  EPS_DECAY_END={os.environ['EPS_DECAY_END']}" if "EPS_DECAY_END" in os.environ else "")
+      + (f"  total_requests={TOTAL_REQUESTS}" if TOTAL_REQUESTS > 0 else "")
+      + f"  loads={numOfRequestPerRound}"
       + (f"  curriculum=[{TRAIN_LOAD_MIN},{TRAIN_LOAD}]" if not INFERENCE_MODE else ""))
 
 
@@ -111,6 +139,8 @@ print(f"[Run.py] mode={'INFERENCE' if INFERENCE_MODE else 'TRAINING'}"
 
 def runThread(algo, requests, algoIndex, ttime, pid, resultDict, shared_data):
     _t_start = time.time()
+    if BASE_SEED is not None:
+        _seed_everything(BASE_SEED)
     # Cap PyTorch/OpenMP threads per worker process.  With 6 algorithms running
     # in parallel, the default (all cores) causes severe CPU contention on macOS.
     _n_threads = int(os.environ.get("TORCH_THREADS", "2"))
@@ -130,15 +160,41 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict, shared_data):
 
     with open(_csv_path, "w", buffering=1) as _csv:
         _csv.write("timeslot,successful_requests,reward,wall_ms\n")
+        _wall_samples = []
         for i in range(ttime):
             _t0    = time.perf_counter()
             result = algo.work(requests[i], i)
             _wall_ms = (time.perf_counter() - _t0) * 1000.0
+            _wall_samples.append(_wall_ms)
             _succ = result.successfulRequestPerRound[i] \
                     if i < len(result.successfulRequestPerRound) else 0
             _rew  = result.rewardPerRound[i] \
                     if i < len(result.rewardPerRound) else 0
             _csv.write(f"{i},{_succ},{_rew},{_wall_ms:.1f}\n")
+
+    _attempted = sum(len(requests.get(i, [])) for i in range(ttime))
+    _succ_series = result.successfulRequestPerRound[:ttime]
+    _success = sum(_succ_series)
+    _fid_series = [f for f in result.fidelityPerRound[:ttime] if f > 0]
+    _half = max(ttime // 2, 1)
+    _first_attempted = sum(len(requests.get(i, [])) for i in range(_half))
+    _second_attempted = max(_attempted - _first_attempted, 0)
+    _first_success = sum(_succ_series[:_half])
+    _second_success = sum(_succ_series[_half:])
+    _summary_path = os.path.join(_log_dir, f"summary_{algo.name}_req{_req_count}.csv")
+    with open(_summary_path, "w", buffering=1) as _sum:
+        _sum.write(
+            "algo,load,total_requests,timeslots,successful,success_rate,"
+            "mean_fidelity,mean_wall_ms,total_wall_s,"
+            "first_half_success_rate,second_half_success_rate\n")
+        _sum.write(
+            f"{algo.name},{_req_count},{_attempted},{ttime},{_success},"
+            f"{(_success / max(_attempted, 1)):.6f},"
+            f"{(sum(_fid_series) / max(len(_fid_series), 1)):.6f},"
+            f"{(sum(_wall_samples) / max(len(_wall_samples), 1)):.3f},"
+            f"{(sum(_wall_samples) / 1000.0):.3f},"
+            f"{(_first_success / max(_first_attempted, 1)):.6f},"
+            f"{(_second_success / max(_second_attempted, 1)):.6f}\n")
 
     # Save trained weights to disk after training run
     if not INFERENCE_MODE and hasattr(algo, '_save_weights'):
@@ -158,7 +214,7 @@ def runThread(algo, requests, algoIndex, ttime, pid, resultDict, shared_data):
 
 # ── Main Run function ─────────────────────────────────────────────────────────
 
-def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
+def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=SWAP_PROB,
         alpha=alpha_, SocialNetworkDensity=0.5,
         rtime=ttime, topo=None, FixedRequests=None, results=[]):
 
@@ -177,6 +233,10 @@ def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
         RELiQ_Adapter(copy.deepcopy(topo),    name='RELiQ'),
         EBSPA(copy.deepcopy(topo),            name='EBSPA'),
     ]
+    if RUN_ALGOS:
+        algorithms = [a for a in algorithms if a.name in RUN_ALGOS]
+        if not algorithms:
+            raise ValueError(f"RUN_ALGOS matched no algorithms: {sorted(RUN_ALGOS)}")
 
     gc.collect()
     print(f"  algorithms: {[a.name for a in algorithms]}")
@@ -184,6 +244,9 @@ def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
     global times
     results      = [[] for _ in range(len(algorithms))]
     rtime        = ttime
+    if TOTAL_REQUESTS > 0 and FixedRequests is None:
+        rtime = int(math.ceil(TOTAL_REQUESTS / max(numOfRequestPerRound, 1)))
+        print(f"  fixed-budget: total_requests={TOTAL_REQUESTS}  timeslots={rtime}")
     resultDicts  = [multiprocessing.Manager().dict() for _ in algorithms]
     shared_data  = multiprocessing.Manager().dict()
 
@@ -198,17 +261,24 @@ def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
     pid  = 0
 
     for _ in range(times):
-        ids = {i: [] for i in range(ttime)}
+        ids = {i: [] for i in range(rtime)}
         if FixedRequests is not None:
             ids = FixedRequests
         else:
-            for i in range(ttime):
+            requests_remaining = TOTAL_REQUESTS if TOTAL_REQUESTS > 0 else None
+            for i in range(rtime):
                 if i < rtime:
                     # Curriculum: randomly pick a load this timeslot so the
                     # model sees all traffic levels during training.
                     # In inference mode INFERENCE_MODE is True and
                     # numOfRequestPerRound is fixed to the evaluation load.
-                    if INFERENCE_MODE:
+                    if requests_remaining is not None:
+                        if requests_remaining <= 0:
+                            slot_load = 0
+                        else:
+                            slot_load = min(numOfRequestPerRound, requests_remaining)
+                            requests_remaining -= slot_load
+                    elif INFERENCE_MODE:
                         slot_load = numOfRequestPerRound
                     else:
                         slot_load = _random.randint(TRAIN_LOAD_MIN,
@@ -222,14 +292,14 @@ def Run(numOfRequestPerRound=20, numOfNode=0, r=7, q=0.9,
 
         for algoIndex in range(len(algorithms)):
             algo = copy.deepcopy(algorithms[algoIndex])
-            requests = {i: [] for i in range(ttime)}
+            requests = {i: [] for i in range(rtime)}
             for i in range(rtime):
                 for (src, dst) in ids[i]:
                     requests[i].append((algo.topo.nodes[src], algo.topo.nodes[dst]))
             pid += 1
             job = multiprocessing.Process(
                 target=runThread,
-                args=(algo, requests, algoIndex, ttime, pid,
+                args=(algo, requests, algoIndex, rtime, pid,
                       resultDicts[algoIndex], shared_data))
             jobs.append(job)
 
@@ -254,7 +324,7 @@ if __name__ == '__main__':
     print("[Run.py] starting")
     t1 = time.time()
 
-    topo = Topo.generate(nodeNo, 0.9, 5, alpha_, degree, gridSize=gridSize)
+    topo = Topo.generate(nodeNo, SWAP_PROB, 5, alpha_, degree, gridSize=gridSize)
 
     for load in numOfRequestPerRound:
         print(f"\n[Run.py] load={load}")

@@ -4,9 +4,9 @@ Replay buffers for QuRA-v2.
 NStepPERBuffer  — n-step returns + proportional Prioritized Experience Replay.
                   Used by Seq / Flock / Guard (single-agent DQN).
 
-QMixEpisodicBuffer — collects full routing episodes (one per request-group
-                     per timeslot) for QMIX joint training.
-                     Uses ragged batches + mask; no MAX_REQUESTS padding.
+QMixEpisodicBuffer — legacy QMIX buffer kept for compatibility.
+
+MAPPORolloutBuffer — on-policy trajectories for Hive's MAPPO actor-critic.
 """
 from __future__ import annotations
 import random
@@ -46,12 +46,19 @@ elif TRAINING_MODE == "long":
     N_STEP               = 8
     GAMMA                = 0.99
 else:   # paper (20k timeslots)
-    CAPACITY             = 1_000_000
+    CAPACITY             = 200_000   # 1M caused O(N) PER sampling to dominate wall time
     MIN_REPLAY           = 5_000
     MINIBATCH_SIZE       = 256
     STEP_BETWEEN_TRAIN   = 10
     N_STEP               = 8
     GAMMA                = 0.99
+
+CAPACITY           = int(os.environ.get("CAPACITY", str(CAPACITY)))
+MIN_REPLAY         = int(os.environ.get("MIN_REPLAY", str(MIN_REPLAY)))
+MINIBATCH_SIZE     = int(os.environ.get("MINIBATCH_SIZE", str(MINIBATCH_SIZE)))
+STEP_BETWEEN_TRAIN = int(os.environ.get("STEP_BETWEEN_TRAIN", str(STEP_BETWEEN_TRAIN)))
+N_STEP             = int(os.environ.get("N_STEP", str(N_STEP)))
+GAMMA              = float(os.environ.get("GAMMA", str(GAMMA)))
 
 # Target network update frequency (Mnih 2015 rule: ~0.1% of total gradient updates).
 # At paper scale (~220k updates) → C=1000.  At long (~2.2M updates) → C=3000.
@@ -77,6 +84,20 @@ elif TRAINING_MODE == "long":
     PER_BETA_STEPS = 1_100_000
 else:   # paper
     PER_BETA_STEPS = 110_000
+
+PPO_EPOCHS       = int(os.environ.get("PPO_EPOCHS", "4"))
+PPO_CLIP_EPS     = float(os.environ.get("PPO_CLIP_EPS", "0.2"))
+PPO_ENTROPY_COEF = float(os.environ.get("PPO_ENTROPY_COEF", "0.01"))
+PPO_VALUE_COEF   = float(os.environ.get("PPO_VALUE_COEF", "0.5"))
+PPO_VALUE_CLIP   = float(os.environ.get("PPO_VALUE_CLIP", "0.2"))
+PPO_ADV_CLIP     = float(os.environ.get("PPO_ADV_CLIP", "5.0"))
+PPO_TARGET_KL    = float(os.environ.get("PPO_TARGET_KL", "0.02"))
+PPO_AUX_POLICY_COEF = float(os.environ.get("PPO_AUX_POLICY_COEF", "0.1"))
+PPO_MATCH_RANK_COEF = float(os.environ.get("PPO_MATCH_RANK_COEF", "0.0"))
+PPO_MATCH_RANK_MARGIN = float(os.environ.get("PPO_MATCH_RANK_MARGIN", "0.05"))
+PPO_CF_VALUE_COEF = float(os.environ.get("PPO_CF_VALUE_COEF", "0.1"))
+PPO_CF_ADV_COEF = float(os.environ.get("PPO_CF_ADV_COEF", "0.15"))
+GAE_LAMBDA       = float(os.environ.get("GAE_LAMBDA", "0.95"))
 
 
 class NStepPERBuffer:
@@ -105,48 +126,48 @@ class NStepPERBuffer:
         # n-step accumulation window (deque of (state, action, reward, next, done))
         self._nstep: deque = deque()
 
-    def _flush_nstep(self, bootstrap_state, bootstrap_done: bool) -> None:
+    def _flush_nstep(self, bootstrap_state, bootstrap_done: bool,
+                     bootstrap_cands=None) -> None:
         """Convert the n-step window into a single transition and store it."""
         if not self._nstep:
             return
-        state0, action0, _, _, _ = self._nstep[0]
+        state0, action0 = self._nstep[0][0], self._nstep[0][1]
         ret      = 0.0
         gamma_n  = 1.0
-        for _, _, r, _, d in self._nstep:
+        for entry in self._nstep:
+            r, d = entry[2], entry[4]
             ret     += gamma_n * r
             gamma_n *= GAMMA
             if d:
                 break   # episode ended within window
         done_final = bootstrap_done
 
-        self._store(state0, action0, ret, bootstrap_state, done_final, gamma_n)
+        self._store(state0, action0, ret, bootstrap_state, done_final, gamma_n,
+                    bootstrap_cands)
 
     def _store(self, state, action: int, ret: float,
-               next_state, done: bool, gamma_n: float) -> None:
+               next_state, done: bool, gamma_n: float,
+               next_cands=None) -> None:
         max_p = self._prios[:self._size].max() if self._size > 0 else 1.0
-        self._buf[self._ptr]   = (state, action, ret, next_state, done, gamma_n)
+        self._buf[self._ptr]   = (state, action, ret, next_state, done, gamma_n,
+                                  next_cands)
         self._prios[self._ptr] = max_p
         self._ptr  = (self._ptr + 1) % self.capacity
         self._size = min(self._size + 1, self.capacity)
 
     def push(self, state, action: int, reward: float,
-             next_state, done: bool) -> None:
-        self._nstep.append((state, action, reward, next_state, done))
+             next_state, done: bool, next_cands=None) -> None:
+        self._nstep.append((state, action, reward, next_state, done, next_cands))
         if len(self._nstep) >= N_STEP or done:
-            # Flush oldest entry
-            self._flush_nstep(
-                self._nstep[-1][3],   # next_state of last step
-                self._nstep[-1][4],   # done of last step
-            )
+            last = self._nstep[-1]
+            self._flush_nstep(last[3], last[4], last[5])
             self._nstep.popleft()
 
     def flush_episode(self) -> None:
         """Call at episode end to drain remaining entries in the n-step window."""
         while self._nstep:
-            self._flush_nstep(
-                self._nstep[-1][3],
-                self._nstep[-1][4],
-            )
+            last = self._nstep[-1]
+            self._flush_nstep(last[3], last[4], last[5])
             self._nstep.popleft()
 
     def push_sequence(self, transitions: list) -> None:
@@ -156,16 +177,16 @@ class NStepPERBuffer:
         Clears the shared deque first so cross-request contamination is
         impossible — each call is a fresh episode.
 
-        transitions: list of (state, action, reward, next_state, done)
+        transitions: list of (state, action, reward, next_state, done[, next_cands])
         """
         self._nstep.clear()
-        for (s, a, r, ns, done) in transitions:
-            self._nstep.append((s, a, r, ns, done))
+        for t in transitions:
+            s, a, r, ns, done = t[0], t[1], t[2], t[3], t[4]
+            nc = t[5] if len(t) > 5 else None
+            self._nstep.append((s, a, r, ns, done, nc))
             if len(self._nstep) >= N_STEP or done:
-                self._flush_nstep(
-                    self._nstep[-1][3],
-                    self._nstep[-1][4],
-                )
+                last = self._nstep[-1]
+                self._flush_nstep(last[3], last[4], last[5])
                 self._nstep.popleft()
         self.flush_episode()
 
@@ -180,13 +201,15 @@ class NStepPERBuffer:
 
         prios = self._prios[:self._size] ** self.alpha
         probs = prios / prios.sum()
-        idx   = np.random.choice(self._size, batch_size, replace=False, p=probs)
+        # replace=True: O(1) vs O(N) for replace=False; duplicates are rare
+        # when batch_size << buffer_size and don't materially hurt PER quality.
+        idx   = np.random.choice(self._size, batch_size, replace=True, p=probs)
 
         weights = (self._size * probs[idx]) ** (-beta)
         weights /= weights.max()
 
         batch = [self._buf[i] for i in idx]
-        s, a, r, ns, d, g = zip(*batch)
+        s, a, r, ns, d, g, nc = zip(*batch)
 
         return (
             np.stack(s).astype(np.float32),
@@ -197,6 +220,7 @@ class NStepPERBuffer:
             np.array(g, dtype=np.float32),
             weights.astype(np.float32),
             idx,
+            list(nc),   # per-sample next-candidate matrices (None or ndarray)
         )
 
     def update_priorities(self, indices: np.ndarray,
@@ -297,3 +321,91 @@ class QMixEpisodicBuffer:
 
     def __len__(self) -> int:
         return self._size
+
+
+class MAPPORolloutBuffer:
+    """
+    On-policy rollout storage for QuRA-Hive MAPPO.
+
+    Each flattened sample stores the full variable candidate set for one
+    request decision, the chosen candidate index, the old policy log-prob,
+    centralized critic value, GAE return, and advantage.
+    """
+
+    def __init__(self, capacity: int = CAPACITY):
+        self.capacity = capacity
+        self._buf: list = []
+
+    def push_trajectory(self, transitions: list) -> None:
+        """
+        transitions entries:
+          {
+            "candidate_states": np.ndarray(K, STATE_DIM),
+            "action_idx": int,
+            "old_logp": float,
+            "value": float,
+            "global_state": np.ndarray(G,),
+            "node_features": np.ndarray(N, GNN_NODE_DIM),
+            "edge_index": np.ndarray(2, E),
+            "curr_id": int,
+            "dst_id": int,
+            "candidate_ids": np.ndarray(K,),
+            "aux_policy_target": np.ndarray(K,),
+            "counterfactual_target": float,
+            "reward": float,
+            "done": bool,
+          }
+        """
+        if not transitions:
+            return
+
+        rewards = [float(t["reward"]) for t in transitions]
+        values = [float(t["value"]) for t in transitions]
+        dones = [bool(t["done"]) for t in transitions]
+
+        adv = np.zeros(len(transitions), dtype=np.float32)
+        last_gae = 0.0
+        next_value = 0.0
+        for i in range(len(transitions) - 1, -1, -1):
+            nonterminal = 0.0 if dones[i] else 1.0
+            delta = rewards[i] + GAMMA * next_value * nonterminal - values[i]
+            last_gae = delta + GAMMA * GAE_LAMBDA * nonterminal * last_gae
+            adv[i] = last_gae
+            next_value = values[i]
+
+        returns = adv + np.array(values, dtype=np.float32)
+
+        for t, a, ret in zip(transitions, adv, returns):
+            sample = {
+                "candidate_states": t["candidate_states"].astype(np.float32),
+                "action_idx": int(t["action_idx"]),
+                "old_logp": float(t["old_logp"]),
+                "old_value": float(t["value"]),
+                "global_state": t["global_state"].astype(np.float32),
+                "node_features": t["node_features"].astype(np.float32),
+                "edge_index": t["edge_index"].astype(np.int64),
+                "curr_id": int(t["curr_id"]),
+                "dst_id": int(t["dst_id"]),
+                "candidate_ids": t["candidate_ids"].astype(np.int64),
+                "aux_policy_target": t["aux_policy_target"].astype(np.float32),
+                "counterfactual_target": float(t.get("counterfactual_target", 0.0)),
+                "return": float(ret),
+                "advantage": float(a),
+            }
+            self._buf.append(sample)
+
+        if len(self._buf) > self.capacity:
+            self._buf = self._buf[-self.capacity:]
+
+    def sample(self, batch_size: int) -> list:
+        return random.sample(self._buf, min(batch_size, len(self._buf)))
+
+    def samples(self) -> list:
+        """Return a snapshot of all currently collected on-policy samples."""
+        return list(self._buf)
+
+    def clear(self) -> None:
+        self._buf.clear()
+
+    def __len__(self) -> int:
+        return len(self._buf)
