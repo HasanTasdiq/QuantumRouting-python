@@ -678,6 +678,155 @@ class QuRA_Local_v2(AlgorithmBase):
         ).astype(np.float32)
 
     @staticmethod
+    def _edge_state_and_aux_all_requests(
+        pending: list,
+        hop_counts: list,
+        ent: np.ndarray,
+        dist: np.ndarray,
+        req_dens: np.ndarray,
+        bfs_mat: np.ndarray,
+        edge_demand: dict | None,
+        active_req_count: int,
+    ) -> tuple[list, list]:
+        """
+        Build (K_r, STATE_DIM) states and (K_r,) aux scores for ALL pending requests
+        in ONE vectorized pass, sharing all hop-level precomputations.
+
+        Replaces R separate calls to _edge_state_batch + _aux_policy_scores with a
+        single numpy operation over sum_K = sum(K_r) candidates, precomputing
+        deg_raw, max_cap, mean_fid, etc. exactly once per hop instead of R times.
+
+        Returns (state_vecs_list, aux_scores_list) — each indexed by pending order.
+        """
+        if not pending:
+            return [], []
+
+        sz          = max(SIZE, 1)
+        N           = ent.shape[0]
+        total_dens  = max(float(req_dens.sum()), 1.0)
+        active_req  = max(float(active_req_count), 1.0)
+
+        # ── Hop-level precomputed: computed ONCE for all R requests ───────────
+        deg_raw      = (ent > 0).sum(axis=1).astype(np.float32)         # (N,)
+        deg_norm     = deg_raw / sz                                       # (N,)
+        dens_norm    = req_dens.astype(np.float32) / total_dens          # (N,)
+        max_cap      = max(float(ent.max()), 1.0)
+        ent_row_sum  = ent.sum(axis=1)
+        max_node_cap = max(float(ent_row_sum.max()), 1.0)
+        active_fids  = dist[ent > 0]
+        mean_fid     = float(active_fids.mean()) if active_fids.size > 0 else 0.0
+        nz2          = float(np.count_nonzero(ent > 0)) / 2.0
+        active_edges_frac = nz2 / max(float(N * (N - 1) / 2.0), 1.0)
+        global_load  = min(float(req_dens.sum()) / sz, 1.0)
+
+        # ── Build flat index arrays for all requests ──────────────────────────
+        flat_curr_parts = []
+        flat_dst_parts  = []
+        flat_nbr_parts  = []
+        flat_fid_parts  = []
+        flat_hops_parts = []
+        offsets         = []
+        off             = 0
+
+        for ridx, rs, curr, dst_id, visited, nbrs in pending:
+            nbr_arr    = np.asarray(nbrs, dtype=np.int64)
+            K_r        = len(nbr_arr)
+            fid_so_far = float(rs[6])
+            hops_frac  = min(float(hop_counts[ridx]) / TTL_W, 1.0)
+            flat_curr_parts.append(np.full(K_r, curr,   dtype=np.int64))
+            flat_dst_parts.append( np.full(K_r, dst_id, dtype=np.int64))
+            flat_nbr_parts.append(nbr_arr)
+            flat_fid_parts.append( np.full(K_r, fid_so_far, dtype=np.float32))
+            flat_hops_parts.append(np.full(K_r, hops_frac,  dtype=np.float32))
+            offsets.append((off, off + K_r))
+            off += K_r
+
+        flat_curr  = np.concatenate(flat_curr_parts)   # (sum_K,) int64
+        flat_dst   = np.concatenate(flat_dst_parts)    # (sum_K,) int64
+        flat_nbrs  = np.concatenate(flat_nbr_parts)    # (sum_K,) int64
+        flat_fid   = np.concatenate(flat_fid_parts)    # (sum_K,) float32
+        flat_hops  = np.concatenate(flat_hops_parts)   # (sum_K,) float32
+        sum_K      = off
+
+        # ── Vectorized feature lookup ─────────────────────────────────────────
+        bfs_c    = bfs_mat[flat_curr, flat_dst].astype(np.float32) / sz
+        bfs_n    = bfs_mat[flat_nbrs, flat_dst].astype(np.float32) / sz
+        d_curr   = bfs_mat[flat_curr, flat_dst].astype(np.float32)
+        d_nbr    = bfs_mat[flat_nbrs, flat_dst].astype(np.float32)
+        fid_uv   = dist[flat_curr, flat_nbrs].astype(np.float32)
+        pred_fid = flat_fid * fid_uv + (1.0 - flat_fid) * (1.0 - fid_uv) / 3.0
+        edge_cap = ent[flat_curr, flat_nbrs].astype(np.float32)
+        nbr_total = ent_row_sum[flat_nbrs].astype(np.float32)
+
+        demand = np.zeros(sum_K, dtype=np.float32)
+        if edge_demand:
+            demand[:] = [
+                float(edge_demand.get(
+                    (int(min(c, n)), int(max(c, n))), 0.0))
+                for c, n in zip(flat_curr.tolist(), flat_nbrs.tolist())
+            ]
+
+        # ── Assemble (sum_K, STATE_DIM=29) ───────────────────────────────────
+        progress   = (d_curr - d_nbr) / sz
+        fid_margin = pred_fid - float(F_MIN)
+        safe_cap   = np.maximum(edge_cap, 1.0)
+
+        all_states = np.column_stack([
+            # curr (3)
+            deg_norm[flat_curr],  dens_norm[flat_curr],  bfs_c,
+            # dst (3)
+            deg_norm[flat_dst],   dens_norm[flat_dst],   np.zeros(sum_K, dtype=np.float32),
+            # nbr (3)
+            deg_norm[flat_nbrs],  dens_norm[flat_nbrs],  bfs_n,
+            # fidelity / hops (3)
+            fid_uv, flat_fid, flat_hops,
+            # edge capacity (1)
+            edge_cap / max_cap,
+            # bottleneck inv-degree (1)
+            1.0 / (1.0 + np.minimum(deg_raw[flat_curr], deg_raw[flat_nbrs])),
+            # predicted fidelity (2)
+            pred_fid, fid_margin,
+            # BFS progress (2)
+            progress, (d_nbr < d_curr).astype(np.float32),
+            # dest flags + TTL (3)
+            (flat_nbrs == flat_dst).astype(np.float32),
+            1.0 - flat_hops,
+            np.full(sum_K, global_load, dtype=np.float32),
+            # topology (2)
+            np.full(sum_K, active_edges_frac, dtype=np.float32),
+            np.full(sum_K, mean_fid, dtype=np.float32),
+            # demand (5)
+            dens_norm[flat_nbrs],
+            deg_norm[flat_dst],
+            demand / active_req,
+            np.minimum(demand / safe_cap, 2.0),
+            nbr_total / max_node_cap,
+            (demand > edge_cap).astype(np.float32),
+        ]).astype(np.float32)
+
+        # ── Aux scores (shares flat arrays computed above) ────────────────────
+        hops_left = 1.0 - flat_hops
+        dest_flag = (flat_nbrs == flat_dst).astype(np.float32)
+        overload  = np.maximum(demand - edge_cap, 0.0) / safe_cap
+        slack     = np.minimum(edge_cap / np.maximum(demand, 1.0), 2.0) - 1.0
+        all_aux = (
+            1.8  * progress
+            + 1.4  * fid_margin
+            + 0.8  * dest_flag
+            + 0.35 * deg_norm[flat_nbrs]
+            + 0.25 * nbr_total / max_node_cap
+            + 0.20 * hops_left
+            + 0.20 * slack
+            - 0.45 * demand / active_req
+            - 0.55 * overload
+            - 0.20 * dens_norm[flat_nbrs]
+        ).astype(np.float32)
+
+        state_vecs_list = [all_states[s:e] for s, e in offsets]
+        aux_scores_list = [all_aux[s:e]    for s, e in offsets]
+        return state_vecs_list, aux_scores_list
+
+    @staticmethod
     def _aux_policy_target(scores: np.ndarray) -> np.ndarray:
         """Softmax over precomputed aux scores → teacher distribution."""
         if scores.size <= 1:
@@ -1281,40 +1430,32 @@ class QuRA_Local_v2(AlgorithmBase):
         if node_embeddings is None:
             node_embeddings = self.agent.encode_mappo_graph(node_features, edge_index)
 
-        # ── Collect per-request data ─────────────────────────────────────────
+        # ── Collect metadata and build all state/aux vectors in one batch ───────
+        # Filter out empty-nbrs entries first; pending is already filtered upstream
+        # but guard against it defensively.
+        active_pending = [(ridx, rs, curr, dst_id, visited, nbrs)
+                          for ridx, rs, curr, dst_id, visited, nbrs in pending
+                          if nbrs]
+        if not active_pending:
+            return []
+
+        state_vecs_list, aux_scores_list = self._edge_state_and_aux_all_requests(
+            active_pending, hop_counts, ent, dist, req_dens, bfs_dists,
+            edge_demand, active_req_count,
+        )
+
         ridx_order: list[int] = []
-        state_vecs_list: list  = []
         candidate_ids_list: list = []
         curr_ids: list[int]    = []
         dst_ids: list[int]     = []
         nbrs_list: list        = []
-        aux_scores_list: list  = []
-        fid_list: list         = []
 
-        for ridx, rs, curr, dst_id, visited, nbrs in pending:
-            if not nbrs:
-                continue
-            sv = self._edge_state_batch(
-                ent, dist, req_dens, bfs_dists,
-                curr, dst_id, list(nbrs),
-                float(rs[6]), hop_counts[ridx],
-                edge_demand, active_req_count)
-            aux_scores = self._aux_policy_scores(
-                ent, dist, req_dens, bfs_dists,
-                curr, dst_id, list(nbrs), float(rs[6]), hop_counts[ridx],
-                edge_demand=edge_demand, active_req_count=active_req_count,
-            )
+        for ridx, rs, curr, dst_id, visited, nbrs in active_pending:
             ridx_order.append(ridx)
-            state_vecs_list.append(sv)
             candidate_ids_list.append(np.array(nbrs, dtype=np.int64))
             curr_ids.append(curr)
             dst_ids.append(dst_id)
             nbrs_list.append(list(nbrs))
-            aux_scores_list.append(aux_scores)
-            fid_list.append(float(rs[6]))
-
-        if not ridx_order:
-            return []
 
         # ── ONE actor + ONE critic forward across all pending requests ────────
         batch_results = self.agent.score_mappo_candidates_batched(
