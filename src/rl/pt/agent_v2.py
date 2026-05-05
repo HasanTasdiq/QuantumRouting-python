@@ -220,6 +220,94 @@ class DQRLAgentV2:
             float(value.item()),
         )
 
+    @torch.no_grad()
+    def score_mappo_candidates_batched(
+        self,
+        candidate_states_list: list,      # list of (K_r, STATE_DIM) np.ndarray
+        global_state: np.ndarray,          # (GLOBAL_DIM,) shared across all requests
+        node_embeddings: torch.Tensor,     # (N, GNN_EMB_DIM) precomputed
+        curr_ids: list[int],
+        dst_ids: list[int],
+        candidate_ids_list: list,          # list of (K_r,) np.ndarray
+    ) -> list[tuple]:
+        """
+        Score ALL pending requests in exactly ONE actor forward + ONE critic forward.
+
+        Instead of R separate PyTorch calls (one per request), build a flat
+        (sum_K, ACTOR_DIM) actor input and an (R, CRITIC_DIM) critic input,
+        run each network once, then slice the results back per-request.
+
+        Returns list of (logits_np, logps_np, value_float) — same contract as
+        score_mappo_candidates, but ~R× fewer Python/CUDA kernel launches.
+        """
+        if not self.use_mappo:
+            raise RuntimeError("score_mappo_candidates_batched called on non-MAPPO agent")
+
+        R = len(candidate_states_list)
+        if R == 0:
+            return []
+
+        self.actor_critic.eval()
+
+        # ── Pre-convert inputs ───────────────────────────────────────────────
+        gs_t = torch.tensor(global_state, dtype=torch.float32)   # (GLOBAL_DIM,)
+
+        # Precompute shared topology stats for critic (same for every request)
+        graph_mean = node_embeddings.mean(dim=0)                  # (EMB,)
+        graph_max  = node_embeddings.max(dim=0).values            # (EMB,)
+
+        # ── Build flat actor input (sum_K, ACTOR_DIM) ───────────────────────
+        actor_rows = []
+        offsets    = []      # (start, stop) per request for slicing logits
+        cs_tensors = []      # reused for critic pool
+        offset = 0
+        for r in range(R):
+            cs_np  = candidate_states_list[r]
+            cs_t   = torch.tensor(cs_np, dtype=torch.float32)     # (K_r, STATE_DIM)
+            K_r    = cs_t.size(0)
+            cids_t = torch.tensor(candidate_ids_list[r], dtype=torch.long)  # (K_r,)
+
+            curr_e = node_embeddings[curr_ids[r]].unsqueeze(0).expand(K_r, -1)
+            dst_e  = node_embeddings[dst_ids[r]].unsqueeze(0).expand(K_r, -1)
+            nbr_e  = node_embeddings[cids_t]                       # (K_r, EMB)
+
+            actor_rows.append(torch.cat([cs_t, curr_e, dst_e, nbr_e], dim=1))
+            offsets.append((offset, offset + K_r))
+            cs_tensors.append((cs_t, cids_t))
+            offset += K_r
+
+        flat_actor_in = torch.cat(actor_rows, dim=0)               # (sum_K, ACTOR_DIM)
+        flat_logits   = self.actor_critic.actor(flat_actor_in).squeeze(-1)  # (sum_K,)
+
+        # ── Build batched critic input (R, CRITIC_DIM) ──────────────────────
+        critic_rows = []
+        for r in range(R):
+            cs_t, cids_t = cs_tensors[r]
+            pmean  = cs_t.mean(dim=0)                              # (STATE_DIM,)
+            pmax   = cs_t.max(dim=0).values                        # (STATE_DIM,)
+            curr_e = node_embeddings[curr_ids[r]]                  # (EMB,)
+            dst_e  = node_embeddings[dst_ids[r]]                   # (EMB,)
+            nbr_e  = node_embeddings[cids_t].mean(dim=0)           # (EMB,)
+            critic_rows.append(torch.cat([
+                gs_t, pmean, pmax, graph_mean, graph_max,
+                curr_e, dst_e, nbr_e,
+            ]))                                                      # (CRITIC_DIM,)
+
+        critic_in = torch.stack(critic_rows)                        # (R, CRITIC_DIM)
+        values    = self.actor_critic.critic(critic_in).squeeze(-1) # (R,)
+
+        # ── Slice results back per request ───────────────────────────────────
+        results = []
+        for r, (start, stop) in enumerate(offsets):
+            logits_r = flat_logits[start:stop]
+            logps_r  = torch.log_softmax(logits_r, dim=0)
+            results.append((
+                logits_r.detach().cpu().numpy(),
+                logps_r.detach().cpu().numpy(),
+                float(values[r].item()),
+            ))
+        return results
+
     def remember(self, state_v: np.ndarray, neighbor_idx: int,
                  reward: float, next_state_v: np.ndarray,
                  done: bool, next_cands: np.ndarray | None = None) -> None:
@@ -358,95 +446,143 @@ class DQRLAgentV2:
                 if not batch:
                     continue
 
-                policy_losses, value_losses, entropies, approx_kls = [], [], [], []
-                aux_policy_losses, match_rank_losses, cf_value_losses = [], [], []
+                # ── Group minibatch by graph topology → one GNN encode per group ──
                 self.actor_critic.train()
-                graph_cache: dict[tuple, torch.Tensor] = {}
-
+                from collections import defaultdict
+                by_graph: dict[bytes, list] = defaultdict(list)
                 for b in batch:
-                    cs = torch.tensor(b["candidate_states"], dtype=torch.float32)
-                    gs = torch.tensor(b["global_state"], dtype=torch.float32)
-                    cids = torch.tensor(b["candidate_ids"], dtype=torch.long)
-                    curr_id = int(b["curr_id"])
-                    dst_id = int(b["dst_id"])
-                    action = torch.tensor(int(b["action_idx"]), dtype=torch.long)
-                    old_logp = torch.tensor(float(b["old_logp"]), dtype=torch.float32)
-                    old_value = torch.tensor(float(b["old_value"]), dtype=torch.float32)
-                    ret = torch.tensor(float(b["return"]), dtype=torch.float32)
-                    aux_policy_target = torch.tensor(
-                        b["aux_policy_target"], dtype=torch.float32
-                    )
-                    cf_target = torch.tensor(
-                        float(b.get("counterfactual_target", 0.0)),
-                        dtype=torch.float32,
-                    )
-                    raw_advantage = (
-                        float(b["advantage"])
-                        + PPO_CF_ADV_COEF * float(b.get("counterfactual_target", 0.0))
-                    )
-                    adv = torch.tensor(
-                        (raw_advantage - adv_mean) / adv_std,
-                        dtype=torch.float32,
-                    )
-                    adv = torch.clamp(adv, -PPO_ADV_CLIP, PPO_ADV_CLIP)
+                    by_graph[b["node_features"].tobytes()].append(b)
 
-                    nf_np = b["node_features"]
-                    ei_np = b["edge_index"]
-                    graph_key = (
-                        nf_np.shape, nf_np.tobytes(),
-                        ei_np.shape, ei_np.tobytes(),
-                    )
-                    node_embeddings = graph_cache.get(graph_key)
-                    if node_embeddings is None:
-                        nf = torch.tensor(nf_np, dtype=torch.float32)
-                        ei = torch.tensor(ei_np, dtype=torch.long)
-                        node_embeddings = self.actor_critic.encode_graph(nf, ei)
-                        graph_cache[graph_key] = node_embeddings
+                all_policy_l: list = []
+                all_value_l:  list = []
+                all_entropy:  list = []
+                all_approx_kl: list = []
+                all_aux_l:    list = []
+                all_cf_l:     list = []
+                all_rank_l:   list = []
 
-                    logits = self.actor_critic.logits_from_embeddings(
-                        cs, node_embeddings, curr_id, dst_id, cids)
-                    logits = torch.nan_to_num(logits, nan=0.0, posinf=10.0, neginf=-10.0)
-                    dist = torch.distributions.Categorical(logits=logits)
-                    logp = dist.log_prob(action)
-                    entropy = dist.entropy()
-                    value = self.actor_critic.value_from_embeddings(
-                        cs, gs, node_embeddings, curr_id, dst_id, cids)
-                    cf_pred = self.actor_critic.counterfactual_from_embeddings(
-                        cs, gs, node_embeddings, curr_id, dst_id, cids,
-                        int(action.item()))
+                for nf_bytes, group in by_graph.items():
+                    b0 = group[0]
+                    nf = torch.tensor(b0["node_features"], dtype=torch.float32)
+                    ei = torch.tensor(b0["edge_index"], dtype=torch.long)
+                    node_emb = self.actor_critic.encode_graph(nf, ei)  # ONE GNN call
 
-                    log_ratio = torch.clamp(logp - old_logp, -10.0, 10.0)
-                    ratio = torch.exp(log_ratio)
-                    unclipped = ratio * adv
-                    clipped = torch.clamp(ratio, 1.0 - PPO_CLIP_EPS,
-                                          1.0 + PPO_CLIP_EPS) * adv
-                    policy_losses.append(-torch.min(unclipped, clipped))
-                    value_clipped = old_value + torch.clamp(
-                        value - old_value, -PPO_VALUE_CLIP, PPO_VALUE_CLIP)
-                    value_losses.append(torch.max(
-                        F.smooth_l1_loss(value, ret),
-                        F.smooth_l1_loss(value_clipped, ret),
-                    ))
-                    if aux_policy_target.numel() == logits.numel():
-                        aux_policy_losses.append(
-                            F.kl_div(
-                                torch.log_softmax(logits, dim=0),
-                                aux_policy_target,
-                                reduction="batchmean",
-                            )
-                        )
-                    cf_value_losses.append(F.smooth_l1_loss(cf_pred, cf_target))
-                    if raw_advantage > 0.0 and logits.numel() > 1:
-                        chosen_logit = logits[action]
-                        other_mask = torch.ones(logits.size(0), dtype=torch.bool)
-                        other_mask[action] = False
-                        other_logits = logits[other_mask]
-                        if other_logits.numel() > 0:
-                            match_rank_losses.append(
-                                F.relu(PPO_MATCH_RANK_MARGIN - (chosen_logit - other_logits)).mean()
-                            )
-                    entropies.append(entropy)
-                    approx_kls.append(old_logp - logp)
+                    g_mean = node_emb.mean(0)
+                    g_max  = node_emb.max(0).values
+
+                    # ── Build flat actor + batched critic/CF inputs ───────────
+                    actor_blocks: list = []
+                    critic_rows:  list = []
+                    cf_rows:      list = []
+                    offsets:      list = []
+                    off = 0
+                    g_actions:    list = []
+                    g_old_logps:  list = []
+                    g_rets:       list = []
+                    g_old_vals:   list = []
+                    g_aux_tgts:   list = []
+                    g_cf_tgts:    list = []
+                    g_raw_advs:   list = []
+
+                    for b in group:
+                        cs    = torch.tensor(b["candidate_states"], dtype=torch.float32)
+                        K     = cs.size(0)
+                        cids  = torch.tensor(b["candidate_ids"], dtype=torch.long)
+                        ai    = int(b["action_idx"])
+                        gs_t  = torch.tensor(b["global_state"], dtype=torch.float32)
+                        curr_e_K = node_emb[int(b["curr_id"])].unsqueeze(0).expand(K, -1)
+                        dst_e_K  = node_emb[int(b["dst_id"])].unsqueeze(0).expand(K, -1)
+                        nbr_e_K  = node_emb[cids]
+                        actor_blocks.append(
+                            torch.cat([cs, curr_e_K, dst_e_K, nbr_e_K], dim=1))
+
+                        pmean   = cs.mean(0);   pmax = cs.max(0).values
+                        curr_e1 = node_emb[int(b["curr_id"])]
+                        dst_e1  = node_emb[int(b["dst_id"])]
+                        nbr_m   = node_emb[cids].mean(0)
+                        c_row   = torch.cat(
+                            [gs_t, pmean, pmax, g_mean, g_max, curr_e1, dst_e1, nbr_m])
+                        critic_rows.append(c_row)
+                        cf_rows.append(torch.cat(
+                            [c_row, cs[ai], node_emb[cids[ai]]]))
+
+                        offsets.append((off, off + K))
+                        off += K
+                        g_actions.append(ai)
+                        g_old_logps.append(float(b["old_logp"]))
+                        g_rets.append(float(b["return"]))
+                        g_old_vals.append(float(b["old_value"]))
+                        g_aux_tgts.append(b["aux_policy_target"])
+                        g_cf_tgts.append(float(b.get("counterfactual_target", 0.0)))
+                        g_raw_advs.append(
+                            float(b["advantage"])
+                            + PPO_CF_ADV_COEF * float(b.get("counterfactual_target", 0.0)))
+
+                    # ── ONE actor, ONE critic, ONE CF forward for this graph ──
+                    flat_logits = self.actor_critic.actor(
+                        torch.cat(actor_blocks, dim=0)).squeeze(-1)
+                    flat_logits = torch.nan_to_num(
+                        flat_logits, nan=0.0, posinf=10.0, neginf=-10.0)
+                    g_values  = self.actor_critic.critic(
+                        torch.stack(critic_rows)).squeeze(-1)
+                    g_cf_preds = self.actor_critic.counterfactual(
+                        torch.stack(cf_rows)).squeeze(-1)
+
+                    # ── Per-sample loss accumulation ──────────────────────────
+                    for i, (s, e) in enumerate(offsets):
+                        logits_i = flat_logits[s:e]
+                        dist_i   = torch.distributions.Categorical(logits=logits_i)
+                        action_t = torch.tensor(g_actions[i], dtype=torch.long)
+                        logp     = dist_i.log_prob(action_t)
+                        entropy  = dist_i.entropy()
+
+                        old_logp_t  = torch.tensor(g_old_logps[i], dtype=torch.float32)
+                        old_value_t = torch.tensor(g_old_vals[i],  dtype=torch.float32)
+                        ret_t       = torch.tensor(g_rets[i],      dtype=torch.float32)
+                        cf_tgt_t    = torch.tensor(g_cf_tgts[i],   dtype=torch.float32)
+                        raw_adv     = g_raw_advs[i]
+                        adv = torch.tensor(
+                            (raw_adv - adv_mean) / adv_std, dtype=torch.float32)
+                        adv = torch.clamp(adv, -PPO_ADV_CLIP, PPO_ADV_CLIP)
+
+                        log_ratio = torch.clamp(logp - old_logp_t, -10.0, 10.0)
+                        ratio     = torch.exp(log_ratio)
+                        all_policy_l.append(-torch.min(
+                            ratio * adv,
+                            torch.clamp(ratio, 1 - PPO_CLIP_EPS, 1 + PPO_CLIP_EPS) * adv))
+                        v_i = g_values[i]
+                        v_clip = old_value_t + torch.clamp(
+                            v_i - old_value_t, -PPO_VALUE_CLIP, PPO_VALUE_CLIP)
+                        all_value_l.append(torch.max(
+                            F.smooth_l1_loss(v_i, ret_t),
+                            F.smooth_l1_loss(v_clip, ret_t)))
+                        aux_tgt = torch.tensor(g_aux_tgts[i], dtype=torch.float32)
+                        if aux_tgt.numel() == logits_i.numel():
+                            all_aux_l.append(F.kl_div(
+                                torch.log_softmax(logits_i, dim=0),
+                                aux_tgt, reduction="batchmean"))
+                        all_cf_l.append(F.smooth_l1_loss(g_cf_preds[i], cf_tgt_t))
+                        if raw_adv > 0.0 and logits_i.numel() > 1:
+                            ai_t  = g_actions[i]
+                            omask = torch.ones(logits_i.size(0), dtype=torch.bool)
+                            omask[ai_t] = False
+                            others = logits_i[omask]
+                            if others.numel() > 0:
+                                all_rank_l.append(F.relu(
+                                    PPO_MATCH_RANK_MARGIN
+                                    - (logits_i[ai_t] - others)).mean())
+                        all_entropy.append(entropy)
+                        all_approx_kl.append(old_logp_t - logp)
+
+                if not all_policy_l:
+                    continue
+                policy_losses = all_policy_l
+                value_losses  = all_value_l
+                entropies     = all_entropy
+                approx_kls    = all_approx_kl
+                aux_policy_losses  = all_aux_l
+                cf_value_losses    = all_cf_l
+                match_rank_losses  = all_rank_l
 
                 loss = (
                     torch.stack(policy_losses).mean()
